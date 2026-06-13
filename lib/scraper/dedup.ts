@@ -63,7 +63,11 @@ export async function insertRestaurant(
   return { inserted: data !== null, id: (data?.id as string) ?? null };
 }
 
-/** True if this restaurant has already been emailed (any outreach record). */
+/**
+ * True if this restaurant has an active outreach record (sending or sent).
+ * Failed/skipped rows are excluded so leads can be re-attempted after a
+ * send failure without being permanently blocked.
+ */
 export async function alreadyContacted(
   db: SupabaseClient,
   restaurantId: string,
@@ -72,6 +76,7 @@ export async function alreadyContacted(
     .from('emails_sent')
     .select('id')
     .eq('restaurant_id', restaurantId)
+    .in('status', ['sending', 'sent'])
     .limit(1)
     .maybeSingle();
   if (error) throw error;

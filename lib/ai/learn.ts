@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createAdminClient } from '../supabase/admin';
 import { categories } from '../scraper/categories';
 import { CLAUDE_MODEL, getClaude } from './claude';
+import { runEmailOptimizer, type EmailOptimizeResult } from './emailOptimizer';
 
 /**
  * Weekly self-improvement (#4). Aggregates conversion data from Supabase,
@@ -51,6 +52,7 @@ export interface LearnResult {
   segments: number;
   tokensUsed: number;
   note?: string;
+  emailOptimizer?: EmailOptimizeResult;
 }
 
 // ── Aggregation (plain SQL reads, no AI) ────────────────────
@@ -298,5 +300,22 @@ export async function runWeeklyLearn(): Promise<LearnResult> {
     tokensUsed,
   });
 
-  return { status: 'updated', version, segments: segments.length, tokensUsed };
+  // Second phase: optimize email strategy angles based on reply rates.
+  // Wrapped in try/catch so an optimizer failure never rolls back the
+  // search-strategy update that already succeeded above.
+  let emailOptimizer: EmailOptimizeResult | undefined;
+  try {
+    emailOptimizer = await runEmailOptimizer(db);
+    await logDecision(db, {
+      inputSummary: `email_optimizer: judging ${emailOptimizer.updated + emailOptimizer.skipped} slots`,
+      outputSummary: emailOptimizer.details.join(' | '),
+      tokensUsed: 0, // token cost is inside runEmailOptimizer; not summed here
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Email optimizer failed:', msg);
+    emailOptimizer = { updated: 0, skipped: 0, details: [`error: ${msg}`] };
+  }
+
+  return { status: 'updated', version, segments: segments.length, tokensUsed, emailOptimizer };
 }
