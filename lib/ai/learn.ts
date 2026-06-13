@@ -5,6 +5,7 @@ import { createAdminClient } from '../supabase/admin';
 import { categories } from '../scraper/categories';
 import { CLAUDE_MODEL, getClaude } from './claude';
 import { runEmailOptimizer, type EmailOptimizeResult } from './emailOptimizer';
+import { runWhatsAppOptimizer, type WhatsAppOptimizeResult } from './whatsappOptimizer';
 
 /**
  * Weekly self-improvement (#4). Aggregates conversion data from Supabase,
@@ -53,6 +54,7 @@ export interface LearnResult {
   tokensUsed: number;
   note?: string;
   emailOptimizer?: EmailOptimizeResult;
+  whatsappOptimizer?: WhatsAppOptimizeResult;
 }
 
 // ── Aggregation (plain SQL reads, no AI) ────────────────────
@@ -317,5 +319,19 @@ export async function runWeeklyLearn(): Promise<LearnResult> {
     emailOptimizer = { updated: 0, skipped: 0, details: [`error: ${msg}`] };
   }
 
-  return { status: 'updated', version, segments: segments.length, tokensUsed, emailOptimizer };
+  let whatsappOptimizer: WhatsAppOptimizeResult | undefined;
+  try {
+    whatsappOptimizer = await runWhatsAppOptimizer(db);
+    await logDecision(db, {
+      inputSummary: `whatsapp_optimizer: judging ${whatsappOptimizer.updated + whatsappOptimizer.skipped} approaches`,
+      outputSummary: whatsappOptimizer.details.join(' | '),
+      tokensUsed: 0,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('WhatsApp optimizer failed:', msg);
+    whatsappOptimizer = { updated: 0, skipped: 0, details: [`error: ${msg}`] };
+  }
+
+  return { status: 'updated', version, segments: segments.length, tokensUsed, emailOptimizer, whatsappOptimizer };
 }

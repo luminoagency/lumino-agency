@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { generateReply } from '../ai/whatsapp';
+import { generateReply, pickApproach } from '../ai/whatsapp';
 import { FORM_URL } from './config';
 import { markRead, sendText } from './client';
 import {
@@ -9,7 +9,38 @@ import {
   isDuplicate,
   updateConversation,
 } from './conversation';
-import type { Stage } from './types';
+import type { RestaurantContext, Stage, WhatsAppApproach } from './types';
+
+async function lookupRestaurant(
+  db: SupabaseClient,
+  phone: string,
+): Promise<RestaurantContext | null> {
+  const digits = phone.replace(/\D/g, '');
+  const candidates = [
+    digits,
+    digits.replace(/^39/, '0'),       // 39021... → 021...
+    '39' + digits.replace(/^0/, ''),  // 021... → 3921...
+  ];
+  const { data } = await db
+    .from('restaurants')
+    .select('id, name, category, city, stars, reviews_count, newly_opened')
+    .in('phone', candidates)
+    .limit(1);
+  return (data?.[0] as RestaurantContext) ?? null;
+}
+
+async function getApproachBrief(
+  db: SupabaseClient,
+  approach: WhatsAppApproach,
+): Promise<string | null> {
+  const { data } = await db
+    .from('whatsapp_approaches')
+    .select('prompt_brief')
+    .eq('approach_number', approach)
+    .eq('active', true)
+    .maybeSingle();
+  return data?.prompt_brief ?? null;
+}
 
 export async function handleInbound(
   db: SupabaseClient,
@@ -18,23 +49,29 @@ export async function handleInbound(
   whapiMessageId: string,
   contactName?: string,
 ): Promise<void> {
-  // Whapi.Cloud retries on non-2xx. We always return 200, but if a message
-  // was somehow delivered twice we skip it here via the unique DB index.
   if (await isDuplicate(db, whapiMessageId)) return;
 
-  const conversation = await getOrCreateConversation(db, phone, contactName);
+  const restaurant = await lookupRestaurant(db, phone);
+  const inferredApproach: WhatsAppApproach = restaurant ? pickApproach(restaurant) : 3;
 
-  // Fetch history BEFORE logging this message so Claude sees only prior turns,
-  // then receives the current inbound as the explicit "new message" argument.
+  const conversation = await getOrCreateConversation(
+    db, phone, contactName, restaurant?.id, inferredApproach,
+  );
+
+  // Use approach stored at conversation creation; fall back to inferred for rows
+  // created before this feature was deployed.
+  const approach = (conversation.approach ?? inferredApproach) as WhatsAppApproach;
   const history = await getHistory(db, conversation.id);
+  const approachBrief =
+    conversation.stage === 'cold' ? await getApproachBrief(db, approach) : null;
 
-  const output = await generateReply(conversation, history, text);
+  const output = await generateReply(conversation, history, text, restaurant, approachBrief);
 
   const attachLink = output.sendFormLink && !conversation.form_link_sent_at;
   const finalReply = attachLink ? `${output.reply}\n\n${FORM_URL}` : output.reply;
 
-  // Send first. Only log after a successful send so that on retry (Whapi or
-  // user) the message is treated as unprocessed and we attempt again.
+  // Send first. Only log after a successful send so that on retry the message
+  // is treated as unprocessed and we attempt again.
   const sent = await sendText(phone, finalReply);
 
   await appendMessage(db, conversation.id, 'inbound', text, whapiMessageId);
@@ -47,6 +84,5 @@ export async function handleInbound(
   if (attachLink) patch.formLinkSentAt = new Date().toISOString();
 
   await updateConversation(db, conversation.id, patch);
-
   void markRead(phone, whapiMessageId);
 }

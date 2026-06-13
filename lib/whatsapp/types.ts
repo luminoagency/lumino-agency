@@ -6,6 +6,8 @@ export type Stage =
   | 'converted'
   | 'closed';
 
+export type WhatsAppApproach = 1 | 2 | 3;
+
 // ── Whapi.Cloud inbound webhook ──────────────────────────────
 
 export interface WhapiTextContent {
@@ -43,6 +45,8 @@ export interface ConversationRow {
   restaurant_name: string | null;
   stage: Stage;
   form_link_sent_at: string | null;
+  restaurant_id: string | null;
+  approach: WhatsAppApproach | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +58,32 @@ export interface MessageRow {
   body: string;
   whapi_message_id: string | null;
   sent_at: string;
+}
+
+// ── Restaurant context (from restaurants table) ──────────────
+
+export interface RestaurantContext {
+  id: string;
+  name: string | null;
+  category: string | null;
+  city: string | null;
+  stars: number | null;
+  reviews_count: number | null;
+  newly_opened: boolean | null;
+}
+
+// ── WhatsApp approach template row ───────────────────────────
+
+export interface ApproachRow {
+  id: string;
+  approach_number: WhatsAppApproach;
+  version: number;
+  angle_name: string;
+  trigger_logic: string;
+  prompt_brief: string;
+  reply_rate: number | null;
+  conversations_count: number;
+  created_at: string;
 }
 
 // ── Claude bot output ────────────────────────────────────────

@@ -1,11 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { HISTORY_WINDOW } from './config';
-import type { ConversationRow, MessageRow, Stage } from './types';
+import type { ConversationRow, MessageRow, Stage, WhatsAppApproach } from './types';
 
 export async function getOrCreateConversation(
   db: SupabaseClient,
   phone: string,
   contactName?: string,
+  restaurantId?: string,
+  approach?: WhatsAppApproach,
 ): Promise<ConversationRow> {
   const { data: existing } = await db
     .from('whatsapp_conversations')
@@ -17,7 +19,12 @@ export async function getOrCreateConversation(
 
   const { data, error } = await db
     .from('whatsapp_conversations')
-    .insert({ phone, contact_name: contactName ?? null })
+    .insert({
+      phone,
+      contact_name: contactName ?? null,
+      restaurant_id: restaurantId ?? null,
+      approach: approach ?? null,
+    })
     .select()
     .single();
 
