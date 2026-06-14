@@ -1,0 +1,41 @@
+[data-theme="exotic"] {
+  --color-bg:               #0d0816;
+  --color-bg-alt:           #1a0a2e;
+  --color-bg-card:          #1f1035;
+  --color-fg:               #f0ebe0;
+  --color-fg-muted:         #b8a898;
+  --color-accent:           #e85d04;
+  --color-accent-light:     #fb8500;
+  --color-accent-secondary: #6a0572;
+  --color-border:           #2e1a3e;
+  --color-overlay:          rgba(13, 8, 22, 0.88);
+
+  --font-heading: var(--font-cinzel, "Cinzel", Georgia, serif);
+  --font-body:    var(--font-lato, "Lato", Arial, sans-serif);
+
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-weight-black:    900;
+
+  --letter-spacing-wide:  0.12em;
+  --letter-spacing-wider: 0.25em;
+
+  --duration-fast:     0.25s;
+  --duration-normal:   0.5s;
+  --duration-slow:     1s;
+  --duration-dramatic: 1.8s;
+
+  --easing-default:  cubic-bezier(0.25, 0.1, 0.25, 1);
+  --easing-dramatic: cubic-bezier(0.68, -0.06, 0.32, 1.06);
+  --easing-sweep:    cubic-bezier(0.4, 0, 0, 1);
+
+  --shadow-spice:  0 0 40px rgba(232, 93, 4, 0.2);
+  --shadow-card:   0 4px 32px rgba(0, 0, 0, 0.7);
+  --shadow-purple: 0 0 60px rgba(106, 5, 114, 0.15);
+
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+}

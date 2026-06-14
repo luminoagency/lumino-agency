@@ -1,0 +1,42 @@
+[data-theme="modern"] {
+  --color-bg:               #1a1210;
+  --color-bg-alt:           #221a16;
+  --color-bg-card:          #2a2018;
+  --color-fg:               #FAF2E8;
+  --color-fg-muted:         #b8a898;
+  --color-accent:           #e52d1d;
+  --color-accent-light:     #ff4533;
+  --color-accent-secondary: #FAF2E8;
+  --color-border:           rgba(250,242,232,0.1);
+  --color-overlay:          rgba(26,18,16,0.92);
+
+  --font-heading: var(--font-inter, "Inter", Arial, sans-serif);
+  --font-body:    var(--font-inter, "Inter", Arial, sans-serif);
+
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+  --font-weight-black:    900;
+
+  --letter-spacing-tight: -0.04em;
+  --letter-spacing-wide:  0.05em;
+
+  --duration-fast:   0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow:   0.6s;
+
+  --easing-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --easing-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --easing-snappy:  cubic-bezier(0.77, 0, 0.175, 1);
+
+  --shadow-punch: 0 4px 20px rgba(229, 45, 29, 0.25);
+  --shadow-card:  0 2px 16px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+}

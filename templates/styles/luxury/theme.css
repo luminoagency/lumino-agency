@@ -1,0 +1,39 @@
+[data-theme="luxury"] {
+  --color-bg:           #0a0a0a;
+  --color-bg-alt:       #111111;
+  --color-bg-card:      #161410;
+  --color-fg:           #f5f0e8;
+  --color-fg-muted:     #a89b8c;
+  --color-accent:       #c9a84c;
+  --color-accent-light: #e8cc80;
+  --color-accent-dark:  #8a6f2e;
+  --color-border:       #2a2520;
+  --color-overlay:      rgba(10, 10, 10, 0.85);
+
+  --font-heading: var(--font-cormorant, "Cormorant Garamond", Georgia, serif);
+  --font-body:    var(--font-libre, "Libre Baskerville", Georgia, serif);
+
+  --font-weight-light:    300;
+  --font-weight-regular:  400;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  --letter-spacing-wide:  0.15em;
+  --letter-spacing-wider: 0.3em;
+
+  --duration-fast:      0.3s;
+  --duration-normal:    0.6s;
+  --duration-slow:      1.2s;
+  --duration-cinematic: 2s;
+
+  --easing-default:   cubic-bezier(0.25, 0.1, 0.25, 1);
+  --easing-cinematic: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --shadow-gold: 0 0 40px rgba(201, 168, 76, 0.15);
+  --shadow-card: 0 4px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 80px rgba(201, 168, 76, 0.08);
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+}
