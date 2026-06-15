@@ -1,777 +1,852 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
-import { DEMO_RESTAURANTS } from '@/templates/_shared/demoData'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { Quote, Star, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
 import { PLANS, SALES_TERMS } from '@/lib/plans'
 
-/* IntersectionObserver hook for scroll-triggered reveal */
-function useReveal<T extends HTMLElement>() {
+/* ───────────────────────── DATA ───────────────────────── */
+
+const MARQUEE_IMAGES = [
+  'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1600&q=85',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=85',
+  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1600&q=85',
+  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1600&q=85',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=85',
+  'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=1600&q=85',
+  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1600&q=85',
+  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1600&q=85',
+]
+
+const TESTIMONIALS = [
+  {
+    name: 'Marco Bianchi',
+    role: 'Proprietario, Trattoria del Sole',
+    text: 'In 24 ore il mio sito era online. Senza chiamate, senza riunioni infinite. Ho ricevuto la prima prenotazione dal sito la sera stessa.',
+    avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&w=200&h=200&fit=crop',
+  },
+  {
+    name: 'Giulia Romano',
+    role: 'Chef, Sapori di Sicilia',
+    text: 'L\'AI ha scritto testi che sembrano scritti da me. Ho corretto due cose dal pannello, in 10 minuti. Pazzesco.',
+    avatar: 'https://images.pexels.com/photos/3992656/pexels-photo-3992656.jpeg?auto=compress&w=200&h=200&fit=crop',
+  },
+  {
+    name: 'Davide Esposito',
+    role: 'Founder, Pizzeria Da Vide',
+    text: 'Avevo un sito di 8 anni fa. Lumino me ne ha fatto uno nuovo, moderno, in un giorno. Prenotazioni triplicate nel primo mese.',
+    avatar: 'https://images.pexels.com/photos/2531553/pexels-photo-2531553.jpeg?auto=compress&w=200&h=200&fit=crop',
+  },
+  {
+    name: 'Francesca Marini',
+    role: 'Co-fondatrice, Osteria Verona',
+    text: 'Pagato la prima rata, due giorni dopo il sito era live. Le foto scelte dall\'AI sono migliori di quelle che avrei caricato io.',
+    avatar: 'https://images.pexels.com/photos/3812743/pexels-photo-3812743.jpeg?auto=compress&w=200&h=200&fit=crop',
+  },
+  {
+    name: 'Lorenzo Conte',
+    role: 'Chef Patron, Sushi Hanami',
+    text: 'Il design del template Aurora ha portato un\'estetica che non avevo mai avuto. Clientela più alta, scontrini medi più alti.',
+    avatar: 'https://images.pexels.com/photos/1813947/pexels-photo-1813947.jpeg?auto=compress&w=200&h=200&fit=crop',
+  },
+]
+
+const PROJECTS = [
+  {
+    slug: 'sushi-hanami',
+    name: 'Sushi Hanami',
+    desc: 'Sushi-bar di nuova generazione a Milano. Template Aurora, video AI, atmosfera onirica.',
+    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1920&q=90',
+  },
+  {
+    slug: 'trattoria-nonna-lucia',
+    name: 'Da Nonna Lucia',
+    desc: 'Tre generazioni di cucina toscana a Firenze. Template Mercato, editorial vintage.',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1920&q=90',
+  },
+  {
+    slug: 'demo-lumino',
+    name: 'Burger Republic',
+    desc: 'Smash burger gourmet a Milano. Template Bento, energico e moderno.',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1920&q=90',
+  },
+]
+
+/* ───────────────────────── HOOKS ───────────────────────── */
+
+function useInView<T extends HTMLElement>(threshold = 0.1) {
   const ref = useRef<T>(null)
+  const [inView, setInView] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { el.classList.add('lm-in'); obs.unobserve(el) } },
-      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true)
+          obs.unobserve(el)
+        }
+      },
+      { threshold },
     )
     obs.observe(el)
     return () => obs.disconnect()
-  }, [])
-  return ref
+  }, [threshold])
+  return { ref, inView }
 }
 
-function Reveal({ children, dir = 'up', delay = 0, as = 'div' }: { children: React.ReactNode; dir?: 'up' | 'left' | 'right' | 'scale'; delay?: number; as?: any }) {
-  const ref = useReveal<HTMLDivElement>()
-  const Tag = as
-  return (
-    <Tag ref={ref} className={`lm-reveal lm-r-${dir}`} style={{ transitionDelay: `${delay}s` }}>
+/* ───────────────────────── SHARED STYLES ───────────────────────── */
+
+const COLOR = {
+  dark: '#051A24',
+  dark2: '#0D212C',
+  light1: '#F6FCFF',
+  light2: '#E0EBF0',
+  muted: '#273C46',
+}
+
+const PRIMARY_BTN_SHADOW =
+  '0 1px 2px 0 rgba(5,26,36,0.1), 0 4px 4px 0 rgba(5,26,36,0.09), 0 9px 6px 0 rgba(5,26,36,0.05), 0 17px 7px 0 rgba(5,26,36,0.01), 0 26px 7px 0 rgba(5,26,36,0), inset 0 2px 8px 0 rgba(255,255,255,0.18)'
+const PRIMARY_BTN_SHADOW_DARK_BG =
+  '0 1px 2px 0 rgba(0,0,0,0.25), 0 4px 14px 0 rgba(0,0,0,0.18), inset 0 2px 8px 0 rgba(255,255,255,0.10)'
+const SECONDARY_BTN_SHADOW =
+  '0 0 0 0.5px rgba(0,0,0,0.05), 0 4px 30px rgba(0,0,0,0.08)'
+
+/* ───────────────────────── BUTTON ───────────────────────── */
+
+interface BtnProps {
+  variant?: 'primary' | 'secondary' | 'tertiary'
+  href?: string
+  external?: boolean
+  children: React.ReactNode
+  onClick?: () => void
+  style?: React.CSSProperties
+}
+
+function Btn({ variant = 'primary', href, external, children, onClick, style }: BtnProps) {
+  const base: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '13px 28px',
+    fontSize: 14,
+    fontWeight: 500,
+    fontFamily: 'inherit',
+    borderRadius: 9999,
+    border: 0,
+    cursor: 'pointer',
+    textDecoration: 'none',
+    transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s, opacity 0.2s',
+    whiteSpace: 'nowrap',
+  }
+  const variants: Record<string, React.CSSProperties> = {
+    primary: { background: COLOR.dark, color: '#fff', boxShadow: PRIMARY_BTN_SHADOW },
+    secondary: { background: '#fff', color: COLOR.dark, boxShadow: SECONDARY_BTN_SHADOW },
+    tertiary: { background: '#fff', color: COLOR.dark, boxShadow: '0 0 0 0.5px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.10)' },
+  }
+  const merged = { ...base, ...variants[variant], ...style }
+
+  const inner = (
+    <span style={merged} className="lm-btn-hover">
       {children}
-    </Tag>
+    </span>
+  )
+
+  if (href) {
+    return external ? (
+      <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
+    ) : (
+      <Link href={href}>{inner}</Link>
+    )
+  }
+  return <button type="button" onClick={onClick} style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}>{inner}</button>
+}
+
+/* ───────────────────────── HERO ───────────────────────── */
+
+function Hero() {
+  return (
+    <section style={{ maxWidth: 440, margin: '0 auto', padding: '48px 24px 0', textAlign: 'left' }}>
+      <h1 className="lm-fade" style={{
+        animationDelay: '0.1s',
+        fontFamily: 'var(--font-serif)', fontWeight: 600,
+        fontSize: 'clamp(32px, 5vw, 44px)',
+        color: COLOR.dark, letterSpacing: '-0.02em',
+        margin: '0 0 16px',
+      }}>
+        Lumino<span style={{ color: '#e52d1d' }}>.</span>
+      </h1>
+
+      <p className="lm-fade" style={{
+        animationDelay: '0.2s',
+        fontFamily: 'var(--font-mono)', fontSize: 13,
+        color: COLOR.dark, margin: '0 0 18px',
+        letterSpacing: '0.02em',
+      }}>
+        Lo studio AI per ristoranti italiani
+      </p>
+
+      <h2 className="lm-fade" style={{
+        animationDelay: '0.3s',
+        fontSize: 'clamp(28px, 4.5vw, 44px)',
+        lineHeight: 1.1, color: COLOR.dark2,
+        letterSpacing: '-0.025em', fontWeight: 400,
+        margin: '0 0 22px',
+      }}>
+        Costruisci il sito{' '}
+        <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>del tuo locale</span>,
+        <br />
+        in <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>24 ore</span>.
+      </h2>
+
+      <div className="lm-fade" style={{
+        animationDelay: '0.4s',
+        display: 'flex', flexDirection: 'column', gap: 22,
+        fontSize: 14.5, lineHeight: 1.65, color: COLOR.dark,
+        marginBottom: 26,
+      }}>
+        <p style={{ margin: 0 }}>
+          Lumino è uno studio italiano costruito attorno all'AI. Generiamo siti per ristoratori che vogliono apparire bene online <em>senza</em> riunioni infinite, agenzie costose o template da Facebook.
+        </p>
+        <p style={{ margin: 0 }}>
+          Lo studio è piccolo per scelta. L'intelligenza artificiale fa il lavoro pesante — testi, foto, menu, prenotazioni. Noi supervisioniamo ogni sito personalmente prima della consegna.
+        </p>
+        <p style={{ margin: 0 }}>
+          I siti partono da <strong>€{PLANS[0].priceFrom}</strong>. Un solo pagamento, nessun abbonamento.
+        </p>
+      </div>
+
+      <div className="lm-fade lm-hero-ctas" style={{
+        animationDelay: '0.5s',
+        display: 'flex', gap: 14, flexWrap: 'wrap',
+      }}>
+        <Btn href="/register" variant="primary">Inizia ora</Btn>
+        <Btn href="#progetti" variant="secondary">Vedi esempi</Btn>
+      </div>
+    </section>
   )
 }
 
-export default function HomePage() {
-  const [cursor, setCursor] = useState({ x: -1000, y: -1000 })
-  const [scrollY, setScrollY] = useState(0)
-  const [winSize, setWinSize] = useState({ w: 1280, h: 800 })
-  const [menuOpen, setMenuOpen] = useState(false)
+/* ───────────────────────── MARQUEE ───────────────────────── */
 
-  useEffect(() => {
-    if (menuOpen) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
-    return () => { document.body.style.overflow = '' }
-  }, [menuOpen])
+function Marquee() {
+  const all = [...MARQUEE_IMAGES, ...MARQUEE_IMAGES]
+  return (
+    <section style={{ marginTop: 80, marginBottom: 80, overflow: 'hidden', width: '100%' }}>
+      <div className="lm-marquee" style={{ display: 'flex', width: 'max-content' }}>
+        {all.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={src}
+            alt=""
+            loading="lazy"
+            style={{
+              height: 'clamp(260px, 38vw, 500px)',
+              width: 'auto',
+              objectFit: 'cover',
+              margin: '0 12px',
+              borderRadius: 18,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              flexShrink: 0,
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
 
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => setCursor({ x: e.clientX, y: e.clientY })
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [])
+/* ───────────────────────── QUOTE WITH PARALLAX ───────────────────────── */
+
+function QuoteSection() {
+  const { ref, inView } = useInView<HTMLDivElement>()
+  const [offset, setOffset] = useState(0)
+  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     let raf = 0
     const onScroll = () => {
-      raf = requestAnimationFrame(() => setScrollY(window.scrollY))
+      raf = requestAnimationFrame(() => {
+        if (!imgRef.current) return
+        const r = imgRef.current.getBoundingClientRect()
+        const vh = window.innerHeight
+        const center = r.top + r.height / 2
+        const progress = (center - vh / 2) / vh   // -1 (top) … +1 (bottom)
+        const off = Math.max(-100, Math.min(100, -progress * 100))
+        setOffset(off)
+      })
     }
-    const onResize = () => setWinSize({ w: window.innerWidth, h: window.innerHeight })
-    onResize()
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onResize)
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onResize)
-      cancelAnimationFrame(raf)
-    }
+    onScroll()
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf) }
   }, [])
 
-  const showcase = DEMO_RESTAURANTS.slice(0, 4)
-  const tiltX = (cursor.x - winSize.w / 2) * 0.012
-  const tiltY = (cursor.y - winSize.h / 2) * 0.012
+  return (
+    <section ref={ref} style={{ padding: '48px 24px', maxWidth: 720, margin: '0 auto', textAlign: 'left' }}>
+      <div className={inView ? 'lm-fade' : ''} style={{ animationDelay: '0.1s', marginBottom: 18 }}>
+        <Quote width={26} height={26} color={COLOR.dark} strokeWidth={1.8} />
+      </div>
 
-  // Giant "Lumino" mark scroll progress (appears around 80vh, fixed in middle)
-  const markProgress = Math.max(0, Math.min(1, (scrollY - winSize.h * 0.6) / (winSize.h * 1.0)))
-  const markVisible = markProgress > 0.15 && markProgress < 0.85
-  const markScale = 0.6 + Math.min(1, markProgress * 1.5) * 0.7
+      <p className={inView ? 'lm-fade' : ''} style={{
+        animationDelay: '0.2s',
+        fontSize: 'clamp(30px, 4.5vw, 44px)',
+        lineHeight: 1.12,
+        color: COLOR.dark2,
+        letterSpacing: '-0.025em',
+        margin: '0 0 26px',
+        fontWeight: 400,
+      }}>
+        Costruito a <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>Milano</span>,
+        pensato per i ristoranti che <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>contano</span>.
+      </p>
+
+      <p className={inView ? 'lm-fade' : ''} style={{
+        animationDelay: '0.3s',
+        fontSize: 14, fontStyle: 'italic',
+        color: COLOR.muted, margin: '0 0 30px',
+      }}>
+        Lumino Agency
+      </p>
+
+      <div className={inView ? 'lm-fade' : ''} style={{
+        animationDelay: '0.4s',
+        display: 'flex', gap: 36, alignItems: 'center', flexWrap: 'wrap',
+        marginBottom: 38, fontSize: 22, fontWeight: 500, color: COLOR.dark,
+        fontFamily: 'var(--font-serif)',
+      }}>
+        <span>Claude</span>
+        <span>Supabase</span>
+        <span>Vercel</span>
+      </div>
+
+      <div className={inView ? 'lm-fade' : ''} style={{ animationDelay: '0.5s' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={imgRef}
+          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1280&q=85"
+          alt="Lumino"
+          style={{
+            width: '100%', maxWidth: 320,
+            borderRadius: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            transform: `translateY(${offset}px)`,
+            transition: 'transform 0.05s linear',
+            display: 'block',
+          }}
+        />
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────── PRICING ───────────────────────── */
+
+function PricingSection() {
+  const { ref, inView } = useInView<HTMLDivElement>()
+  const basic = PLANS[0]
+  const pro = PLANS[1]
+  return (
+    <section ref={ref} id="prezzi" style={{ padding: '48px 24px', width: '100%' }}>
+      <div style={{ maxWidth: 1100, margin: '0 0 0 auto' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 32,
+        }}>
+          {/* Card 1 — DARK */}
+          <div className={inView ? 'lm-fade' : ''} style={{
+            animationDelay: '0.1s',
+            background: COLOR.dark, color: COLOR.light1,
+            borderRadius: 40,
+            padding: '40px 40px 40px 40px',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 48px rgba(0,0,0,0.18)',
+          }}>
+            <h3 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 10px' }}>Sito + AI</h3>
+            <p style={{ color: COLOR.light2, fontSize: 14.5, lineHeight: 1.55, margin: '0 0 28px' }}>
+              Sito completo generato dall'AI.<br />
+              Pronto in 24 ore, supervisionato da noi.
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 28, color: COLOR.light1, margin: '0 0 4px', lineHeight: 1,
+            }}>
+              da €{basic.priceFrom}
+            </p>
+            <p style={{ color: COLOR.light2, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 24px' }}>
+              Una tantum
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Btn href="/register" variant="primary" style={{ background: '#fff', color: COLOR.dark, boxShadow: PRIMARY_BTN_SHADOW_DARK_BG }}>Inizia ora</Btn>
+              <Btn href="/pricing" variant="secondary" style={{ background: 'transparent', color: COLOR.light1, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)' }}>Come funziona</Btn>
+            </div>
+          </div>
+
+          {/* Card 2 — LIGHT */}
+          <div className={inView ? 'lm-fade' : ''} style={{
+            animationDelay: '0.2s',
+            background: '#fff', color: COLOR.dark2,
+            borderRadius: 40,
+            padding: '40px 40px 40px 40px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          }}>
+            <h3 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 10px' }}>{pro.name} & {PLANS[2].name}</h3>
+            <p style={{ color: 'rgba(13,33,44,0.6)', fontSize: 14.5, lineHeight: 1.55, margin: '0 0 28px' }}>
+              Prenotazioni, eventi, sezione chef, WhatsApp.<br />
+              Dominio personalizzato e pannello di controllo.
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 28, color: COLOR.dark2, margin: '0 0 4px', lineHeight: 1,
+            }}>
+              da €{pro.priceFrom}
+            </p>
+            <p style={{ color: 'rgba(13,33,44,0.5)', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 24px' }}>
+              Minimo
+            </p>
+            <Btn href="/register" variant="tertiary">Inizia ora</Btn>
+          </div>
+        </div>
+        <p style={{ marginTop: 24, color: 'rgba(5,26,36,0.55)', fontSize: 12.5, textAlign: 'right', lineHeight: 1.5 }}>
+          {SALES_TERMS.publicNote}
+        </p>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────── TESTIMONIAL CAROUSEL ───────────────────────── */
+
+function CarouselSection() {
+  const tripled = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS]
+  const [index, setIndex] = useState(TESTIMONIALS.length)  // start in middle copy
+  const [hover, setHover] = useState(false)
+  const { ref, inView } = useInView<HTMLDivElement>()
+
+  useEffect(() => {
+    if (hover) return
+    const t = setInterval(() => setIndex(i => i + 1), 3500)
+    return () => clearInterval(t)
+  }, [hover])
+
+  // Reset position when index out of middle window (no animation)
+  useEffect(() => {
+    if (index >= TESTIMONIALS.length * 2) {
+      const t = setTimeout(() => setIndex(TESTIMONIALS.length), 850)
+      return () => clearTimeout(t)
+    }
+    if (index < 0) {
+      const t = setTimeout(() => setIndex(TESTIMONIALS.length - 1), 850)
+      return () => clearTimeout(t)
+    }
+  }, [index])
+
+  const cardWidth = 360
+  const gap = 24
 
   return (
-    <div className="lm-home">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; background: #050505; color: #fff; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
-        ::selection { background: rgba(229, 45, 29, 0.35); }
-
-        .lm-home { position: relative; min-height: 100vh; overflow-x: hidden; }
-
-        /* ─── Multi-layer animated aurora background ─────────────────────── */
-        .lm-aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-        .lm-aurora-blob { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.55; will-change: transform; }
-        .lm-blob-1 { width: 700px; height: 700px; background: radial-gradient(circle, #e52d1d 0%, transparent 70%); top: -200px; left: -150px; animation: lmFloat1 24s ease-in-out infinite alternate; }
-        .lm-blob-2 { width: 600px; height: 600px; background: radial-gradient(circle, #a78bfa 0%, transparent 70%); bottom: -180px; right: -120px; animation: lmFloat2 30s ease-in-out infinite alternate; }
-        .lm-blob-3 { width: 500px; height: 500px; background: radial-gradient(circle, #60a5fa 0%, transparent 70%); top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.35; animation: lmFloat3 26s ease-in-out infinite alternate; }
-        @keyframes lmFloat1 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(15vw, 10vh) scale(1.2); } }
-        @keyframes lmFloat2 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(-12vw, -8vh) scale(0.9); } }
-        @keyframes lmFloat3 { 0% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-30%, -70%) scale(1.15); } }
-
-        /* Floating particles */
-        .lm-particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
-        .lm-particle { position: absolute; width: 2px; height: 2px; background: rgba(255,255,255,0.7); border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.5); animation: lmRise 16s linear infinite; }
-        @keyframes lmRise { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 10% { opacity: 0.9; } 90% { opacity: 0.9; } 100% { transform: translateY(-10vh) scale(1.4); opacity: 0; } }
-
-        /* Cursor light */
-        .lm-cursor-light { position: fixed; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(229, 45, 29, 0.2) 0%, transparent 60%); pointer-events: none; z-index: 2; transform: translate(-50%, -50%); mix-blend-mode: screen; will-change: transform; }
-        @media (max-width: 768px) { .lm-cursor-light { display: none; } }
-
-        /* Giant Lumino mark that appears in middle while scrolling */
-        .lm-giant-mark {
-          position: fixed;
-          inset: 0;
-          z-index: 3;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-          opacity: 0;
-          transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .lm-giant-mark.show { opacity: 1; }
-        .lm-giant-mark-text {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: clamp(8rem, 24vw, 22rem);
-          font-weight: 400;
-          letter-spacing: -0.05em;
-          line-height: 0.85;
-          background: linear-gradient(135deg, rgba(229,45,29,0.18), rgba(167,139,250,0.18) 50%, rgba(96,165,250,0.18));
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-align: center;
-          will-change: transform;
-        }
-        .lm-giant-mark-dot {
-          color: rgba(229,45,29,0.4);
-          font-size: 0.45em;
-          margin-left: 0.1em;
-          vertical-align: bottom;
-        }
-
-        .lm-content { position: relative; z-index: 10; }
-
-        /* ─── NAV ──────────────────────────────────────────────────────── */
-        .lm-nav {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          padding: 18px 32px;
-          display: flex; align-items: center; justify-content: space-between;
-          background: rgba(5, 5, 5, 0.55);
-          backdrop-filter: blur(24px);
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .lm-logo {
-          display: inline-flex; align-items: baseline; gap: 4px;
-          color: #fff; text-decoration: none;
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: 28px; font-weight: 500; letter-spacing: -0.01em; line-height: 1;
-        }
-        .lm-logo-dot {
-          width: 6px; height: 6px; border-radius: 50%; background: #e52d1d;
-          box-shadow: 0 0 14px #e52d1d;
-          margin-left: 4px; align-self: flex-end; margin-bottom: 6px;
-          animation: lmPulse 2.5s ease-in-out infinite;
-        }
-        @keyframes lmPulse { 0%, 100% { box-shadow: 0 0 14px #e52d1d, 0 0 0 0 rgba(229,45,29,0.5); } 50% { box-shadow: 0 0 22px #e52d1d, 0 0 0 8px rgba(229,45,29,0); } }
-        .lm-nav-links { display: flex; gap: 28px; align-items: center; }
-        .lm-nav-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s; position: relative; }
-        .lm-nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 1px; background: #fff; transform: scaleX(0); transform-origin: center; transition: transform 0.3s; }
-        .lm-nav-link:hover { color: #fff; }
-        .lm-nav-link:hover::after { transform: scaleX(1); }
-        .lm-nav-cta {
-          padding: 10px 22px; background: #fff; color: #050505;
-          text-decoration: none; font-size: 12px; font-weight: 700;
-          letter-spacing: 0.08em; text-transform: uppercase;
-          border-radius: 100px; transition: transform 0.25s, box-shadow 0.25s;
-          position: relative; overflow: hidden;
-        }
-        .lm-nav-cta::before { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent, rgba(229,45,29,0.4), transparent); transform: translateX(-100%); transition: transform 0.5s; }
-        .lm-nav-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(255,255,255,0.2); }
-        .lm-nav-cta:hover::before { transform: translateX(100%); }
-
-        /* Hamburger */
-        .lm-burger {
-          display: none;
-          background: transparent; border: 0; padding: 8px;
-          width: 40px; height: 40px;
-          cursor: pointer; position: relative; z-index: 130;
-        }
-        .lm-burger span {
-          display: block; width: 22px; height: 2px;
-          background: #fff; margin: 5px auto;
-          transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s;
-          border-radius: 2px;
-        }
-        .lm-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-        .lm-burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-        .lm-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-        /* Mobile drawer */
-        .lm-drawer {
-          position: fixed; inset: 0; z-index: 120;
-          background: rgba(5, 5, 5, 0.85);
-          backdrop-filter: blur(28px);
-          opacity: 0; pointer-events: none;
-          transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-          display: flex; align-items: center; justify-content: center;
-        }
-        .lm-drawer.open { opacity: 1; pointer-events: auto; }
-        .lm-drawer-inner {
-          display: flex; flex-direction: column; gap: 6px;
-          width: 100%; max-width: 420px; padding: 32px;
-          transform: translateY(20px); opacity: 0;
-          transition: opacity 0.4s 0.05s, transform 0.4s 0.05s;
-        }
-        .lm-drawer.open .lm-drawer-inner { transform: translateY(0); opacity: 1; }
-        .lm-drawer-link {
-          padding: 18px 22px;
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: 28px; font-style: italic; font-weight: 400;
-          color: #fff; text-decoration: none;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          letter-spacing: -0.01em;
-        }
-        .lm-drawer-cta {
-          margin-top: 22px; padding: 18px 24px;
-          background: linear-gradient(135deg, #e52d1d, #c9241a);
-          color: #fff; text-decoration: none;
-          font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-          border-radius: 100px; text-align: center;
-          box-shadow: 0 14px 40px rgba(229,45,29,0.4);
-        }
-
-        /* How it works */
-        .lm-howit {
-          display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 50px;
-        }
-        .lm-howit-card {
-          padding: 32px 26px;
-          background: rgba(20,20,22,0.5);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 18px;
-          backdrop-filter: blur(20px);
-          height: 100%; box-sizing: border-box;
-        }
-        .lm-howit-n {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-style: italic; font-size: 3.6rem;
-          background: linear-gradient(135deg, #e52d1d, #a78bfa);
-          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-          line-height: 1; margin-bottom: 18px;
-        }
-        .lm-howit-t {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: 1.5rem; font-style: italic; color: #fff;
-          margin: 0 0 10px; font-weight: 400;
-        }
-        .lm-howit-p { color: rgba(255,255,255,0.6); font-size: 13.5px; line-height: 1.6; margin: 0; }
-
-        /* ─── REVEAL animations ────────────────────────────────────────── */
-        .lm-reveal {
-          opacity: 0;
-          transition: opacity 1.0s cubic-bezier(0.22, 1, 0.36, 1), transform 1.0s cubic-bezier(0.22, 1, 0.36, 1);
-          will-change: opacity, transform;
-        }
-        .lm-r-up { transform: translateY(40px); }
-        .lm-r-left { transform: translateX(-60px); }
-        .lm-r-right { transform: translateX(60px); }
-        .lm-r-scale { transform: scale(0.9); }
-        .lm-reveal.lm-in { opacity: 1; transform: translate(0, 0) scale(1); }
-
-        /* ─── HERO ─────────────────────────────────────────────────────── */
-        .lm-hero {
-          padding: 11rem 2rem 5rem;
-          max-width: 1300px; margin: 0 auto; text-align: center;
-          position: relative; perspective: 1200px;
-        }
-        .lm-hero-eyebrow {
-          display: inline-flex; align-items: center; gap: 10px;
-          padding: 8px 18px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 100px;
-          color: rgba(255,255,255,0.85);
-          font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; font-weight: 600;
-          margin-bottom: 32px; backdrop-filter: blur(20px);
-          animation: lmEyebrowIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
-        }
-        @keyframes lmEyebrowIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-        .lm-hero-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 12px #22c55e; animation: lmPulseGreen 2s ease-in-out infinite; }
-        @keyframes lmPulseGreen { 0%, 100% { box-shadow: 0 0 12px #22c55e, 0 0 0 0 rgba(34,197,94,0.5); } 50% { box-shadow: 0 0 18px #22c55e, 0 0 0 8px rgba(34,197,94,0); } }
-
-        .lm-hero-title {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: clamp(3.5rem, 11vw, 9rem);
-          font-weight: 400; letter-spacing: -0.04em; line-height: 0.95;
-          margin: 0 0 20px; color: #fff;
-          transform-style: preserve-3d;
-          animation: lmTitleIn 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
-        }
-        @keyframes lmTitleIn { from { opacity: 0; transform: translateY(40px) rotateX(-10deg); } to { opacity: 1; transform: translateY(0) rotateX(0); } }
-        .lm-hero-title em {
-          font-style: italic;
-          background: linear-gradient(120deg, #e52d1d 0%, #a78bfa 50%, #60a5fa 100%);
-          background-size: 200% auto;
-          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-          animation: lmGradient 6s ease infinite;
-        }
-        @keyframes lmGradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        .lm-hero-sub {
-          color: rgba(255,255,255,0.7);
-          font-size: clamp(1.05rem, 1.7vw, 1.35rem);
-          line-height: 1.5; max-width: 680px; margin: 0 auto 36px;
-          font-weight: 300;
-          animation: lmFadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
-        }
-        @keyframes lmFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .lm-hero-cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; animation: lmFadeUp 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.75s both; }
-        .lm-cta {
-          position: relative; padding: 18px 36px; text-decoration: none;
-          font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-          border-radius: 100px; overflow: hidden;
-          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s;
-          z-index: 1; display: inline-flex; align-items: center; gap: 10px; backdrop-filter: blur(8px); will-change: transform;
-        }
-        .lm-cta-primary {
-          background: linear-gradient(135deg, #e52d1d 0%, #c9241a 100%);
-          color: #fff;
-          box-shadow: 0 14px 40px rgba(229,45,29,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-        .lm-cta-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.3), transparent 70%); transform: translateX(-100%); transition: transform 0.6s; }
-        .lm-cta-primary:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 24px 50px rgba(229,45,29,0.55); }
-        .lm-cta-primary:hover::before { transform: translateX(100%); }
-        .lm-cta-secondary { background: rgba(255,255,255,0.04); color: #fff; border: 1px solid rgba(255,255,255,0.18); }
-        .lm-cta-secondary:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.4); transform: translateY(-3px); }
-
-        /* ─── SCROLL SECTIONS ──────────────────────────────────────────── */
-        .lm-section {
-          padding: 7rem 2rem;
-          max-width: 1300px;
-          margin: 0 auto;
-          position: relative;
-        }
-        .lm-section-eyebrow { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: #e52d1d; font-weight: 600; margin: 0 0 18px; }
-        .lm-section-title {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: clamp(2.4rem, 5.5vw, 4.5rem);
-          font-weight: 400; letter-spacing: -0.035em; line-height: 1.04;
-          margin: 0 0 20px; color: #fff;
-        }
-        .lm-section-title em { font-style: italic; background: linear-gradient(135deg, #e52d1d, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .lm-section-sub { color: rgba(255,255,255,0.65); font-size: clamp(1rem, 1.5vw, 1.18rem); line-height: 1.6; max-width: 660px; font-weight: 300; }
-
-        /* ─── BIG SPLIT (alternating left/right) ───────────────────────── */
-        .lm-split { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin-top: 40px; }
-        .lm-split.flip { direction: rtl; }
-        .lm-split.flip > * { direction: ltr; }
-        .lm-split-text h3 {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: clamp(2rem, 3.6vw, 3.2rem); font-weight: 400; font-style: italic;
-          line-height: 1.05; letter-spacing: -0.025em; color: #fff; margin: 0 0 18px;
-        }
-        .lm-split-text h3 em { background: linear-gradient(135deg, #e52d1d, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .lm-split-text p { color: rgba(255,255,255,0.65); font-size: 16px; line-height: 1.7; margin: 0 0 12px; }
-        .lm-split-text ul { padding: 0; margin: 16px 0 0; list-style: none; }
-        .lm-split-text li { padding: 8px 0 8px 28px; position: relative; color: rgba(255,255,255,0.85); font-size: 14.5px; line-height: 1.5; }
-        .lm-split-text li::before { content: '✦'; position: absolute; left: 0; color: #e52d1d; font-size: 14px; top: 9px; }
-
-        .lm-split-visual {
-          position: relative;
-          border-radius: 24px;
-          overflow: hidden;
-          aspect-ratio: 4/5;
-          box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-          background: #111;
-          transform-style: preserve-3d;
-          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-        .lm-split-visual:hover { transform: rotateY(-4deg) rotateX(2deg) translateY(-6px); }
-        .lm-split-visual img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s; }
-        .lm-split-visual:hover img { transform: scale(1.06); }
-        .lm-split-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6)); }
-        .lm-split-visual-tag {
-          position: absolute; top: 20px; left: 20px;
-          padding: 6px 14px; background: rgba(0,0,0,0.6); backdrop-filter: blur(12px);
-          font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: #fff; font-weight: 700;
-          border-radius: 100px; border: 1px solid rgba(255,255,255,0.15); z-index: 2;
-        }
-
-        /* ─── PRICING TEASER ──────────────────────────────────────────── */
-        .lm-pricing {
-          display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-          margin-top: 40px; perspective: 1500px;
-        }
-        .lm-pcard {
-          display: flex; flex-direction: column;
-          padding: 32px 28px;
-          background: rgba(20, 20, 22, 0.7);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 22px;
-          backdrop-filter: blur(20px);
-          position: relative;
-          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.4s, box-shadow 0.5s;
-          text-decoration: none; color: inherit;
-        }
-        .lm-pcard:hover { transform: translateY(-8px) rotateX(2deg); }
-        .lm-pcard.highlight {
-          border-color: rgba(167,139,250,0.4);
-          background: linear-gradient(180deg, rgba(167,139,250,0.08), rgba(20,20,22,0.7) 60%);
-          box-shadow: 0 20px 50px rgba(167,139,250,0.15);
-        }
-        .lm-pcard-badge {
-          position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-          white-space: nowrap;
-          padding: 5px 14px; background: #a78bfa; color: #050505;
-          font-size: 10px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
-          border-radius: 100px;
-          box-shadow: 0 6px 18px rgba(167,139,250,0.35);
-        }
-        .lm-pcard-name {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-style: italic; font-size: 2.2rem; font-weight: 400;
-          color: #fff; letter-spacing: -0.02em; margin: 0 0 8px;
-        }
-        .lm-pcard-tag { color: rgba(255,255,255,0.55); font-size: 13px; line-height: 1.5; margin: 0 0 20px; min-height: 40px; }
-        .lm-pcard-price-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 22px; }
-        .lm-pcard-period-top { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.45); font-weight: 700; }
-        .lm-pcard-price-amount { display: flex; align-items: baseline; gap: 4px; }
-        .lm-pcard-currency { font-size: 1.2rem; color: rgba(255,255,255,0.55); }
-        .lm-pcard-price {
-          font-family: 'Cormorant Garamond', Georgia, serif;
-          font-size: 3rem; font-weight: 400; line-height: 1; color: #fff; letter-spacing: -0.04em;
-        }
-        .lm-pcard-badge { white-space: nowrap; }
-        .lm-pricing-note {
-          max-width: 720px; margin: 36px auto 0;
-          text-align: center; color: rgba(255,255,255,0.45);
-          font-size: 12.5px; line-height: 1.6;
-        }
-        .lm-pcard-features { list-style: none; padding: 0; margin: 0 0 22px; }
-        .lm-pcard-feat { padding: 7px 0; font-size: 13.5px; color: rgba(255,255,255,0.85); display: flex; gap: 8px; }
-        .lm-pcard-feat::before { content: '✓'; color: #22c55e; font-weight: 700; flex-shrink: 0; }
-        .lm-pcard-link { display: block; margin-top: auto; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; transition: all 0.25s; }
-        .lm-pcard.highlight .lm-pcard-link { background: #a78bfa; color: #050505; border-color: #a78bfa; }
-        .lm-pcard-link:hover { background: #fff; color: #050505; border-color: #fff; }
-
-        /* ─── PORTFOLIO showcase ──────────────────────────────────────── */
-        .lm-portfolio {
-          display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
-          margin-top: 50px; perspective: 1500px;
-        }
-        .lm-portfolio-card {
-          position: relative; aspect-ratio: 4/5;
-          border-radius: 20px; overflow: hidden;
-          text-decoration: none; color: #fff; background: #111;
-          box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s;
-          transform-style: preserve-3d;
-        }
-        .lm-portfolio-card:hover { transform: translateY(-12px) rotateX(3deg) rotateY(-2deg); box-shadow: 0 30px 70px rgba(229,45,29,0.3); }
-        .lm-portfolio-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
-        .lm-portfolio-card:hover img { transform: scale(1.1); }
-        .lm-portfolio-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.92) 100%); }
-        .lm-portfolio-info { position: absolute; bottom: 22px; left: 22px; right: 22px; z-index: 2; }
-        .lm-portfolio-cuisine { font-size: 9.5px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.8); margin: 0 0 6px; font-weight: 600; }
-        .lm-portfolio-name { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.5rem; font-weight: 400; margin: 0; color: #fff; letter-spacing: -0.01em; font-style: italic; }
-        .lm-portfolio-all { text-align: center; margin-top: 44px; }
-        .lm-portfolio-all a { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 14px 28px; border: 1px solid rgba(255,255,255,0.18); border-radius: 100px; transition: all 0.3s; }
-        .lm-portfolio-all a:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.05); transform: translateY(-2px); }
-
-        /* ─── FINAL CTA ────────────────────────────────────────────────── */
-        .lm-final { padding: 9rem 2rem; text-align: center; max-width: 900px; margin: 0 auto; position: relative; }
-        .lm-final::before {
-          content: ''; position: absolute; top: 0; left: -10%; right: -10%; bottom: 0;
-          background: radial-gradient(circle at 50% 50%, rgba(229,45,29,0.18), transparent 60%), radial-gradient(circle at 30% 70%, rgba(167,139,250,0.12), transparent 50%);
-          z-index: -1; pointer-events: none;
-        }
-        .lm-final h2 { font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2.8rem, 7vw, 5.5rem); font-weight: 400; letter-spacing: -0.04em; line-height: 1.0; margin: 0 0 26px; }
-        .lm-final h2 em { font-style: italic; background: linear-gradient(135deg, #e52d1d, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-        .lm-final p { color: rgba(255,255,255,0.7); font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.5; margin: 0 0 40px; font-weight: 300; }
-
-        /* ─── FOOTER ───────────────────────────────────────────────────── */
-        .lm-footer {
-          border-top: 1px solid rgba(255,255,255,0.06);
-          padding: 3rem 2rem; max-width: 1300px; margin: 0 auto;
-          display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px;
-          color: rgba(255,255,255,0.45); font-size: 12px; align-items: center;
-        }
-        .lm-footer-logo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; color: rgba(255,255,255,0.85); font-weight: 500; }
-        .lm-footer-links { display: flex; gap: 24px; }
-        .lm-footer-link { color: rgba(255,255,255,0.55); text-decoration: none; transition: color 0.2s; }
-        .lm-footer-link:hover { color: #fff; }
-
-        @media (max-width: 1000px) {
-          .lm-portfolio { grid-template-columns: repeat(2, 1fr); }
-          .lm-howit { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 900px) {
-          .lm-pricing { grid-template-columns: 1fr; gap: 14px; }
-          .lm-split { grid-template-columns: 1fr; gap: 32px; }
-          .lm-split.flip { direction: ltr; }
-          .lm-split-visual { aspect-ratio: 16/10; max-height: 56vh; }
-        }
-        @media (max-width: 760px) {
-          .lm-nav { padding: 14px 20px; }
-          .lm-nav-links { display: none; }
-          .lm-burger { display: block; }
-          .lm-logo { font-size: 24px; }
-          .lm-hero { padding: 7rem 1.4rem 3rem; }
-          .lm-hero-eyebrow { margin-bottom: 22px; font-size: 10px; padding: 7px 14px; letter-spacing: 0.22em; }
-          .lm-hero-sub { font-size: 1rem; margin-bottom: 28px; }
-          .lm-hero-cta-row { gap: 10px; }
-          .lm-cta { padding: 15px 26px; font-size: 12px; }
-          .lm-section { padding: 4.5rem 1.4rem; }
-          .lm-section-title { font-size: clamp(2rem, 9vw, 3rem) !important; }
-          .lm-split-visual { aspect-ratio: 4/3; max-height: 50vh; }
-          .lm-howit-card { padding: 24px 22px; }
-          .lm-howit-n { font-size: 3rem; margin-bottom: 12px; }
-        }
-        @media (max-width: 540px) {
-          .lm-howit { grid-template-columns: 1fr; }
-          .lm-portfolio { grid-template-columns: 1fr; }
-          .lm-final { padding: 5rem 1.4rem; }
-          .lm-footer { flex-direction: column; text-align: center; }
-          .lm-footer-links { justify-content: center; }
-          .lm-hero { padding: 6.5rem 1.2rem 2.5rem; }
-          .lm-section { padding: 4rem 1.2rem; }
-        }
-      `}</style>
-
-      {/* Multi-layer background */}
-      <div className="lm-aurora">
-        <div className="lm-aurora-blob lm-blob-1" />
-        <div className="lm-aurora-blob lm-blob-2" />
-        <div className="lm-aurora-blob lm-blob-3" />
-      </div>
-
-      {/* Floating particles */}
-      <div className="lm-particles">
-        {Array.from({ length: 25 }).map((_, i) => (
-          <span key={i} className="lm-particle" style={{ left: `${(i * 4) % 100}%`, animationDelay: `${i * 0.6}s`, animationDuration: `${14 + (i % 4) * 2}s` }} />
-        ))}
-      </div>
-
-      {/* Cursor light */}
-      <div className="lm-cursor-light" style={{ left: cursor.x, top: cursor.y }} />
-
-      {/* GIANT LUMINO MARK in middle on scroll */}
-      <div className={`lm-giant-mark ${markVisible ? 'show' : ''}`}>
-        <span
-          className="lm-giant-mark-text"
-          style={{ transform: `scale(${markScale}) rotate(${(markProgress - 0.5) * 4}deg)` }}
-        >
-          Lumino<span className="lm-giant-mark-dot">.</span>
-        </span>
-      </div>
-
-      <div className="lm-content">
-        {/* NAV */}
-        <nav className="lm-nav">
-          <Link href="/" className="lm-logo">
-            <span>Lumino</span>
-            <span className="lm-logo-dot" />
-          </Link>
-          <div className="lm-nav-links">
-            <Link href="/portfolio" className="lm-nav-link">Portfolio</Link>
-            <Link href="/pricing" className="lm-nav-link">Piani</Link>
-            <Link href="/login" className="lm-nav-link">Accedi</Link>
-            <Link href="/register" className="lm-nav-cta">Inizia</Link>
+    <section ref={ref} style={{ padding: '80px 0', width: '100%', overflow: 'hidden' }}>
+      <div style={{ maxWidth: 1100, margin: '0 0 0 auto', padding: '0 24px' }}>
+        <div className={inView ? 'lm-fade' : ''} style={{
+          animationDelay: '0.1s',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+          marginBottom: 36, gap: 24, flexWrap: 'wrap',
+        }}>
+          <h3 style={{
+            fontSize: 'clamp(28px, 4.5vw, 44px)',
+            lineHeight: 1.1, color: COLOR.dark2,
+            letterSpacing: '-0.025em', margin: 0, fontWeight: 400,
+          }}>
+            Cosa dicono i{' '}
+            <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>ristoratori</span>.
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {[0,1,2,3,4].map(i => <Star key={i} width={18} height={18} fill={COLOR.dark} stroke={COLOR.dark} />)}
+            <span style={{ marginLeft: 4, fontSize: 14, color: COLOR.dark, fontWeight: 500 }}>5/5</span>
           </div>
-          <button
-            type="button"
-            className={`lm-burger ${menuOpen ? 'open' : ''}`}
-            onClick={() => setMenuOpen(o => !o)}
-            aria-label={menuOpen ? 'Chiudi menu' : 'Apri menu'}
-            aria-expanded={menuOpen}
-          >
-            <span /><span /><span />
-          </button>
-        </nav>
+        </div>
+      </div>
 
-        {/* MOBILE DRAWER */}
-        <div
-          className={`lm-drawer ${menuOpen ? 'open' : ''}`}
-          onClick={() => setMenuOpen(false)}
-          aria-hidden={!menuOpen}
-        >
-          <div className="lm-drawer-inner" onClick={(e) => e.stopPropagation()}>
-            <Link href="/portfolio" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Portfolio</Link>
-            <Link href="/pricing" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Piani</Link>
-            <Link href="/login" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Accedi</Link>
-            <Link href="/register" className="lm-drawer-cta" onClick={() => setMenuOpen(false)}>Inizia ora →</Link>
+      <div
+        style={{ padding: '0 24px' }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        <div style={{ overflow: 'hidden' }}>
+          <div style={{
+            display: 'flex',
+            gap,
+            transform: `translateX(calc(50% - ${cardWidth/2}px - ${index * (cardWidth + gap)}px))`,
+            transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}>
+            {tripled.map((t, i) => (
+              <div key={i} style={{
+                width: cardWidth, flexShrink: 0,
+                background: '#fff', borderRadius: 32,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                padding: '32px 32px 32px 32px',
+                display: 'flex', flexDirection: 'column', gap: 18,
+              }}>
+                <Quote width={22} height={22} color={COLOR.dark} strokeWidth={1.6} />
+                <p style={{
+                  margin: 0, fontSize: 15.5, lineHeight: 1.6, color: COLOR.dark2,
+                  flex: 1,
+                }}>
+                  "{t.text}"
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={t.avatar} alt={t.name} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: COLOR.dark }}>{t.name}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12.5, color: COLOR.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <ArrowUpRight width={12} height={12} />
+                      {t.role}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* HERO */}
-        <section
-          className="lm-hero"
-          style={{ transform: `rotateX(${-tiltY * 0.3}deg) rotateY(${tiltX * 0.3}deg)` }}
-        >
-          <div className="lm-hero-eyebrow">
-            <span className="lm-hero-eyebrow-dot" />
-            siti pronti in 24 ore
-          </div>
-          <h1 className="lm-hero-title">
-            Il sito che il tuo<br />ristorante <em>merita</em>.
-          </h1>
-          <p className="lm-hero-sub">
-            La nostra AI costruisce il sito perfetto per il tuo locale: testi, foto, menu, prenotazioni — tutto automatico. Tu pensi a cucinare, al sito ci pensiamo noi.
-          </p>
-          <div className="lm-hero-cta-row">
-            <Link href="/register" className="lm-cta lm-cta-primary">Inizia ora →</Link>
-            <Link href="/portfolio" className="lm-cta lm-cta-secondary">Vedi esempi</Link>
-          </div>
-        </section>
-
-        {/* SPLIT 1 — image left, text right */}
-        <section className="lm-section">
-          <div className="lm-split">
-            <Reveal dir="left">
-              <div className="lm-split-visual">
-                <span className="lm-split-visual-tag">SUSHI · MILANO</span>
-                <img src={showcase[0]?.data.heroImage} alt="" loading="lazy" />
-              </div>
-            </Reveal>
-            <Reveal dir="right" delay={0.1}>
-              <div className="lm-split-text">
-                <p className="lm-section-eyebrow">✦ il design</p>
-                <h3>Un sito che <em>fa fame</em>.</h3>
-                <p>Layout pensati per ristoranti, non per agenzie. Animazioni eleganti, foto a tutto schermo, micro-interazioni che fanno la differenza.</p>
-                <ul>
-                  <li>Hero immersivo con foto in alta risoluzione</li>
-                  <li>Menu navigabile con filtri allergeni</li>
-                  <li>Mobile-first — l'80% dei tuoi clienti è da telefono</li>
-                  <li>Tempi di caricamento sotto 2 secondi</li>
-                </ul>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* SPLIT 2 — text left, image right (flipped) */}
-        <section className="lm-section">
-          <div className="lm-split flip">
-            <Reveal dir="right">
-              <div className="lm-split-visual">
-                <span className="lm-split-visual-tag">PIZZA · NAPOLI</span>
-                <img src={showcase[3]?.data.heroImage} alt="" loading="lazy" />
-              </div>
-            </Reveal>
-            <Reveal dir="left" delay={0.1}>
-              <div className="lm-split-text">
-                <p className="lm-section-eyebrow">✦ l'AI lavora per te</p>
-                <h3>Niente template <em>generici</em>.</h3>
-                <p>L'AI legge il tuo locale — categoria, posizione, recensioni — e ricostruisce TUTTO su misura. Testi che parlano della tua cucina, non frasi vuote.</p>
-                <ul>
-                  <li>Testi generati per il tuo ristorante specifico</li>
-                  <li>Foto del menu organizzate per categoria</li>
-                  <li>Colori e font scelti per match con il tuo brand</li>
-                  <li>SEO ottimizzato per Google Maps locale</li>
-                </ul>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
-        {/* HOW IT WORKS — horizontal flow */}
-        <section className="lm-section">
-          <Reveal dir="up">
-            <p className="lm-section-eyebrow">✦ come funziona</p>
-            <h2 className="lm-section-title">Quattro <em>passi</em>.<br />Niente più.</h2>
-          </Reveal>
-          <div className="lm-howit">
-            {[
-              { n: '01', t: 'Ti registri', p: '30 secondi: email, password, nome del locale.' },
-              { n: '02', t: 'Noi costruiamo', p: "L'AI scrive testi, sceglie foto, organizza il menu." },
-              { n: '03', t: 'Tu approvi', p: 'In 24 ore ti mandiamo il sito. Modifichi se serve.' },
-              { n: '04', t: 'Vai online', p: 'Premi pubblica e sei online. Gestisci tutto dal pannello.' },
-            ].map((s, i) => (
-              <Reveal key={s.n} dir="up" delay={i * 0.08}>
-                <div className="lm-howit-card">
-                  <div className="lm-howit-n">{s.n}</div>
-                  <h3 className="lm-howit-t">{s.t}</h3>
-                  <p className="lm-howit-p">{s.p}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        {/* PORTFOLIO */}
-        <section className="lm-section">
-          <Reveal dir="up">
-            <p className="lm-section-eyebrow">✦ portfolio</p>
-            <h2 className="lm-section-title">Guarda cosa <em>realizziamo</em>.</h2>
-            <p className="lm-section-sub">Pizza, sushi, ramen, trattoria, steakhouse — ognuno con la sua personalità. Clicca per vedere il sito completo.</p>
-          </Reveal>
-          <div className="lm-portfolio">
-            {showcase.map((r, i) => (
-              <Reveal key={r.slug} dir={i % 2 === 0 ? 'left' : 'right'} delay={i * 0.06}>
-                <Link href={`/demo/${r.slug}`} className="lm-portfolio-card">
-                  <img src={r.data.heroImage} alt={r.data.restaurantName} loading="lazy" />
-                  <div className="lm-portfolio-info">
-                    <p className="lm-portfolio-cuisine">{r.cuisine}</p>
-                    <p className="lm-portfolio-name">{r.data.restaurantName}</p>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal dir="up" delay={0.2}>
-            <div className="lm-portfolio-all">
-              <Link href="/portfolio">Vedi tutti gli esempi →</Link>
-            </div>
-          </Reveal>
-        </section>
-
-        {/* PRICING TEASER */}
-        <section className="lm-section" id="pricing">
-          <Reveal dir="up">
-            <p className="lm-section-eyebrow">✦ scegli il tuo piano</p>
-            <h2 className="lm-section-title">Trasparente.<br /><em>Senza sorprese</em>.</h2>
-            <p className="lm-section-sub">Un pagamento unico. Niente abbonamenti. Niente carte di credito al primo step.</p>
-          </Reveal>
-          <div className="lm-pricing">
-            {PLANS.map((p, i) => {
-              const dir = i === 0 ? 'left' : i === 1 ? 'up' : 'right'
-              const delay = 0.05 + i * 0.05
-              const teaser = p.features.slice(0, 6)
-              return (
-                <Reveal key={p.key} dir={dir as any} delay={delay}>
-                  <Link href="/pricing" className={`lm-pcard ${p.highlight ? 'highlight' : ''}`}>
-                    {p.badge && <span className="lm-pcard-badge">{p.badge}</span>}
-                    <h3 className="lm-pcard-name">{p.name}</h3>
-                    <p className="lm-pcard-tag">{p.description}</p>
-                    <div className="lm-pcard-price-row">
-                      <span className="lm-pcard-period-top">a partire da</span>
-                      <div className="lm-pcard-price-amount">
-                        <span className="lm-pcard-currency">€</span>
-                        <span className="lm-pcard-price">{p.priceFrom}</span>
-                      </div>
-                    </div>
-                    <ul className="lm-pcard-features">
-                      {teaser.map((f, j) => (
-                        <li key={j} className="lm-pcard-feat">{f}</li>
-                      ))}
-                    </ul>
-                    <span className="lm-pcard-link">Scopri →</span>
-                  </Link>
-                </Reveal>
-              )
-            })}
-          </div>
-          <p className="lm-pricing-note">{SALES_TERMS.publicNote}</p>
-        </section>
-
-        {/* FINAL CTA */}
-        <section className="lm-final">
-          <Reveal dir="scale">
-            <h2>Il tuo sito è<br /><em>a 24 ore</em> da te.</h2>
-            <p>Inizia oggi. Scegli il tuo piano, ti consegniamo il sito entro domani.</p>
-            <Link href="/register" className="lm-cta lm-cta-primary">Crea il mio sito →</Link>
-          </Reveal>
-        </section>
-
-        {/* FOOTER */}
-        <footer className="lm-footer">
-          <div className="lm-footer-logo">Lumino<span style={{ color: '#e52d1d' }}>.</span></div>
-          <div>© {new Date().getFullYear()} Lumino Agency · Made in Italy</div>
-          <div className="lm-footer-links">
-            <Link href="/portfolio" className="lm-footer-link">Portfolio</Link>
-            <Link href="/pricing" className="lm-footer-link">Prezzi</Link>
-            <Link href="/login" className="lm-footer-link">Accedi</Link>
-            <a href="mailto:hello@bylumino.com" className="lm-footer-link">Contatti</a>
-          </div>
-        </footer>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 28 }}>
+          <button
+            type="button"
+            onClick={() => setIndex(i => i - 1)}
+            aria-label="Precedente"
+            style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '1px solid rgba(13,33,44,0.18)',
+              background: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            className="lm-circle-btn"
+          >
+            <ChevronLeft width={20} height={20} color={COLOR.dark} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIndex(i => i + 1)}
+            aria-label="Successivo"
+            style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '1px solid rgba(13,33,44,0.18)',
+              background: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+            className="lm-circle-btn"
+          >
+            <ChevronRight width={20} height={20} color={COLOR.dark} />
+          </button>
+        </div>
       </div>
+    </section>
+  )
+}
+
+/* ───────────────────────── PROJECTS ───────────────────────── */
+
+function ProjectItem({ project, delay }: { project: typeof PROJECTS[number]; delay: number }) {
+  const { ref, inView } = useInView<HTMLDivElement>(0.15)
+  return (
+    <div ref={ref} className={inView ? 'lm-fade' : ''} style={{ animationDelay: `${delay}s`, marginBottom: 80 }}>
+      <div style={{ marginLeft: 'clamp(20px, 5vw, 110px)', marginBottom: 18 }}>
+        <h4 style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: 'clamp(24px, 3.4vw, 32px)',
+          fontWeight: 600, color: COLOR.dark,
+          margin: '0 0 6px', letterSpacing: '-0.01em',
+        }}>
+          {project.name}
+        </h4>
+        <p style={{
+          fontSize: 'clamp(14px, 1.6vw, 16px)',
+          color: 'rgba(5,26,36,0.7)', margin: 0, lineHeight: 1.55,
+          maxWidth: 520,
+        }}>
+          {project.desc}
+        </p>
+      </div>
+      <Link href={`/sites/${project.slug}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={project.image}
+          alt={project.name}
+          style={{
+            width: '100%', borderRadius: 18,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            objectFit: 'cover',
+            aspectRatio: '16 / 9',
+            display: 'block',
+            cursor: 'pointer',
+            transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+          className="lm-project-img"
+        />
+      </Link>
+    </div>
+  )
+}
+
+function ProjectsSection() {
+  return (
+    <section id="progetti" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+      {PROJECTS.map((p, i) => (
+        <ProjectItem key={p.slug} project={p} delay={0.1 + i * 0.05} />
+      ))}
+    </section>
+  )
+}
+
+/* ───────────────────────── PARTNER (MOUSE TRAIL) ───────────────────────── */
+
+function PartnerSection() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; img: string; rotation: number }>>([])
+  const lastSpawn = useRef(0)
+  const nextId = useRef(0)
+
+  const onMove = useCallback((e: React.MouseEvent) => {
+    const now = performance.now()
+    if (now - lastSpawn.current < 80) return
+    lastSpawn.current = now
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const img = MARQUEE_IMAGES[Math.floor(Math.random() * MARQUEE_IMAGES.length)]
+    const rotation = Math.random() * 20 - 10
+    const id = nextId.current++
+    setParticles(p => [...p, { id, x, y, img, rotation }])
+    setTimeout(() => {
+      setParticles(p => p.filter(x => x.id !== id))
+    }, 1100)
+  }, [])
+
+  return (
+    <section style={{ padding: '48px 24px', width: '100%' }}>
+      <div
+        ref={containerRef}
+        onMouseMove={onMove}
+        style={{
+          maxWidth: 1200, margin: '0 auto',
+          padding: '180px 24px',
+          background: '#fff', borderRadius: 40,
+          boxShadow: '0 0 0 0.5px rgba(0,0,0,0.05), 0 16px 64px rgba(0,0,0,0.06)',
+          position: 'relative', overflow: 'hidden',
+        }}
+      >
+        {particles.map(p => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={p.id}
+            src={p.img}
+            alt=""
+            style={{
+              position: 'absolute',
+              left: p.x - 60, top: p.y - 80,
+              width: 120, height: 160,
+              objectFit: 'cover',
+              borderRadius: 14,
+              boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
+              transform: `rotate(${p.rotation}deg)`,
+              animation: 'lmParticle 1s ease-out forwards',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        <h3 style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: 'clamp(48px, 7vw, 80px)',
+          fontWeight: 500, color: COLOR.dark2,
+          textAlign: 'center', margin: '0 0 48px',
+          letterSpacing: '-0.025em',
+          position: 'relative', zIndex: 2,
+          pointerEvents: 'none',
+        }}>
+          Costruisci con noi.
+        </h3>
+
+        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 2 }}>
+          <Link href="/register" style={{ textDecoration: 'none' }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+              background: COLOR.dark, color: '#fff',
+              padding: '8px 8px 8px 8px',
+              borderRadius: 9999,
+              boxShadow: PRIMARY_BTN_SHADOW,
+              fontFamily: 'inherit', fontSize: 14, fontWeight: 500,
+            }} className="lm-btn-hover">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&w=120&h=120&fit=crop"
+                alt=""
+                style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+              />
+              <span style={{ paddingRight: 20 }}>Inizia una chat con Lumino</span>
+            </span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────── FOOTER ───────────────────────── */
+
+function FooterSection() {
+  return (
+    <footer id="contatti" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        gap: 36, flexWrap: 'wrap',
+      }}>
+        <Btn href="/register" variant="primary">Inizia una chat</Btn>
+
+        <div style={{ display: 'flex', gap: 60, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <ArrowUpRight width={22} height={22} color={COLOR.dark} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100 }}>
+            <a href="#prezzi" style={footerLinkStyle}>Prezzi</a>
+            <a href="#progetti" style={footerLinkStyle}>Esempi</a>
+            <Link href="/login" style={footerLinkStyle}>Accedi</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100 }}>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>Instagram</a>
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>X.com</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+const footerLinkStyle: React.CSSProperties = {
+  fontSize: 16,
+  color: COLOR.dark,
+  textDecoration: 'none',
+  transition: 'opacity 0.2s',
+}
+
+/* ───────────────────────── COPYRIGHT BAR ───────────────────────── */
+
+function CopyrightBar() {
+  return (
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 24px 90px' }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontSize: 13, color: COLOR.dark, flexWrap: 'wrap', gap: 8,
+        borderTop: '1px solid rgba(5,26,36,0.08)', paddingTop: 16,
+      }}>
+        <span>© Lumino Agency</span>
+        <span>Made in Italy</span>
+      </div>
+    </div>
+  )
+}
+
+/* ───────────────────────── FIXED BOTTOM NAV ───────────────────────── */
+
+function BottomNav() {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 50, display: 'flex', alignItems: 'center', gap: 14,
+      background: '#fff', borderRadius: 9999, padding: '8px 8px 8px 24px',
+      boxShadow: '0 1px 2px rgba(5,26,36,0.06), 0 8px 24px rgba(5,26,36,0.10), 0 24px 48px rgba(5,26,36,0.08)',
+    }}>
+      <Link href="/" style={{
+        fontFamily: 'var(--font-serif)',
+        fontSize: 24, fontWeight: 600, color: COLOR.dark,
+        textDecoration: 'none', lineHeight: 1,
+      }}>
+        L
+      </Link>
+      <Btn href="/register" variant="primary">Inizia una chat</Btn>
+    </div>
+  )
+}
+
+/* ───────────────────────── PAGE ───────────────────────── */
+
+export default function HomePage() {
+  return (
+    <div style={{ background: '#fff', minHeight: '100vh', color: COLOR.dark, fontFamily: 'var(--font-sans)' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+          --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          --font-serif: 'Instrument Serif', Georgia, 'Cormorant Garamond', serif;
+          --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+        }
+
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff; }
+        body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+        /* fade in up */
+        @keyframes lmFadeInUp {
+          0%   { opacity: 0; transform: translateY(28px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .lm-fade {
+          animation: lmFadeInUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0;
+        }
+
+        /* infinite marquee */
+        @keyframes lmMarquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .lm-marquee {
+          animation: lmMarquee 32s linear infinite;
+          will-change: transform;
+        }
+        @media (max-width: 768px) {
+          .lm-marquee { animation-duration: 18s; }
+        }
+
+        /* mouse trail particle */
+        @keyframes lmParticle {
+          0%   { opacity: 0; transform: scale(0.6) rotate(var(--rot, 0deg)); }
+          15%  { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
+          100% { opacity: 0; transform: scale(0.6) translateY(40px) rotate(var(--rot, 0deg)); }
+        }
+
+        /* button hover */
+        .lm-btn-hover { will-change: transform; }
+        a:hover .lm-btn-hover, button:hover .lm-btn-hover { transform: translateY(-2px); }
+        a:active .lm-btn-hover { transform: translateY(0); }
+
+        .lm-circle-btn:hover { background: ${COLOR.dark} !important; }
+        .lm-circle-btn:hover svg { color: #fff !important; }
+
+        .lm-project-img:hover { transform: scale(1.02); }
+
+        a { color: inherit; }
+        a:hover { opacity: 0.7; }
+
+        @media (max-width: 540px) {
+          .lm-hero-ctas { flex-direction: column; align-items: stretch; }
+          .lm-hero-ctas > a, .lm-hero-ctas > button { width: 100%; }
+          .lm-hero-ctas > a > span, .lm-hero-ctas > button > span { width: 100%; justify-content: center; }
+        }
+      `}</style>
+
+      <Hero />
+      <Marquee />
+      <QuoteSection />
+      <PricingSection />
+      <CarouselSection />
+      <ProjectsSection />
+      <PartnerSection />
+      <FooterSection />
+      <CopyrightBar />
+      <BottomNav />
     </div>
   )
 }
