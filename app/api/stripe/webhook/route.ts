@@ -70,5 +70,4 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true })
 }
 
-// Stripe richiede il raw body; disabilitiamo qualsiasi parser di Next
-export const config = { api: { bodyParser: false } }
+// App Router: req.text() già restituisce il raw body, non serve config bodyParser.
