@@ -77,48 +77,81 @@ export async function registerAction(formData: FormData) {
   // Auto-create restaurant + site + site_owner + site_content for this user
   if (data.user) {
     const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + data.user.id.slice(0, 6)
-    const { data: restaurant } = await supabase
+    const { data: restaurant, error: restErr } = await supabase
       .from('restaurants')
       .insert({
         name: restaurantName,
-        source: 'signup',
         city: city || null,
         phone: phone || null,
       })
       .select('id')
       .single()
+    if (restErr) console.error('[register] restaurant insert failed:', restErr.message)
     if (restaurant) {
-      const { data: site } = await supabase
-        .from('sites')
+      // Crea il client (chain restaurant → client → site)
+      const { data: client, error: clientErr } = await supabase
+        .from('clients')
         .insert({
           restaurant_id: restaurant.id,
+          name: restaurantName,
+          email,
+          phone: phone || null,
+          plan: tier,
+        })
+        .select('id')
+        .single()
+      if (clientErr) console.error('[register] client insert failed:', clientErr.message)
+      if (!client) return
+
+      const { data: site, error: siteErr } = await supabase
+        .from('sites')
+        .insert({
+          client_id: client.id,
           slug,
           tier,
           active: true,
           status: 'draft',
-          // dominio scelto dal cliente (se ce l'ha già); altrimenti Lumino lo registra dopo
-          custom_domain: tier !== 'basic' && hasDomain === 'yes' ? domain || null : null,
-          domain_managed_by_lumino: tier !== 'basic' && hasDomain === 'no',
+          // dominio scelto dal cliente (se ce l'ha già); se no → Lumino lo registra dopo (campo 0009)
+          // Nota: custom_domain e domain_managed_by_lumino vengono inseriti solo se la migrazione 0009 è applicata
+          ...(tier !== 'basic' && hasDomain === 'yes' ? { custom_domain: domain || null } : {}),
+          ...(tier !== 'basic' && hasDomain === 'no' ? { domain_managed_by_lumino: true } : {}),
         })
         .select('id')
         .single()
+      if (siteErr) console.error('[register] site insert failed:', siteErr.message)
       if (site) {
-        await supabase.from('site_owners').insert({
+        const { error: ownerErr } = await supabase.from('site_owners').insert({
           user_id: data.user.id,
           site_id: site.id,
           role: 'owner',
         })
-        await supabase.from('site_content').insert({
+        if (ownerErr) console.error('[register] site_owner insert failed:', ownerErr.message)
+        // site_content: insertiamo le colonne base + (se la migrazione 0008/0009 è applicata) anche
+        // chef_*, whatsapp_number. Usiamo spread condizionale così se le colonne non esistono
+        // si fa un retry pulito senza di esse.
+        const baseContent = {
           site_id: site.id,
           restaurant_name: restaurantName,
-          // WhatsApp: numero se vuole il bottone, altrimenti null = solo chiamata
-          whatsapp_number: tier !== 'basic' && wantsWhatsapp === 'yes' ? whatsappNumber || null : null,
-          // Chef: opzionale, solo se ha detto sì
-          chef_active: tier !== 'basic' && hasChef === 'yes',
-          chef_name: tier !== 'basic' && hasChef === 'yes' ? chefName || null : null,
-          chef_role: tier !== 'basic' && hasChef === 'yes' ? chefRole || null : null,
-          chef_quote: tier !== 'basic' && hasChef === 'yes' ? chefQuote || null : null,
-        })
+          phone: phone || null,
+          city: city || null,
+          whatsapp: tier !== 'basic' && wantsWhatsapp === 'yes' ? whatsappNumber || null : null,
+        }
+        const extendedContent: any = { ...baseContent }
+        if (tier !== 'basic' && wantsWhatsapp === 'yes' && whatsappNumber) {
+          extendedContent.whatsapp_number = whatsappNumber
+        }
+        if (tier !== 'basic' && hasChef === 'yes' && chefName) {
+          extendedContent.chef_active = true
+          extendedContent.chef_name = chefName
+          extendedContent.chef_role = chefRole || null
+          extendedContent.chef_quote = chefQuote || null
+        }
+        let { error: contentErr } = await supabase.from('site_content').insert(extendedContent)
+        if (contentErr && /column .* does not exist|Could not find the/i.test(contentErr.message)) {
+          // Migrazione 0008/0009 non ancora applicata: retry con i campi base
+          contentErr = (await supabase.from('site_content').insert(baseContent)).error
+        }
+        if (contentErr) console.error('[register] site_content insert failed:', contentErr.message)
       }
     }
   }
