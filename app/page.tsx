@@ -6,29 +6,22 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 
 /* ───────────────────────── DATA ───────────────────────── */
 
+// 14 immagini ristoranti — risoluzione contenuta (w=800) per evitare rate-limit Unsplash
 const MARQUEE_IMAGES = [
-  // 21 immagini di food/ristoranti italiani — stable Unsplash
-  'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1200&q=85',
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=85',
-  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=85',
-  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&q=85',
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=85',
-  'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=1200&q=85',
-  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=85',
-  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1200&q=85',
-  'https://images.unsplash.com/photo-1481833761820-0509d3217039?w=1200&q=85',
-  'https://images.unsplash.com/photo-1553621042-f6e147245754?w=1200&q=85',
-  'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=1200&q=85',
-  'https://images.unsplash.com/photo-1535473895227-bdecb20fb157?w=1200&q=85',
-  'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=1200&q=85',
-  'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1200&q=85',
-  'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=1200&q=85',
-  'https://images.unsplash.com/photo-1571066811602-716837d681de?w=1200&q=85',
-  'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=1200&q=85',
-  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&q=85',
-  'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=1200&q=85',
-  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=85',
-  'https://images.unsplash.com/photo-1542528180-a1208c5169a5?w=1200&q=85',
+  'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80',
+  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
+  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
+  'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800&q=80',
+  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800&q=80',
+  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&q=80',
+  'https://images.unsplash.com/photo-1481833761820-0509d3217039?w=800&q=80',
+  'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800&q=80',
+  'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80',
+  'https://images.unsplash.com/photo-1535473895227-bdecb20fb157?w=800&q=80',
+  'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=800&q=80',
+  'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&q=80',
 ]
 
 const SERVICES = [
@@ -302,12 +295,11 @@ function HeroSection() {
       <div style={{ overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         <FadeIn y={40} delay={0.15}>
           <h1 className="hero-heading" style={{
-            fontSize: 'clamp(18vw, 17vw, 17.5vw)',
+            fontSize: 'clamp(56px, 16vw, 220px)',
             fontWeight: 900,
-            lineHeight: 1,
-            letterSpacing: '-0.04em',
+            lineHeight: 0.92,
+            letterSpacing: '-0.045em',
             textTransform: 'lowercase',
-            whiteSpace: 'nowrap',
             margin: 0,
             padding: '0 clamp(24px, 4vw, 56px)',
             width: '100%',
@@ -375,23 +367,27 @@ function MarqueeSection() {
   const [offset, setOffset] = useState(0)
 
   useEffect(() => {
+    let raf = 0
     const onScroll = () => {
-      const el = ref.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const sectionTop = rect.top + window.scrollY
-      const off = (window.scrollY - sectionTop + window.innerHeight) * 0.3
-      setOffset(off)
+      raf = requestAnimationFrame(() => {
+        const el = ref.current
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const sectionTop = rect.top + window.scrollY
+        const off = (window.scrollY - sectionTop + window.innerHeight) * 0.3
+        setOffset(off)
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf) }
   }, [])
 
-  const row1 = MARQUEE_IMAGES.slice(0, 11)
-  const row2 = MARQUEE_IMAGES.slice(11)
-  const row1x3 = [...row1, ...row1, ...row1]
-  const row2x3 = [...row2, ...row2, ...row2]
+  const row1 = MARQUEE_IMAGES.slice(0, 7)
+  const row2 = MARQUEE_IMAGES.slice(7)
+  // 2x per loop continuo durante lo scroll, ma poche immagini uniche per non saturare il CDN
+  const row1x = [...row1, ...row1]
+  const row2x = [...row2, ...row2]
 
   return (
     <section ref={ref} style={{
@@ -403,16 +399,17 @@ function MarqueeSection() {
         display: 'flex',
         gap: 12,
         marginBottom: 12,
-        transform: `translateX(${offset - 200}px)`,
+        transform: `translate3d(${offset - 200}px, 0, 0)`,
         willChange: 'transform',
       }}>
-        {row1x3.map((src, i) => (
+        {row1x.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={`r1-${i}`}
             src={src}
             alt=""
             loading="lazy"
+            decoding="async"
             style={{
               width: 'clamp(280px, 30vw, 420px)',
               height: 'clamp(190px, 20vw, 270px)',
@@ -420,6 +417,7 @@ function MarqueeSection() {
               borderRadius: 18,
               flexShrink: 0,
               filter: 'saturate(1.05)',
+              background: '#1a1a1a',
             }}
           />
         ))}
@@ -427,16 +425,17 @@ function MarqueeSection() {
       <div style={{
         display: 'flex',
         gap: 12,
-        transform: `translateX(${-(offset - 200)}px)`,
+        transform: `translate3d(${-(offset - 200)}px, 0, 0)`,
         willChange: 'transform',
       }}>
-        {row2x3.map((src, i) => (
+        {row2x.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={`r2-${i}`}
             src={src}
             alt=""
             loading="lazy"
+            decoding="async"
             style={{
               width: 'clamp(280px, 30vw, 420px)',
               height: 'clamp(190px, 20vw, 270px)',
@@ -444,6 +443,7 @@ function MarqueeSection() {
               borderRadius: 18,
               flexShrink: 0,
               filter: 'saturate(1.05)',
+              background: '#1a1a1a',
             }}
           />
         ))}
@@ -647,8 +647,16 @@ function ProjectCard({ project, index, totalCards }: {
   const targetScale = 1 - (totalCards - 1 - index) * 0.03
   const topOffset = index * 28
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  // useScroll su questa card → animiamo da 1 a targetScale mentre la card esce dal viewport
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  })
+  const scale = useTransform(scrollYProgress, [0, 1], [1, targetScale])
+
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       height: '85vh',
       position: 'relative',
       maxWidth: 1280,
@@ -663,7 +671,7 @@ function ProjectCard({ project, index, totalCards }: {
           border: '2px solid #D7E2EA',
           borderRadius: 'clamp(32px, 5vw, 60px)',
           padding: 'clamp(16px, 2vw, 32px)',
-          scale: targetScale,
+          scale,
           transformOrigin: 'top',
         }}
       >
@@ -800,15 +808,12 @@ export default function HomePage() {
       overflowX: 'clip',
       minHeight: '100vh',
     }}>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700;900&display=swap');
-
         :root { color-scheme: dark; }
-
         * { box-sizing: border-box; }
         html, body, #__next { margin: 0; padding: 0; background: #0C0C0C; }
         body { font-family: 'Kanit', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-
         .hero-heading {
           background: linear-gradient(180deg, #646973 0%, #BBCCD7 100%);
           -webkit-background-clip: text;
@@ -816,13 +821,11 @@ export default function HomePage() {
           -webkit-text-fill-color: transparent;
           color: transparent;
         }
-
         .lm-nav-link { transition: opacity 0.2s; }
         .lm-nav-link:hover { opacity: 0.7; }
-
         .lm-contact-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
         .lm-live-btn:hover { background: rgba(215,226,234,0.1); transform: translateY(-2px); }
-      `}</style>
+      ` }} />
 
       <HeroSection />
       <MarqueeSection />
