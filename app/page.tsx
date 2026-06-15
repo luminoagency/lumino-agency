@@ -1,254 +1,449 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { Quote, Star, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
-import { PLANS, SALES_TERMS } from '@/lib/plans'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
 
 /* ───────────────────────── DATA ───────────────────────── */
 
 const MARQUEE_IMAGES = [
-  'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1600&q=85',
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&q=85',
-  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1600&q=85',
-  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1600&q=85',
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=85',
-  'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=1600&q=85',
-  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1600&q=85',
-  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1600&q=85',
+  // 21 immagini di food/ristoranti italiani — stable Unsplash
+  'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1200&q=85',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=85',
+  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=85',
+  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&q=85',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=85',
+  'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=1200&q=85',
+  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=85',
+  'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=1200&q=85',
+  'https://images.unsplash.com/photo-1481833761820-0509d3217039?w=1200&q=85',
+  'https://images.unsplash.com/photo-1553621042-f6e147245754?w=1200&q=85',
+  'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=1200&q=85',
+  'https://images.unsplash.com/photo-1535473895227-bdecb20fb157?w=1200&q=85',
+  'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=1200&q=85',
+  'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1200&q=85',
+  'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=1200&q=85',
+  'https://images.unsplash.com/photo-1571066811602-716837d681de?w=1200&q=85',
+  'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=1200&q=85',
+  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&q=85',
+  'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=1200&q=85',
+  'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=85',
+  'https://images.unsplash.com/photo-1542528180-a1208c5169a5?w=1200&q=85',
 ]
 
-const TESTIMONIALS = [
+const SERVICES = [
   {
-    name: 'Marco Bianchi',
-    role: 'Proprietario, Trattoria del Sole',
-    text: 'In 24 ore il mio sito era online. Senza chiamate, senza riunioni infinite. Ho ricevuto la prima prenotazione dal sito la sera stessa.',
-    avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&w=200&h=200&fit=crop',
+    n: '01', title: 'Sito completo',
+    desc: 'Generato dall\'AI in 24 ore: testi, foto, menu, mappa, contatti. Supervisionato personalmente prima della consegna.',
   },
   {
-    name: 'Giulia Romano',
-    role: 'Chef, Sapori di Sicilia',
-    text: 'L\'AI ha scritto testi che sembrano scritti da me. Ho corretto due cose dal pannello, in 10 minuti. Pazzesco.',
-    avatar: 'https://images.pexels.com/photos/3992656/pexels-photo-3992656.jpeg?auto=compress&w=200&h=200&fit=crop',
+    n: '02', title: 'Prenotazioni online',
+    desc: 'Form integrato sul sito, notifiche real-time al ristoratore. Gestione conferme/rifiuti dal pannello admin in 1 click.',
   },
   {
-    name: 'Davide Esposito',
-    role: 'Founder, Pizzeria Da Vide',
-    text: 'Avevo un sito di 8 anni fa. Lumino me ne ha fatto uno nuovo, moderno, in un giorno. Prenotazioni triplicate nel primo mese.',
-    avatar: 'https://images.pexels.com/photos/2531553/pexels-photo-2531553.jpeg?auto=compress&w=200&h=200&fit=crop',
+    n: '03', title: 'Dominio + Hosting',
+    desc: 'Dominio personalizzato (tuoristorante.it) incluso nel prezzo. Hosting veloce su Vercel, SSL, CDN globale.',
   },
   {
-    name: 'Francesca Marini',
-    role: 'Co-fondatrice, Osteria Verona',
-    text: 'Pagato la prima rata, due giorni dopo il sito era live. Le foto scelte dall\'AI sono migliori di quelle che avrei caricato io.',
-    avatar: 'https://images.pexels.com/photos/3812743/pexels-photo-3812743.jpeg?auto=compress&w=200&h=200&fit=crop',
+    n: '04', title: 'Pannello di controllo',
+    desc: 'Modifichi tu, quando vuoi: testi, orari, menu, foto, eventi. Niente più chiamate all\'agenzia per cambiare un numero.',
   },
   {
-    name: 'Lorenzo Conte',
-    role: 'Chef Patron, Sushi Hanami',
-    text: 'Il design del template Aurora ha portato un\'estetica che non avevo mai avuto. Clientela più alta, scontrini medi più alti.',
-    avatar: 'https://images.pexels.com/photos/1813947/pexels-photo-1813947.jpeg?auto=compress&w=200&h=200&fit=crop',
+    n: '05', title: 'Supporto prioritario',
+    desc: 'WhatsApp diretto per i clienti Premium. Risposta entro un\'ora. Modifiche grosse? Le facciamo noi.',
   },
 ]
 
 const PROJECTS = [
   {
-    slug: 'sushi-hanami',
+    n: '01',
     name: 'Sushi Hanami',
-    desc: 'Sushi-bar di nuova generazione a Milano. Template Aurora, video AI, atmosfera onirica.',
-    image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1920&q=90',
-  },
-  {
-    slug: 'trattoria-nonna-lucia',
-    name: 'Da Nonna Lucia',
-    desc: 'Tre generazioni di cucina toscana a Firenze. Template Mercato, editorial vintage.',
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1920&q=90',
-  },
-  {
+    category: 'Cliente · Premium',
     slug: 'demo-lumino',
+    images: [
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=1200&q=85',
+      'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=1200&q=85',
+      'https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=1600&q=85',
+    ],
+  },
+  {
+    n: '02',
+    name: 'Da Nonna Lucia',
+    category: 'Cliente · Pro',
+    slug: 'demo-lumino',
+    images: [
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&q=85',
+      'https://images.unsplash.com/photo-1481833761820-0509d3217039?w=1200&q=85',
+      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=1600&q=85',
+    ],
+  },
+  {
+    n: '03',
     name: 'Burger Republic',
-    desc: 'Smash burger gourmet a Milano. Template Bento, energico e moderno.',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1920&q=90',
+    category: 'Cliente · Premium',
+    slug: 'demo-lumino',
+    images: [
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1200&q=85',
+      'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=1200&q=85',
+      'https://images.unsplash.com/photo-1535473895227-bdecb20fb157?w=1600&q=85',
+    ],
   },
 ]
 
-/* ───────────────────────── HOOKS ───────────────────────── */
+const HERO_PORTRAIT = 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=90'
 
-function useInView<T extends HTMLElement>(threshold = 0.1) {
-  const ref = useRef<T>(null)
-  const [inView, setInView] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setInView(true)
-          obs.unobserve(el)
-        }
-      },
-      { threshold },
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return { ref, inView }
+/* ─────────────── DECORATIVE 3D-style corner images (about) ─────────────── */
+const ABOUT_DECO = {
+  topLeft:    'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=85',
+  topRight:   'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400&q=85',
+  bottomLeft: 'https://images.unsplash.com/photo-1572441713132-c542fc4fe282?w=400&q=85',
+  bottomRight:'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=85',
 }
 
-/* ───────────────────────── SHARED STYLES ───────────────────────── */
+/* ───────────────────────── COMPONENTS ───────────────────────── */
 
-const COLOR = {
-  dark: '#051A24',
-  dark2: '#0D212C',
-  light1: '#F6FCFF',
-  light2: '#E0EBF0',
-  muted: '#273C46',
-}
-
-const PRIMARY_BTN_SHADOW =
-  '0 1px 2px 0 rgba(5,26,36,0.1), 0 4px 4px 0 rgba(5,26,36,0.09), 0 9px 6px 0 rgba(5,26,36,0.05), 0 17px 7px 0 rgba(5,26,36,0.01), 0 26px 7px 0 rgba(5,26,36,0), inset 0 2px 8px 0 rgba(255,255,255,0.18)'
-const PRIMARY_BTN_SHADOW_DARK_BG =
-  '0 1px 2px 0 rgba(0,0,0,0.25), 0 4px 14px 0 rgba(0,0,0,0.18), inset 0 2px 8px 0 rgba(255,255,255,0.10)'
-const SECONDARY_BTN_SHADOW =
-  '0 0 0 0.5px rgba(0,0,0,0.05), 0 4px 30px rgba(0,0,0,0.08)'
-
-/* ───────────────────────── BUTTON ───────────────────────── */
-
-interface BtnProps {
-  variant?: 'primary' | 'secondary' | 'tertiary'
-  href?: string
-  external?: boolean
-  children: React.ReactNode
-  onClick?: () => void
-  style?: React.CSSProperties
-}
-
-function Btn({ variant = 'primary', href, external, children, onClick, style }: BtnProps) {
-  const base: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '13px 28px',
-    fontSize: 14,
-    fontWeight: 500,
-    fontFamily: 'inherit',
-    borderRadius: 9999,
-    border: 0,
-    cursor: 'pointer',
-    textDecoration: 'none',
-    transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s, opacity 0.2s',
-    whiteSpace: 'nowrap',
-  }
-  const variants: Record<string, React.CSSProperties> = {
-    primary: { background: COLOR.dark, color: '#fff', boxShadow: PRIMARY_BTN_SHADOW },
-    secondary: { background: '#fff', color: COLOR.dark, boxShadow: SECONDARY_BTN_SHADOW },
-    tertiary: { background: '#fff', color: COLOR.dark, boxShadow: '0 0 0 0.5px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.10)' },
-  }
-  const merged = { ...base, ...variants[variant], ...style }
-
-  const inner = (
-    <span style={merged} className="lm-btn-hover">
+/** Wrapper FadeIn con Framer Motion whileInView */
+function FadeIn({
+  children, delay = 0, duration = 0.7, x = 0, y = 30, className, style,
+}: {
+  children: ReactNode; delay?: number; duration?: number; x?: number; y?: number;
+  className?: string; style?: React.CSSProperties;
+}) {
+  return (
+    <motion.div
+      className={className}
+      style={style}
+      initial={{ opacity: 0, x, y }}
+      whileInView={{ opacity: 1, x: 0, y: 0 }}
+      viewport={{ once: true, margin: '50px', amount: 0 }}
+      transition={{ duration, delay, ease: [0.25, 0.1, 0.25, 1] }}
+    >
       {children}
+    </motion.div>
+  )
+}
+
+/** Magnet — effetto magnetico al passaggio del mouse */
+function Magnet({
+  children, padding = 150, strength = 3, style,
+  activeTransition = 'transform 0.3s ease-out',
+  inactiveTransition = 'transform 0.6s ease-in-out',
+}: {
+  children: ReactNode; padding?: number; strength?: number;
+  style?: React.CSSProperties; activeTransition?: string; inactiveTransition?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const el = ref.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const cx = r.left + r.width / 2
+      const cy = r.top + r.height / 2
+      const dx = e.clientX - cx
+      const dy = e.clientY - cy
+      const dist = Math.hypot(dx, dy)
+      if (dist < Math.max(r.width, r.height) / 2 + padding) {
+        setActive(true)
+        setPos({ x: dx / strength, y: dy / strength })
+      } else {
+        setActive(false)
+        setPos({ x: 0, y: 0 })
+      }
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
+  }, [padding, strength])
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        ...style,
+        transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+        transition: active ? activeTransition : inactiveTransition,
+        willChange: 'transform',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** AnimatedText — char-by-char opacity 0.2 → 1 scroll-driven */
+function AnimatedText({ text, className, style }: { text: string; className?: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 0.8', 'end 0.2'],
+  })
+
+  return (
+    <p ref={ref} className={className} style={{ position: 'relative', ...style }}>
+      {text.split('').map((ch, i) => {
+        const start = i / text.length
+        const end = start + 1 / text.length
+        return <Char key={i} ch={ch} progress={scrollYProgress} start={start} end={end} />
+      })}
+    </p>
+  )
+}
+
+function Char({ ch, progress, start, end }: { ch: string; progress: any; start: number; end: number }) {
+  const opacity = useTransform(progress, [start, end], [0.2, 1])
+  return (
+    <span style={{ position: 'relative', display: 'inline-block', whiteSpace: ch === ' ' ? 'pre' : 'normal' }}>
+      <span style={{ opacity: 0 }}>{ch}</span>
+      <motion.span style={{ opacity, position: 'absolute', left: 0, top: 0 }}>{ch}</motion.span>
     </span>
   )
+}
 
-  if (href) {
-    return external ? (
-      <a href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
-    ) : (
-      <Link href={href}>{inner}</Link>
-    )
-  }
-  return <button type="button" onClick={onClick} style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}>{inner}</button>
+/** ContactButton — pill con gradient viola/magenta */
+function ContactButton({ label = 'Inizia ora', href = '/register' }: { label?: string; href?: string }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <span
+        className="lm-contact-btn"
+        style={{
+          display: 'inline-block',
+          padding: 'clamp(12px, 1.5vw, 18px) clamp(28px, 3vw, 48px)',
+          borderRadius: 9999,
+          background: 'linear-gradient(123deg, #18011F 7%, #B600A8 37%, #7621B0 72%, #BE4C00 100%)',
+          color: '#fff',
+          fontFamily: 'inherit',
+          fontSize: 'clamp(12px, 1.1vw, 16px)',
+          fontWeight: 500,
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+          boxShadow:
+            '0 4px 4px rgba(181,1,167,0.25), inset 4px 4px 12px #7721B1',
+          outline: '2px solid #fff',
+          outlineOffset: '-3px',
+          transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1), filter 0.3s',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </span>
+    </Link>
+  )
+}
+
+/** LiveProjectButton — ghost border */
+function LiveProjectButton({ href }: { href: string }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none' }}>
+      <span style={{
+        display: 'inline-block',
+        padding: 'clamp(10px, 1vw, 14px) clamp(24px, 2.4vw, 40px)',
+        borderRadius: 9999,
+        border: '2px solid #D7E2EA',
+        color: '#D7E2EA',
+        fontFamily: 'inherit',
+        fontSize: 'clamp(12px, 1vw, 14px)',
+        fontWeight: 500,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        background: 'transparent',
+        transition: 'background 0.25s, transform 0.25s',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+      }}
+      className="lm-live-btn"
+      >
+        Vedi live
+      </span>
+    </Link>
+  )
 }
 
 /* ───────────────────────── HERO ───────────────────────── */
 
-function Hero() {
+function HeroSection() {
   return (
-    <section style={{ maxWidth: 440, margin: '0 auto', padding: '48px 24px 0', textAlign: 'left' }}>
-      <h1 className="lm-fade" style={{
-        animationDelay: '0.1s',
-        fontFamily: 'var(--font-serif)', fontWeight: 600,
-        fontSize: 'clamp(32px, 5vw, 44px)',
-        color: COLOR.dark, letterSpacing: '-0.02em',
-        margin: '0 0 16px',
-      }}>
-        Lumino<span style={{ color: '#e52d1d' }}>.</span>
-      </h1>
+    <section style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      overflowX: 'clip', position: 'relative',
+    }}>
+      {/* NAV */}
+      <FadeIn y={-20} delay={0}>
+        <nav style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: 'clamp(20px, 3vw, 36px) clamp(24px, 4vw, 56px)',
+          gap: 16, flexWrap: 'wrap',
+        }}>
+          <Link href="/" style={{ textDecoration: 'none', color: '#D7E2EA', fontFamily: 'inherit', fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 700, letterSpacing: '-0.01em' }}>
+            Lumino<span style={{ color: '#B600A8' }}>.</span>
+          </Link>
+          <div style={{ display: 'flex', gap: 'clamp(18px, 3vw, 40px)', alignItems: 'center', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Studio', href: '#studio' },
+              { label: 'Piani', href: '/pricing' },
+              { label: 'Progetti', href: '#progetti' },
+              { label: 'Contatti', href: '#contatti' },
+            ].map(l => (
+              <a key={l.label} href={l.href} className="lm-nav-link" style={{
+                color: '#D7E2EA', textDecoration: 'none',
+                fontSize: 'clamp(13px, 1.15vw, 22px)',
+                fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
+                transition: 'opacity 0.2s',
+              }}>{l.label}</a>
+            ))}
+          </div>
+        </nav>
+      </FadeIn>
 
-      <p className="lm-fade" style={{
-        animationDelay: '0.2s',
-        fontFamily: 'var(--font-mono)', fontSize: 13,
-        color: COLOR.dark, margin: '0 0 18px',
-        letterSpacing: '0.02em',
-      }}>
-        Lo studio AI per ristoranti italiani
-      </p>
+      {/* HERO HEADING */}
+      <div style={{ overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        <FadeIn y={40} delay={0.15}>
+          <h1 className="hero-heading" style={{
+            fontSize: 'clamp(18vw, 17vw, 17.5vw)',
+            fontWeight: 900,
+            lineHeight: 1,
+            letterSpacing: '-0.04em',
+            textTransform: 'lowercase',
+            whiteSpace: 'nowrap',
+            margin: 0,
+            padding: '0 clamp(24px, 4vw, 56px)',
+            width: '100%',
+            textAlign: 'left',
+          }}>
+            ciao,&nbsp;siamo<br/>lumino<span style={{ display: 'inline-block', WebkitTextFillColor: '#B600A8', color: '#B600A8' }}>.</span>
+          </h1>
+        </FadeIn>
 
-      <h2 className="lm-fade" style={{
-        animationDelay: '0.3s',
-        fontSize: 'clamp(28px, 4.5vw, 44px)',
-        lineHeight: 1.1, color: COLOR.dark2,
-        letterSpacing: '-0.025em', fontWeight: 400,
-        margin: '0 0 22px',
-      }}>
-        Costruisci il sito{' '}
-        <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>del tuo locale</span>,
-        <br />
-        in <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>24 ore</span>.
-      </h2>
-
-      <div className="lm-fade" style={{
-        animationDelay: '0.4s',
-        display: 'flex', flexDirection: 'column', gap: 22,
-        fontSize: 14.5, lineHeight: 1.65, color: COLOR.dark,
-        marginBottom: 26,
-      }}>
-        <p style={{ margin: 0 }}>
-          Lumino è uno studio italiano costruito attorno all'AI. Generiamo siti per ristoratori che vogliono apparire bene online <em>senza</em> riunioni infinite, agenzie costose o template da Facebook.
-        </p>
-        <p style={{ margin: 0 }}>
-          Lo studio è piccolo per scelta. L'intelligenza artificiale fa il lavoro pesante — testi, foto, menu, prenotazioni. Noi supervisioniamo ogni sito personalmente prima della consegna.
-        </p>
-        <p style={{ margin: 0 }}>
-          I siti partono da <strong>€{PLANS[0].priceFrom}</strong>. Un solo pagamento, nessun abbonamento.
-        </p>
+        {/* BOTTOM BAR */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          padding: 'clamp(22px, 3vw, 44px) clamp(24px, 4vw, 56px) clamp(28px, 3vw, 44px)',
+          gap: 22, flexWrap: 'wrap',
+        }}>
+          <FadeIn y={20} delay={0.35}>
+            <p style={{
+              color: '#D7E2EA',
+              fontSize: 'clamp(0.75rem, 1.4vw, 1.5rem)',
+              fontWeight: 300,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              lineHeight: 1.35,
+              maxWidth: 'clamp(180px, 22vw, 320px)',
+              margin: 0,
+            }}>
+              Uno studio italiano che genera siti per ristoranti — AI per costruirli, occhi umani per ogni dettaglio
+            </p>
+          </FadeIn>
+          <FadeIn y={20} delay={0.5}>
+            <ContactButton label="Inizia ora" />
+          </FadeIn>
+        </div>
       </div>
 
-      <div className="lm-fade lm-hero-ctas" style={{
-        animationDelay: '0.5s',
-        display: 'flex', gap: 14, flexWrap: 'wrap',
+      {/* PORTRAIT */}
+      <FadeIn y={30} delay={0.6} style={{
+        position: 'absolute', left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+        top: 'auto', bottom: 0,
       }}>
-        <Btn href="/register" variant="primary">Inizia ora</Btn>
-        <Btn href="#progetti" variant="secondary">Vedi esempi</Btn>
-      </div>
+        <Magnet padding={150} strength={3}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={HERO_PORTRAIT}
+            alt="Lumino"
+            style={{
+              width: 'clamp(260px, 32vw, 520px)',
+              height: 'auto',
+              objectFit: 'cover',
+              borderRadius: 24,
+              boxShadow: '0 24px 80px rgba(182,0,168,0.18), 0 12px 40px rgba(0,0,0,0.5)',
+              display: 'block',
+            }}
+          />
+        </Magnet>
+      </FadeIn>
     </section>
   )
 }
 
 /* ───────────────────────── MARQUEE ───────────────────────── */
 
-function Marquee() {
-  const all = [...MARQUEE_IMAGES, ...MARQUEE_IMAGES]
+function MarqueeSection() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [offset, setOffset] = useState(0)
+
+  useEffect(() => {
+    const onScroll = () => {
+      const el = ref.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const sectionTop = rect.top + window.scrollY
+      const off = (window.scrollY - sectionTop + window.innerHeight) * 0.3
+      setOffset(off)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const row1 = MARQUEE_IMAGES.slice(0, 11)
+  const row2 = MARQUEE_IMAGES.slice(11)
+  const row1x3 = [...row1, ...row1, ...row1]
+  const row2x3 = [...row2, ...row2, ...row2]
+
   return (
-    <section style={{ marginTop: 80, marginBottom: 80, overflow: 'hidden', width: '100%' }}>
-      <div className="lm-marquee" style={{ display: 'flex', width: 'max-content' }}>
-        {all.map((src, i) => (
+    <section ref={ref} style={{
+      background: '#0C0C0C',
+      padding: 'clamp(80px, 12vw, 160px) 0 40px',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        marginBottom: 12,
+        transform: `translateX(${offset - 200}px)`,
+        willChange: 'transform',
+      }}>
+        {row1x3.map((src, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={i}
+            key={`r1-${i}`}
             src={src}
             alt=""
             loading="lazy"
             style={{
-              height: 'clamp(260px, 38vw, 500px)',
-              width: 'auto',
+              width: 'clamp(280px, 30vw, 420px)',
+              height: 'clamp(190px, 20vw, 270px)',
               objectFit: 'cover',
-              margin: '0 12px',
               borderRadius: 18,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
               flexShrink: 0,
+              filter: 'saturate(1.05)',
+            }}
+          />
+        ))}
+      </div>
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        transform: `translateX(${-(offset - 200)}px)`,
+        willChange: 'transform',
+      }}>
+        {row2x3.map((src, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={`r2-${i}`}
+            src={src}
+            alt=""
+            loading="lazy"
+            style={{
+              width: 'clamp(280px, 30vw, 420px)',
+              height: 'clamp(190px, 20vw, 270px)',
+              objectFit: 'cover',
+              borderRadius: 18,
+              flexShrink: 0,
+              filter: 'saturate(1.05)',
             }}
           />
         ))}
@@ -257,441 +452,292 @@ function Marquee() {
   )
 }
 
-/* ───────────────────────── QUOTE WITH PARALLAX ───────────────────────── */
+/* ───────────────────────── ABOUT ───────────────────────── */
 
-function QuoteSection() {
-  const { ref, inView } = useInView<HTMLDivElement>()
-  const [offset, setOffset] = useState(0)
-  const imgRef = useRef<HTMLImageElement>(null)
-
-  useEffect(() => {
-    let raf = 0
-    const onScroll = () => {
-      raf = requestAnimationFrame(() => {
-        if (!imgRef.current) return
-        const r = imgRef.current.getBoundingClientRect()
-        const vh = window.innerHeight
-        const center = r.top + r.height / 2
-        const progress = (center - vh / 2) / vh   // -1 (top) … +1 (bottom)
-        const off = Math.max(-100, Math.min(100, -progress * 100))
-        setOffset(off)
-      })
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf) }
-  }, [])
-
+function AboutSection() {
   return (
-    <section ref={ref} style={{ padding: '48px 24px', maxWidth: 720, margin: '0 auto', textAlign: 'left' }}>
-      <div className={inView ? 'lm-fade' : ''} style={{ animationDelay: '0.1s', marginBottom: 18 }}>
-        <Quote width={26} height={26} color={COLOR.dark} strokeWidth={1.8} />
-      </div>
-
-      <p className={inView ? 'lm-fade' : ''} style={{
-        animationDelay: '0.2s',
-        fontSize: 'clamp(30px, 4.5vw, 44px)',
-        lineHeight: 1.12,
-        color: COLOR.dark2,
-        letterSpacing: '-0.025em',
-        margin: '0 0 26px',
-        fontWeight: 400,
+    <section id="studio" style={{
+      minHeight: '100vh', position: 'relative', overflow: 'hidden',
+      padding: 'clamp(64px, 10vw, 120px) clamp(20px, 4vw, 56px)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(40px, 7vw, 90px)',
+    }}>
+      {/* Decorative corner images */}
+      <FadeIn x={-80} delay={0.1} duration={0.9} style={{
+        position: 'absolute', top: '4%', left: 'clamp(6px, 3vw, 60px)', zIndex: 1, pointerEvents: 'none',
       }}>
-        Costruito a <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>Milano</span>,
-        pensato per i ristoranti che <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>contano</span>.
-      </p>
-
-      <p className={inView ? 'lm-fade' : ''} style={{
-        animationDelay: '0.3s',
-        fontSize: 14, fontStyle: 'italic',
-        color: COLOR.muted, margin: '0 0 30px',
-      }}>
-        Lumino Agency
-      </p>
-
-      <div className={inView ? 'lm-fade' : ''} style={{
-        animationDelay: '0.4s',
-        display: 'flex', gap: 36, alignItems: 'center', flexWrap: 'wrap',
-        marginBottom: 38, fontSize: 22, fontWeight: 500, color: COLOR.dark,
-        fontFamily: 'var(--font-serif)',
-      }}>
-        <span>Claude</span>
-        <span>Supabase</span>
-        <span>Vercel</span>
-      </div>
-
-      <div className={inView ? 'lm-fade' : ''} style={{ animationDelay: '0.5s' }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          ref={imgRef}
-          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1280&q=85"
-          alt="Lumino"
+        <img src={ABOUT_DECO.topLeft} alt="" style={{
+          width: 'clamp(110px, 12vw, 210px)', borderRadius: 18,
+          filter: 'saturate(0.7)', opacity: 0.7,
+        }} />
+      </FadeIn>
+      <FadeIn x={80} delay={0.15} duration={0.9} style={{
+        position: 'absolute', top: '4%', right: 'clamp(6px, 3vw, 60px)', zIndex: 1, pointerEvents: 'none',
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ABOUT_DECO.topRight} alt="" style={{
+          width: 'clamp(110px, 12vw, 210px)', borderRadius: 18,
+          filter: 'saturate(0.7)', opacity: 0.7,
+        }} />
+      </FadeIn>
+      <FadeIn x={-80} delay={0.25} duration={0.9} style={{
+        position: 'absolute', bottom: '8%', left: 'clamp(12px, 6vw, 140px)', zIndex: 1, pointerEvents: 'none',
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ABOUT_DECO.bottomLeft} alt="" style={{
+          width: 'clamp(90px, 10vw, 180px)', borderRadius: 18,
+          filter: 'saturate(0.7)', opacity: 0.7,
+        }} />
+      </FadeIn>
+      <FadeIn x={80} delay={0.3} duration={0.9} style={{
+        position: 'absolute', bottom: '8%', right: 'clamp(12px, 6vw, 140px)', zIndex: 1, pointerEvents: 'none',
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={ABOUT_DECO.bottomRight} alt="" style={{
+          width: 'clamp(110px, 12vw, 220px)', borderRadius: 18,
+          filter: 'saturate(0.7)', opacity: 0.7,
+        }} />
+      </FadeIn>
+
+      <FadeIn y={40} delay={0} style={{ position: 'relative', zIndex: 2 }}>
+        <h2 className="hero-heading" style={{
+          fontSize: 'clamp(3rem, 12vw, 160px)',
+          fontWeight: 900,
+          lineHeight: 0.95,
+          letterSpacing: '-0.03em',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          margin: 0,
+        }}>
+          Lo studio
+        </h2>
+      </FadeIn>
+
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 620 }}>
+        <AnimatedText
+          text="Lumino è uno studio italiano nato per dare ai ristoratori siti web che oggi normalmente non possono permettersi. L'AI scrive testi, sceglie foto e organizza il menu. Noi controlliamo ogni dettaglio prima della consegna. Niente riunioni infinite, niente template da Facebook. Solo un sito che fa onore al tuo locale, online in 24 ore."
           style={{
-            width: '100%', maxWidth: 320,
-            borderRadius: 18, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            transform: `translateY(${offset}px)`,
-            transition: 'transform 0.05s linear',
-            display: 'block',
+            color: '#D7E2EA',
+            fontWeight: 500,
+            textAlign: 'center',
+            lineHeight: 1.55,
+            fontSize: 'clamp(1rem, 2vw, 1.35rem)',
+            margin: 0,
           }}
         />
       </div>
+
+      <FadeIn delay={0.2} style={{ position: 'relative', zIndex: 2 }}>
+        <ContactButton label="Costruisci il tuo" />
+      </FadeIn>
     </section>
   )
 }
 
-/* ───────────────────────── PRICING ───────────────────────── */
+/* ───────────────────────── SERVICES ───────────────────────── */
 
-function PricingSection() {
-  const { ref, inView } = useInView<HTMLDivElement>()
-  const basic = PLANS[0]
-  const pro = PLANS[1]
+function ServicesSection() {
   return (
-    <section ref={ref} id="prezzi" style={{ padding: '48px 24px', width: '100%' }}>
-      <div style={{ maxWidth: 1100, margin: '0 0 0 auto' }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 32,
+    <section style={{
+      background: '#fff',
+      borderTopLeftRadius: 'clamp(40px, 5vw, 60px)',
+      borderTopRightRadius: 'clamp(40px, 5vw, 60px)',
+      padding: 'clamp(80px, 10vw, 130px) clamp(20px, 4vw, 56px)',
+      position: 'relative', zIndex: 5,
+    }}>
+      <FadeIn y={40} delay={0}>
+        <h2 style={{
+          color: '#0C0C0C',
+          fontWeight: 900,
+          fontSize: 'clamp(3rem, 12vw, 160px)',
+          letterSpacing: '-0.03em',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          lineHeight: 0.95,
+          margin: '0 0 clamp(64px, 8vw, 112px)',
         }}>
-          {/* Card 1 — DARK */}
-          <div className={inView ? 'lm-fade' : ''} style={{
-            animationDelay: '0.1s',
-            background: COLOR.dark, color: COLOR.light1,
-            borderRadius: 40,
-            padding: '40px 40px 40px 40px',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 48px rgba(0,0,0,0.18)',
-          }}>
-            <h3 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 10px' }}>Sito + AI</h3>
-            <p style={{ color: COLOR.light2, fontSize: 14.5, lineHeight: 1.55, margin: '0 0 28px' }}>
-              Sito completo generato dall'AI.<br />
-              Pronto in 24 ore, supervisionato da noi.
-            </p>
-            <p style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 28, color: COLOR.light1, margin: '0 0 4px', lineHeight: 1,
+          Cosa facciamo
+        </h2>
+      </FadeIn>
+
+      <div style={{ maxWidth: 1024, margin: '0 auto' }}>
+        {SERVICES.map((s, i) => (
+          <FadeIn key={s.n} y={30} delay={i * 0.1}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr',
+              alignItems: 'center',
+              gap: 'clamp(20px, 4vw, 64px)',
+              padding: 'clamp(32px, 4.5vw, 56px) 0',
+              borderTop: i === 0 ? '1px solid rgba(12,12,12,0.15)' : 'none',
+              borderBottom: '1px solid rgba(12,12,12,0.15)',
             }}>
-              da €{basic.priceFrom}
-            </p>
-            <p style={{ color: COLOR.light2, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 24px' }}>
-              Una tantum
-            </p>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <Btn href="/register" variant="primary" style={{ background: '#fff', color: COLOR.dark, boxShadow: PRIMARY_BTN_SHADOW_DARK_BG }}>Inizia ora</Btn>
-              <Btn href="/pricing" variant="secondary" style={{ background: 'transparent', color: COLOR.light1, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.18)' }}>Come funziona</Btn>
-            </div>
-          </div>
-
-          {/* Card 2 — LIGHT */}
-          <div className={inView ? 'lm-fade' : ''} style={{
-            animationDelay: '0.2s',
-            background: '#fff', color: COLOR.dark2,
-            borderRadius: 40,
-            padding: '40px 40px 40px 40px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-          }}>
-            <h3 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 10px' }}>{pro.name} & {PLANS[2].name}</h3>
-            <p style={{ color: 'rgba(13,33,44,0.6)', fontSize: 14.5, lineHeight: 1.55, margin: '0 0 28px' }}>
-              Prenotazioni, eventi, sezione chef, WhatsApp.<br />
-              Dominio personalizzato e pannello di controllo.
-            </p>
-            <p style={{
-              fontFamily: 'var(--font-serif)',
-              fontSize: 28, color: COLOR.dark2, margin: '0 0 4px', lineHeight: 1,
-            }}>
-              da €{pro.priceFrom}
-            </p>
-            <p style={{ color: 'rgba(13,33,44,0.5)', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 24px' }}>
-              Minimo
-            </p>
-            <Btn href="/register" variant="tertiary">Inizia ora</Btn>
-          </div>
-        </div>
-        <p style={{ marginTop: 24, color: 'rgba(5,26,36,0.55)', fontSize: 12.5, textAlign: 'right', lineHeight: 1.5 }}>
-          {SALES_TERMS.publicNote}
-        </p>
-      </div>
-    </section>
-  )
-}
-
-/* ───────────────────────── TESTIMONIAL CAROUSEL ───────────────────────── */
-
-function CarouselSection() {
-  const tripled = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS]
-  const [index, setIndex] = useState(TESTIMONIALS.length)  // start in middle copy
-  const [hover, setHover] = useState(false)
-  const { ref, inView } = useInView<HTMLDivElement>()
-
-  useEffect(() => {
-    if (hover) return
-    const t = setInterval(() => setIndex(i => i + 1), 3500)
-    return () => clearInterval(t)
-  }, [hover])
-
-  // Reset position when index out of middle window (no animation)
-  useEffect(() => {
-    if (index >= TESTIMONIALS.length * 2) {
-      const t = setTimeout(() => setIndex(TESTIMONIALS.length), 850)
-      return () => clearTimeout(t)
-    }
-    if (index < 0) {
-      const t = setTimeout(() => setIndex(TESTIMONIALS.length - 1), 850)
-      return () => clearTimeout(t)
-    }
-  }, [index])
-
-  const cardWidth = 360
-  const gap = 24
-
-  return (
-    <section ref={ref} style={{ padding: '80px 0', width: '100%', overflow: 'hidden' }}>
-      <div style={{ maxWidth: 1100, margin: '0 0 0 auto', padding: '0 24px' }}>
-        <div className={inView ? 'lm-fade' : ''} style={{
-          animationDelay: '0.1s',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-          marginBottom: 36, gap: 24, flexWrap: 'wrap',
-        }}>
-          <h3 style={{
-            fontSize: 'clamp(28px, 4.5vw, 44px)',
-            lineHeight: 1.1, color: COLOR.dark2,
-            letterSpacing: '-0.025em', margin: 0, fontWeight: 400,
-          }}>
-            Cosa dicono i{' '}
-            <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 500 }}>ristoratori</span>.
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {[0,1,2,3,4].map(i => <Star key={i} width={18} height={18} fill={COLOR.dark} stroke={COLOR.dark} />)}
-            <span style={{ marginLeft: 4, fontSize: 14, color: COLOR.dark, fontWeight: 500 }}>5/5</span>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{ padding: '0 24px' }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{
-            display: 'flex',
-            gap,
-            transform: `translateX(calc(50% - ${cardWidth/2}px - ${index * (cardWidth + gap)}px))`,
-            transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}>
-            {tripled.map((t, i) => (
-              <div key={i} style={{
-                width: cardWidth, flexShrink: 0,
-                background: '#fff', borderRadius: 32,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                padding: '32px 32px 32px 32px',
-                display: 'flex', flexDirection: 'column', gap: 18,
-              }}>
-                <Quote width={22} height={22} color={COLOR.dark} strokeWidth={1.6} />
+              <span style={{
+                color: '#0C0C0C',
+                fontWeight: 900,
+                fontSize: 'clamp(3rem, 10vw, 140px)',
+                lineHeight: 0.85,
+                fontFeatureSettings: '"tnum"',
+              }}>{s.n}</span>
+              <div>
+                <h3 style={{
+                  color: '#0C0C0C',
+                  fontWeight: 500,
+                  fontSize: 'clamp(1rem, 2.2vw, 2.1rem)',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  margin: '0 0 14px',
+                  lineHeight: 1.15,
+                }}>{s.title}</h3>
                 <p style={{
-                  margin: 0, fontSize: 15.5, lineHeight: 1.6, color: COLOR.dark2,
-                  flex: 1,
-                }}>
-                  "{t.text}"
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={t.avatar} alt={t.name} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
-                  <div>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: COLOR.dark }}>{t.name}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 12.5, color: COLOR.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <ArrowUpRight width={12} height={12} />
-                      {t.role}
-                    </p>
-                  </div>
-                </div>
+                  color: '#0C0C0C',
+                  fontWeight: 300,
+                  fontSize: 'clamp(0.85rem, 1.6vw, 1.25rem)',
+                  lineHeight: 1.6,
+                  margin: 0,
+                  maxWidth: 720,
+                  opacity: 0.6,
+                }}>{s.desc}</p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-start', marginTop: 28 }}>
-          <button
-            type="button"
-            onClick={() => setIndex(i => i - 1)}
-            aria-label="Precedente"
-            style={{
-              width: 48, height: 48, borderRadius: '50%',
-              border: '1px solid rgba(13,33,44,0.18)',
-              background: '#fff', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-            className="lm-circle-btn"
-          >
-            <ChevronLeft width={20} height={20} color={COLOR.dark} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIndex(i => i + 1)}
-            aria-label="Successivo"
-            style={{
-              width: 48, height: 48, borderRadius: '50%',
-              border: '1px solid rgba(13,33,44,0.18)',
-              background: '#fff', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-            className="lm-circle-btn"
-          >
-            <ChevronRight width={20} height={20} color={COLOR.dark} />
-          </button>
-        </div>
+            </div>
+          </FadeIn>
+        ))}
       </div>
     </section>
   )
 }
 
-/* ───────────────────────── PROJECTS ───────────────────────── */
-
-function ProjectItem({ project, delay }: { project: typeof PROJECTS[number]; delay: number }) {
-  const { ref, inView } = useInView<HTMLDivElement>(0.15)
-  return (
-    <div ref={ref} className={inView ? 'lm-fade' : ''} style={{ animationDelay: `${delay}s`, marginBottom: 80 }}>
-      <div style={{ marginLeft: 'clamp(20px, 5vw, 110px)', marginBottom: 18 }}>
-        <h4 style={{
-          fontFamily: 'var(--font-serif)',
-          fontSize: 'clamp(24px, 3.4vw, 32px)',
-          fontWeight: 600, color: COLOR.dark,
-          margin: '0 0 6px', letterSpacing: '-0.01em',
-        }}>
-          {project.name}
-        </h4>
-        <p style={{
-          fontSize: 'clamp(14px, 1.6vw, 16px)',
-          color: 'rgba(5,26,36,0.7)', margin: 0, lineHeight: 1.55,
-          maxWidth: 520,
-        }}>
-          {project.desc}
-        </p>
-      </div>
-      <Link href={`/sites/${project.slug}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={project.image}
-          alt={project.name}
-          style={{
-            width: '100%', borderRadius: 18,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-            objectFit: 'cover',
-            aspectRatio: '16 / 9',
-            display: 'block',
-            cursor: 'pointer',
-            transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
-          className="lm-project-img"
-        />
-      </Link>
-    </div>
-  )
-}
+/* ───────────────────────── PROJECTS (sticky stacking) ───────────────────────── */
 
 function ProjectsSection() {
   return (
-    <section id="progetti" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+    <section id="progetti" style={{
+      background: '#0C0C0C',
+      borderTopLeftRadius: 'clamp(40px, 5vw, 60px)',
+      borderTopRightRadius: 'clamp(40px, 5vw, 60px)',
+      marginTop: 'clamp(-56px, -7vw, -40px)',
+      position: 'relative', zIndex: 10,
+      padding: 'clamp(80px, 10vw, 130px) clamp(20px, 4vw, 56px) clamp(80px, 10vw, 130px)',
+    }}>
+      <FadeIn y={40} delay={0}>
+        <h2 className="hero-heading" style={{
+          fontSize: 'clamp(3rem, 12vw, 160px)',
+          fontWeight: 900,
+          lineHeight: 0.95,
+          letterSpacing: '-0.03em',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          margin: '0 0 clamp(48px, 6vw, 80px)',
+        }}>
+          Progetti
+        </h2>
+      </FadeIn>
+
       {PROJECTS.map((p, i) => (
-        <ProjectItem key={p.slug} project={p} delay={0.1 + i * 0.05} />
+        <ProjectCard key={p.n} project={p} index={i} totalCards={PROJECTS.length} />
       ))}
     </section>
   )
 }
 
-/* ───────────────────────── PARTNER (MOUSE TRAIL) ───────────────────────── */
-
-function PartnerSection() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; img: string; rotation: number }>>([])
-  const lastSpawn = useRef(0)
-  const nextId = useRef(0)
-
-  const onMove = useCallback((e: React.MouseEvent) => {
-    const now = performance.now()
-    if (now - lastSpawn.current < 80) return
-    lastSpawn.current = now
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const img = MARQUEE_IMAGES[Math.floor(Math.random() * MARQUEE_IMAGES.length)]
-    const rotation = Math.random() * 20 - 10
-    const id = nextId.current++
-    setParticles(p => [...p, { id, x, y, img, rotation }])
-    setTimeout(() => {
-      setParticles(p => p.filter(x => x.id !== id))
-    }, 1100)
-  }, [])
+function ProjectCard({ project, index, totalCards }: {
+  project: typeof PROJECTS[number]; index: number; totalCards: number;
+}) {
+  const targetScale = 1 - (totalCards - 1 - index) * 0.03
+  const topOffset = index * 28
 
   return (
-    <section style={{ padding: '48px 24px', width: '100%' }}>
-      <div
-        ref={containerRef}
-        onMouseMove={onMove}
+    <div style={{
+      height: '85vh',
+      position: 'relative',
+      maxWidth: 1280,
+      margin: '0 auto',
+    }}>
+      <motion.div
         style={{
-          maxWidth: 1200, margin: '0 auto',
-          padding: '180px 24px',
-          background: '#fff', borderRadius: 40,
-          boxShadow: '0 0 0 0.5px rgba(0,0,0,0.05), 0 16px 64px rgba(0,0,0,0.06)',
-          position: 'relative', overflow: 'hidden',
+          position: 'sticky',
+          top: `clamp(80px, 10vh, 128px)`,
+          marginTop: topOffset,
+          background: '#0C0C0C',
+          border: '2px solid #D7E2EA',
+          borderRadius: 'clamp(32px, 5vw, 60px)',
+          padding: 'clamp(16px, 2vw, 32px)',
+          scale: targetScale,
+          transformOrigin: 'top',
         }}
       >
-        {particles.map(p => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={p.id}
-            src={p.img}
-            alt=""
-            style={{
-              position: 'absolute',
-              left: p.x - 60, top: p.y - 80,
-              width: 120, height: 160,
-              objectFit: 'cover',
-              borderRadius: 14,
-              boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
-              transform: `rotate(${p.rotation}deg)`,
-              animation: 'lmParticle 1s ease-out forwards',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        <h3 style={{
-          fontFamily: 'var(--font-serif)',
-          fontSize: 'clamp(48px, 7vw, 80px)',
-          fontWeight: 500, color: COLOR.dark2,
-          textAlign: 'center', margin: '0 0 48px',
-          letterSpacing: '-0.025em',
-          position: 'relative', zIndex: 2,
-          pointerEvents: 'none',
+        {/* Top row */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          gap: 'clamp(16px, 3vw, 40px)', flexWrap: 'wrap',
+          marginBottom: 'clamp(16px, 2vw, 28px)',
         }}>
-          Costruisci con noi.
-        </h3>
-
-        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 2 }}>
-          <Link href="/register" style={{ textDecoration: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(16px, 3vw, 36px)', flexWrap: 'wrap' }}>
             <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 12,
-              background: COLOR.dark, color: '#fff',
-              padding: '8px 8px 8px 8px',
-              borderRadius: 9999,
-              boxShadow: PRIMARY_BTN_SHADOW,
-              fontFamily: 'inherit', fontSize: 14, fontWeight: 500,
-            }} className="lm-btn-hover">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&w=120&h=120&fit=crop"
-                alt=""
-                style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
-              />
-              <span style={{ paddingRight: 20 }}>Inizia una chat con Lumino</span>
-            </span>
-          </Link>
+              color: '#D7E2EA',
+              fontWeight: 900,
+              fontSize: 'clamp(3rem, 10vw, 140px)',
+              lineHeight: 0.8,
+              fontFeatureSettings: '"tnum"',
+            }}>{project.n}</span>
+            <div>
+              <p style={{
+                color: '#D7E2EA',
+                fontSize: 'clamp(0.7rem, 1vw, 1rem)',
+                fontWeight: 500,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                margin: '0 0 4px',
+                opacity: 0.7,
+              }}>{project.category}</p>
+              <h3 style={{
+                color: '#D7E2EA',
+                fontWeight: 500,
+                fontSize: 'clamp(1.2rem, 2.4vw, 2.4rem)',
+                letterSpacing: '-0.01em',
+                margin: 0,
+              }}>{project.name}</h3>
+            </div>
+          </div>
+          <LiveProjectButton href={`/sites/${project.slug}`} />
         </div>
-      </div>
-    </section>
+
+        {/* Bottom: 2-col image grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '40% 60%',
+          gap: 'clamp(8px, 1.5vw, 18px)',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.5vw, 18px)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={project.images[0]} alt="" style={{
+              width: '100%',
+              height: 'clamp(130px, 16vw, 230px)',
+              objectFit: 'cover',
+              borderRadius: 'clamp(32px, 5vw, 60px)',
+              display: 'block',
+            }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={project.images[1]} alt="" style={{
+              width: '100%',
+              height: 'clamp(160px, 22vw, 340px)',
+              objectFit: 'cover',
+              borderRadius: 'clamp(32px, 5vw, 60px)',
+              display: 'block',
+            }} />
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={project.images[2]} alt="" style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: 'clamp(32px, 5vw, 60px)',
+            display: 'block',
+          }} />
+        </div>
+      </motion.div>
+    </div>
   )
 }
 
@@ -699,73 +745,47 @@ function PartnerSection() {
 
 function FooterSection() {
   return (
-    <footer id="contatti" style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+    <footer id="contatti" style={{
+      background: '#0C0C0C',
+      padding: 'clamp(60px, 8vw, 100px) clamp(20px, 4vw, 56px) clamp(40px, 5vw, 60px)',
+      borderTop: '1px solid rgba(215,226,234,0.08)',
+    }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-        gap: 36, flexWrap: 'wrap',
+        maxWidth: 1280, margin: '0 auto',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        gap: 40, flexWrap: 'wrap',
       }}>
-        <Btn href="/register" variant="primary">Inizia una chat</Btn>
-
-        <div style={{ display: 'flex', gap: 60, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <ArrowUpRight width={22} height={22} color={COLOR.dark} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100 }}>
-            <a href="#prezzi" style={footerLinkStyle}>Prezzi</a>
-            <a href="#progetti" style={footerLinkStyle}>Esempi</a>
-            <Link href="/login" style={footerLinkStyle}>Accedi</Link>
+        <div>
+          <p style={{ color: '#D7E2EA', fontSize: 'clamp(1.5rem, 4vw, 3rem)', fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 14px' }}>
+            Pronto a costruire?
+          </p>
+          <ContactButton label="Inizia ora" />
+        </div>
+        <div style={{ display: 'flex', gap: 'clamp(28px, 4vw, 60px)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <a href="/pricing" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Piani</a>
+            <a href="#progetti" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Progetti</a>
+            <a href="/portfolio" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Portfolio</a>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 100 }}>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>Instagram</a>
-            <a href="https://x.com" target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>X.com</a>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <a href="/login" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Accedi</a>
+            <a href="/register" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Registrati</a>
+            <a href="mailto:ciao@bylumino.com" style={{ color: '#D7E2EA', textDecoration: 'none', fontSize: 14, letterSpacing: '0.06em', textTransform: 'uppercase' }} className="lm-nav-link">Email</a>
           </div>
         </div>
       </div>
-    </footer>
-  )
-}
-
-const footerLinkStyle: React.CSSProperties = {
-  fontSize: 16,
-  color: COLOR.dark,
-  textDecoration: 'none',
-  transition: 'opacity 0.2s',
-}
-
-/* ───────────────────────── COPYRIGHT BAR ───────────────────────── */
-
-function CopyrightBar() {
-  return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 24px 90px' }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        fontSize: 13, color: COLOR.dark, flexWrap: 'wrap', gap: 8,
-        borderTop: '1px solid rgba(5,26,36,0.08)', paddingTop: 16,
+        maxWidth: 1280, margin: '40px auto 0',
+        display: 'flex', justifyContent: 'space-between',
+        fontSize: 12, color: 'rgba(215,226,234,0.5)',
+        letterSpacing: '0.06em', textTransform: 'uppercase',
+        flexWrap: 'wrap', gap: 8,
+        paddingTop: 24, borderTop: '1px solid rgba(215,226,234,0.08)',
       }}>
         <span>© Lumino Agency</span>
         <span>Made in Italy</span>
       </div>
-    </div>
-  )
-}
-
-/* ───────────────────────── FIXED BOTTOM NAV ───────────────────────── */
-
-function BottomNav() {
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 50, display: 'flex', alignItems: 'center', gap: 14,
-      background: '#fff', borderRadius: 9999, padding: '8px 8px 8px 24px',
-      boxShadow: '0 1px 2px rgba(5,26,36,0.06), 0 8px 24px rgba(5,26,36,0.10), 0 24px 48px rgba(5,26,36,0.08)',
-    }}>
-      <Link href="/" style={{
-        fontFamily: 'var(--font-serif)',
-        fontSize: 24, fontWeight: 600, color: COLOR.dark,
-        textDecoration: 'none', lineHeight: 1,
-      }}>
-        L
-      </Link>
-      <Btn href="/register" variant="primary">Inizia una chat</Btn>
-    </div>
+    </footer>
   )
 }
 
@@ -773,80 +793,43 @@ function BottomNav() {
 
 export default function HomePage() {
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', color: COLOR.dark, fontFamily: 'var(--font-sans)' }}>
+    <main style={{
+      background: '#0C0C0C',
+      color: '#D7E2EA',
+      fontFamily: 'Kanit, system-ui, sans-serif',
+      overflowX: 'clip',
+      minHeight: '100vh',
+    }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700;900&display=swap');
 
-        :root {
-          --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          --font-serif: 'Instrument Serif', Georgia, 'Cormorant Garamond', serif;
-          --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-        }
+        :root { color-scheme: dark; }
 
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; background: #fff; }
-        body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+        html, body, #__next { margin: 0; padding: 0; background: #0C0C0C; }
+        body { font-family: 'Kanit', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
-        /* fade in up */
-        @keyframes lmFadeInUp {
-          0%   { opacity: 0; transform: translateY(28px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .lm-fade {
-          animation: lmFadeInUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-          opacity: 0;
+        .hero-heading {
+          background: linear-gradient(180deg, #646973 0%, #BBCCD7 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
         }
 
-        /* infinite marquee */
-        @keyframes lmMarquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .lm-marquee {
-          animation: lmMarquee 32s linear infinite;
-          will-change: transform;
-        }
-        @media (max-width: 768px) {
-          .lm-marquee { animation-duration: 18s; }
-        }
+        .lm-nav-link { transition: opacity 0.2s; }
+        .lm-nav-link:hover { opacity: 0.7; }
 
-        /* mouse trail particle */
-        @keyframes lmParticle {
-          0%   { opacity: 0; transform: scale(0.6) rotate(var(--rot, 0deg)); }
-          15%  { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
-          100% { opacity: 0; transform: scale(0.6) translateY(40px) rotate(var(--rot, 0deg)); }
-        }
-
-        /* button hover */
-        .lm-btn-hover { will-change: transform; }
-        a:hover .lm-btn-hover, button:hover .lm-btn-hover { transform: translateY(-2px); }
-        a:active .lm-btn-hover { transform: translateY(0); }
-
-        .lm-circle-btn:hover { background: ${COLOR.dark} !important; }
-        .lm-circle-btn:hover svg { color: #fff !important; }
-
-        .lm-project-img:hover { transform: scale(1.02); }
-
-        a { color: inherit; }
-        a:hover { opacity: 0.7; }
-
-        @media (max-width: 540px) {
-          .lm-hero-ctas { flex-direction: column; align-items: stretch; }
-          .lm-hero-ctas > a, .lm-hero-ctas > button { width: 100%; }
-          .lm-hero-ctas > a > span, .lm-hero-ctas > button > span { width: 100%; justify-content: center; }
-        }
+        .lm-contact-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .lm-live-btn:hover { background: rgba(215,226,234,0.1); transform: translateY(-2px); }
       `}</style>
 
-      <Hero />
-      <Marquee />
-      <QuoteSection />
-      <PricingSection />
-      <CarouselSection />
+      <HeroSection />
+      <MarqueeSection />
+      <AboutSection />
+      <ServicesSection />
       <ProjectsSection />
-      <PartnerSection />
       <FooterSection />
-      <CopyrightBar />
-      <BottomNav />
-    </div>
+    </main>
   )
 }
