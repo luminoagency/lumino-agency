@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { saveSiteContent, publishSite, unpublishSite } from './actions/site'
+import { saveSiteContent, publishSite, unpublishSite, generateMySiteContent } from './actions/site'
 import { logoutAction } from '../auth/actions'
 
 interface OpeningHoursDay { open?: string; close?: string; closed?: boolean }
@@ -80,6 +80,21 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
     })
   }
 
+  function generateAI() {
+    if (!confirm('Generare il contenuto del sito con AI? Sovrascrive testi, foto e menu attuali.')) return
+    setFeedback(null)
+    startTransition(async () => {
+      const r = await generateMySiteContent()
+      if (r.ok) {
+        setStatus('live')
+        setFeedback({ ok: true, msg: '✓ Sito generato. Ricarica la pagina per vedere.' })
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        setFeedback({ ok: false, msg: r.error || 'Generazione fallita' })
+      }
+    })
+  }
+
   const publicUrl = `/sites/${site.slug}`
 
   return (
@@ -148,6 +163,8 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
         .ae-btn-primary:hover:not(:disabled) { transform: translateY(-2px); }
         .ae-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .ae-btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 10px 24px rgba(34,197,94,0.3); }
+        .ae-btn-ai { background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; box-shadow: 0 10px 24px rgba(167,139,250,0.3); }
+        .ae-btn-ai:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(167,139,250,0.45); }
         .ae-btn-ghost { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.12); }
         .ae-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .ae-btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
@@ -247,6 +264,15 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
             )}
             <button
               type="button"
+              onClick={generateAI}
+              disabled={pending}
+              className="ae-btn ae-btn-ai"
+              title="L'AI scrive testi, sceglie foto e crea il menu in base al tipo di locale"
+            >
+              ✨ Genera con AI
+            </button>
+            <button
+              type="button"
               onClick={togglePublish}
               disabled={pending}
               className={`ae-btn ${isLive ? 'ae-btn-danger' : 'ae-btn-success'}`}
@@ -339,12 +365,23 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
           })}
         </div>
 
-        {/* Future sections placeholder */}
-        <div className="ae-section" style={{ opacity: 0.6 }}>
-          <h2 className="ae-h2">Menu, foto, eventi, prenotazioni</h2>
-          <p className="ae-h2-sub">In sviluppo. Disponibili in una prossima versione di Lumino.</p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
-            Per ora il menu e le foto sono gestiti direttamente dal team Lumino dopo il pagamento della prima rata. Potrai gestirli tu da qui appena pronta la sezione (piani Pro/Premium).
+        {/* Sezioni dedicate */}
+        <div className="ae-section">
+          <h2 className="ae-h2">Altre sezioni</h2>
+          <p className="ae-h2-sub">Gestisci menu, eventi e altro nelle pagine dedicate.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <Link href="/admin/menu" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
+              <span>🍽 Menu</span><span style={{ opacity: 0.5 }}>→</span>
+            </Link>
+            <Link href="/admin/events" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
+              <span>📅 Eventi</span><span style={{ opacity: 0.5 }}>→</span>
+            </Link>
+            <Link href="/admin/chef" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
+              <span>👨‍🍳 Lo chef</span><span style={{ opacity: 0.5 }}>→</span>
+            </Link>
+          </div>
+          <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', marginTop: 14 }}>
+            Foto e gallery sono gestite automaticamente dal sistema. Clicca "✨ Genera con AI" per rifare tutto da zero.
           </p>
         </div>
       </div>

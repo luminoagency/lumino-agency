@@ -20,6 +20,14 @@ export async function loginAction(formData: FormData) {
   if (error) {
     redirect('/login?error=' + encodeURIComponent(translateAuthError(error.message)) + '&next=' + encodeURIComponent(next))
   }
+
+  // Tracking login (fire-and-forget, mai bloccante)
+  try {
+    const hdrs = headers()
+    const ip = hdrs.get('x-forwarded-for')?.split(',')[0].trim() || hdrs.get('x-real-ip') || ''
+    trackEvent('login', { email, ip }).catch(() => {})
+  } catch {}
+
   redirect(next)
 }
 

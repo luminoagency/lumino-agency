@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { sendReservationConfirmed, sendReservationCancelled } from '@/lib/integrations/email'
+import { trackEvent } from '@/lib/tracking'
 
 /**
  * Returns the site owned by the currently logged-in user, or null if they don't have one yet.
@@ -116,6 +117,26 @@ export async function saveSiteContent(input: SiteContentInput) {
 }
 
 /**
+ * Triggera la pipeline AI per generare il contenuto del sito dell'utente loggato.
+ * Sovrascrive tagline/descrizione/menu/foto. Lo status passa a 'live' al successo.
+ */
+export async function generateMySiteContent() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  const { generateSiteContent } = await import('@/lib/pipeline/generate')
+  const result = await generateSiteContent({ siteId: owner.site_id })
+  if (!result.ok) return { ok: false, error: result.error || 'Generazione fallita' }
+
+  revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
+  return { ok: true, template: result.template, accent: result.accentColor }
+}
+
+/**
  * Pubblica il sito: status='building' → 'live'.
  * Il sito diventa visibile su /sites/[slug].
  */
@@ -131,6 +152,20 @@ export async function publishSite() {
     .update({ status: 'live' })
     .eq('id', owner.site_id)
   if (error) return { ok: false, error: error.message }
+
+  // Tracking
+  const { data: site } = await supabase
+    .from('sites')
+    .select('slug, clients:client_id(name)')
+    .eq('id', owner.site_id)
+    .maybeSingle()
+  const restaurantName = site ? ((Array.isArray((site as any).clients) ? (site as any).clients[0] : (site as any).clients)?.name || '') : ''
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://bylumino.com'
+  trackEvent('site_published', {
+    email: user.email || '',
+    restaurantName,
+    siteUrl: `${origin}/sites/${site?.slug || ''}`,
+  }).catch(() => {})
 
   revalidatePath('/admin')
   revalidatePath(`/sites/[slug]`, 'page')
@@ -159,70 +194,141 @@ export async function unpublishSite() {
   return { ok: true }
 }
 
-interface MenuItemInput {
-  id?: string
-  category: string
+export interface MenuItemDTO {
   name: string
   description?: string
   price: number
-  available: boolean
   allergens?: string[]
-  display_order?: number
+}
+export interface MenuCategoryDTO {
+  name: string
+  description?: string
+  items: MenuItemDTO[]
 }
 
-export async function saveMenuItems(items: MenuItemInput[]) {
+/**
+ * Restituisce le categorie correnti del menu del sito dell'utente.
+ * site_menus.categories è un jsonb; tipologia matched a MenuCategoryDTO[].
+ */
+export async function getMyMenu(): Promise<{ ok: boolean; categories?: MenuCategoryDTO[]; error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+  const { data: menu } = await supabase.from('site_menus').select('categories').eq('site_id', owner.site_id).maybeSingle()
+  const categories: MenuCategoryDTO[] = Array.isArray(menu?.categories) ? (menu!.categories as any) : []
+  return { ok: true, categories }
+}
+
+/**
+ * Sovrascrive l'intero menu (delete + insert).
+ * Le categorie sono tutte salvate come singola riga jsonb in site_menus.categories.
+ */
+export async function saveMyMenu(categories: MenuCategoryDTO[]) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Non autenticato.' }
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
-  // Replace strategy: delete all then re-insert (simple for now)
   await supabase.from('site_menus').delete().eq('site_id', owner.site_id)
-  if (items.length) {
-    const { error } = await supabase
-      .from('site_menus')
-      .insert(items.map((it, i) => ({ ...it, site_id: owner.site_id, display_order: it.display_order ?? i })))
+  if (categories.length) {
+    const { error } = await supabase.from('site_menus').insert({ site_id: owner.site_id, categories })
     if (error) return { ok: false, error: error.message }
   }
   revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
   return { ok: true }
 }
 
-export async function deleteMenuItem(id: string) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: 'Non autenticato.' }
-  const { error } = await supabase.from('site_menus').delete().eq('id', id)
-  if (error) return { ok: false, error: error.message }
-  revalidatePath('/admin')
-  return { ok: true }
-}
-
-interface EventInput {
-  id?: string
+export interface EventDTO {
   title: string
   description?: string
-  event_date: string
+  event_date: string  // YYYY-MM-DD
   image_url?: string
-  active: boolean
+  active?: boolean
 }
 
-export async function saveEvents(events: EventInput[]) {
+export async function getMyEvents(): Promise<{ ok: boolean; events?: EventDTO[]; error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+  const { data } = await supabase
+    .from('site_events')
+    .select('title, description, event_date, image_url, active')
+    .eq('site_id', owner.site_id)
+    .order('event_date', { ascending: true })
+  return { ok: true, events: (data as EventDTO[]) || [] }
+}
+
+export async function saveMyEvents(events: EventDTO[]) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'Non autenticato.' }
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
+  // Replace strategy
   await supabase.from('site_events').delete().eq('site_id', owner.site_id)
   if (events.length) {
-    const { error } = await supabase
-      .from('site_events')
-      .insert(events.map(ev => ({ ...ev, site_id: owner.site_id })))
-    if (error) return { ok: false, error: error.message }
+    const rows = events
+      .filter(e => e.title && e.event_date)
+      .map(e => ({
+        site_id: owner.site_id,
+        title: e.title,
+        description: e.description || null,
+        event_date: e.event_date,
+        image_url: e.image_url || null,
+        active: e.active !== false,
+      }))
+    if (rows.length) {
+      const { error } = await supabase.from('site_events').insert(rows)
+      if (error) return { ok: false, error: error.message }
+    }
   }
   revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
+  return { ok: true }
+}
+
+/**
+ * Salva la sezione "Lo chef" (richiede migrazione 0008 applicata — graceful retry altrimenti).
+ */
+export interface ChefDTO {
+  chef_active: boolean
+  chef_name?: string
+  chef_role?: string
+  chef_quote?: string
+  chef_photo_url?: string
+}
+
+export async function saveMyChef(input: ChefDTO) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  const payload: any = {
+    site_id: owner.site_id,
+    chef_active: input.chef_active,
+    chef_name: input.chef_name || null,
+    chef_role: input.chef_role || null,
+    chef_quote: input.chef_quote || null,
+    chef_photo_url: input.chef_photo_url || null,
+  }
+  const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'site_id' })
+  if (error) {
+    if (/column .* does not exist|Could not find the/i.test(error.message)) {
+      return { ok: false, error: 'Sezione chef richiede la migrazione 0008 applicata al DB.' }
+    }
+    return { ok: false, error: error.message }
+  }
+  revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
   return { ok: true }
 }
 

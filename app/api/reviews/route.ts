@@ -1,32 +1,79 @@
-import { createClient } from '@/lib/supabase/server'
+/**
+ * POST /api/reviews
+ * Body: { slug, authorName, rating (1-5), text, authorEmail? }
+ *
+ * Submit pubblico di una recensione sul sito di un ristorante.
+ * Va in moderazione (show=false) — il ristoratore approva dal pannello.
+ *
+ * Storage: site_content.reviews (jsonb array). Richiede migrazione 0008 applicata.
+ */
+
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { site_id, author_name, author_email, rating, text } = body
-    if (!site_id || !author_name || !rating || !text) {
-      return NextResponse.json({ error: 'Compila tutti i campi.' }, { status: 400 })
-    }
-    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'Voto non valido.' }, { status: 400 })
-    }
-
-    const supabase = createClient()
-    const { error } = await supabase.from('site_user_reviews').insert({
-      site_id,
-      author_name: String(author_name).slice(0, 100),
-      author_email: author_email ? String(author_email).slice(0, 120) : null,
-      rating: Math.round(rating),
-      text: String(text).slice(0, 1500),
-      approved: false,
-    })
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-    return NextResponse.json({ ok: true })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Errore' }, { status: 500 })
+  let body: any = {}
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Body JSON richiesto' }, { status: 400 })
   }
+
+  const slug = String(body.slug || '').trim()
+  const authorName = String(body.authorName || body.author_name || '').trim()
+  const authorEmail = String(body.authorEmail || body.author_email || '').trim().toLowerCase()
+  const rating = Math.max(1, Math.min(5, Math.round(Number(body.rating) || 0)))
+  const text = String(body.text || '').trim().slice(0, 1500)
+
+  if (!slug || !authorName || !rating || !text) {
+    return NextResponse.json({ error: 'Compila nome, voto e recensione' }, { status: 400 })
+  }
+
+  const supabase = createAdminClient()
+  const { data: site } = await supabase
+    .from('sites')
+    .select('id, tier, status')
+    .eq('slug', slug)
+    .maybeSingle()
+
+  if (!site || site.status !== 'live') {
+    return NextResponse.json({ error: 'Sito non trovato o non pubblicato' }, { status: 404 })
+  }
+  if (site.tier === 'basic') {
+    return NextResponse.json({ error: 'Le recensioni dal sito non sono attive per questo locale' }, { status: 400 })
+  }
+
+  // Carica recensioni esistenti
+  const { data: content } = await supabase
+    .from('site_content')
+    .select('reviews')
+    .eq('site_id', site.id)
+    .maybeSingle()
+
+  if (!content) {
+    return NextResponse.json({ error: 'Sito non inizializzato' }, { status: 500 })
+  }
+
+  const existing = Array.isArray((content as any).reviews) ? (content as any).reviews : []
+  const newReview = {
+    author: authorName,
+    email: authorEmail || undefined,
+    rating,
+    text,
+    source: 'site',
+    date: new Date().toISOString(),
+    show: false,  // in moderazione
+  }
+
+  const { error } = await supabase
+    .from('site_content')
+    .update({ reviews: [...existing, newReview] })
+    .eq('site_id', site.id)
+
+  if (error) {
+    if (/column .* does not exist|Could not find the/i.test(error.message)) {
+      return NextResponse.json({ error: 'Recensioni richiedono la migrazione 0008 applicata' }, { status: 503 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, message: 'Recensione inviata. Sarà pubblicata dopo approvazione.' })
 }
