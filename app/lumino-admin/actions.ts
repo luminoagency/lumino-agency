@@ -1,0 +1,117 @@
+'use server'
+
+/**
+ * Server actions del super-admin (/lumino-admin).
+ * Accessibili SOLO se l'utente loggato è nella SUPER_ADMINS allowlist.
+ */
+
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { revalidatePath } from 'next/cache'
+import { generateSiteContent } from '@/lib/pipeline/generate'
+
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'bylumino.06@gmail.com']
+
+async function assertSuperAdmin() {
+  const sb = createClient()
+  const { data: { user } } = await sb.auth.getUser()
+  if (!user || !SUPER_ADMINS.includes(user.email || '')) {
+    throw new Error('Non autorizzato')
+  }
+  return user
+}
+
+/** Forza la pipeline AI su un sito qualsiasi (anche di altri ristoratori). */
+export async function adminGenerateSite(siteId: string) {
+  try {
+    await assertSuperAdmin()
+    const r = await generateSiteContent({ siteId })
+    if (!r.ok) return { ok: false, error: r.error }
+    revalidatePath('/lumino-admin')
+    revalidatePath('/sites/[slug]', 'page')
+    return { ok: true, template: r.template }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Cambia lo status del sito (building → live → error). */
+export async function adminSetSiteStatus(siteId: string, status: 'building' | 'live' | 'error') {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin.from('sites').update({ status }).eq('id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    revalidatePath('/sites/[slug]', 'page')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Cambia il tier (piano) di un sito. Usato quando l'utente passa di piano. */
+export async function adminSetSiteTier(siteId: string, tier: 'basic' | 'pro' | 'premium') {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin.from('sites').update({ tier }).eq('id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Approva una recensione in moderazione. */
+export async function adminApproveReview(siteId: string, reviewIndex: number) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { data: content } = await admin.from('site_content').select('reviews').eq('site_id', siteId).maybeSingle()
+    const reviews: any[] = Array.isArray((content as any)?.reviews) ? (content as any).reviews : []
+    if (!reviews[reviewIndex]) return { ok: false, error: 'Recensione non trovata' }
+    reviews[reviewIndex] = { ...reviews[reviewIndex], show: true }
+    const { error } = await admin.from('site_content').update({ reviews }).eq('site_id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Elimina una recensione (anche già pubblicata). */
+export async function adminDeleteReview(siteId: string, reviewIndex: number) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { data: content } = await admin.from('site_content').select('reviews').eq('site_id', siteId).maybeSingle()
+    const reviews: any[] = Array.isArray((content as any)?.reviews) ? (content as any).reviews : []
+    if (!reviews[reviewIndex]) return { ok: false, error: 'Recensione non trovata' }
+    reviews.splice(reviewIndex, 1)
+    const { error } = await admin.from('site_content').update({ reviews }).eq('site_id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Calcolo prezzo dinamico interno (usato dal calcolatore in dashboard). */
+export async function adminCalculatePrice(input: {
+  plan: 'basic' | 'pro' | 'premium'
+  zone: 'milano' | 'romaCentro' | 'grandeCitta' | 'cittaMedia' | 'provincia' | 'paeseRurale'
+  level: 'cinqueStelle' | 'altaFascia' | 'mediaFascia' | 'trattoria' | 'nuovoApertura'
+}) {
+  try {
+    await assertSuperAdmin()
+    const { computeDynamicPrice } = await import('@/lib/plans')
+    const price = computeDynamicPrice(input.plan, input.zone, input.level)
+    return { ok: true, price }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
