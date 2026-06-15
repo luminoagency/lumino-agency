@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { postSheetEvent } from '@/lib/integrations/googleSheets'
+import { trackEvent } from '@/lib/tracking'
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get('email') || '').trim()
@@ -60,12 +61,22 @@ export async function registerAction(formData: FormData) {
     redirect('/register?error=' + encodeURIComponent(translateAuthError(error.message)))
   }
 
-  // Sync signup to Google Sheets (fire-and-forget — never block signup on this)
+  // Sync signup to Google Sheets — fire-and-forget, MAI bloccare il signup
   try {
     const hdrs = headers()
     const ip = hdrs.get('x-forwarded-for')?.split(',')[0].trim() || hdrs.get('x-real-ip') || ''
     const userAgent = hdrs.get('user-agent') || ''
     const referrer = hdrs.get('referer') || ''
+    // Nuovo sistema (lib/tracking) — Apps Script con secret token
+    trackEvent('signup', {
+      email,
+      restaurantName,
+      plan: tier,
+      ip,
+      userAgent,
+      referrer,
+    }).catch(() => {})
+    // Vecchio sistema (lib/integrations/googleSheets) — no-op se GOOGLE_SHEETS_WEBHOOK_URL non è settato
     postSheetEvent({
       kind: 'signup',
       email,
