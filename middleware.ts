@@ -54,5 +54,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/lumino-admin/:path*', '/login', '/register'],
+  matcher: ['/admin', '/admin/:path*', '/lumino-admin', '/lumino-admin/:path*', '/login', '/register'],
 }

@@ -2,10 +2,11 @@ import { loginAction } from '../auth/actions'
 
 export const metadata = { title: 'Accedi · Lumino Agency' }
 
-export default function LoginPage({ searchParams }: { searchParams: { error?: string; registered?: string; reset?: string } }) {
+export default function LoginPage({ searchParams }: { searchParams: { error?: string; registered?: string; reset?: string; next?: string } }) {
   const errorMsg = searchParams?.error
   const registered = searchParams?.registered === '1'
   const reset = searchParams?.reset === '1'
+  const next = searchParams?.next || ''
 
   return (
     <div style={{
@@ -73,6 +74,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
         )}
 
         <form action={loginAction} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {next && <input type="hidden" name="next" value={next} />}
           <div>
             <label style={{ color: '#aaa', fontSize: 12, marginBottom: 6, display: 'block', fontWeight: 500 }}>Email</label>
             <input

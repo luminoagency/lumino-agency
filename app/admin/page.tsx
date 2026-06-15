@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 export default async function AdminPage() {
   const site = await getMySite()
   if (!site) {
-    redirect('/login?error=' + encodeURIComponent('Sessione scaduta. Accedi per gestire il tuo sito.'))
+    const next = encodeURIComponent('/admin')
+    redirect('/login?next=' + next + '&error=' + encodeURIComponent('Accedi per gestire il tuo sito.'))
   }
 
   // Il join site_content può tornare array oppure oggetto a seconda della relazione

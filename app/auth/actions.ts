@@ -8,15 +8,18 @@ import { postSheetEvent } from '@/lib/integrations/googleSheets'
 export async function loginAction(formData: FormData) {
   const email = String(formData.get('email') || '').trim()
   const password = String(formData.get('password') || '')
+  const nextRaw = String(formData.get('next') || '')
+  const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/admin'
+
   if (!email || !password) {
-    redirect('/login?error=' + encodeURIComponent('Compila tutti i campi.'))
+    redirect('/login?error=' + encodeURIComponent('Compila tutti i campi.') + '&next=' + encodeURIComponent(next))
   }
   const supabase = createClient()
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
-    redirect('/login?error=' + encodeURIComponent(translateAuthError(error.message)))
+    redirect('/login?error=' + encodeURIComponent(translateAuthError(error.message)) + '&next=' + encodeURIComponent(next))
   }
-  redirect('/admin')
+  redirect(next)
 }
 
 export async function registerAction(formData: FormData) {
