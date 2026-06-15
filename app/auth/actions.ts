@@ -110,7 +110,7 @@ export async function registerAction(formData: FormData) {
           slug,
           tier,
           active: true,
-          status: 'draft',
+          status: 'building',  // legacy DB constraint: 'building' | 'live' | 'error'
           // dominio scelto dal cliente (se ce l'ha già); se no → Lumino lo registra dopo (campo 0009)
           // Nota: custom_domain e domain_managed_by_lumino vengono inseriti solo se la migrazione 0009 è applicata
           ...(tier !== 'basic' && hasDomain === 'yes' ? { custom_domain: domain || null } : {}),

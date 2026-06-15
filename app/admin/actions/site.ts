@@ -94,12 +94,68 @@ export async function saveSiteContent(input: SiteContentInput) {
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
-  const { error } = await supabase
+  // Filtra i campi 0008/0009 se la colonna non esiste sul DB live (retry pulito)
+  const baseSafe = { site_id: owner.site_id, ...input }
+  let { error } = await supabase
     .from('site_content')
-    .upsert({ site_id: owner.site_id, ...input }, { onConflict: 'site_id' })
+    .upsert(baseSafe as any, { onConflict: 'site_id' })
+
+  if (error && /column .* does not exist|Could not find the/i.test(error.message)) {
+    // Rimuovi le colonne che probabilmente non esistono e riprova
+    const safe: any = { site_id: owner.site_id }
+    const allowed = ['restaurant_name', 'tagline', 'description', 'hero_headline', 'hero_subheadline', 'hero_image_url', 'about_title', 'about_text', 'about_image_url', 'team_photos', 'address', 'city', 'phone', 'email', 'whatsapp', 'google_place_id', 'google_maps_embed_url', 'opening_hours', 'gallery_images', 'style_override', 'social_links', 'seo_title', 'seo_description', 'seo_keywords']
+    for (const k of allowed) if (k in (input as any)) safe[k] = (input as any)[k]
+    const retry = await supabase.from('site_content').upsert(safe, { onConflict: 'site_id' })
+    error = retry.error
+  }
 
   if (error) return { ok: false, error: error.message }
   revalidatePath('/admin')
+  revalidatePath(`/sites/[slug]`, 'page')
+  return { ok: true }
+}
+
+/**
+ * Pubblica il sito: status='building' → 'live'.
+ * Il sito diventa visibile su /sites/[slug].
+ */
+export async function publishSite() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  const { error } = await supabase
+    .from('sites')
+    .update({ status: 'live' })
+    .eq('id', owner.site_id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/admin')
+  revalidatePath(`/sites/[slug]`, 'page')
+  return { ok: true }
+}
+
+/**
+ * Nasconde il sito dalla rete: status='live' → 'building'.
+ * /sites/[slug] dà 404.
+ */
+export async function unpublishSite() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  const { error } = await supabase
+    .from('sites')
+    .update({ status: 'building' })
+    .eq('id', owner.site_id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/admin')
+  revalidatePath(`/sites/[slug]`, 'page')
   return { ok: true }
 }
 
