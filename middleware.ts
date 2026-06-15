@@ -1,34 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
-/**
- * Edge-safe middleware: fa solo gate per cookie presence.
- *
- * Pattern raccomandato Next 14: middleware veloce (no Supabase calls in Edge,
- * perché @supabase/ssr trascina codice che usa __dirname → ReferenceError su Edge).
- * La validazione vera (token decode, getUser) avviene a livello di Server Component
- * dove abbiamo l'intero runtime Node.
- *
- * Risultato: middleware lascia passare se c'è un cookie sb-*-auth-token, poi
- * la page chiama getUser() che valida sul server. Se il token è scaduto/falso,
- * la page redirige a /login.
- */
-
-const ADMIN_OPEN_FOR_PREVIEW = process.env.NEXT_PUBLIC_ADMIN_OPEN === '1'
-// /lumino-admin è sempre gated (super-admin only), a prescindere dal preview flag
-const PROTECTED_PREFIXES = ADMIN_OPEN_FOR_PREVIEW ? ['/lumino-admin'] : ['/admin', '/lumino-admin']
+const PROTECTED_PREFIXES = ['/admin', '/lumino-admin']
 const GUEST_ONLY = ['/login', '/register']
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const isProtected = PROTECTED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
-  const isGuestOnly = GUEST_ONLY.some(p => pathname === p)
+  const pathname = request.nextUrl.pathname
+
+  // Trova se è una rotta gated
+  let isProtected = false
+  for (const p of PROTECTED_PREFIXES) {
+    if (pathname === p || pathname.startsWith(p + '/')) { isProtected = true; break }
+  }
+  let isGuestOnly = false
+  if (!isProtected) {
+    for (const p of GUEST_ONLY) {
+      if (pathname === p) { isGuestOnly = true; break }
+    }
+  }
 
   if (!isProtected && !isGuestOnly) return NextResponse.next()
 
-  // Presenza cookie sessione Supabase (formato sb-<project-ref>-auth-token)
-  const hasSession = request.cookies.getAll().some(c =>
-    c.name.startsWith('sb-') && c.name.includes('auth-token'),
-  )
+  // Cookie presence check (Supabase session cookie nome: sb-<projectref>-auth-token)
+  let hasSession = false
+  const all = request.cookies.getAll()
+  for (let i = 0; i < all.length; i++) {
+    const n = all[i].name
+    if (n.indexOf('sb-') === 0 && n.indexOf('auth-token') >= 0) { hasSession = true; break }
+  }
 
   if (isProtected && !hasSession) {
     const url = request.nextUrl.clone()
@@ -36,14 +34,12 @@ export function middleware(request: NextRequest) {
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
   }
-
   if (isGuestOnly && hasSession) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin'
     url.search = ''
     return NextResponse.redirect(url)
   }
-
   return NextResponse.next()
 }
 
