@@ -7,6 +7,13 @@
       "runtimeArgs": ["next", "dev"],
       "port": 3002,
       "autoPort": true
+    },
+    {
+      "name": "dev-mobile",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-H", "0.0.0.0"],
+      "port": 3003,
+      "autoPort": false
     }
   ]
 }

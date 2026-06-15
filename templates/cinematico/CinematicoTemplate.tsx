@@ -2,17 +2,22 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
+import { InteractiveEffects } from '../_shared/InteractiveEffects'
+import { StickyMobileBar } from '../_shared/StickyMobileBar'
+import { AllergenBadges } from '../_shared/AllergenBadges'
+import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 
 interface CinematicoProps {
   restaurantName: string
   tagline?: string
   description?: string
   heroImage: string
+  heroImages?: string[]
   aboutImage?: string
   menuCategories: Array<{
     name: string
     description?: string
-    items: Array<{ name: string; description?: string; price: number }>
+    items: Array<{ name: string; description?: string; price: number; allergens?: string[] }>
   }>
   galleryImages: Array<{ url: string; alt: string; caption?: string }>
   address?: string
@@ -26,6 +31,10 @@ interface CinematicoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
+  reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
+  faq?: Array<{ q: string; a: string }>
+  timeSlots?: string[]
 }
 
 const DAY_NAMES: Record<string, string> = {
@@ -70,8 +79,9 @@ function Reveal({ children, delay = 0, className = '' }: {
   )
 }
 
-function CinematicoReservationForm({ accent, bg, text, muted }: { accent: string; bg: string; text: string; muted: string }) {
+function CinematicoReservationForm({ accent, bg, text, muted, timeSlots }: { accent: string; bg: string; text: string; muted: string; timeSlots?: string[] }) {
   const [submitted, setSubmitted] = useState(false)
+  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -88,7 +98,7 @@ function CinematicoReservationForm({ accent, bg, text, muted }: { accent: string
 
   if (submitted) {
     return (
-      <section style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', borderTop: '1px solid rgba(250,242,232,0.06)' }}>
+      <section id="prenotazioni" style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', borderTop: '1px solid rgba(250,242,232,0.06)', scrollMarginTop: '2rem' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)', textAlign: 'center' }}>
           <div style={{ width: 50, height: 2, background: accent, margin: '0 auto 2rem' }} />
           <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', fontWeight: 300, marginBottom: '1rem', color: text }}>
@@ -101,7 +111,7 @@ function CinematicoReservationForm({ accent, bg, text, muted }: { accent: string
   }
 
   return (
-    <section style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', borderTop: '1px solid rgba(250,242,232,0.06)' }}>
+    <section id="prenotazioni" style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', borderTop: '1px solid rgba(250,242,232,0.06)', scrollMarginTop: '2rem' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
         <Reveal>
           <div style={{ width: 50, height: 2, background: accent, marginBottom: '2rem' }} />
@@ -116,13 +126,30 @@ function CinematicoReservationForm({ accent, bg, text, muted }: { accent: string
           onSubmit={e => { e.preventDefault(); setSubmitted(true) }}
           style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
         >
+          {timeSlots && timeSlots.length > 0 && (
+            <div className="cin-slots">
+              <div className="cin-slots-title">▸ Disponibilità per stasera</div>
+              <div className="cin-slots-row">
+                {timeSlots.map(slot => (
+                  <button
+                    key={slot}
+                    type="button"
+                    className={`cin-slot ${pickedSlot === slot ? 'active' : ''}`}
+                    onClick={() => setPickedSlot(slot)}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="cin-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
             <input required type="text" placeholder="Nome" style={inputStyle} />
             <input required type="tel" placeholder="Telefono" style={inputStyle} />
           </div>
           <div className="cin-form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
             <input required type="date" style={inputStyle} />
-            <input required type="time" style={inputStyle} />
+            <input required type="time" value={pickedSlot || ''} onChange={e => setPickedSlot(e.target.value)} style={inputStyle} />
             <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
           </div>
           <textarea
@@ -174,39 +201,46 @@ function CinematicoEvents({
 }) {
   return (
     <section style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', borderTop: '1px solid rgba(250,242,232,0.06)' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
         <Reveal>
-          <p style={{ fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem' }}>
-            In programma
-          </p>
-          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95, marginBottom: 'clamp(2rem, 4vh, 3rem)', color: text }}>
-            Eventi
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: 'clamp(2rem, 4vh, 3rem)' }}>
+            <div>
+              <p style={{ fontFamily: '"JetBrains Mono", "Courier New", monospace', fontSize: '0.65rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
+                ▶ NOW SHOWING
+              </p>
+              <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95, color: text }}>
+                Eventi
+              </h2>
+            </div>
+            <p style={{ fontFamily: '"JetBrains Mono", "Courier New", monospace', fontSize: '0.7rem', color: muted, letterSpacing: '0.15em' }}>
+              {events.length.toString().padStart(2, '0')} EVENTS · PROGRAMMATI
+            </p>
+          </div>
         </Reveal>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-          {events.map((ev, i) => (
-            <Reveal key={i} delay={i * 0.1}>
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(250,242,232,0.08)',
-                borderRadius: 4,
-                overflow: 'hidden',
-              }}>
-                {ev.imageUrl && (
-                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
-                    <img src={ev.imageUrl} alt={ev.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div className="cin-billboard">
+          {events.map((ev, i) => {
+            const d = new Date(ev.date)
+            return (
+              <Reveal key={i} delay={i * 0.1}>
+                <div className="cin-poster">
+                  <div className="cin-poster-tag">In programma</div>
+                  <div>
+                    <div className="cin-poster-date">{d.getDate().toString().padStart(2, '0')}</div>
+                    <span className="cin-poster-date-month">
+                      {d.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                    </span>
                   </div>
-                )}
-                <div style={{ padding: '1.5rem' }}>
-                  <p style={{ fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: accent, marginBottom: '0.5rem' }}>
-                    {new Date(ev.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </p>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: text, marginBottom: '0.5rem' }}>{ev.title}</h3>
-                  {ev.description && <p style={{ fontSize: '0.85rem', color: muted, lineHeight: 1.6 }}>{ev.description}</p>}
+                  <div className="cin-poster-content">
+                    <h3 className="cin-poster-title">{ev.title}</h3>
+                    {ev.description && <p className="cin-poster-desc">{ev.description}</p>}
+                    <div className="cin-poster-cta">
+                      <span>Save the date</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            )
+          })}
         </div>
       </div>
     </section>
@@ -215,10 +249,11 @@ function CinematicoEvents({
 
 export function CinematicoTemplate(props: CinematicoProps) {
   const {
-    restaurantName, tagline, description, heroImage, aboutImage,
+    restaurantName, tagline, description, heroImage, heroImages, aboutImage,
     menuCategories, galleryImages, address, phone, email,
     hours, mapsUrl, socialLinks, accentColor = '#e52d1d', logoUrl,
     tier = 'basic', events, whatsappNumber,
+    chef, reviews, faq, timeSlots,
   } = props
 
   const accent = accentColor
@@ -229,13 +264,47 @@ export function CinematicoTemplate(props: CinematicoProps) {
   const [activeCategory, setActiveCategory] = useState(0)
   const cinMenuRef = useRef<HTMLDivElement>(null)
 
+  // Hero carousel: rotate through heroImages (or just heroImage)
+  const heroSlides = heroImages && heroImages.length > 0 ? heroImages : [heroImage]
+  const [heroIdx, setHeroIdx] = useState(0)
+  useEffect(() => {
+    if (heroSlides.length < 2) return
+    const t = setInterval(() => setHeroIdx(i => (i + 1) % heroSlides.length), 4500)
+    return () => clearInterval(t)
+  }, [heroSlides.length])
+
+  // Reviews carousel index
+  const [reviewIdx, setReviewIdx] = useState(0)
+
+  // FAQ open index
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+
   useEffect(() => {
     if (cinMenuRef.current) cinMenuRef.current.scrollTo({ left: 0, behavior: 'smooth' })
   }, [activeCategory])
 
   return (
     <div style={{ background: bg, color: text, fontFamily: "'Inter', sans-serif" }}>
+      <InteractiveEffects accent={accent} scope="cin" />
       <style>{`
+        :where(div) { --ripple-color: rgba(229, 45, 29, 0.55); }
+        .cin-menu-card { position: relative; overflow: hidden; }
+        .cin-menu-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(280px circle at var(--gx, 50%) var(--gy, 50%), rgba(229,45,29,0.18), transparent 50%);
+          opacity: 0;
+          transition: opacity 0.4s;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .cin-menu-card:hover::before { opacity: 1; }
+        .cin-menu-card > * { position: relative; z-index: 1; }
+        button, .cin-btn { transition: transform 0.25s, box-shadow 0.3s, background 0.3s, color 0.3s !important; }
+        button:hover:not(.cin-cat-pill):not(.cin-cat-pill-active) {
+          transform: translateY(-2px);
+        }
         .cin-reveal {
           opacity: 0;
           transform: translateY(40px);
@@ -336,6 +405,614 @@ export function CinematicoTemplate(props: CinematicoProps) {
           .cin-gallery-item { flex: 0 0 75vw; }
         }
 
+        /* ── FILMSTRIP gallery ── */
+        .cin-filmstrip-wrap {
+          position: relative;
+          background: #000;
+          padding: 22px 0;
+          margin: 0;
+          overflow: hidden;
+        }
+        .cin-filmstrip-wrap::before,
+        .cin-filmstrip-wrap::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          height: 22px;
+          background-image:
+            linear-gradient(90deg, transparent 8px, ${bg} 8px, ${bg} 22px, transparent 22px);
+          background-size: 36px 100%;
+          background-repeat: repeat-x;
+          z-index: 3;
+        }
+        .cin-filmstrip-wrap::before { top: 0; }
+        .cin-filmstrip-wrap::after { bottom: 0; }
+        .cin-filmstrip {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          scroll-snap-type: x mandatory;
+          scrollbar-width: none;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+        }
+        .cin-filmstrip::-webkit-scrollbar { display: none; }
+        .cin-frame {
+          flex: 0 0 clamp(280px, 32vw, 480px);
+          scroll-snap-align: start;
+          position: relative;
+          aspect-ratio: 16/9;
+          overflow: hidden;
+          background: #111;
+          cursor: pointer;
+          filter: saturate(0.6) contrast(1.05);
+          transition: filter 0.5s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cin-frame:hover {
+          filter: saturate(1.1) contrast(1);
+          transform: scale(1.015);
+          z-index: 2;
+        }
+        .cin-frame img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cin-frame:hover img { transform: scale(1.06); }
+        .cin-frame-tag {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.65rem;
+          letter-spacing: 0.15em;
+          color: ${accent};
+          background: rgba(0,0,0,0.7);
+          padding: 4px 8px;
+          z-index: 2;
+          font-weight: 600;
+        }
+        .cin-frame-cap {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 2rem 1rem 1rem;
+          background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+          opacity: 0;
+          transform: translateY(15px);
+          transition: opacity 0.4s, transform 0.4s;
+          color: ${text};
+          font-size: 0.85rem;
+          font-weight: 500;
+          z-index: 2;
+        }
+        .cin-frame:hover .cin-frame-cap { opacity: 1; transform: translateY(0); }
+
+        /* ── EVENTS as cinema posters ── */
+        .cin-billboard {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+        }
+        .cin-poster {
+          position: relative;
+          aspect-ratio: 2/3;
+          background: linear-gradient(160deg, #1a0e0c 0%, #0a0606 100%);
+          border: 1px solid ${accent}33;
+          overflow: hidden;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          cursor: pointer;
+          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s, border-color 0.5s;
+        }
+        .cin-poster::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 30% 0%, ${accent}22 0%, transparent 50%),
+            repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px);
+          pointer-events: none;
+        }
+        .cin-poster:hover {
+          transform: translateY(-12px) rotate(-1deg);
+          box-shadow: 0 30px 60px ${accent}40, 0 0 0 1px ${accent}77 inset;
+          border-color: ${accent};
+        }
+        .cin-poster-tag {
+          position: relative;
+          z-index: 2;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.65rem;
+          letter-spacing: 0.25em;
+          color: ${accent};
+          text-transform: uppercase;
+          font-weight: 600;
+        }
+        .cin-poster-tag::before {
+          content: '●';
+          color: ${accent};
+          animation: cinBlink 2s ease-in-out infinite;
+        }
+        @keyframes cinBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        @keyframes cinKenBurns {
+          from { transform: scale(1.02); }
+          to { transform: scale(1.12); }
+        }
+
+        /* ── CHEF section ── */
+        .cin-chef {
+          padding: clamp(4rem, 10vh, 8rem) 0;
+          border-top: 1px solid rgba(250, 242, 232, 0.06);
+          position: relative;
+        }
+        .cin-chef-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.1fr;
+          gap: clamp(2rem, 5vw, 5rem);
+          align-items: center;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+        }
+        .cin-chef-photo {
+          position: relative;
+          aspect-ratio: 4/5;
+          overflow: hidden;
+          filter: grayscale(0.4) contrast(1.05);
+          transition: filter 0.6s;
+        }
+        .cin-chef-photo:hover { filter: grayscale(0); }
+        .cin-chef-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .cin-chef-photo-meta {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.65rem;
+          letter-spacing: 0.25em;
+          color: ${accent};
+          background: rgba(0,0,0,0.7);
+          padding: 4px 10px;
+          z-index: 2;
+        }
+        .cin-chef-photo-years {
+          position: absolute;
+          bottom: 24px;
+          right: 24px;
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(3rem, 5vw, 4.5rem);
+          font-weight: 900;
+          line-height: 0.85;
+          color: ${text};
+          letter-spacing: -0.04em;
+          z-index: 2;
+        }
+        .cin-chef-photo-years small {
+          font-size: 0.65rem;
+          font-weight: 500;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: ${accent};
+          display: block;
+          margin-top: 0.25rem;
+        }
+        .cin-chef-content { position: relative; }
+        .cin-chef-quote {
+          font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+          font-weight: 300;
+          line-height: 1.3;
+          color: ${text};
+          letter-spacing: -0.01em;
+          font-style: italic;
+          margin-bottom: 2rem;
+          position: relative;
+          padding-left: 1.5rem;
+        }
+        .cin-chef-quote::before {
+          content: '“';
+          position: absolute;
+          left: -0.25rem;
+          top: -0.5rem;
+          font-size: 5rem;
+          line-height: 1;
+          color: ${accent};
+          font-family: Georgia, serif;
+        }
+        .cin-chef-sign {
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.7rem;
+          letter-spacing: 0.25em;
+          color: ${accent};
+          text-transform: uppercase;
+          margin-bottom: 0.4rem;
+        }
+        .cin-chef-name {
+          font-size: 1.5rem;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          color: ${text};
+          margin-bottom: 0.25rem;
+        }
+        .cin-chef-role {
+          font-size: 0.85rem;
+          color: ${muted};
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+        /* ── PRESS / REVIEWS ── */
+        .cin-press-bar {
+          border-top: 1px solid rgba(250, 242, 232, 0.06);
+          border-bottom: 1px solid rgba(250, 242, 232, 0.06);
+          padding: 2rem 0;
+          background: rgba(255,255,255,0.015);
+        }
+        .cin-press-bar-inner {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+          display: flex;
+          align-items: center;
+          gap: 3rem;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .cin-press-stat {
+          display: flex;
+          align-items: center;
+          gap: 0.9rem;
+        }
+        .cin-press-stars {
+          font-size: 1.4rem;
+          color: ${accent};
+          letter-spacing: 0.15em;
+        }
+        .cin-press-score {
+          font-size: 1.8rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: ${text};
+        }
+        .cin-press-meta {
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.7rem;
+          letter-spacing: 0.2em;
+          color: ${muted};
+          text-transform: uppercase;
+        }
+        .cin-press-divider {
+          width: 1px;
+          height: 30px;
+          background: ${muted}55;
+        }
+
+        .cin-reviews {
+          padding: clamp(4rem, 10vh, 8rem) 0;
+          border-top: 1px solid rgba(250, 242, 232, 0.06);
+        }
+        .cin-reviews-stage {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+          position: relative;
+        }
+        .cin-review-card {
+          opacity: 0;
+          display: none;
+          padding: 2.5rem 2rem;
+          border: 1px solid rgba(250, 242, 232, 0.1);
+          background: rgba(255, 255, 255, 0.02);
+          transition: opacity 0.6s;
+          position: relative;
+        }
+        .cin-review-card.active {
+          display: block;
+          animation: cinReviewIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes cinReviewIn {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .cin-review-stars {
+          color: ${accent};
+          font-size: 1.1rem;
+          letter-spacing: 0.15em;
+          margin-bottom: 1.5rem;
+        }
+        .cin-review-text {
+          font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+          line-height: 1.5;
+          font-weight: 300;
+          color: ${text};
+          margin-bottom: 2rem;
+          font-style: italic;
+        }
+        .cin-review-byline {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 1rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid rgba(250, 242, 232, 0.08);
+        }
+        .cin-review-author {
+          font-weight: 700;
+          font-size: 1rem;
+          letter-spacing: 0.05em;
+          color: ${text};
+        }
+        .cin-review-source {
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.7rem;
+          letter-spacing: 0.2em;
+          color: ${accent};
+          text-transform: uppercase;
+        }
+        .cin-review-nav {
+          display: flex;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 2rem;
+        }
+        .cin-review-dot {
+          width: 26px;
+          height: 2px;
+          background: rgba(250, 242, 232, 0.2);
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          transition: background 0.3s, width 0.3s;
+        }
+        .cin-review-dot.active {
+          background: ${accent};
+          width: 40px;
+        }
+
+        /* ── FAQ accordion ── */
+        .cin-faq {
+          padding: clamp(4rem, 10vh, 8rem) 0;
+          border-top: 1px solid rgba(250, 242, 232, 0.06);
+        }
+        .cin-faq-list {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+        }
+        .cin-faq-item {
+          border-bottom: 1px solid rgba(250, 242, 232, 0.08);
+        }
+        .cin-faq-q {
+          width: 100%;
+          background: none;
+          border: none;
+          padding: 1.5rem 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: ${text};
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(1rem, 1.6vw, 1.2rem);
+          font-weight: 500;
+          letter-spacing: -0.01em;
+          cursor: pointer;
+          text-align: left;
+          gap: 1rem;
+          transition: color 0.3s;
+        }
+        .cin-faq-q:hover { color: ${accent}; }
+        .cin-faq-icon {
+          width: 28px;
+          height: 28px;
+          border: 1px solid rgba(250, 242, 232, 0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: transform 0.4s, border-color 0.3s;
+          font-size: 0.9rem;
+        }
+        .cin-faq-item.open .cin-faq-icon {
+          transform: rotate(45deg);
+          border-color: ${accent};
+          color: ${accent};
+        }
+        .cin-faq-a {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1), padding 0.4s;
+        }
+        .cin-faq-item.open .cin-faq-a {
+          max-height: 400px;
+          padding-bottom: 1.5rem;
+        }
+        .cin-faq-a p {
+          color: ${muted};
+          line-height: 1.7;
+          font-size: 1rem;
+        }
+
+        /* ── NEWSLETTER ── */
+        .cin-newsletter {
+          padding: clamp(4rem, 8vh, 6rem) 0;
+          border-top: 1px solid rgba(250, 242, 232, 0.06);
+          background: linear-gradient(180deg, rgba(229, 45, 29, 0.04) 0%, transparent 100%);
+        }
+        .cin-newsletter-inner {
+          max-width: 700px;
+          margin: 0 auto;
+          padding: 0 clamp(1.5rem, 5vw, 4rem);
+          text-align: center;
+        }
+        .cin-newsletter h2 {
+          font-size: clamp(1.8rem, 3vw, 2.5rem);
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          margin-bottom: 1rem;
+        }
+        .cin-newsletter p {
+          color: ${muted};
+          margin-bottom: 2rem;
+          font-size: 1rem;
+        }
+        .cin-newsletter-form {
+          display: flex;
+          gap: 0.5rem;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+        .cin-newsletter-input {
+          flex: 1;
+          padding: 1rem 1.2rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(250, 242, 232, 0.15);
+          color: ${text};
+          font-family: inherit;
+          font-size: 0.95rem;
+          outline: none;
+          transition: border-color 0.3s;
+        }
+        .cin-newsletter-input:focus { border-color: ${accent}; }
+        .cin-newsletter-btn {
+          padding: 1rem 2rem;
+          background: ${accent};
+          color: #fff;
+          border: none;
+          font-family: inherit;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background 0.3s;
+        }
+        .cin-newsletter-btn:hover { background: #b81f12; }
+
+        /* ── Time slots in reservation ── */
+        .cin-slots {
+          margin: 1rem 0 1.25rem;
+        }
+        .cin-slots-title {
+          font-size: 0.7rem;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: ${accent};
+          margin-bottom: 0.75rem;
+          font-weight: 600;
+        }
+        .cin-slots-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .cin-slot {
+          padding: 0.7rem 1.1rem;
+          background: transparent;
+          color: ${text};
+          border: 1px solid rgba(250, 242, 232, 0.2);
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 0.85rem;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+          transition: all 0.25s;
+        }
+        .cin-slot:hover { border-color: ${accent}; color: ${accent}; }
+        .cin-slot.active {
+          background: ${accent};
+          color: #fff;
+          border-color: ${accent};
+        }
+
+        @media (max-width: 768px) {
+          .cin-chef-grid { grid-template-columns: 1fr; }
+          .cin-press-bar-inner { gap: 1.5rem; }
+          .cin-newsletter-form { flex-direction: column; }
+          .cin-press-divider { display: none; }
+        }
+        .cin-poster-date {
+          position: relative;
+          z-index: 2;
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(4rem, 8vw, 6.5rem);
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          line-height: 0.85;
+          color: ${text};
+        }
+        .cin-poster-date-month {
+          font-size: 0.85rem;
+          font-weight: 600;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: ${accent};
+          margin-top: 0.5rem;
+          display: block;
+        }
+        .cin-poster-content {
+          position: relative;
+          z-index: 2;
+        }
+        .cin-poster-title {
+          font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          line-height: 1.05;
+          color: ${text};
+          margin-bottom: 0.6rem;
+        }
+        .cin-poster-desc {
+          font-size: 0.85rem;
+          line-height: 1.5;
+          color: ${muted};
+          margin-bottom: 1.2rem;
+        }
+        .cin-poster-cta {
+          font-family: 'JetBrains Mono', 'Courier New', monospace;
+          font-size: 0.65rem;
+          letter-spacing: 0.25em;
+          color: ${accent};
+          text-transform: uppercase;
+          font-weight: 600;
+          padding-top: 1rem;
+          border-top: 1px solid ${accent}33;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .cin-poster-cta::after {
+          content: '→';
+          font-family: 'Inter', sans-serif;
+          font-size: 1.1rem;
+          transition: transform 0.3s;
+        }
+        .cin-poster:hover .cin-poster-cta::after { transform: translateX(6px); }
+
+        @media (max-width: 768px) {
+          .cin-frame { flex: 0 0 80vw; }
+          .cin-billboard { grid-template-columns: 1fr 1fr; gap: 1rem; }
+          .cin-poster { padding: 1rem; }
+          .cin-poster-date { font-size: 3.2rem; }
+        }
+        @media (max-width: 480px) {
+          .cin-billboard { grid-template-columns: 1fr; }
+        }
+
         /* ── Responsive: About split grid ── */
         @media (max-width: 768px) {
           .cin-about-grid {
@@ -377,16 +1054,31 @@ export function CinematicoTemplate(props: CinematicoProps) {
 
       {/* ── HERO ── */}
       <section style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <Image
-            src={heroImage}
-            alt={restaurantName}
-            fill
-            priority
-            sizes="100vw"
-            style={{ objectFit: 'cover', objectPosition: 'center' }}
-          />
-        </div>
+        {heroSlides.map((src, i) => (
+          <div
+            key={i}
+            className="cin-hero-slide"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              opacity: i === heroIdx ? 1 : 0,
+              transition: 'opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+          >
+            <Image
+              src={src}
+              alt={restaurantName}
+              fill
+              priority={i === 0}
+              sizes="100vw"
+              style={{
+                objectFit: 'cover',
+                objectPosition: 'center',
+                animation: i === heroIdx ? 'cinKenBurns 6s ease-out forwards' : 'none',
+              }}
+            />
+          </div>
+        ))}
         <div style={{
           position: 'absolute', inset: 0,
           background: `linear-gradient(to bottom, ${bg}33 0%, ${bg}99 50%, ${bg} 100%)`,
@@ -399,8 +1091,13 @@ export function CinematicoTemplate(props: CinematicoProps) {
           padding: '0 1.5rem clamp(4rem, 10vh, 8rem)',
         }}>
           {logoUrl && (
-            <div style={{ marginBottom: '2rem', opacity: 0.9 }}>
-              <Image src={logoUrl} alt="Logo" width={60} height={60} style={{ filter: 'brightness(10)' }} />
+            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src={logoUrl}
+                alt={restaurantName}
+                height={80}
+                style={{ height: 80, width: 'auto', maxWidth: 260, filter: 'brightness(0) invert(1)', opacity: 0.95, objectFit: 'contain' }}
+              />
             </div>
           )}
           <h1 style={{
@@ -423,8 +1120,51 @@ export function CinematicoTemplate(props: CinematicoProps) {
               {tagline}
             </p>
           )}
+          <div style={{ marginTop: '2.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <a href="#menu" style={{
+              padding: '14px 28px',
+              background: accent,
+              color: '#fff',
+              fontFamily: 'inherit',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'transform 0.25s, box-shadow 0.3s',
+              boxShadow: `0 8px 24px ${accent}55`,
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              Esplora il menu
+            </a>
+            {tier !== 'basic' && (
+              <a href="#prenotazioni" style={{
+                padding: '14px 28px',
+                background: 'transparent',
+                color: text,
+                fontFamily: 'inherit',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                border: `1px solid ${text}55`,
+                cursor: 'pointer',
+                transition: 'all 0.25s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = `${text}55`; e.currentTarget.style.color = text }}
+              >
+                Prenota tavolo
+              </a>
+            )}
+          </div>
           <div style={{
-            marginTop: '3rem', width: 1, height: 60,
+            marginTop: '2.5rem', width: 1, height: 50,
             background: `linear-gradient(to bottom, ${accent}, transparent)`,
           }} />
         </div>
@@ -501,7 +1241,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
       )}
 
       {/* ── MENU ── */}
-      <section style={{ padding: 'clamp(4rem, 10vh, 8rem) 0' }}>
+      <section id="menu" style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', scrollMarginTop: '2rem' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
           <Reveal>
             <p style={{
@@ -539,9 +1279,17 @@ export function CinematicoTemplate(props: CinematicoProps) {
           {/* Horizontal scroll cards */}
           <div ref={cinMenuRef} className="cin-menu-scroll">
             {menuCategories[activeCategory]?.items.map((item, i) => (
-              <div key={`${activeCategory}-${i}`} className="cin-menu-card">
+              <div key={`${activeCategory}-${i}`} className="cin-menu-card glow-card"
+                onMouseMove={e => {
+                  const r = e.currentTarget.getBoundingClientRect()
+                  e.currentTarget.style.setProperty('--gx', `${((e.clientX-r.left)/r.width)*100}%`)
+                  e.currentTarget.style.setProperty('--gy', `${((e.clientY-r.top)/r.height)*100}%`)
+                }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: text, lineHeight: 1.3, maxWidth: '70%', margin: 0 }}>{item.name}</h4>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 600, color: text, lineHeight: 1.3, maxWidth: '70%', margin: 0 }}>
+                    {item.name}
+                    <AllergenBadges allergens={item.allergens} variant="minimal" />
+                  </h4>
                   <span style={{ fontSize: '0.95rem', fontWeight: 700, color: accent, whiteSpace: 'nowrap' }}>
                     {item.price.toFixed(2)} €
                   </span>
@@ -578,35 +1326,179 @@ export function CinematicoTemplate(props: CinematicoProps) {
             </h2>
           </Reveal>
         </div>
-        <div className="cin-gallery-strip" style={{ paddingLeft: 'clamp(1.5rem, 5vw, 4rem)' }}>
-          {galleryImages.map((img, i) => (
-            <div key={i} className="cin-gallery-item">
-              <Image
-                src={img.url}
-                alt={img.alt}
-                fill
-                sizes="40vw"
-                style={{ objectFit: 'cover' }}
-              />
-              {img.caption && (
-                <div className="cin-caption">
-                  <p style={{ fontSize: '0.8rem', fontWeight: 500, color: text }}>
-                    {img.caption}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)', marginBottom: '1.5rem' }}>
+          <p style={{ fontFamily: '"JetBrains Mono", "Courier New", monospace', fontSize: '0.65rem', letterSpacing: '0.2em', color: muted, textTransform: 'uppercase' }}>
+            REEL 01 · {galleryImages.length.toString().padStart(2, '0')} TAKES · 35MM
+          </p>
+        </div>
+        <div className="cin-filmstrip-wrap">
+          <div className="cin-filmstrip">
+            {galleryImages.map((img, i) => (
+              <div key={i} className="cin-frame">
+                <span className="cin-frame-tag">TAKE {(i + 1).toString().padStart(3, '0')}</span>
+                <img src={img.url} alt={img.alt} loading="lazy" />
+                {img.caption && (
+                  <div className="cin-frame-cap">{img.caption}</div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
+      {/* ── PRESS BAR (social proof bar) ── */}
+      {reviews && (
+        <section className="cin-press-bar">
+          <div className="cin-press-bar-inner">
+            <div className="cin-press-stat">
+              <span className="cin-press-stars">★★★★★</span>
+              <span className="cin-press-score">{reviews.score.toFixed(1)}</span>
+              <span className="cin-press-meta">/ 5 · {reviews.source}</span>
+            </div>
+            <div className="cin-press-divider" />
+            <div className="cin-press-stat">
+              <span className="cin-press-meta">{reviews.count}+ recensioni</span>
+            </div>
+            {chef?.years && (
+              <>
+                <div className="cin-press-divider" />
+                <div className="cin-press-stat">
+                  <span className="cin-press-meta">{chef.years}+ anni di cucina</span>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── CHEF section ── */}
+      {chef && (
+        <section className="cin-chef">
+          <div className="cin-chef-grid">
+            <Reveal>
+              <div className="cin-chef-photo">
+                <span className="cin-chef-photo-meta">DIRECTOR · CHEF</span>
+                {chef.photo && (
+                  <img src={chef.photo} alt={chef.name} loading="lazy" />
+                )}
+                {chef.years && (
+                  <div className="cin-chef-photo-years">
+                    {chef.years}<small>anni · in cucina</small>
+                  </div>
+                )}
+              </div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="cin-chef-content">
+                <p className="cin-chef-sign">▸ NEL CAST</p>
+                <p className="cin-chef-quote">{chef.quote}</p>
+                <div className="cin-chef-name">{chef.name}</div>
+                <div className="cin-chef-role">— {chef.role}</div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+      )}
+
+      {/* ── REVIEWS carousel ── */}
+      {reviews && reviews.items.length > 0 && (
+        <section className="cin-reviews">
+          <div className="cin-reviews-stage">
+            <Reveal>
+              <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+                <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
+                  ▶ TESTIMONIANZE
+                </p>
+                <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95 }}>
+                  La critica
+                </h2>
+              </div>
+            </Reveal>
+            {reviews.items.map((rev, i) => (
+              <div key={i} className={`cin-review-card ${i === reviewIdx ? 'active' : ''}`}>
+                <div className="cin-review-stars">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</div>
+                <p className="cin-review-text">"{rev.text}"</p>
+                <div className="cin-review-byline">
+                  <span className="cin-review-author">— {rev.author}</span>
+                  <span className="cin-review-source">{rev.source || reviews.source} · {rev.date || ''}</span>
+                </div>
+              </div>
+            ))}
+            <div className="cin-review-nav">
+              {reviews.items.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`cin-review-dot ${i === reviewIdx ? 'active' : ''}`}
+                  onClick={() => setReviewIdx(i)}
+                  aria-label={`Recensione ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Leave a review */}
+            <div style={{ marginTop: '4rem' }}>
+              <LeaveReviewForm accent={accent} theme="dark" scope="cin-lr" labelFont="Inter" />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── RESERVATION FORM (Pro + Premium) ── */}
-      {tier !== 'basic' && <CinematicoReservationForm accent={accent} bg={bg} text={text} muted={muted} />}
+      {tier !== 'basic' && <CinematicoReservationForm accent={accent} bg={bg} text={text} muted={muted} timeSlots={timeSlots} />}
 
       {/* ── EVENTS (Pro + Premium) ── */}
       {tier !== 'basic' && events && events.length > 0 && (
         <CinematicoEvents events={events} accent={accent} bg={bg} text={text} muted={muted} />
       )}
+
+      {/* ── FAQ accordion ── */}
+      {faq && faq.length > 0 && (
+        <section className="cin-faq">
+          <Reveal>
+            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+              <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
+                Q & A
+              </p>
+              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.95 }}>
+                Domande frequenti
+              </h2>
+            </div>
+          </Reveal>
+          <div className="cin-faq-list">
+            {faq.map((item, i) => (
+              <div key={i} className={`cin-faq-item ${openFaq === i ? 'open' : ''}`}>
+                <button
+                  className="cin-faq-q"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  type="button"
+                >
+                  <span>{item.q}</span>
+                  <span className="cin-faq-icon">+</span>
+                </button>
+                <div className="cin-faq-a">
+                  <p>{item.a}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── NEWSLETTER ── */}
+      <section className="cin-newsletter">
+        <div className="cin-newsletter-inner">
+          <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
+            ◉ STAY TUNED
+          </p>
+          <h2>Coming next</h2>
+          <p>Le nostre serate speciali, i nuovi piatti, le sneak peek. Una mail al mese, niente spam.</p>
+          <form className="cin-newsletter-form" onSubmit={e => { e.preventDefault(); const t = e.currentTarget; const btn = t.querySelector('.cin-newsletter-btn') as HTMLButtonElement; if (btn) btn.textContent = '✓ Iscritto'; }}>
+            <input className="cin-newsletter-input" type="email" required placeholder="tu@email.it" />
+            <button type="submit" className="cin-newsletter-btn">Iscriviti</button>
+          </form>
+        </div>
+      </section>
 
       {/* ── CONTACT ── */}
       <section style={{
@@ -767,6 +1659,17 @@ export function CinematicoTemplate(props: CinematicoProps) {
           </svg>
         </a>
       )}
+
+      {/* Sticky mobile bottom bar */}
+      <StickyMobileBar
+        phone={phone}
+        address={address}
+        hasReservation={tier !== 'basic'}
+        whatsapp={tier === 'premium' ? whatsappNumber : undefined}
+        accent={accent}
+        theme="dark"
+        scope="cin-smb"
+      />
     </div>
   )
 }

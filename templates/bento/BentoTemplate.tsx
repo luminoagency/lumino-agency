@@ -6,6 +6,10 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
+import { InteractiveEffects } from '../_shared/InteractiveEffects'
+import { StickyMobileBar } from '../_shared/StickyMobileBar'
+import { AllergenBadges } from '../_shared/AllergenBadges'
+import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -16,6 +20,7 @@ interface MenuItemData {
   description?: string
   price: number
   photo_url?: string
+  allergens?: string[]
 }
 
 interface MenuCategoryData {
@@ -50,6 +55,11 @@ export interface BentoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  heroImages?: string[]
+  chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
+  reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
+  faq?: Array<{ q: string; a: string }>
+  timeSlots?: string[]
 }
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
@@ -115,9 +125,28 @@ export function BentoTemplate(props: BentoProps) {
     tier = 'basic',
     events,
     whatsappNumber,
+    heroImages,
+    chef,
+    reviews,
+    faq,
+    timeSlots,
   } = props
 
   const [reservationSubmitted, setReservationSubmitted] = useState(false)
+
+  // Hero carousel
+  const heroSlides = heroImages && heroImages.length > 0 ? heroImages : [heroImage]
+  const [heroIdx, setHeroIdx] = useState(0)
+  useEffect(() => {
+    if (heroSlides.length < 2) return
+    const t = setInterval(() => setHeroIdx(i => (i + 1) % heroSlides.length), 4500)
+    return () => clearInterval(t)
+  }, [heroSlides.length])
+
+  // Reviews + FAQ + slot state
+  const [reviewIdx, setReviewIdx] = useState(0)
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeCategory, setActiveCategory] = useState(0)
@@ -285,147 +314,370 @@ export function BentoTemplate(props: BentoProps) {
         overflowX: 'hidden',
       }}
     >
-      {/* ═══════════════════════ HERO ═══════════════════════ */}
-      <section
-        style={{
-          position: 'relative',
-          height: '70vh',
-          minHeight: '500px',
-          maxHeight: '800px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem 1.5rem',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Background gradient mesh */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: `
-              radial-gradient(ellipse 80% 60% at 20% 30%, ${accentBg(accentColor, 0.08)}, transparent),
-              radial-gradient(ellipse 60% 50% at 80% 70%, ${accentBg(accentColor, 0.06)}, transparent),
-              radial-gradient(ellipse 50% 40% at 50% 50%, rgba(200,200,255,0.05), transparent)
-            `,
-            zIndex: 0,
-          }}
-        />
-        {/* Floating dots decoration */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, opacity: 0.4 }}>
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                width: `${6 + (i % 4) * 4}px`,
-                height: `${6 + (i % 4) * 4}px`,
-                borderRadius: '50%',
-                background: i % 3 === 0 ? accentBg(accentColor, 0.3) : 'rgba(0,0,0,0.06)',
-                left: `${8 + (i * 7.3) % 84}%`,
-                top: `${10 + (i * 11.7) % 75}%`,
-              }}
-            />
-          ))}
-        </div>
+      <InteractiveEffects accent={accentColor} scope="ben" />
+      <style jsx global>{`
+        :root { --ripple-color: ${accentColor}55; }
+        [data-bento-menu-card] { position: relative; overflow: hidden; }
+        [data-bento-menu-card]::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(280px circle at var(--gx, 50%) var(--gy, 50%), ${accentColor}22, transparent 50%);
+          opacity: 0;
+          transition: opacity 0.4s;
+          pointer-events: none;
+          z-index: 0;
+        }
+        [data-bento-menu-card]:hover::before { opacity: 1; }
+        [data-bento-menu-card] > * { position: relative; z-index: 1; }
+        button { transition: transform 0.25s, box-shadow 0.3s, background 0.3s, color 0.3s !important; }
+        button:hover { transform: translateY(-2px); }
+      `}</style>
+      {/* ═══════════════════════ HERO — true bento grid ═══════════════════════ */}
+      <section className="bento-hero-section">
+        <div className="bento-hero-grid">
 
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '900px' }}>
-          <h1
-            data-bento-hero-title
-            style={{
-              fontSize: 'clamp(3rem, 10vw, 7rem)',
-              fontWeight: 900,
-              lineHeight: 1.05,
-              letterSpacing: '-0.03em',
-              margin: 0,
-              color: 'var(--bento-text)',
-            }}
-          >
-            {restaurantName}
-          </h1>
-
-          {/* Preview image strip */}
-          {heroPreviewImages.length > 0 && (
-            <div
-              data-bento-hero-strip
-              style={{
-                display: 'flex',
-                gap: '12px',
-                justifyContent: 'center',
-                marginTop: '1.5rem',
-              }}
-            >
-              {heroPreviewImages.map((img, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: 'var(--bento-shadow)',
-                    position: 'relative',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Image
-                    src={img.url}
-                    alt={img.alt}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    sizes="80px"
-                  />
-                </div>
-              ))}
+          {/* Main feature card with hero image + title overlay */}
+          <div className="bento-hero-feature" data-bento-card>
+            {heroSlides.map((src, i) => (
+              <div
+                key={i}
+                className="bento-hero-bg"
+                style={{
+                  backgroundImage: `url(${src})`,
+                  opacity: i === heroIdx ? 1 : 0,
+                }}
+              />
+            ))}
+            <div className="bento-hero-overlay" />
+            <div className="bento-hero-content">
+              {logoUrl && (
+                <img src={logoUrl} alt="Logo" className="bento-hero-logo" />
+              )}
+              <h1 className="bento-hero-title">{restaurantName}</h1>
+              {tagline && <p className="bento-hero-tagline">{tagline}</p>}
+              <div className="bento-hero-actions">
+                <a href="#menu" className="bento-hero-cta bento-hero-cta-primary">Scopri il menu →</a>
+                {tier !== 'basic' && (
+                  <a href="#prenotazioni" className="bento-hero-cta bento-hero-cta-ghost">Prenota</a>
+                )}
+              </div>
             </div>
-          )}
+          </div>
 
-          {tagline && (
-            <p
-              data-bento-hero-tagline
-              style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.35rem)',
-                color: 'var(--bento-muted)',
-                marginTop: '1.25rem',
-                fontWeight: 400,
-                letterSpacing: '0.01em',
-              }}
-            >
-              {tagline}
-            </p>
-          )}
+          {/* Top-right: dish 1 */}
+          <div className="bento-hero-dish bento-hero-dish-1" data-bento-card>
+            {galleryImages[0] && (
+              <img src={galleryImages[0].url} alt={galleryImages[0].alt} loading="eager" />
+            )}
+            <div className="bento-hero-dish-tag">★ Signature</div>
+          </div>
 
-          <a
-            href="#menu"
-            data-bento-hero-cta
-            style={{
-              display: 'inline-block',
-              marginTop: '1.75rem',
-              padding: '14px 36px',
-              background: accentColor,
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '1rem',
-              borderRadius: '999px',
-              textDecoration: 'none',
-              boxShadow: `0 4px 20px ${accentBg(accentColor, 0.35)}`,
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = `0 6px 28px ${accentBg(accentColor, 0.45)}`
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = `0 4px 20px ${accentBg(accentColor, 0.35)}`
-            }}
-          >
-            Scopri il menu
-          </a>
+          {/* Stat tile */}
+          <div className="bento-hero-stat" data-bento-card>
+            {reviews ? (
+              <>
+                <div className="bento-hero-stat-stars">★★★★★</div>
+                <div className="bento-hero-stat-score">{reviews.score.toFixed(1)}<span>/5</span></div>
+                <div className="bento-hero-stat-meta">{reviews.count}+ recensioni · {reviews.source}</div>
+              </>
+            ) : (
+              <>
+                <div className="bento-hero-stat-score">Dal<span style={{ display: 'block' }}>1962</span></div>
+                <div className="bento-hero-stat-meta">tradizione di famiglia</div>
+              </>
+            )}
+          </div>
+
+          {/* Mid-right: dish 2 */}
+          <div className="bento-hero-dish bento-hero-dish-2" data-bento-card>
+            {galleryImages[1] && (
+              <img src={galleryImages[1].url} alt={galleryImages[1].alt} loading="eager" />
+            )}
+            <div className="bento-hero-dish-tag">Bowl del giorno</div>
+          </div>
+
+          {/* Hours / open now */}
+          <div className="bento-hero-info" data-bento-card>
+            <div className="bento-hero-info-status">
+              <span className="bento-hero-dot" /> Aperto ora
+            </div>
+            <div className="bento-hero-info-line">{address?.split(',')[0]}</div>
+            <div className="bento-hero-info-action">
+              <a href={`tel:${phone}`}>{phone}</a>
+            </div>
+          </div>
+
+          {/* Bottom-right: dish 3 */}
+          <div className="bento-hero-dish bento-hero-dish-3" data-bento-card>
+            {galleryImages[2] && (
+              <img src={galleryImages[2].url} alt={galleryImages[2].alt} loading="eager" />
+            )}
+            <div className="bento-hero-dish-tag">Dolce del weekend</div>
+          </div>
+
         </div>
       </section>
+      <style>{`
+        .bento-hero-section {
+          padding: 1.5rem;
+          max-width: 1300px;
+          margin: 0 auto;
+        }
+        .bento-hero-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr;
+          grid-template-rows: 1fr 1fr 1fr;
+          gap: 16px;
+          height: min(80vh, 720px);
+          min-height: 560px;
+        }
+        .bento-hero-feature {
+          grid-column: 1;
+          grid-row: 1 / span 3;
+          position: relative;
+          overflow: hidden;
+          border-radius: var(--bento-radius);
+          box-shadow: var(--bento-shadow);
+        }
+        .bento-hero-bg {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          transition: opacity 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+          animation: bentoKenBurns 8s ease-out infinite alternate;
+        }
+        @keyframes bentoKenBurns {
+          from { transform: scale(1.02); }
+          to { transform: scale(1.12); }
+        }
+        .bento-hero-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 65%, rgba(0,0,0,0.85) 100%);
+        }
+        .bento-hero-content {
+          position: absolute;
+          inset: 0;
+          padding: 2.5rem 2.25rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          color: #fff;
+        }
+        .bento-hero-logo {
+          height: 48px;
+          width: auto;
+          margin-bottom: auto;
+          filter: brightness(0) invert(1);
+          opacity: 0.95;
+          align-self: flex-start;
+        }
+        .bento-hero-title {
+          font-size: clamp(2.8rem, 7vw, 5.5rem);
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          line-height: 0.95;
+          margin: 0 0 0.85rem;
+          color: #fff;
+        }
+        .bento-hero-tagline {
+          font-size: clamp(1rem, 1.6vw, 1.25rem);
+          font-weight: 400;
+          color: rgba(255,255,255,0.85);
+          letter-spacing: 0.01em;
+          margin-bottom: 1.5rem;
+          max-width: 500px;
+          line-height: 1.5;
+        }
+        .bento-hero-actions {
+          display: flex;
+          gap: 0.6rem;
+          flex-wrap: wrap;
+        }
+        .bento-hero-cta {
+          padding: 14px 28px;
+          font-weight: 700;
+          font-size: 0.95rem;
+          border-radius: 100px;
+          text-decoration: none;
+          transition: transform 0.25s, box-shadow 0.25s, background 0.25s, color 0.25s;
+        }
+        .bento-hero-cta:hover { transform: translateY(-2px); }
+        .bento-hero-cta-primary {
+          background: var(--bento-accent, ${accentColor});
+          color: white;
+          box-shadow: 0 6px 22px rgba(0,0,0,0.25);
+        }
+        .bento-hero-cta-ghost {
+          background: rgba(255,255,255,0.95);
+          color: #1a1a1a;
+        }
+        /* Dish tiles */
+        .bento-hero-dish {
+          position: relative;
+          overflow: hidden;
+          border-radius: var(--bento-radius);
+          box-shadow: var(--bento-shadow);
+          transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s;
+          cursor: pointer;
+        }
+        .bento-hero-dish:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 18px 40px rgba(0,0,0,0.16);
+        }
+        .bento-hero-dish img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .bento-hero-dish:hover img { transform: scale(1.08); }
+        .bento-hero-dish-tag {
+          position: absolute;
+          bottom: 12px;
+          left: 12px;
+          padding: 6px 12px;
+          background: rgba(255,255,255,0.96);
+          color: #1a1a1a;
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          border-radius: 100px;
+          backdrop-filter: blur(8px);
+          z-index: 2;
+        }
+        .bento-hero-dish-1 { grid-column: 2; grid-row: 1; }
+        .bento-hero-dish-2 { grid-column: 2; grid-row: 2; }
+        .bento-hero-dish-3 { grid-column: 3; grid-row: 3; }
+
+        /* Stat tile */
+        .bento-hero-stat {
+          grid-column: 3;
+          grid-row: 1;
+          background: var(--bento-accent, ${accentColor});
+          color: white;
+          padding: 1.5rem 1.25rem;
+          border-radius: var(--bento-radius);
+          box-shadow: 0 8px 24px ${accentBg(accentColor, 0.3)};
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+        }
+        .bento-hero-stat::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%),
+            radial-gradient(circle at 20% 90%, rgba(0,0,0,0.12) 0%, transparent 60%);
+          pointer-events: none;
+        }
+        .bento-hero-stat > * { position: relative; z-index: 1; }
+        .bento-hero-stat-stars {
+          font-size: 1rem;
+          letter-spacing: 0.15em;
+          margin-bottom: 0.4rem;
+          opacity: 0.95;
+        }
+        .bento-hero-stat-score {
+          font-size: clamp(2.2rem, 3.8vw, 3.2rem);
+          font-weight: 900;
+          line-height: 0.95;
+          letter-spacing: -0.04em;
+        }
+        .bento-hero-stat-score span {
+          font-size: 0.55em;
+          font-weight: 600;
+          opacity: 0.7;
+        }
+        .bento-hero-stat-meta {
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-top: 0.5rem;
+          opacity: 0.9;
+        }
+
+        /* Info tile */
+        .bento-hero-info {
+          grid-column: 2;
+          grid-row: 3;
+          background: var(--bento-surface);
+          padding: 1.5rem 1.25rem;
+          border-radius: var(--bento-radius);
+          box-shadow: var(--bento-shadow);
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+          justify-content: center;
+        }
+        .bento-hero-info-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: #5e8a3a;
+        }
+        .bento-hero-dot {
+          display: inline-block;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: #5e8a3a;
+          box-shadow: 0 0 0 4px rgba(94, 138, 58, 0.2);
+          animation: bentoDotPulse 2s ease-in-out infinite;
+        }
+        @keyframes bentoDotPulse {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(94, 138, 58, 0.2); }
+          50% { box-shadow: 0 0 0 8px rgba(94, 138, 58, 0); }
+        }
+        .bento-hero-info-line {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--bento-text);
+          line-height: 1.3;
+        }
+        .bento-hero-info-action a {
+          color: var(--bento-accent, ${accentColor});
+          font-weight: 700;
+          text-decoration: none;
+          font-size: 0.95rem;
+        }
+        .bento-hero-info-action a:hover { text-decoration: underline; }
+
+        @media (max-width: 900px) {
+          .bento-hero-grid {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 60vh 180px 180px 130px;
+            height: auto;
+            min-height: 0;
+          }
+          .bento-hero-feature { grid-column: 1 / span 2; grid-row: 1; }
+          .bento-hero-dish-1 { grid-column: 1; grid-row: 2; }
+          .bento-hero-stat { grid-column: 2; grid-row: 2; }
+          .bento-hero-dish-2 { grid-column: 1; grid-row: 3; }
+          .bento-hero-dish-3 { grid-column: 2; grid-row: 3; }
+          .bento-hero-info { grid-column: 1 / span 2; grid-row: 4; }
+        }
+        @media (max-width: 540px) {
+          .bento-hero-grid {
+            grid-template-rows: 65vh 160px 160px 130px;
+            gap: 10px;
+          }
+          .bento-hero-content { padding: 1.5rem 1.25rem; }
+          .bento-hero-title { font-size: clamp(2.2rem, 9vw, 3.5rem); }
+          .bento-hero-tagline { font-size: 0.95rem; margin-bottom: 1rem; }
+          .bento-hero-cta { padding: 11px 22px; font-size: 0.85rem; }
+          .bento-hero-stat-score { font-size: 2rem; }
+          .bento-hero-dish-tag { font-size: 0.62rem; padding: 5px 10px; }
+        }
+      `}</style>
 
       {/* ═══════════════════════ BENTO ABOUT ═══════════════════════ */}
       <section style={{ padding: '3rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
@@ -670,6 +922,11 @@ export function BentoTemplate(props: BentoProps) {
             <div
               key={`${activeCategory}-${item.name}-${i}`}
               data-bento-menu-card
+              onMouseMove={e => {
+                const r = e.currentTarget.getBoundingClientRect()
+                e.currentTarget.style.setProperty('--gx', `${((e.clientX-r.left)/r.width)*100}%`)
+                e.currentTarget.style.setProperty('--gy', `${((e.clientY-r.top)/r.height)*100}%`)
+              }}
               style={{
                 flex: '0 0 300px',
                 scrollSnapAlign: 'start',
@@ -721,7 +978,10 @@ export function BentoTemplate(props: BentoProps) {
               </div>
               {/* Text */}
               <div style={{ padding: '1rem 1.25rem 1.25rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>{item.name}</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {item.name}
+                  <AllergenBadges allergens={item.allergens} variant="icon" />
+                </h3>
                 {item.description && (
                   <p style={{
                     fontSize: '0.82rem', color: 'var(--bento-muted)', marginTop: '0.35rem',
@@ -754,76 +1014,37 @@ export function BentoTemplate(props: BentoProps) {
           >
             Galleria
           </h2>
-          <div
-            className="bento-gallery-masonry"
-            style={{
-              columns: 'clamp(1, calc((100% - 200px) / 300 + 1), 3)',
-              columnCount: 3,
-              columnGap: '16px',
-            }}
-          >
-            {galleryImages.map((img, i) => (
-              <div
-                key={i}
-                data-bento-gallery-item
-                onClick={() => openLightbox(i)}
-                style={{
-                  breakInside: 'avoid',
-                  marginBottom: '16px',
-                  borderRadius: 'var(--bento-radius)',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  boxShadow: 'var(--bento-shadow)',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.03)'
-                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)'
-                  const cap = e.currentTarget.querySelector('[data-gallery-caption]') as HTMLElement
-                  if (cap) cap.style.transform = 'translateY(0)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.boxShadow = 'var(--bento-shadow)'
-                  const cap = e.currentTarget.querySelector('[data-gallery-caption]') as HTMLElement
-                  if (cap) cap.style.transform = 'translateY(100%)'
-                }}
-              >
-                <Image
-                  src={img.url}
-                  alt={img.alt}
-                  width={600}
-                  height={i % 3 === 0 ? 800 : i % 3 === 1 ? 600 : 450}
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block',
-                  }}
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                {img.caption && (
-                  <div
-                    data-gallery-caption
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      padding: '2rem 1rem 1rem',
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
-                      color: '#fff',
-                      fontSize: '0.9rem',
-                      fontWeight: 500,
-                      transform: 'translateY(100%)',
-                      transition: 'transform 0.3s ease',
-                    }}
-                  >
-                    {img.caption}
-                  </div>
-                )}
-              </div>
-            ))}
+          <div className="bento-gallery-grid">
+            {galleryImages.map((img, i) => {
+              // Bento layout pattern: 1st=large, 2nd=wide, 3rd=tall, 4th=wide, rest=normal
+              const layoutClass =
+                i === 0 ? 'bento-gallery-cell-large' :
+                i === 1 ? 'bento-gallery-cell-wide' :
+                i === 4 ? 'bento-gallery-cell-tall' : ''
+              const tags = ['Signature', 'Atmosfera', 'Dolci', 'Cucina', 'Sala', 'Bevande']
+              return (
+                <div
+                  key={i}
+                  data-bento-gallery-item
+                  className={`bento-gallery-cell ${layoutClass}`}
+                  onClick={() => openLightbox(i)}
+                >
+                  <span className="bento-gallery-badge">{tags[i % tags.length]}</span>
+                  <Image
+                    src={img.url}
+                    alt={img.alt}
+                    width={800}
+                    height={600}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    style={{ objectFit: 'cover' }}
+                  />
+                  <div className="bento-gallery-overlay" />
+                  {img.caption && (
+                    <div className="bento-gallery-caption">{img.caption}</div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           {/* Lightbox */}
@@ -838,7 +1059,7 @@ export function BentoTemplate(props: BentoProps) {
 
       {/* ═══════════════════════ RESERVATION FORM (Pro + Premium) ═══════════════════════ */}
       {tier !== 'basic' && (
-        <section style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
+        <section id="prenotazioni" style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto', scrollMarginTop: '2rem' }}>
           <h2
             data-bento-section-title
             style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}
@@ -870,6 +1091,18 @@ export function BentoTemplate(props: BentoProps) {
                 gap: '1.25rem',
               }}
             >
+              {timeSlots && timeSlots.length > 0 && (
+                <div className="bento-slots">
+                  <div className="bento-slots-title">Disponibilità per stasera</div>
+                  <div className="bento-slots-row">
+                    {timeSlots.map(slot => (
+                      <button key={slot} type="button" className={`bento-slot ${pickedSlot === slot ? 'active' : ''}`} onClick={() => setPickedSlot(slot)}>
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="bento-form-grid-2">
                 <input required type="text" placeholder="Nome" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
                 <input required type="tel" placeholder="Telefono" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
@@ -920,38 +1153,136 @@ export function BentoTemplate(props: BentoProps) {
           >
             Eventi
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-            {events.map((ev, i) => (
-              <div
-                key={i}
-                data-bento-card
-                style={{
-                  background: 'var(--bento-surface)',
-                  borderRadius: 'var(--bento-radius)',
-                  overflow: 'hidden',
-                  boxShadow: 'var(--bento-shadow)',
-                  transition: 'transform 0.25s, box-shadow 0.25s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.1)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--bento-shadow)' }}
-              >
-                {ev.imageUrl && (
-                  <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
-                    <img src={ev.imageUrl} alt={ev.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div className="bento-events-grid">
+            {events.map((ev, i) => {
+              const d = new Date(ev.date)
+              // featured = first, wide = 3rd if exists
+              const layoutClass =
+                i === 0 ? 'bento-event-featured' :
+                i === 2 && events.length > 3 ? 'bento-event-wide' : ''
+              const badges = ['SPECIALE', 'LIVE', 'BRUNCH', 'DEGUSTAZIONE', 'WORKSHOP']
+              return (
+                <div key={i} data-bento-card className={`bento-event-tile ${layoutClass}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                    <div className="bento-event-badge">{badges[i % badges.length]}</div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="bento-event-day">{d.getDate().toString().padStart(2, '0')}</div>
+                      <div className="bento-event-month">
+                        {d.toLocaleDateString('it-IT', { month: 'short' })}
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div style={{ padding: '1.5rem' }}>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 600, color: accentColor, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {new Date(ev.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </p>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>{ev.title}</h3>
-                  {ev.description && <p style={{ fontSize: '0.85rem', color: 'var(--bento-muted)', lineHeight: 1.5 }}>{ev.description}</p>}
+                  <div>
+                    <h3 className="bento-event-title">{ev.title}</h3>
+                    {ev.description && <p className="bento-event-desc">{ev.description}</p>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════ PRESS BAR ═══════════════════════ */}
+      {reviews && (
+        <section style={{ padding: '0 1.5rem' }}>
+          <div className="bento-press">
+            <div className="bento-press-block">
+              <span className="bento-press-stars">★★★★★</span>
+              <span className="bento-press-score">{reviews.score.toFixed(1)}</span>
+              <span className="bento-press-meta">/ 5 · {reviews.source}</span>
+            </div>
+            <div className="bento-press-pipe" />
+            <div className="bento-press-block">
+              <span className="bento-press-meta">{reviews.count}+ recensioni</span>
+            </div>
+            {chef?.years && (
+              <>
+                <div className="bento-press-pipe" />
+                <div className="bento-press-block">
+                  <span className="bento-press-meta">{chef.years}+ anni di cucina</span>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════ CHEF ═══════════════════════ */}
+      {chef && (
+        <section className="bento-chef">
+          <div className="bento-chef-card bento-chef-photo">
+            <span className="bento-chef-badge">Il volto del locale</span>
+            {chef.photo && <img src={chef.photo} alt={chef.name} loading="lazy" />}
+          </div>
+          <div className="bento-chef-card bento-chef-content">
+            <div>
+              <p className="bento-chef-eyebrow">Lo chef</p>
+              <p className="bento-chef-quote">"{chef.quote}"</p>
+            </div>
+            <div className="bento-chef-sign">
+              <div className="bento-chef-name">{chef.name}</div>
+              <div className="bento-chef-role">{chef.role}{chef.years ? ` · ${chef.years} anni di esperienza` : ''}</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════ REVIEWS ═══════════════════════ */}
+      {reviews && reviews.items.length > 0 && (
+        <section className="bento-reviews">
+          <h2 data-bento-section-title style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
+            Le voci dei nostri ospiti
+          </h2>
+          <div className="bento-reviews-grid">
+            {reviews.items.slice(0, 3).map((rev, i) => (
+              <div key={i} className="bento-review">
+                <div className="bento-review-stars">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</div>
+                <p className="bento-review-text">"{rev.text}"</p>
+                <div className="bento-review-byline">
+                  <span className="bento-review-author">{rev.author}</span>
+                  <span className="bento-review-source">{rev.source}</span>
                 </div>
               </div>
             ))}
           </div>
+          <div style={{ marginTop: '3rem' }}>
+            <LeaveReviewForm accent={accentColor} theme="light" scope="ben-lr" labelFont="Inter" />
+          </div>
         </section>
       )}
+
+      {/* ═══════════════════════ FAQ ═══════════════════════ */}
+      {faq && faq.length > 0 && (
+        <section className="bento-faq">
+          <h2 data-bento-section-title style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.02em', textAlign: 'center' }}>
+            Domande frequenti
+          </h2>
+          {faq.map((item, i) => (
+            <div key={i} className={`bento-faq-item ${openFaq === i ? 'open' : ''}`}>
+              <button className="bento-faq-q" type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+                <span>{item.q}</span>
+                <span className="bento-faq-icon">+</span>
+              </button>
+              <div className="bento-faq-a">
+                <p>{item.a}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* ═══════════════════════ NEWSLETTER ═══════════════════════ */}
+      <section style={{ padding: '0 1.5rem' }}>
+        <div className="bento-newsletter">
+          <h2>Resta aggiornato</h2>
+          <p>Novità del menu, eventi e offerte. Una mail al mese, niente spam.</p>
+          <form className="bento-newsletter-form" onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
+            <input type="email" required placeholder="tu@email.it" />
+            <button type="submit">Iscriviti</button>
+          </form>
+        </div>
+      </section>
 
       {/* ═══════════════════════ CONTACT CARDS ═══════════════════════ */}
       <section style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
@@ -1337,6 +1668,16 @@ export function BentoTemplate(props: BentoProps) {
         </a>
       )}
 
+      <StickyMobileBar
+        phone={phone}
+        address={address}
+        hasReservation={tier !== 'basic'}
+        whatsapp={tier === 'premium' ? whatsappNumber : undefined}
+        accent={accentColor}
+        theme="light"
+        scope="ben-smb"
+      />
+
       {/* ═══════════════════════ RESPONSIVE STYLES ═══════════════════════ */}
       <style>{`
         /* Hide scrollbar on category pills and menu scroll */
@@ -1376,6 +1717,497 @@ export function BentoTemplate(props: BentoProps) {
           grid-column: span 2;
           grid-row: span 2;
         }
+
+        /* ── CHEF section (bento-style) ── */
+        .bento-chef {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          padding: 4rem 1.5rem;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+        .bento-chef-card {
+          background: var(--bento-surface);
+          border-radius: var(--bento-radius);
+          box-shadow: var(--bento-shadow);
+          overflow: hidden;
+          position: relative;
+          transition: transform 0.4s, box-shadow 0.4s;
+        }
+        .bento-chef-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+        }
+        .bento-chef-photo {
+          aspect-ratio: 3/4;
+          overflow: hidden;
+          position: relative;
+        }
+        .bento-chef-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .bento-chef-badge {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          padding: 6px 12px;
+          background: var(--bento-accent, ${accentColor});
+          color: white;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          border-radius: 100px;
+          z-index: 2;
+        }
+        .bento-chef-content {
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .bento-chef-eyebrow {
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: var(--bento-accent, ${accentColor});
+          margin-bottom: 0.75rem;
+        }
+        .bento-chef-quote {
+          font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+          font-weight: 500;
+          line-height: 1.4;
+          color: var(--bento-text);
+          letter-spacing: -0.01em;
+          margin-bottom: 2rem;
+        }
+        .bento-chef-sign {
+          padding-top: 1.5rem;
+          border-top: 1px solid var(--bento-muted, #999)15;
+        }
+        .bento-chef-name {
+          font-size: 1.2rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+        .bento-chef-role {
+          font-size: 0.85rem;
+          color: var(--bento-muted);
+          margin-top: 0.25rem;
+        }
+
+        /* ── REVIEWS bento ── */
+        .bento-press {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+          justify-content: center;
+          padding: 1.75rem 1.5rem;
+          margin: 2rem auto;
+          max-width: 1100px;
+          background: var(--bento-surface);
+          border-radius: var(--bento-radius);
+          box-shadow: var(--bento-shadow);
+        }
+        .bento-press-block {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .bento-press-stars { font-size: 1.3rem; color: var(--bento-accent, ${accentColor}); letter-spacing: 0.15em; }
+        .bento-press-score { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+        .bento-press-meta { font-size: 0.8rem; color: var(--bento-muted); font-weight: 600; }
+        .bento-press-pipe { width: 1px; height: 32px; background: var(--bento-muted, #999)33; }
+
+        .bento-reviews {
+          padding: 4rem 1.5rem;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+        .bento-reviews-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+        .bento-review {
+          background: var(--bento-surface);
+          border-radius: var(--bento-radius);
+          padding: 1.75rem;
+          box-shadow: var(--bento-shadow);
+          transition: transform 0.4s, box-shadow 0.4s;
+        }
+        .bento-review:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+        .bento-review:first-child {
+          grid-column: span 2;
+          background: linear-gradient(135deg, var(--bento-accent, ${accentColor}) 0%, color-mix(in oklch, var(--bento-accent, ${accentColor}) 60%, #000) 100%);
+          color: white;
+        }
+        .bento-review-stars { color: var(--bento-accent, ${accentColor}); font-size: 1rem; letter-spacing: 0.15em; margin-bottom: 1rem; }
+        .bento-review:first-child .bento-review-stars { color: white; opacity: 0.95; }
+        .bento-review-text {
+          font-size: 0.95rem;
+          line-height: 1.6;
+          font-weight: 500;
+          margin-bottom: 1.25rem;
+        }
+        .bento-review:first-child .bento-review-text { font-size: 1.15rem; font-weight: 600; }
+        .bento-review-byline {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.75rem;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(0,0,0,0.08);
+        }
+        .bento-review:first-child .bento-review-byline { border-color: rgba(255,255,255,0.2); }
+        .bento-review-author { font-weight: 700; }
+        .bento-review-source { opacity: 0.65; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.65rem; }
+
+        /* ── FAQ ── */
+        .bento-faq {
+          padding: 4rem 1.5rem;
+          max-width: 850px;
+          margin: 0 auto;
+        }
+        .bento-faq-item {
+          background: var(--bento-surface);
+          border-radius: var(--bento-radius);
+          margin-bottom: 12px;
+          box-shadow: var(--bento-shadow);
+          overflow: hidden;
+          transition: box-shadow 0.3s;
+        }
+        .bento-faq-item.open {
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .bento-faq-q {
+          width: 100%;
+          background: none;
+          border: none;
+          padding: 1.4rem 1.75rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: var(--bento-text);
+          font-family: inherit;
+          font-size: 1.05rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          cursor: pointer;
+          text-align: left;
+          gap: 1rem;
+          transition: color 0.3s;
+        }
+        .bento-faq-q:hover { color: var(--bento-accent, ${accentColor}); }
+        .bento-faq-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: var(--bento-bg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: var(--bento-accent, ${accentColor});
+          transition: transform 0.4s;
+          flex-shrink: 0;
+        }
+        .bento-faq-item.open .bento-faq-icon { transform: rotate(45deg); }
+        .bento-faq-a {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .bento-faq-item.open .bento-faq-a { max-height: 400px; }
+        .bento-faq-a p {
+          padding: 0 1.75rem 1.5rem;
+          color: var(--bento-muted);
+          line-height: 1.7;
+          font-size: 0.95rem;
+        }
+
+        /* ── NEWSLETTER ── */
+        .bento-newsletter {
+          max-width: 1100px;
+          margin: 4rem auto;
+          padding: 3rem;
+          background: linear-gradient(135deg, var(--bento-accent, ${accentColor}) 0%, color-mix(in oklch, var(--bento-accent, ${accentColor}) 65%, #000) 100%);
+          border-radius: var(--bento-radius);
+          color: white;
+          text-align: center;
+          box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        }
+        .bento-newsletter h2 {
+          font-size: clamp(1.7rem, 3vw, 2.5rem);
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          margin-bottom: 0.75rem;
+        }
+        .bento-newsletter p {
+          opacity: 0.9;
+          margin-bottom: 1.75rem;
+          font-size: 1rem;
+        }
+        .bento-newsletter-form {
+          display: flex;
+          gap: 0.5rem;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+        .bento-newsletter input {
+          flex: 1;
+          padding: 0.95rem 1.25rem;
+          border: none;
+          border-radius: 100px;
+          background: rgba(255,255,255,0.95);
+          font-family: inherit;
+          font-size: 0.95rem;
+          color: #1a1a1a;
+          outline: none;
+        }
+        .bento-newsletter button {
+          padding: 0.95rem 1.75rem;
+          border: none;
+          border-radius: 100px;
+          background: #1a1a1a;
+          color: white;
+          font-family: inherit;
+          font-size: 0.85rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: transform 0.25s;
+        }
+        .bento-newsletter button:hover { transform: translateY(-2px); }
+
+        /* Time slots */
+        .bento-slots {
+          margin: 0.5rem 0 1.5rem;
+        }
+        .bento-slots-title {
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--bento-accent, ${accentColor});
+          margin-bottom: 0.75rem;
+        }
+        .bento-slots-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .bento-slot {
+          padding: 0.7rem 1.1rem;
+          background: var(--bento-bg);
+          color: var(--bento-text);
+          border: 1.5px solid var(--bento-muted, #999)30;
+          border-radius: 12px;
+          font-family: inherit;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.25s;
+        }
+        .bento-slot:hover { border-color: var(--bento-accent, ${accentColor}); transform: translateY(-2px); }
+        .bento-slot.active {
+          background: var(--bento-accent, ${accentColor});
+          color: white;
+          border-color: var(--bento-accent, ${accentColor});
+        }
+
+        /* ── BENTO GALLERY GRID — true asymmetric ── */
+        .bento-gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          grid-auto-rows: 200px;
+          gap: 14px;
+        }
+        .bento-gallery-cell {
+          position: relative;
+          overflow: hidden;
+          border-radius: var(--bento-radius);
+          cursor: pointer;
+          box-shadow: var(--bento-shadow);
+          transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s;
+        }
+        .bento-gallery-cell:hover {
+          transform: translateY(-6px) scale(1.015);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+        }
+        .bento-gallery-cell img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .bento-gallery-cell:hover img { transform: scale(1.08); }
+        .bento-gallery-cell-large {
+          grid-column: span 2;
+          grid-row: span 2;
+        }
+        .bento-gallery-cell-wide {
+          grid-column: span 2;
+        }
+        .bento-gallery-cell-tall {
+          grid-row: span 2;
+        }
+        .bento-gallery-badge {
+          position: absolute;
+          top: 14px;
+          left: 14px;
+          z-index: 3;
+          padding: 6px 12px;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          background: rgba(255,255,255,0.95);
+          color: var(--bento-bg, #1a1a1a);
+          border-radius: 100px;
+          backdrop-filter: blur(8px);
+        }
+        .bento-gallery-cell-large .bento-gallery-badge {
+          font-size: 0.75rem;
+          padding: 8px 16px;
+        }
+        .bento-gallery-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.55) 100%);
+          opacity: 0;
+          transition: opacity 0.4s;
+          z-index: 2;
+        }
+        .bento-gallery-cell:hover .bento-gallery-overlay { opacity: 1; }
+        .bento-gallery-caption {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          padding: 1.5rem;
+          z-index: 3;
+          color: white;
+          font-size: 0.95rem;
+          font-weight: 500;
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 0.4s, transform 0.4s;
+        }
+        .bento-gallery-cell:hover .bento-gallery-caption {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* ── BENTO EVENTS GRID — asymmetric ── */
+        .bento-events-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+        .bento-event-tile {
+          position: relative;
+          background: var(--bento-surface);
+          border-radius: var(--bento-radius);
+          padding: 1.75rem;
+          box-shadow: var(--bento-shadow);
+          transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 220px;
+        }
+        .bento-event-tile:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 18px 45px rgba(0,0,0,0.15);
+        }
+        .bento-event-featured {
+          grid-column: span 2;
+          grid-row: span 2;
+          min-height: 460px;
+          background: linear-gradient(135deg, var(--bento-accent, #FF6B35) 0%, color-mix(in oklch, var(--bento-accent, #FF6B35) 60%, #c14a1f) 100%);
+          color: white;
+        }
+        .bento-event-featured::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%),
+            radial-gradient(circle at 20% 90%, rgba(0,0,0,0.15) 0%, transparent 60%);
+          pointer-events: none;
+        }
+        .bento-event-featured > * { position: relative; z-index: 2; }
+        .bento-event-wide {
+          grid-column: span 2;
+        }
+        .bento-event-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: rgba(255,255,255,0.15);
+          border-radius: 100px;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          backdrop-filter: blur(8px);
+          width: max-content;
+        }
+        .bento-event-badge::before {
+          content: '●';
+          font-size: 0.5rem;
+          animation: bentoDot 2s ease-in-out infinite;
+        }
+        @keyframes bentoDot {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        .bento-event-tile:not(.bento-event-featured) .bento-event-badge {
+          background: color-mix(in oklch, var(--bento-accent, #FF6B35) 15%, transparent);
+          color: var(--bento-accent, #FF6B35);
+        }
+        .bento-event-day {
+          font-size: clamp(3rem, 5vw, 4.5rem);
+          font-weight: 900;
+          letter-spacing: -0.04em;
+          line-height: 0.85;
+        }
+        .bento-event-featured .bento-event-day {
+          font-size: clamp(5rem, 9vw, 8rem);
+        }
+        .bento-event-month {
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          opacity: 0.85;
+          margin-top: 0.3rem;
+        }
+        .bento-event-title {
+          font-size: 1.2rem;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          line-height: 1.15;
+          margin-bottom: 0.5rem;
+        }
+        .bento-event-featured .bento-event-title {
+          font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+          margin-bottom: 0.75rem;
+        }
+        .bento-event-desc {
+          font-size: 0.9rem;
+          line-height: 1.5;
+          opacity: 0.85;
+        }
+        .bento-event-featured .bento-event-desc { font-size: 1.05rem; }
 
         /* ── Reservation form grids ── */
         .bento-form-grid-2 {
@@ -1432,6 +2264,39 @@ export function BentoTemplate(props: BentoProps) {
           .bento-gallery-masonry {
             column-count: 1 !important;
           }
+        }
+
+        /* Gallery + Events bento responsive */
+        @media (max-width: 1024px) {
+          .bento-gallery-grid { grid-template-columns: repeat(3, 1fr); grid-auto-rows: 180px; }
+          .bento-events-grid { grid-template-columns: repeat(3, 1fr); }
+          .bento-event-featured { min-height: 380px; }
+        }
+        @media (max-width: 768px) {
+          .bento-gallery-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 160px; }
+          .bento-gallery-cell-large { grid-column: span 2; grid-row: span 2; }
+          .bento-gallery-cell-wide { grid-column: span 2; }
+          .bento-gallery-cell-tall { grid-row: span 1; }
+          .bento-events-grid { grid-template-columns: 1fr 1fr; }
+          .bento-event-featured { grid-column: span 2; grid-row: span 1; min-height: 320px; }
+          .bento-event-wide { grid-column: span 2; }
+        }
+        @media (max-width: 480px) {
+          .bento-gallery-grid { grid-template-columns: 1fr; }
+          .bento-gallery-cell-large,
+          .bento-gallery-cell-wide,
+          .bento-gallery-cell-tall { grid-column: span 1; grid-row: span 1; }
+          .bento-events-grid { grid-template-columns: 1fr; }
+          .bento-event-featured,
+          .bento-event-wide { grid-column: span 1; }
+        }
+        @media (max-width: 768px) {
+          .bento-chef { grid-template-columns: 1fr; }
+          .bento-reviews-grid { grid-template-columns: 1fr; }
+          .bento-review:first-child { grid-column: span 1; }
+          .bento-newsletter-form { flex-direction: column; }
+          .bento-press { flex-direction: column; gap: 0.75rem; }
+          .bento-press-pipe { width: 60%; height: 1px; }
         }
       `}</style>
     </div>
