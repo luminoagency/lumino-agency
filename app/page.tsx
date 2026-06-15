@@ -3,7 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowUpRight, Play, Sparkles, LayoutGrid, Gem, Clock, Globe } from 'lucide-react'
+import {
+  ArrowUpRight, Play, Sparkles, LayoutGrid, Gem, Clock, Globe,
+  Check, Mail, Instagram,
+} from 'lucide-react'
+import { PLANS, SALES_TERMS } from '@/lib/plans'
 
 /* ────────────────────────────  CONFIG  ──────────────────────────── */
 
@@ -556,6 +560,505 @@ function CapabilitiesSection() {
   )
 }
 
+/* ───────────────────────  PROCESS / 4 STEPS  ─────────────────────── */
+
+const STEPS = [
+  {
+    n: '01', t: 'Ti registri',
+    d: 'Form a 5 step. Scegli il piano, ci dici il nome del locale, eventualmente WhatsApp e sezione chef. 90 secondi totali.',
+  },
+  {
+    n: '02', t: 'Paghi la prima rata',
+    d: '50% all\'avvio del lavoro. Link Stripe sicuro. Niente abbonamenti — Lumino è una tantum.',
+  },
+  {
+    n: '03', t: 'L\'AI lavora',
+    d: 'In 24 ore: Claude scrive i testi, sceglie le foto, organizza il menu. Tu controlli, noi rifiniamo prima della consegna.',
+  },
+  {
+    n: '04', t: 'Vai live',
+    d: 'Approvi, paghi il saldo, pubblichiamo. Modifichi tutto in autonomia dal pannello quando vuoi.',
+  },
+]
+
+function ProcessSection() {
+  return (
+    <section id="process" style={{
+      position: 'relative', padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 80px)',
+      background: '#000', overflow: 'hidden',
+    }}>
+      {/* subtle gradient bg */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(circle at 20% 30%, rgba(70,30,100,0.15), transparent 50%), radial-gradient(circle at 80% 70%, rgba(180,0,140,0.10), transparent 50%)',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto' }}>
+        <FadeUp delay={0}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-body)', margin: '0 0 22px' }}>
+            // Come funziona
+          </p>
+        </FadeUp>
+        <FadeUp delay={0.1}>
+          <h2 style={{
+            fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+            color: '#fff', fontSize: 'clamp(2.6rem, 7vw, 5rem)',
+            lineHeight: 0.9, letterSpacing: '-3px',
+            margin: '0 0 64px',
+          }}>
+            Quattro passi.<br/>Niente più.
+          </h2>
+        </FadeUp>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: 20,
+        }}>
+          {STEPS.map((s, i) => (
+            <FadeUp key={s.n} delay={0.2 + i * 0.1} className="liquid-glass" style={{
+              borderRadius: '1.25rem', padding: 28,
+              minHeight: 220, display: 'flex', flexDirection: 'column',
+            }}>
+              <p style={{
+                fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+                color: '#B600A8', fontSize: '2.5rem', lineHeight: 1,
+                margin: '0 0 16px', letterSpacing: '-1px',
+              }}>{s.n}</p>
+              <h3 style={{
+                fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+                color: '#fff', fontSize: '1.5rem', lineHeight: 1.1,
+                margin: '0 0 12px', letterSpacing: '-1px',
+              }}>{s.t}</h3>
+              <p style={{
+                fontFamily: 'var(--font-body)', fontWeight: 300,
+                fontSize: 13, color: 'rgba(255,255,255,0.85)',
+                lineHeight: 1.5, margin: 0,
+              }}>{s.d}</p>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────  PIANI / PRICING  ─────────────────────── */
+
+const PLAN_TAGS: Record<string, string[]> = {
+  basic: ['Sito completo', 'Menu + allergeni', 'Orari + mappa', 'Recensioni Google'],
+  pro: ['Tutto Basic', 'Prenotazioni', 'WhatsApp', 'Eventi', 'Newsletter', 'Dominio'],
+  premium: ['Tutto Pro', 'Foto custom', 'Modifica testi', 'CRM clienti', 'Video AI', 'Supporto 1h'],
+}
+
+function PricingSection() {
+  return (
+    <section id="piani" style={{
+      position: 'relative', padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 80px)',
+      background: '#000', overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(circle at 30% 80%, rgba(180,0,140,0.10), transparent 55%), radial-gradient(circle at 80% 20%, rgba(50,80,200,0.10), transparent 60%)',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto' }}>
+        <FadeUp delay={0}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-body)', margin: '0 0 22px' }}>
+            // Piani
+          </p>
+        </FadeUp>
+        <FadeUp delay={0.1}>
+          <h2 style={{
+            fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+            color: '#fff', fontSize: 'clamp(2.6rem, 7vw, 5rem)',
+            lineHeight: 0.9, letterSpacing: '-3px',
+            margin: '0 0 16px',
+          }}>
+            Tre piani.<br/>Una sola scelta.
+          </h2>
+        </FadeUp>
+        <FadeUp delay={0.2}>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontWeight: 300,
+            fontSize: 15, color: 'rgba(255,255,255,0.85)',
+            lineHeight: 1.5, margin: '0 0 56px', maxWidth: 620,
+          }}>
+            Pagamento unico. Nessun abbonamento. Si parte con il 50% all'avvio del lavoro, saldo alla consegna.
+          </p>
+        </FadeUp>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 22, alignItems: 'stretch',
+        }}>
+          {PLANS.map((p, i) => {
+            const tags = PLAN_TAGS[p.key] || []
+            const featured = p.key === 'pro'
+            return (
+              <FadeUp key={p.key} delay={0.3 + i * 0.1}
+                className={featured ? 'liquid-glass-strong' : 'liquid-glass'}
+                style={{
+                  borderRadius: '1.5rem', padding: 32,
+                  display: 'flex', flexDirection: 'column', gap: 18,
+                  ...(featured ? { transform: 'scale(1.02)' } : {}),
+                }}
+              >
+                {featured && (
+                  <span style={{
+                    alignSelf: 'flex-start',
+                    background: '#B600A8', color: '#fff',
+                    padding: '4px 12px', borderRadius: 9999,
+                    fontSize: 10.5, fontWeight: 700, letterSpacing: '0.16em',
+                    textTransform: 'uppercase', fontFamily: 'var(--font-body)',
+                  }}>Più scelto</span>
+                )}
+                <h3 style={{
+                  fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+                  color: '#fff', fontSize: '2rem', lineHeight: 1,
+                  margin: 0, letterSpacing: '-1px',
+                }}>{p.name}</h3>
+                <p style={{
+                  fontFamily: 'var(--font-body)', fontWeight: 300,
+                  fontSize: 13.5, color: 'rgba(255,255,255,0.8)',
+                  lineHeight: 1.45, margin: 0, minHeight: 38,
+                }}>{p.tagline}</p>
+
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
+                  <span style={{
+                    fontFamily: 'var(--font-body)', fontWeight: 300,
+                    fontSize: 11, color: 'rgba(255,255,255,0.55)',
+                    letterSpacing: '0.18em', textTransform: 'uppercase',
+                    marginRight: 6,
+                  }}>da</span>
+                  <span style={{
+                    fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+                    color: '#fff', fontSize: '3rem', lineHeight: 1,
+                    letterSpacing: '-1.5px',
+                  }}>€{p.priceFrom}</span>
+                </div>
+                <span style={{
+                  fontFamily: 'var(--font-body)', fontWeight: 400,
+                  fontSize: 11, color: 'rgba(255,255,255,0.55)',
+                  letterSpacing: '0.16em', textTransform: 'uppercase',
+                  marginTop: -10,
+                }}>Una tantum</span>
+
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '6px 0' }} />
+
+                <ul style={{
+                  listStyle: 'none', padding: 0, margin: 0,
+                  display: 'flex', flexDirection: 'column', gap: 10, flex: 1,
+                }}>
+                  {tags.map(t => (
+                    <li key={t} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      fontSize: 13.5, color: 'rgba(255,255,255,0.92)',
+                      fontFamily: 'var(--font-body)',
+                    }}>
+                      <Check size={14} strokeWidth={2.5} style={{ color: '#B600A8', flexShrink: 0 }} />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+
+                <Link href="/register" className={featured ? 'liquid-glass-strong' : 'liquid-glass'} style={{
+                  marginTop: 8,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '13px 22px', borderRadius: 9999,
+                  fontSize: 13.5, fontWeight: 500, color: '#fff',
+                  fontFamily: 'var(--font-body)', textDecoration: 'none',
+                  background: featured ? '#fff' : undefined,
+                  ...(featured ? { color: '#000' } : {}),
+                }} {...(featured ? { className: undefined as any } : {})}>
+                  {featured ? <>Scegli {p.name} <ArrowUpRight size={16} strokeWidth={2.4} /></> : <>Inizia con {p.name} <ArrowUpRight size={16} strokeWidth={2} /></>}
+                </Link>
+              </FadeUp>
+            )
+          })}
+        </div>
+
+        <FadeUp delay={0.7}>
+          <p style={{
+            marginTop: 28, color: 'rgba(255,255,255,0.55)', fontSize: 12.5,
+            fontFamily: 'var(--font-body)', textAlign: 'center',
+          }}>
+            {SALES_TERMS.publicNote}
+          </p>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────  PROGETTI / SHOWCASE  ─────────────────────── */
+
+const SHOWCASE = [
+  {
+    slug: 'demo-lumino', name: 'Sushi Hanami',
+    cuisine: 'Sushi · Milano',
+    template: 'Aurora',
+    img: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=900&q=80',
+  },
+  {
+    slug: 'demo-lumino', name: 'Da Nonna Lucia',
+    cuisine: 'Trattoria · Firenze',
+    template: 'Mercato',
+    img: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&q=80',
+  },
+  {
+    slug: 'demo-lumino', name: 'Burger Republic',
+    cuisine: 'Smash burger · Milano',
+    template: 'Bento',
+    img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=900&q=80',
+  },
+]
+
+function ShowcaseSection() {
+  return (
+    <section id="progetti" style={{
+      position: 'relative', padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 80px)',
+      background: '#000', overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(circle at 10% 50%, rgba(180,0,140,0.10), transparent 55%)',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto' }}>
+        <FadeUp delay={0}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-body)', margin: '0 0 22px' }}>
+            // Progetti
+          </p>
+        </FadeUp>
+        <FadeUp delay={0.1}>
+          <h2 style={{
+            fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+            color: '#fff', fontSize: 'clamp(2.6rem, 7vw, 5rem)',
+            lineHeight: 0.9, letterSpacing: '-3px',
+            margin: '0 0 56px',
+          }}>
+            Cosa abbiamo<br/>costruito.
+          </h2>
+        </FadeUp>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 24,
+        }}>
+          {SHOWCASE.map((s, i) => (
+            <FadeUp key={s.name + i} delay={0.2 + i * 0.1}>
+              <Link href={`/sites/${s.slug}`} className="liquid-glass" style={{
+                display: 'block', borderRadius: '1.25rem', overflow: 'hidden',
+                textDecoration: 'none', padding: 12,
+              }}>
+                <div style={{
+                  borderRadius: '1rem', overflow: 'hidden',
+                  aspectRatio: '4 / 5', position: 'relative',
+                }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.img} alt={s.name} style={{
+                    width: '100%', height: '100%', objectFit: 'cover',
+                    display: 'block', transition: 'transform 0.6s cubic-bezier(0.22,1,0.36,1)',
+                  }} className="lm-showcase-img" />
+                  <div style={{
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', left: 18, right: 18, bottom: 18,
+                    color: '#fff',
+                  }}>
+                    <p style={{
+                      fontFamily: 'var(--font-body)', fontWeight: 500,
+                      fontSize: 10.5, letterSpacing: '0.22em',
+                      textTransform: 'uppercase', opacity: 0.7,
+                      margin: '0 0 6px',
+                    }}>{s.template} · {s.cuisine}</p>
+                    <p style={{
+                      fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+                      fontSize: '1.6rem', lineHeight: 1, letterSpacing: '-0.5px',
+                      margin: 0,
+                    }}>{s.name}</p>
+                  </div>
+                </div>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '14px 8px 6px',
+                }}>
+                  <span style={{
+                    fontSize: 13, color: 'rgba(255,255,255,0.85)',
+                    fontFamily: 'var(--font-body)',
+                  }}>Esplora il sito</span>
+                  <ArrowUpRight size={16} color="#fff" strokeWidth={2} />
+                </div>
+              </Link>
+            </FadeUp>
+          ))}
+        </div>
+
+        <FadeUp delay={0.6} style={{ textAlign: 'center', marginTop: 40 }}>
+          <Link href="/portfolio" className="liquid-glass" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            borderRadius: 9999, padding: '10px 20px',
+            color: '#fff', textDecoration: 'none',
+            fontSize: 13.5, fontFamily: 'var(--font-body)', fontWeight: 500,
+          }}>
+            Tutti i progetti <ArrowUpRight size={16} strokeWidth={2} />
+          </Link>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
+/* ───────────────────────  CTA + FOOTER  ─────────────────────── */
+
+function CtaFooter() {
+  return (
+    <section id="contatti" style={{
+      position: 'relative', background: '#000',
+      padding: 'clamp(80px, 10vw, 140px) clamp(20px, 5vw, 80px) 40px',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(circle at 50% 50%, rgba(180,0,140,0.16), transparent 60%)',
+      }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto' }}>
+        {/* Big CTA */}
+        <FadeUp delay={0}>
+          <h2 style={{
+            fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+            color: '#fff', fontSize: 'clamp(3rem, 9vw, 7rem)',
+            lineHeight: 0.85, letterSpacing: '-4px',
+            margin: '0 0 32px', textAlign: 'center',
+          }}>
+            Pronto?
+          </h2>
+        </FadeUp>
+        <FadeUp delay={0.15}>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontWeight: 300,
+            fontSize: 'clamp(1rem, 1.6vw, 1.15rem)',
+            color: 'rgba(255,255,255,0.88)', lineHeight: 1.5,
+            margin: '0 auto 36px', maxWidth: 580, textAlign: 'center',
+          }}>
+            Iniziamo il tuo progetto adesso. Il sito è pronto in 24 ore dalla registrazione.
+          </p>
+        </FadeUp>
+        <FadeUp delay={0.3} style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 18, flexWrap: 'wrap', marginBottom: 100,
+        }}>
+          <Link href="/register" className="liquid-glass-strong" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10,
+            borderRadius: 9999, padding: '14px 26px',
+            fontSize: 14, fontWeight: 500, color: '#fff',
+            fontFamily: 'var(--font-body)', textDecoration: 'none',
+          }}>
+            Inizia il tuo sito <ArrowUpRight size={20} strokeWidth={2} />
+          </Link>
+          <Link href="/pricing" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            color: '#fff', textDecoration: 'none', opacity: 0.8,
+            fontSize: 14, fontWeight: 500, fontFamily: 'var(--font-body)',
+          }} className="lm-link">
+            Vedi tutti i piani <ArrowUpRight size={16} strokeWidth={2} />
+          </Link>
+        </FadeUp>
+
+        {/* Footer grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 32, paddingTop: 40,
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          {/* Brand */}
+          <div>
+            <Link href="/" style={{
+              color: '#fff', textDecoration: 'none',
+              fontFamily: 'var(--font-heading)', fontStyle: 'italic',
+              fontSize: 36, fontWeight: 400, letterSpacing: '-0.01em',
+              lineHeight: 1, display: 'inline-block', marginBottom: 12,
+            }}>Lumino</Link>
+            <p style={{
+              fontFamily: 'var(--font-body)', fontWeight: 300,
+              fontSize: 13, color: 'rgba(255,255,255,0.6)',
+              lineHeight: 1.5, margin: 0, maxWidth: 240,
+            }}>
+              Studio AI per ristoranti italiani. Made in Italy.
+            </p>
+          </div>
+
+          {/* Prodotto */}
+          <div>
+            <p style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              fontWeight: 600, fontFamily: 'var(--font-body)',
+              margin: '0 0 16px',
+            }}>Prodotto</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <li><a href="#process" className="lm-foot-link">Come funziona</a></li>
+              <li><Link href="/pricing" className="lm-foot-link">Piani</Link></li>
+              <li><a href="#progetti" className="lm-foot-link">Progetti</a></li>
+              <li><Link href="/portfolio" className="lm-foot-link">Portfolio</Link></li>
+            </ul>
+          </div>
+
+          {/* Account */}
+          <div>
+            <p style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              fontWeight: 600, fontFamily: 'var(--font-body)',
+              margin: '0 0 16px',
+            }}>Account</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <li><Link href="/register" className="lm-foot-link">Registrati</Link></li>
+              <li><Link href="/login" className="lm-foot-link">Accedi</Link></li>
+              <li><Link href="/admin" className="lm-foot-link">Il tuo pannello</Link></li>
+              <li><Link href="/forgot-password" className="lm-foot-link">Password dimenticata</Link></li>
+            </ul>
+          </div>
+
+          {/* Contatti */}
+          <div>
+            <p style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              fontWeight: 600, fontFamily: 'var(--font-body)',
+              margin: '0 0 16px',
+            }}>Contatti</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <li><a href="mailto:ciao@bylumino.com" className="lm-foot-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Mail size={13} /> ciao@bylumino.com</a></li>
+              <li><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="lm-foot-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Instagram size={13} /> Instagram</a></li>
+              <li><a href="https://x.com" target="_blank" rel="noopener noreferrer" className="lm-foot-link">X.com</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div style={{
+          display: 'flex', justifyContent: 'space-between',
+          fontSize: 12, color: 'rgba(255,255,255,0.5)',
+          fontFamily: 'var(--font-body)',
+          paddingTop: 28, marginTop: 28,
+          borderTop: '1px solid rgba(255,255,255,0.05)',
+          flexWrap: 'wrap', gap: 12,
+        }}>
+          <span>© {new Date().getFullYear()} Lumino Agency</span>
+          <span>Made in Italy</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ────────────────────────────  PAGE  ─────────────────────────── */
 
 export default function HomePage() {
@@ -645,12 +1148,25 @@ export default function HomePage() {
           .lm-nav-center { display: none !important; }
         }
 
-        /* fallback gradient if video doesn't load */
-        section { background-image: radial-gradient(circle at 30% 20%, rgba(70,30,100,0.18), transparent 60%), radial-gradient(circle at 80% 80%, rgba(180,0,140,0.10), transparent 55%); }
+        /* footer links */
+        .lm-foot-link {
+          color: rgba(255,255,255,0.78); text-decoration: none;
+          font-size: 13.5px; font-family: var(--font-body);
+          transition: color 0.2s;
+        }
+        .lm-foot-link:hover { color: #fff; }
+
+        /* showcase img hover */
+        .lm-showcase-img { will-change: transform; }
+        a:hover .lm-showcase-img { transform: scale(1.04); }
       ` }} />
 
       <HeroSection />
       <CapabilitiesSection />
+      <ProcessSection />
+      <PricingSection />
+      <ShowcaseSection />
+      <CtaFooter />
     </main>
   )
 }
