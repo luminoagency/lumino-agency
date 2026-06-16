@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { sendReservationConfirmed, sendReservationCancelled } from '@/lib/integrations/email'
+// Email transazionali: passano da Gmail + Apps Script (tracking layer).
+// Quando aggiungeremo notifiche ai clienti sostituiremo questo posto.
 import { trackEvent } from '@/lib/tracking'
 
 /**
@@ -345,29 +346,8 @@ export async function updateReservationStatus(id: string, status: 'pending' | 'c
   const { error } = await supabase.from('site_reservations').update({ status }).eq('id', id)
   if (error) return { ok: false, error: error.message }
 
-  // Fire email (don't block on it)
-  if (r?.guest_email && (status === 'confirmed' || status === 'cancelled')) {
-    const site = (r as any).sites
-    const content = site?.content?.[0] || site?.content
-    const restaurantName = content?.restaurant_name || site?.restaurant?.name || 'Il ristorante'
-    const address = content?.address
-    const phone = content?.phone
-    const payload = {
-      restaurantName,
-      guestName: r.guest_name,
-      date: r.date,
-      time: r.time?.slice(0, 5) || '',
-      persons: r.guests_count,
-      address,
-      phone,
-    }
-    try {
-      if (status === 'confirmed') await sendReservationConfirmed(r.guest_email, payload)
-      else await sendReservationCancelled(r.guest_email, payload)
-    } catch (e) {
-      console.warn('[reservation email] failed', e)
-    }
-  }
+  // TODO: notifica al cliente via Gmail + Apps Script (non bloccante).
+  // Per ora il ristoratore aggiorna lo status; nessuna mail in uscita al guest.
 
   revalidatePath('/admin')
   return { ok: true }

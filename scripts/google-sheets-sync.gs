@@ -2,13 +2,13 @@
  * Google Apps Script — Lumino events tracker
  *
  * SETUP (5 min, una volta sola):
- * 1. Vai su https://script.google.com con bylumino06@gmail.com
+ * 1. Vai su https://script.google.com con outlumino@gmail.com
  * 2. Nuovo progetto → rinomina "Lumino Events"
  * 3. Incolla TUTTO questo file in Code.gs (sostituendo il contenuto)
  * 4. Salva (Ctrl+S)
  * 5. Deploy → Nuovo deployment → Tipo: "App Web"
  *    - Descrizione: "Lumino sync"
- *    - Esegui come: Me (bylumino06@gmail.com)
+ *    - Esegui come: Me (outlumino@gmail.com)
  *    - Chi può accedere: "Chiunque" (è un endpoint pubblico ma autenticato dal payload)
  * 6. Copia l'URL del deployment (finisce in /exec)
  * 7. Mettilo in .env.local del progetto: GOOGLE_SHEETS_WEBHOOK_URL=https://...

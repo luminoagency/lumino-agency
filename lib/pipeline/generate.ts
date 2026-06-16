@@ -17,6 +17,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getClaude } from '@/lib/ai/claude'
+import { generateWordmarkLogo, type LogoTemplate } from '@/lib/integrations/logoGenerator'
+import { searchHeroVideoForTemplate } from '@/lib/integrations/pexelsVideos'
 import type { TemplateKey } from '@/lib/plans'
 
 const MODEL = 'claude-sonnet-4-6'
@@ -88,6 +90,21 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
   // 4. Foto da Unsplash (hero + about + 6 gallery)
   const photos = await pickPhotos(cuisine)
 
+  // 4b. Logo wordmark SVG (sostituisce la vecchia generazione AI Ideogram).
+  // Render text-based in font coerente col template scelto.
+  const logo = generateWordmarkLogo({
+    restaurantName,
+    template: template as LogoTemplate,
+    primaryColor: accentColor,
+  })
+
+  // 4c. Hero video gratis da Pexels (solo Premium).
+  // Fail-soft: se manca PEXELS_API_KEY o Pexels è down, video resta null
+  // e il sito usa la sola hero image. Non blocca mai la generazione.
+  const heroVideo = tier === 'premium'
+    ? await searchHeroVideoForTemplate(template as LogoTemplate)
+    : null
+
   // 5. Aggiorna site_content (graceful: prova con tutti i campi, fallback ai campi base)
   const fullPayload: any = {
     site_id: site.id,
@@ -113,6 +130,9 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
     theme_accent: accentColor,
     hero_images: [photos.hero, ...photos.gallery.slice(0, 2)],
     time_slots: generated.time_slots || ['19:00', '19:30', '20:00', '20:30', '21:00', '21:30'],
+    // Logo wordmark SVG (data URL base64): storage diretto in site_content.
+    // Premium puo sostituire da admin con upload custom.
+    logo_url: logo.dataUrl,
   }
 
   const baseAllowed = new Set(['site_id', 'restaurant_name', 'tagline', 'description', 'hero_image_url', 'about_image_url', 'about_text', 'about_title', 'address', 'city', 'phone', 'email', 'google_maps_embed_url', 'gallery_images', 'social_links', 'seo_title', 'seo_description'])
@@ -137,8 +157,11 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
     if (mErr) return { ok: false, error: 'site_menus: ' + mErr.message }
   }
 
-  // 7. Marca live
-  await supabase.from('sites').update({ status: 'live' }).eq('id', site.id)
+  // 7. Marca live + salva eventuale hero video (Premium)
+  await supabase.from('sites').update({
+    status: 'live',
+    ...(heroVideo ? { video_url: heroVideo.url } : {}),
+  }).eq('id', site.id)
 
   return { ok: true, template, accentColor }
 }

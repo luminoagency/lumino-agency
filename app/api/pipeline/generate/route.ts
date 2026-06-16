@@ -5,7 +5,7 @@
  * Triggera la pipeline AI per generare contenuto del sito.
  *
  * Auth: l'utente loggato deve essere owner del sito (site_owners.user_id),
- * oppure deve avere CRON_SECRET (per chiamate server-to-server, es. webhook Stripe).
+ * oppure deve avere CRON_SECRET (per chiamate server-to-server, es. webhook pagamento).
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
@@ -37,6 +37,24 @@ export async function POST(req: NextRequest) {
       .eq('site_id', siteId)
       .maybeSingle()
     if (!owner) return NextResponse.json({ error: 'Non autorizzato per questo sito' }, { status: 403 })
+  }
+
+  // Gate pagamento: la pipeline parte SOLO se il pagamento del 50% è stato confermato.
+  // Il flag `sites.payment_confirmed` viene messo a true a mano (dal super-admin) o, in futuro,
+  // automaticamente dal webhook del payment provider. Bypass via CRON_SECRET per testing.
+  if (!viaCron) {
+    const admin = createAdminClient()
+    const { data: siteRow } = await admin
+      .from('sites')
+      .select('payment_confirmed')
+      .eq('id', siteId)
+      .maybeSingle()
+    if (!siteRow?.payment_confirmed) {
+      return NextResponse.json(
+        { error: 'Pagamento non confermato. La generazione AI parte dopo la prima rata.' },
+        { status: 402 },
+      )
+    }
   }
 
   const result = await generateSiteContent({ siteId })

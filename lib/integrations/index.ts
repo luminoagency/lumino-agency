@@ -2,6 +2,5 @@
 export * as googleMaps from './google-maps';
 export * as claude from './claude';
 export * as unsplash from './unsplash';
-export * as ideogram from './ideogram';
 export * as porkbun from './porkbun';
 export * as vercel from './vercel';

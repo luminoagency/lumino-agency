@@ -133,7 +133,7 @@ export interface TierCapabilities {
   newsletter: boolean
   reviewsCapture: boolean
   // Tech avanzato
-  higgsfieldVideo: boolean
+  heroVideo: boolean
   advancedAnimations: boolean   // GSAP + Lenis smooth scroll
   multiHero: boolean
   // Asset / contenuti
@@ -158,7 +158,7 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
     events: false,
     newsletter: false,
     reviewsCapture: false,
-    higgsfieldVideo: false,
+    heroVideo: false,
     advancedAnimations: false,
     multiHero: false,
     customAssetsUpload: false,
@@ -179,7 +179,7 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
     events: true,
     newsletter: true,
     reviewsCapture: true,
-    higgsfieldVideo: false,
+    heroVideo: false,
     advancedAnimations: false,
     multiHero: false,
     customAssetsUpload: false,
@@ -200,7 +200,7 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
     events: true,
     newsletter: true,
     reviewsCapture: true,
-    higgsfieldVideo: true,
+    heroVideo: true,
     advancedAnimations: true,
     multiHero: true,
     customAssetsUpload: true,

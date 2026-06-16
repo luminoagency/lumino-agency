@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { generateSiteContent } from '@/lib/pipeline/generate'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com', 'bylumino.06@gmail.com']
+const SUPER_ADMINS = ['outlumino@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()
@@ -44,6 +44,24 @@ export async function adminSetSiteStatus(siteId: string, status: 'building' | 'l
     if (error) return { ok: false, error: error.message }
     revalidatePath('/lumino-admin')
     revalidatePath('/sites/[slug]', 'page')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/**
+ * Conferma il pagamento del 50% per un sito (flag manuale).
+ * Quando true, la pipeline AI puo essere triggerata. Va sostituito in futuro
+ * con un webhook automatico del payment provider.
+ */
+export async function adminConfirmPayment(siteId: string, confirmed: boolean) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin.from('sites').update({ payment_confirmed: confirmed }).eq('id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore' }

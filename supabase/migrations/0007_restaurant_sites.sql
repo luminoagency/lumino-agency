@@ -10,7 +10,7 @@ BEGIN;
 --    slug     → URL routing key for app/sites/[slug]
 --    tier     → mirrors clients.plan, denormalized for perf
 --    active   → owner can take site offline without deleting
---    video_url → Higgsfield video (Premium), Supabase Storage URL
+--    video_url → hero video (Premium), Pexels CDN URL o Supabase Storage
 -- ------------------------------------------------------------
 ALTER TABLE sites
   ADD COLUMN slug      text unique,

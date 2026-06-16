@@ -1,7 +1,7 @@
 /**
  * Google Sheets integration.
  * Posts a row to a Google Apps Script web app whenever a relevant event happens.
- * The Apps Script is owned by bylumino06@gmail.com and appends rows to a tracking sheet.
+ * The Apps Script is owned by outlumino@gmail.com and appends rows to a tracking sheet.
  *
  * Setup:
  *   1. In Apps Script (https://script.google.com), create a new project.

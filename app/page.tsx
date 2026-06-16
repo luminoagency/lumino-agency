@@ -416,7 +416,7 @@ function HeroSection() {
             <span>Vercel</span>
             <span>Supabase</span>
             <span>Unsplash</span>
-            <span>Stripe</span>
+            <span>Higgs</span>
           </FadeUp>
         </div>
       </div>
@@ -569,7 +569,7 @@ const STEPS = [
   },
   {
     n: '02', t: 'Paghi la prima rata',
-    d: '50% all\'avvio del lavoro. Link Stripe sicuro. Niente abbonamenti — Lumino è una tantum.',
+    d: '50% all\'avvio del lavoro tramite bonifico o link di pagamento. Niente abbonamenti — Lumino è una tantum.',
   },
   {
     n: '03', t: 'L\'AI lavora',
@@ -763,15 +763,19 @@ function PricingSection() {
                   ))}
                 </ul>
 
-                <Link href="/register" className={featured ? 'liquid-glass-strong' : 'liquid-glass'} style={{
-                  marginTop: 8,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  padding: '13px 22px', borderRadius: 9999,
-                  fontSize: 13.5, fontWeight: 500, color: '#fff',
-                  fontFamily: 'var(--font-body)', textDecoration: 'none',
-                  background: featured ? '#fff' : undefined,
-                  ...(featured ? { color: '#000' } : {}),
-                }} {...(featured ? { className: undefined as any } : {})}>
+                <Link
+                  href="/register"
+                  className={featured ? '' : 'liquid-glass'}
+                  style={{
+                    marginTop: 8,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    padding: '13px 22px', borderRadius: 9999,
+                    fontSize: 13.5, fontWeight: 500,
+                    fontFamily: 'var(--font-body)', textDecoration: 'none',
+                    background: featured ? '#fff' : 'transparent',
+                    color: featured ? '#000' : '#fff',
+                  }}
+                >
                   {featured ? <>Scegli {p.name} <ArrowUpRight size={16} strokeWidth={2.4} /></> : <>Inizia con {p.name} <ArrowUpRight size={16} strokeWidth={2} /></>}
                 </Link>
               </FadeUp>

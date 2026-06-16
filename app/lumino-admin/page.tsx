@@ -6,7 +6,7 @@ import { SuperAdminClient } from './SuperAdminClient'
 import { PLANS, ZONE_MULTIPLIERS, RESTAURANT_LEVEL_MULTIPLIERS } from '@/lib/plans'
 
 // SUPER ADMIN ALLOWLIST
-const SUPER_ADMINS = ['bylumino06@gmail.com', 'bylumino.06@gmail.com']
+const SUPER_ADMINS = ['outlumino@gmail.com']
 
 export const metadata = { title: 'Lumino Control · Super Admin' }
 export const dynamic = 'force-dynamic'
@@ -137,7 +137,7 @@ export default async function LuminoAdminPage() {
         id: u.id,
         email: u.email || '',
         created_at: u.created_at,
-        last_sign_in_at: u.last_sign_in_at,
+        last_sign_in_at: u.last_sign_in_at ?? null,
         restaurant_name: (u.user_metadata as any)?.restaurant_name || '',
         site: siteByUserId.get(u.id) ? {
           id: siteByUserId.get(u.id).id,
