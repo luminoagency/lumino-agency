@@ -5,8 +5,11 @@ import Link from 'next/link'
 import {
   adminGenerateSite, adminSetSiteStatus, adminSetSiteTier,
   adminApproveReview, adminDeleteReview, adminCalculatePrice,
+  adminToggleOutreachAccount,
 } from './actions'
 import { logoutAction } from '../auth/actions'
+import { DiagnosticsPanel } from './DiagnosticsPanel'
+import type { DiagnosticsData } from './DiagnosticsPanel'
 
 interface SiteRow {
   id: string; slug: string; tier: string; active: boolean; status: string;
@@ -18,10 +21,18 @@ interface UserRow {
   restaurant_name: string;
   site: { id: string; slug: string; tier: string; status: string } | null;
 }
-interface ResRow {
-  id: string; guest_name: string; guest_phone: string; guest_email: string | null;
-  date: string; time: string; guests_count: number; notes: string | null;
-  status: string; created_at: string; site_slug: string; restaurant_name: string;
+interface OutreachAccountRow {
+  id: string; email: string; sender_name: string | null;
+  status: string; warmup_day: number; daily_cap: number;
+  delivery_rate: number | null; last_paused_at: string | null;
+  active: boolean; failure_count: number;
+}
+
+/** Aggregato per sito — Lumino NON vede mai dati personali del guest. */
+interface ResAggRow {
+  site_id: string; siteSlug: string; restaurantName: string;
+  total: number; confirmed: number; cancelled: number; pending: number;
+  confirmedPct: number; cancelledPct: number;
 }
 interface PendingReview {
   siteId: string; siteSlug: string; restaurantName: string; index: number;
@@ -30,6 +41,7 @@ interface PendingReview {
 
 interface Props {
   currentUserEmail: string
+  diagnostics: DiagnosticsData | null
   stats: {
     totalUsers: number; totalSites: number; liveSites: number;
     buildingSites: number; errorSites: number; reservations30d: number;
@@ -38,7 +50,8 @@ interface Props {
   }
   users: UserRow[]
   sites: SiteRow[]
-  reservations: ResRow[]
+  reservationsAggregate: ResAggRow[]
+  outreachAccounts: OutreachAccountRow[]
   pendingReviews: PendingReview[]
   pricingMeta: {
     plans: Array<{ key: 'basic' | 'pro' | 'premium'; name: string; priceFrom: number; priceMax: number }>
@@ -48,7 +61,7 @@ interface Props {
 }
 
 export function SuperAdminClient(props: Props) {
-  const { stats, users, sites, reservations, pendingReviews, pricingMeta, currentUserEmail } = props
+  const { stats, users, sites, reservationsAggregate, outreachAccounts, pendingReviews, pricingMeta, currentUserEmail, diagnostics } = props
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg: string } | null>(null)
 
@@ -74,6 +87,12 @@ export function SuperAdminClient(props: Props) {
     startTransition(async () => {
       const r = await adminSetSiteTier(siteId, tier)
       notify(!!r.ok, r.ok ? '✓ Piano aggiornato' : `Errore: ${r.error}`)
+    })
+  }
+  function doToggleAccount(accountId: string, action: 'pause' | 'resume') {
+    startTransition(async () => {
+      const r = await adminToggleOutreachAccount(accountId, action)
+      notify(!!r.ok, r.ok ? (action === 'pause' ? '⏸ In pausa' : '▶ Ripreso') : `Errore: ${r.error}`)
     })
   }
   function doApproveReview(siteId: string, idx: number) {
@@ -237,6 +256,9 @@ export function SuperAdminClient(props: Props) {
           <h1 className="la-hero-title">La <em>tua</em> piattaforma.<br />Tutto sotto controllo.</h1>
         </div>
 
+        {/* DIAGNOSTICA */}
+        <DiagnosticsPanel initialData={diagnostics} />
+
         {/* STATS */}
         <div className="la-stats">
           <div className="la-stat">
@@ -362,30 +384,107 @@ export function SuperAdminClient(props: Props) {
           </div>
         )}
 
-        {/* RESERVATIONS */}
+        {/* STATO ACCOUNT OUTREACH */}
         <div className="la-section">
-          <h2 className="la-section-title">Prenotazioni ultime 30 giorni</h2>
+          <h2 className="la-section-title">📧 Stato account outreach</h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12.5, margin: '0 0 14px' }}>
+            4 sender Zoho @bylumino.com. Il warm-up è automatico (vedi cron warmup-tick). Pausa manuale se vedi anomalie.
+          </p>
           <div className="la-card">
             <div className="la-table-wrap">
               <table className="la-table">
                 <thead>
                   <tr>
-                    <th>Quando</th><th>Cliente</th><th>Ristorante</th><th>Data prenotazione</th><th>Persone</th><th>Stato</th>
+                    <th>Account</th>
+                    <th style={{ textAlign: 'center' }}>Stato</th>
+                    <th style={{ textAlign: 'center' }}>Warmup</th>
+                    <th style={{ textAlign: 'center' }}>Cap giorno</th>
+                    <th style={{ textAlign: 'center' }}>Delivery 7gg</th>
+                    <th style={{ textAlign: 'right' }}>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reservations.length === 0 && <tr><td colSpan={6} className="la-empty">Nessuna prenotazione recente.</td></tr>}
-                  {reservations.slice(0, 60).map(r => (
-                    <tr key={r.id}>
-                      <td style={{ color: 'rgba(255,255,255,0.55)' }}>{new Date(r.created_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                  {outreachAccounts.length === 0 && <tr><td colSpan={6} className="la-empty">Nessun account outreach configurato (vedi migrazione 0014).</td></tr>}
+                  {outreachAccounts.map(a => {
+                    const isPaused = a.status === 'paused'
+                    const isActive = a.status === 'active'
+                    const dr = a.delivery_rate != null ? Math.round(a.delivery_rate * 1000) / 10 : null
+                    return (
+                      <tr key={a.id}>
+                        <td>
+                          <strong style={{ color: '#fff' }}>{a.sender_name || a.email}</strong><br/>
+                          <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{a.email}</span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`la-pill ${a.status === 'paused' ? 'error' : a.status === 'active' ? 'live' : a.status === 'burned' ? 'error' : 'building'}`}>{a.status}</span>
+                          {a.failure_count > 0 && <div style={{ fontSize: 10, color: '#f87171', marginTop: 4 }}>{a.failure_count} fallimenti</div>}
+                        </td>
+                        <td style={{ textAlign: 'center', fontSize: 12.5 }}>
+                          {isActive ? `Attivo da ${Math.max(0, a.warmup_day - 22)}gg` : `Giorno ${a.warmup_day}/22`}
+                        </td>
+                        <td style={{ textAlign: 'center', fontWeight: 600 }}>{a.daily_cap}</td>
+                        <td style={{ textAlign: 'center' }}>
+                          {dr != null ? (
+                            <strong style={{ color: dr >= 95 ? '#22c55e' : dr >= 85 ? '#f59e0b' : '#f87171' }}>{dr}%</strong>
+                          ) : (
+                            <span style={{ color: 'rgba(255,255,255,0.3)' }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            type="button"
+                            className={`la-btn ${isPaused ? 'la-btn-success' : 'la-btn-danger'}`}
+                            disabled={pending}
+                            onClick={() => doToggleAccount(a.id, isPaused ? 'resume' : 'pause')}
+                          >
+                            {isPaused ? '▶ Riprendi' : '⏸ Pausa'}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* PRENOTAZIONI — solo aggregati, niente dati personali */}
+        <div className="la-section">
+          <h2 className="la-section-title">Prenotazioni ultimi 30 giorni — aggregati</h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12.5, margin: '0 0 14px' }}>
+            Lumino non vede mai nome, telefono o email del cliente. Solo conteggi per ristorante. I dati personali stanno solo nel pannello del ristoratore.
+          </p>
+          <div className="la-card">
+            <div className="la-table-wrap">
+              <table className="la-table">
+                <thead>
+                  <tr>
+                    <th>Ristorante</th>
+                    <th style={{ textAlign: 'center' }}>Totali</th>
+                    <th style={{ textAlign: 'center' }}>In attesa</th>
+                    <th style={{ textAlign: 'center' }}>Confermate</th>
+                    <th style={{ textAlign: 'center' }}>Annullate</th>
+                    <th style={{ textAlign: 'right' }}>Tasso conferma</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reservationsAggregate.length === 0 && <tr><td colSpan={6} className="la-empty">Nessuna prenotazione negli ultimi 30 giorni.</td></tr>}
+                  {reservationsAggregate.map(a => (
+                    <tr key={a.site_id}>
                       <td>
-                        <strong style={{ color: '#fff' }}>{r.guest_name}</strong><br/>
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{r.guest_phone}</span>
+                        <strong style={{ color: '#fff' }}>{a.restaurantName}</strong><br/>
+                        <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{a.siteSlug}</span>
                       </td>
-                      <td>{r.restaurant_name}</td>
-                      <td>{r.date} · {r.time}</td>
-                      <td style={{ textAlign: 'center' }}>{r.guests_count}</td>
-                      <td><span className={`la-pill ${r.status}`}>{r.status}</span></td>
+                      <td style={{ textAlign: 'center', fontWeight: 600 }}>{a.total}</td>
+                      <td style={{ textAlign: 'center', color: '#f59e0b' }}>{a.pending}</td>
+                      <td style={{ textAlign: 'center', color: '#22c55e' }}>{a.confirmed}</td>
+                      <td style={{ textAlign: 'center', color: '#f87171' }}>{a.cancelled}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <strong style={{ color: a.confirmedPct >= 80 ? '#22c55e' : a.confirmedPct >= 50 ? '#f59e0b' : '#f87171' }}>
+                          {a.confirmedPct}%
+                        </strong>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { saveSiteContent, publishSite, unpublishSite, generateMySiteContent } from './actions/site'
+import { saveSiteContent, publishSite, unpublishSite, generateMySiteContent, setFeatureFlag, type FeatureFlags } from './actions/site'
 import { logoutAction } from '../auth/actions'
+import { PLAN_FEATURE_DEFAULTS, type FeatureKey, type PlanKey } from '@/lib/plans'
 
 interface OpeningHoursDay { open?: string; close?: string; closed?: boolean }
 type OpeningHours = Record<string, OpeningHoursDay>
@@ -21,8 +22,18 @@ interface Props {
     whatsapp: string
     opening_hours: OpeningHours
   }
+  featureFlags: FeatureFlags
   eventsCount: number
 }
+
+const FEATURES: Array<{ key: FeatureKey; col: keyof FeatureFlags; icon: string; name: string; sub: string }> = [
+  { key: 'reservations',   col: 'feature_reservations_enabled',    icon: '📋', name: 'Prenotazioni online', sub: 'Modulo prenotazione tavolo sul sito' },
+  { key: 'newsletter',     col: 'feature_newsletter_enabled',      icon: '✉️', name: 'Newsletter',           sub: 'Form iscrizione per inviare comunicazioni' },
+  { key: 'events',         col: 'feature_events_enabled',          icon: '📅', name: 'Eventi',               sub: 'Pubblica eventi sul sito' },
+  { key: 'whatsappButton', col: 'feature_whatsapp_button_enabled', icon: '💬', name: 'Pulsante WhatsApp',    sub: 'Bottone fisso che apre WhatsApp' },
+  { key: 'reviews',        col: 'feature_reviews_enabled',         icon: '⭐', name: 'Recensioni',           sub: 'Sezione recensioni + form scrittura' },
+  { key: 'chef',           col: 'feature_chef_section_enabled',    icon: '👨‍🍳', name: 'Sezione "Lo chef"', sub: 'Foto + frase dello chef sul sito' },
+]
 
 const DAYS: Array<{ key: string; label: string }> = [
   { key: 'mon', label: 'Lun' },
@@ -34,9 +45,11 @@ const DAYS: Array<{ key: string; label: string }> = [
   { key: 'sun', label: 'Dom' },
 ]
 
-export function AdminEditor({ site, initial, eventsCount }: Props) {
+export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props) {
   const [data, setData] = useState(initial)
   const [hours, setHours] = useState<OpeningHours>(initial.opening_hours || {})
+  const [flags, setFlags] = useState<FeatureFlags>(featureFlags)
+  const planDefaults = PLAN_FEATURE_DEFAULTS[site.tier as PlanKey] || PLAN_FEATURE_DEFAULTS.basic
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg?: string } | null>(null)
   const [status, setStatus] = useState(site.status)
@@ -91,6 +104,25 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
         setTimeout(() => window.location.reload(), 1500)
       } else {
         setFeedback({ ok: false, msg: r.error || 'Generazione fallita' })
+      }
+    })
+  }
+
+  function toggleFeature(feature: FeatureKey, col: keyof FeatureFlags, currentEnabled: boolean) {
+    setFeedback(null)
+    // Se il default del piano è ON: toggle OFF → false, toggle ON → null (default)
+    // Se il default è OFF: non dovrebbe arrivare qui (UI gated)
+    const planAllows = planDefaults[feature]
+    const next = currentEnabled ? false : (planAllows ? null : true)
+    setFlags(prev => ({ ...prev, [col]: next }))
+    startTransition(async () => {
+      const r = await setFeatureFlag(feature, next)
+      if (!r.ok) {
+        setFlags(prev => ({ ...prev, [col]: currentEnabled ? true : false }))
+        setFeedback({ ok: false, msg: r.error || 'Errore' })
+      } else {
+        setFeedback({ ok: true, msg: `✓ ${currentEnabled ? 'Disattivato' : 'Attivato'}` })
+        setTimeout(() => setFeedback(null), 2500)
       }
     })
   }
@@ -225,6 +257,23 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
         }
         .ae-feedback-ok { background: rgba(34,197,94,0.15); color: #22c55e; }
         .ae-feedback-err { background: rgba(239,68,68,0.15); color: #f87171; }
+
+        /* feature toggles */
+        .ae-feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+        .ae-feat { padding: 16px 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; transition: border-color 0.2s, background 0.2s; }
+        .ae-feat.on { border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.04); }
+        .ae-feat.locked { opacity: 0.5; }
+        .ae-feat-head { display: flex; align-items: center; gap: 12px; }
+        .ae-feat-icon { font-size: 22px; flex-shrink: 0; }
+        .ae-feat-meta { flex: 1; min-width: 0; }
+        .ae-feat-name { margin: 0; font-size: 14px; font-weight: 600; color: #fff; }
+        .ae-feat-sub { margin: 2px 0 0; font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.35; }
+        .ae-feat-badge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; background: rgba(167,139,250,0.18); color: #c4b5fd; padding: 5px 10px; border-radius: 9999px; text-decoration: none; white-space: nowrap; }
+        .ae-toggle { width: 46px; height: 26px; border-radius: 9999px; background: rgba(255,255,255,0.1); border: 0; position: relative; cursor: pointer; transition: background 0.2s; padding: 0; flex-shrink: 0; }
+        .ae-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ae-toggle.on { background: #22c55e; }
+        .ae-toggle-knob { display: block; width: 20px; height: 20px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .ae-toggle.on .ae-toggle-knob { left: 23px; }
 
         @media (max-width: 720px) {
           .ae-grid { grid-template-columns: 1fr; }
@@ -365,11 +414,53 @@ export function AdminEditor({ site, initial, eventsCount }: Props) {
           })}
         </div>
 
+        {/* Funzionalità del sito (feature toggles) */}
+        <div className="ae-section">
+          <h2 className="ae-h2">⚙️ Funzionalità del sito</h2>
+          <p className="ae-h2-sub">Accendi o spegni le sezioni del tuo sito. Quando spente, scompaiono completamente.</p>
+          <div className="ae-feat-grid">
+            {FEATURES.map(f => {
+              const planAllows = planDefaults[f.key]
+              const override = flags[f.col]
+              // Active = piano permette E (override non false)
+              const isActive = planAllows && override !== false
+              const locked = !planAllows
+              return (
+                <div key={f.key} className={`ae-feat ${locked ? 'locked' : ''} ${isActive && !locked ? 'on' : ''}`}>
+                  <div className="ae-feat-head">
+                    <span className="ae-feat-icon">{f.icon}</span>
+                    <div className="ae-feat-meta">
+                      <p className="ae-feat-name">{f.name}</p>
+                      <p className="ae-feat-sub">{f.sub}</p>
+                    </div>
+                    {locked ? (
+                      <a href="/pricing" className="ae-feat-badge">Solo Pro</a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => toggleFeature(f.key, f.col, isActive)}
+                        disabled={pending}
+                        className={`ae-toggle ${isActive ? 'on' : ''}`}
+                        aria-label={`${f.name} ${isActive ? 'attivo' : 'disattivato'}`}
+                      >
+                        <span className="ae-toggle-knob" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Sezioni dedicate */}
         <div className="ae-section">
           <h2 className="ae-h2">Altre sezioni</h2>
           <p className="ae-h2-sub">Gestisci menu, eventi e altro nelle pagine dedicate.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <Link href="/admin/prenotazioni" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
+              <span>📋 Prenotazioni</span><span style={{ opacity: 0.5 }}>→</span>
+            </Link>
             <Link href="/admin/menu" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
               <span>🍽 Menu</span><span style={{ opacity: 0.5 }}>→</span>
             </Link>

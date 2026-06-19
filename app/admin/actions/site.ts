@@ -118,6 +118,50 @@ export async function saveSiteContent(input: SiteContentInput) {
 }
 
 /**
+ * Feature toggles del ristoratore (6 booleani in site_content).
+ */
+import type { FeatureKey } from '@/lib/plans'
+
+export interface FeatureFlags {
+  feature_reservations_enabled: boolean | null
+  feature_newsletter_enabled: boolean | null
+  feature_events_enabled: boolean | null
+  feature_whatsapp_button_enabled: boolean | null
+  feature_reviews_enabled: boolean | null
+  feature_chef_section_enabled: boolean | null
+}
+
+const FEATURE_COL: Record<FeatureKey, keyof FeatureFlags> = {
+  reservations:   'feature_reservations_enabled',
+  newsletter:     'feature_newsletter_enabled',
+  events:         'feature_events_enabled',
+  whatsappButton: 'feature_whatsapp_button_enabled',
+  reviews:        'feature_reviews_enabled',
+  chef:           'feature_chef_section_enabled',
+}
+
+export async function setFeatureFlag(feature: FeatureKey, enabled: boolean | null): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  const col = FEATURE_COL[feature]
+  const payload: any = { site_id: owner.site_id, [col]: enabled }
+  const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'site_id' })
+  if (error) {
+    if (/column .* does not exist|Could not find the/i.test(error.message)) {
+      return { ok: false, error: 'Migrazione 0013 non applicata: applicala dal SQL editor di Supabase.' }
+    }
+    return { ok: false, error: error.message }
+  }
+  revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
+  return { ok: true }
+}
+
+/**
  * Triggera la pipeline AI per generare il contenuto del sito dell'utente loggato.
  * Sovrascrive tagline/descrizione/menu/foto. Lo status passa a 'live' al successo.
  */

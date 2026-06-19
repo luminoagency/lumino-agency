@@ -215,6 +215,80 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
 }
 
 /**
+ * Feature toggles — il ristoratore puo accendere/spegnere singole sezioni
+ * del sito (es. "non voglio prenotazioni online" anche se il piano le include).
+ *
+ * Default per piano: la colonna site_content.feature_<key>_enabled (boolean)
+ * può essere:
+ *   null  → usa il default del piano
+ *   true  → forza ON (se il piano lo permette)
+ *   false → forza OFF (override esplicito del ristoratore)
+ */
+export type FeatureKey =
+  | 'reservations'
+  | 'newsletter'
+  | 'events'
+  | 'whatsappButton'
+  | 'reviews'
+  | 'chef'
+
+export const PLAN_FEATURE_DEFAULTS: Record<PlanKey, Record<FeatureKey, boolean>> = {
+  basic: {
+    reservations: false,
+    newsletter: false,
+    events: false,
+    whatsappButton: false,
+    reviews: true,
+    chef: false,
+  },
+  pro: {
+    reservations: true,
+    newsletter: true,
+    events: true,
+    whatsappButton: true,
+    reviews: true,
+    chef: true,
+  },
+  premium: {
+    reservations: true,
+    newsletter: true,
+    events: true,
+    whatsappButton: true,
+    reviews: true,
+    chef: true,
+  },
+}
+
+const FEATURE_COLUMN_MAP: Record<FeatureKey, string> = {
+  reservations:   'feature_reservations_enabled',
+  newsletter:     'feature_newsletter_enabled',
+  events:         'feature_events_enabled',
+  whatsappButton: 'feature_whatsapp_button_enabled',
+  reviews:        'feature_reviews_enabled',
+  chef:           'feature_chef_section_enabled',
+}
+
+/**
+ * Verifica se una feature è attiva per un sito.
+ *  - Se il piano non la include → false (override non possibile)
+ *  - Se il piano la include e l'override è esplicitamente false → false
+ *  - Altrimenti → true
+ */
+export function isFeatureActive(
+  tier: PlanKey,
+  content: Record<string, unknown> | null | undefined,
+  feature: FeatureKey,
+): boolean {
+  const planAllows = PLAN_FEATURE_DEFAULTS[tier]?.[feature]
+  if (!planAllows) return false
+  if (!content) return true
+  const col = FEATURE_COLUMN_MAP[feature]
+  const override = content[col]
+  if (override === false) return false
+  return true
+}
+
+/**
  * Prezzo dinamico interno (NON mostrare al cliente).
  * Prezzo finale = prezzo base × moltiplicatore zona × livello ristorante.
  * Si applica per arrivare al numero finale dentro al range del piano.

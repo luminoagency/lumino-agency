@@ -4,13 +4,18 @@
  *         guestsCount, notes? }
  *
  * Endpoint pubblico chiamato dal form prenotazione sui siti pubblici dei ristoranti.
- * Crea una riga in site_reservations con status='pending' per il ristoratore.
- * Solo per siti tier='pro' | 'premium' e status='live'.
+ *
+ * Privacy: Lumino non vede MAI dati personali. Tracking solo aggregato
+ * (slug + date_only + restaurant_id). Tutte le email passano da Apps Script
+ * webhook (LUMINO_RESERVATION_ACK_URL, LUMINO_OWNER_NOTIFY_URL).
+ *
+ * Gating: tier ≠ 'basic' AND status='live' AND feature_reservations_enabled.
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { trackEvent } from '@/lib/tracking'
+import { isFeatureActive } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   let body: any = {}
@@ -35,42 +40,141 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const { data: site } = await supabase
     .from('sites')
-    .select('id, tier, status, slug, client_id, clients:client_id(email, name)')
+    .select(`
+      id, tier, status, slug, client_id,
+      clients:client_id (email, name, restaurant_id),
+      content:site_content (
+        restaurant_name, email, whatsapp_number,
+        feature_reservations_enabled, feature_whatsapp_button_enabled
+      )
+    `)
     .eq('slug', slug)
     .maybeSingle()
 
   if (!site || site.status !== 'live') {
-    return NextResponse.json({ error: 'Sito non trovato o non pubblicato' }, { status: 404 })
-  }
-  if (site.tier === 'basic') {
-    return NextResponse.json({ error: 'Le prenotazioni online non sono attive per questo locale' }, { status: 400 })
+    // Stessa 404 per "non esiste" e "feature disattivata": no info leak
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
 
-  const { error: insErr } = await supabase.from('site_reservations').insert({
-    site_id: site.id,
-    guest_name: guestName,
-    guest_email: guestEmail || null,
-    guest_phone: guestPhone,
-    date,
-    time: time + ':00',  // postgres time vuole HH:MM:SS
-    guests_count: guestsCount,
-    notes: notes || null,
-    status: 'pending',
-  })
+  const content: any = Array.isArray((site as any).content)
+    ? (site as any).content[0]
+    : (site as any).content
+  const client: any = Array.isArray((site as any).clients)
+    ? (site as any).clients[0]
+    : (site as any).clients
 
-  if (insErr) {
-    return NextResponse.json({ error: insErr.message }, { status: 500 })
+  // Feature gating: se il piano non lo prevede O l'override è OFF → 404
+  if (!isFeatureActive(site.tier as any, content || {}, 'reservations')) {
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
 
-  // Tracking (fire-and-forget)
-  const client = Array.isArray((site as any).clients) ? (site as any).clients[0] : (site as any).clients
-  trackEvent('reservation', {
-    email: client?.email || '',
-    restaurantName: client?.name || slug,
-    guestName,
-    date,
-    persons: guestsCount,
+  const { data: inserted, error: insErr } = await supabase
+    .from('site_reservations')
+    .insert({
+      site_id: site.id,
+      guest_name: guestName,
+      guest_email: guestEmail || null,
+      guest_phone: guestPhone,
+      date,
+      time: time + ':00',
+      guests_count: guestsCount,
+      notes: notes || null,
+      status: 'pending',
+    })
+    .select('id')
+    .single()
+
+  if (insErr || !inserted) {
+    return NextResponse.json({ error: insErr?.message || 'Errore' }, { status: 500 })
+  }
+
+  const restaurantName: string = content?.restaurant_name || client?.name || slug
+  const restaurantReplyTo: string = content?.email || client?.email || ''
+
+  // ── 1. Email ACK al guest (Apps Script) ─────────────────────────────────
+  const ackUrl = process.env.LUMINO_RESERVATION_ACK_URL
+  if (ackUrl && guestEmail) {
+    try {
+      const ackRes = await fetch(ackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          secret: process.env.LUMINO_SHEET_SECRET,
+          kind: 'reservation_ack',
+          guest_email: guestEmail,
+          guest_name: guestName,
+          restaurant_name: restaurantName,
+          restaurant_reply_to: restaurantReplyTo,
+          date,
+          time,
+          people: guestsCount,
+        }),
+      })
+      if (ackRes.ok) {
+        await supabase.from('site_reservations')
+          .update({ ack_email_sent_at: new Date().toISOString() })
+          .eq('id', inserted.id)
+      }
+    } catch {}
+  }
+
+  // ── 2. Notifica al ristoratore (Apps Script email) ──────────────────────
+  const notifyUrl = process.env.LUMINO_OWNER_NOTIFY_URL
+  if (notifyUrl && client?.email) {
+    fetch(notifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: process.env.LUMINO_SHEET_SECRET,
+        kind: 'owner_notify_reservation',
+        owner_email: client.email,
+        restaurant_name: restaurantName,
+        guest_name: guestName,
+        guest_phone: guestPhone,
+        date,
+        time,
+        people: guestsCount,
+        notes: notes || '',
+        admin_url: `https://bylumino.com/admin/prenotazioni`,
+      }),
+    }).catch(() => {})
+  }
+
+  // ── 3. Notifica WhatsApp al ristoratore (solo se ha bottone WA attivo) ──
+  const hasWhatsappFeature = isFeatureActive(
+    site.tier as any,
+    content || {},
+    'whatsappButton',
+  )
+  const ownerWhatsapp = content?.whatsapp_number
+  if (hasWhatsappFeature && ownerWhatsapp && process.env.WHAPI_TOKEN) {
+    fetch(`${process.env.WHAPI_BASE_URL}/messages/text`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.WHAPI_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: ownerWhatsapp,
+        body:
+          `Nuova prenotazione · ${restaurantName}\n\n` +
+          `${guestName} (${guestPhone})\n` +
+          `${date} alle ${time} · ${guestsCount} persone\n` +
+          (notes ? `Note: ${notes}\n` : '') +
+          `\nConferma o annulla: https://bylumino.com/admin/prenotazioni`,
+      }),
+    }).catch(() => {})
+  }
+
+  // ── 4. Tracking AGGREGATO (zero dati personali) ─────────────────────────
+  trackEvent('reservation_count' as any, {
+    restaurant_id: (client?.restaurant_id as string) || '',
+    slug,
+    date_only: date,
   }).catch(() => {})
 
-  return NextResponse.json({ ok: true, message: 'Prenotazione ricevuta. Il ristorante ti contatterà per confermare.' })
+  return NextResponse.json({
+    ok: true,
+    message: 'Prenotazione ricevuta. Riceverai una mail di conferma a breve.',
+  })
 }

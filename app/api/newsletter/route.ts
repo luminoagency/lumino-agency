@@ -9,6 +9,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isFeatureActive } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   let body: any = {}
@@ -26,15 +27,18 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const { data: site } = await supabase
     .from('sites')
-    .select('id, tier, status')
+    .select('id, tier, status, content:site_content (feature_newsletter_enabled)')
     .eq('slug', slug)
     .maybeSingle()
 
   if (!site || site.status !== 'live') {
-    return NextResponse.json({ error: 'Sito non trovato o non pubblicato' }, { status: 404 })
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
-  if (site.tier === 'basic') {
-    return NextResponse.json({ error: 'Newsletter non attiva per questo locale' }, { status: 400 })
+  const content: any = Array.isArray((site as any).content)
+    ? (site as any).content[0]
+    : (site as any).content
+  if (!isFeatureActive(site.tier as any, content || {}, 'newsletter')) {
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
 
   // Inserisce o reattiva l'iscrizione esistente

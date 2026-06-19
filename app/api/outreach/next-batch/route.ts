@@ -1,134 +1,160 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { getAvailableAccounts } from '@/lib/outreach/accounts';
-import { compose } from '@/lib/outreach/compose';
-import { getQueue } from '@/lib/outreach/queue';
-import { releaseStaleClaims } from '@/lib/outreach/report';
-import { getActiveStrategies, pickStrategy } from '@/lib/outreach/strategies';
-import type { AccountName, ClaimInsert } from '@/lib/outreach/types';
+import { NextResponse, type NextRequest } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { compose } from '@/lib/outreach/compose'
+import { getQueue } from '@/lib/outreach/queue'
+import { releaseStaleClaims } from '@/lib/outreach/report'
+import { getActiveStrategies, pickStrategy } from '@/lib/outreach/strategies'
+import { sendOutreachEmail, type OutreachAccount } from '@/lib/outreach/smtpSender'
+import { preflightCheck } from '@/lib/outreach/preflight'
+import type { ClaimInsert } from '@/lib/outreach/types'
 
 /**
- * Outreach batch endpoint — called by each Gmail Apps Script at the start of
- * its send run. The script authenticates with OUTREACH_SECRET, identifies
- * itself via ?account=, and receives a batch of composed emails to send.
+ * Outreach send tick — chiamato da Vercel Cron (o /api/cron/outreach-tick).
  *
- * Claim rows (status='sending') are inserted before the response is returned
- * so that two accounts polling simultaneously cannot claim the same lead.
- * Conflicts on the unique index are silently dropped via ignoreDuplicates.
+ * NIENTE Apps Script. Lumino tiene il controllo end-to-end:
+ *  1. release stale claims (failed-mid-run nelle run precedenti)
+ *  2. per ogni account status='active' con capacita rimanente:
+ *      - prendi N lead dalla coda (initial + followup_3 + followup_7)
+ *      - compose() con strategia round-robin e voce del sender_name
+ *      - preflightCheck() (MX, disposable, suppression, recently_contacted)
+ *      - claim (insert emails_sent status='sending')
+ *      - sendOutreachEmail() via Zoho SMTP
+ *      - update status='sent'/'failed' direttamente
  *
- * The script then sends each email and calls /api/outreach/report for each one.
+ * Auth: header `Authorization: Bearer ${CRON_SECRET}`.
  */
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.OUTREACH_SECRET;
-  if (!secret) return false;
-  return req.headers.get('authorization') === `Bearer ${secret}`;
+  // Accetta sia OUTREACH_SECRET (legacy) sia CRON_SECRET (nuovo Vercel cron)
+  const auth = req.headers.get('authorization') || ''
+  const expected1 = process.env.OUTREACH_SECRET
+  const expected2 = process.env.CRON_SECRET
+  if (expected1 && auth === `Bearer ${expected1}`) return true
+  if (expected2 && auth === `Bearer ${expected2}`) return true
+  return false
 }
 
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const accountName = req.nextUrl.searchParams.get('account') as AccountName | null;
-  if (!accountName) {
-    return NextResponse.json({ error: 'Missing account param' }, { status: 400 });
+  const db = createAdminClient()
+
+  // 1. Rilascia claim 'sending' vecchi (deploy crash mid-run)
+  await releaseStaleClaims(db)
+
+  // 2. Account attivi (no warming, no paused, no burned)
+  const { data: rawAccounts } = await db
+    .from('outreach_accounts')
+    .select('id, email, sender_name, smtp_host, smtp_port, smtp_user, smtp_password_encrypted, provider, daily_cap, name')
+    .eq('active', true)
+    .eq('status', 'active')
+
+  const accounts = (rawAccounts || []) as Array<OutreachAccount & { daily_cap: number; name: string }>
+  if (accounts.length === 0) {
+    return NextResponse.json({ ok: true, sent: 0, reason: 'no active accounts' })
   }
 
-  const db = createAdminClient();
-
-  // Release stale 'sending' claims from any previously crashed run.
-  await releaseStaleClaims(db);
-
-  // Check this account's remaining daily capacity.
-  const available = await getAvailableAccounts(db);
-  const slot = available.find((a) => a.account.name === accountName);
-  if (!slot) {
-    return NextResponse.json({ ok: true, batch: [], reason: 'no capacity' });
+  const strategies = await getActiveStrategies(db)
+  if (!strategies.length) {
+    return NextResponse.json({ ok: true, sent: 0, reason: 'no strategies' })
   }
 
-  const limit = Math.min(slot.remaining, 50); // cap per-call batch
-  const [queue, strategies] = await Promise.all([
-    getQueue(db, limit),
-    getActiveStrategies(db),
-  ]);
+  const todayUtc = new Date().toISOString().slice(0, 10)
+  let totalSent = 0
+  let totalSkipped = 0
+  let totalFailed = 0
 
-  if (!queue.length || !strategies.length) {
-    return NextResponse.json({ ok: true, batch: [] });
-  }
-
-  // For follow-up steps, look up the original thread ID (always from
-  // step='initial') so the script can reply into the same Gmail thread.
-  const followupRestaurantIds = queue
-    .filter((q) => q.step !== 'initial')
-    .map((q) => q.lead.id);
-
-  const threadIdByRestaurantId = new Map<string, string>();
-  if (followupRestaurantIds.length > 0) {
-    const { data: threads } = await db
+  // Per ogni account: quanti slot rimanenti oggi → quanti lead prelevare
+  for (const account of accounts) {
+    const { count: sentToday } = await db
       .from('emails_sent')
-      .select('restaurant_id, gmail_thread_id')
-      .in('restaurant_id', followupRestaurantIds)
-      .eq('step', 'initial')
+      .select('id', { count: 'exact', head: true })
+      .eq('account', account.name)
       .eq('status', 'sent')
-      .not('gmail_thread_id', 'is', null);
-    for (const t of threads ?? []) {
-      if (t.gmail_thread_id) {
-        threadIdByRestaurantId.set(
-          t.restaurant_id as string,
-          t.gmail_thread_id as string,
-        );
+      .gte('sent_at', `${todayUtc}T00:00:00Z`)
+    const remaining = Math.max(0, (account.daily_cap || 0) - (sentToday || 0))
+    if (remaining <= 0) continue
+
+    const batchSize = Math.min(remaining, 25)
+    const queue = await getQueue(db, batchSize)
+    if (!queue.length) continue
+
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i]
+      const lead = item.lead
+
+      // Preflight: skip lead se non sicuro
+      const pf = await preflightCheck(db, lead)
+      if (!pf.ok) {
+        totalSkipped++
+        continue
+      }
+
+      // Compose con voce del sender (sender_name passato a compose)
+      const draft = await compose({
+        lead,
+        strategy: pickStrategy(strategies, i),
+        step: item.step,
+        priorSubject: item.priorSubject,
+        senderName: account.sender_name || 'Lumino',
+      } as any)
+
+      // Claim
+      const claim: ClaimInsert = {
+        restaurant_id: lead.id,
+        strategy: draft.strategyNumber,
+        subject: draft.subject,
+        body: draft.body,
+        account: account.name as any,
+        step: item.step,
+        status: 'sending',
+        token: draft.token,
+      }
+      const { error: claimErr } = await db.from('emails_sent').insert(claim)
+      if (claimErr) {
+        totalSkipped++
+        continue
+      }
+
+      // Send via SMTP
+      const r = await sendOutreachEmail({
+        account,
+        to: lead.email!,
+        subject: draft.subject,
+        body: draft.body,
+        unsubToken: draft.token,
+      })
+
+      if (r.ok) {
+        await db
+          .from('emails_sent')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            gmail_message_id: r.messageId || null,
+          })
+          .eq('token', draft.token)
+        totalSent++
+      } else {
+        await db
+          .from('emails_sent')
+          .update({ status: 'failed', error_message: (r.error || '').slice(0, 500) })
+          .eq('token', draft.token)
+        totalFailed++
       }
     }
   }
 
-  // Compose all emails in parallel (Haiku calls; fast enough for batch ≤50).
-  const drafts = await Promise.all(
-    queue.map((queued, index) =>
-      compose({
-        lead: queued.lead,
-        strategy: pickStrategy(strategies, index),
-        step: queued.step,
-        priorSubject: queued.priorSubject,
-      }),
-    ),
-  );
-
-  // Insert claim rows. ignoreDuplicates silently drops any race-condition
-  // conflicts; we then query back to find which tokens actually landed.
-  const claims: ClaimInsert[] = drafts.map((draft, i) => ({
-    restaurant_id: queue[i].lead.id,
-    strategy: draft.strategyNumber,
-    subject: draft.subject,
-    body: draft.body,
-    account: accountName,
-    step: queue[i].step,
-    status: 'sending' as const,
-    token: draft.token,
-  }));
-
-  await db.from('emails_sent').insert(claims, { count: 'exact' });
-
-  // Only return emails whose claim was actually inserted.
-  const { data: confirmed } = await db
-    .from('emails_sent')
-    .select('token')
-    .in('token', claims.map((c) => c.token));
-
-  const confirmedTokens = new Set((confirmed ?? []).map((r) => r.token as string));
-
-  const batch = drafts
-    .map((draft, i) => ({
-      token: draft.token,
-      to: queue[i].lead.email,
-      subject: draft.subject,
-      body: draft.body,
-      threadId: threadIdByRestaurantId.get(queue[i].lead.id) ?? null,
-    }))
-    .filter((item) => confirmedTokens.has(item.token));
-
-  return NextResponse.json({ ok: true, batch });
+  return NextResponse.json({
+    ok: true,
+    sent: totalSent,
+    skipped: totalSkipped,
+    failed: totalFailed,
+    accountsProcessed: accounts.length,
+  })
 }

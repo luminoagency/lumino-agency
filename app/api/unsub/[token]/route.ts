@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { suppressRestaurantByToken } from '@/lib/outreach/unsubGlobal';
 
 /**
  * One-click unsubscribe endpoint. Appended as plain text to every outreach
@@ -38,11 +39,9 @@ export async function GET(
 
   try {
     const db = createAdminClient();
-    await db
-      .from('emails_sent')
-      .update({ unsubscribed_at: new Date().toISOString(), unsubscribed: true })
-      .eq('token', token)
-      .is('unsubscribed_at', null); // idempotent
+    // suppressRestaurantByToken: marca emails_sent.unsubscribed + restaurants.do_not_contact
+    // così TUTTI e 4 i sender Zoho rispettano l'unsub globale (preflight.ts blocca).
+    await suppressRestaurantByToken(db, token);
   } catch (err) {
     // Log but don't surface to the recipient.
     console.error(`Unsub error [${token}]:`, err instanceof Error ? err.message : err);

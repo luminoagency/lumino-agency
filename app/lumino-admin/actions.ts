@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { generateSiteContent } from '@/lib/pipeline/generate'
 
-const SUPER_ADMINS = ['outlumino@gmail.com']
+const SUPER_ADMINS = ['outlumino@gmail.com', 'bylumino06@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()
@@ -115,6 +115,65 @@ export async function adminDeleteReview(siteId: string, reviewIndex: number) {
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Pausa/Riprendi manualmente un account outreach (super-admin only). */
+export async function adminToggleOutreachAccount(accountId: string, action: 'pause' | 'resume') {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const update = action === 'pause'
+      ? { status: 'paused', last_paused_at: new Date().toISOString() }
+      : { status: 'warming', last_paused_at: null }
+    const { error } = await admin.from('outreach_accounts').update(update).eq('id', accountId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/** Aggrega tutti i dati diagnostici giornalieri + riassunto AI. */
+export async function adminGetDiagnostics() {
+  try {
+    await assertSuperAdmin()
+
+    const [
+      { getEmailMetricsToday, getStrategyPerformanceToday, getWhatsAppMetricsToday, getAnomalies, getWinsToday },
+      { generateDailySummary },
+      { cacheGet, cacheSet, AI_SUMMARY_TTL },
+    ] = await Promise.all([
+      import('@/lib/diagnostics/daily'),
+      import('@/lib/diagnostics/aiSummary'),
+      import('@/lib/diagnostics/cache'),
+    ])
+
+    const [email, strategies, whatsapp, wins] = await Promise.all([
+      getEmailMetricsToday(),
+      getStrategyPerformanceToday(),
+      getWhatsAppMetricsToday(),
+      getWinsToday(),
+    ])
+
+    // Pass pre-computed WA response time to avoid double-fetching
+    const anomalies = await getAnomalies(whatsapp.avg_response_time)
+
+    const today = new Date().toISOString().slice(0, 10)
+    const cacheKey = `ai_summary_${today}`
+    let aiSummary = cacheGet<string>(cacheKey)
+    if (!aiSummary) {
+      aiSummary = await generateDailySummary({ email, strategies, whatsapp, anomalies, wins })
+      cacheSet(cacheKey, aiSummary, AI_SUMMARY_TTL)
+    }
+
+    return {
+      ok: true,
+      data: { email, strategies, whatsapp, anomalies, wins, aiSummary, generatedAt: new Date().toISOString() },
+    }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nel caricamento diagnostica' }
   }
 }
 

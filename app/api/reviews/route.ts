@@ -10,6 +10,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
+import { isFeatureActive } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   let body: any = {}
@@ -30,23 +31,19 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const { data: site } = await supabase
     .from('sites')
-    .select('id, tier, status')
+    .select('id, tier, status, content:site_content (reviews, feature_reviews_enabled)')
     .eq('slug', slug)
     .maybeSingle()
 
   if (!site || site.status !== 'live') {
-    return NextResponse.json({ error: 'Sito non trovato o non pubblicato' }, { status: 404 })
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
-  if (site.tier === 'basic') {
-    return NextResponse.json({ error: 'Le recensioni dal sito non sono attive per questo locale' }, { status: 400 })
+  const content: any = Array.isArray((site as any).content)
+    ? (site as any).content[0]
+    : (site as any).content
+  if (!isFeatureActive(site.tier as any, content || {}, 'reviews')) {
+    return NextResponse.json({ error: 'Non trovato' }, { status: 404 })
   }
-
-  // Carica recensioni esistenti
-  const { data: content } = await supabase
-    .from('site_content')
-    .select('reviews')
-    .eq('site_id', site.id)
-    .maybeSingle()
 
   if (!content) {
     return NextResponse.json({ error: 'Sito non inizializzato' }, { status: 500 })

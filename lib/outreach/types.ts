@@ -9,8 +9,16 @@ export type OutreachStep = 'initial' | 'followup_3' | 'followup_7';
 /** Send lifecycle status — mirrors emails_sent.status constraint. */
 export type SendStatus = 'sending' | 'sent' | 'failed' | 'skipped';
 
-/** The four Gmail sender identities. */
-export type AccountName = 'outlumino1' | 'outlumino2' | 'outlumino3' | 'outlumino4';
+/**
+ * Sender identities — ora 4 mittenti @bylumino.com con prima persona.
+ * (Legacy outlumino1..4 dei vecchi Gmail Apps Script restano accettati per backward-compat.)
+ */
+export type AccountName =
+  | 'luca' | 'pietro' | 'giovanni' | 'gabriele'
+  | 'outlumino1' | 'outlumino2' | 'outlumino3' | 'outlumino4';
+
+/** Voci umane parametriche (vedi lib/outreach/compose.ts). */
+export type SenderVoice = 'luca' | 'pietro' | 'giovanni' | 'gabriele';
 
 /** Strategy slot number — mirrors email_strategies.strategy_number constraint. */
 export type StrategyNumber = 1 | 2 | 3 | 4 | 5;
@@ -61,6 +69,8 @@ export interface ComposeInput {
   step: OutreachStep;
   /** Subject of the original email, required to thread follow-ups. */
   priorSubject?: string;
+  /** Nome del mittente (es. 'Luca'). Usato per la firma e per scegliere la voce. */
+  senderName?: string;
 }
 
 /** A fully rendered email ready to hand to the sender. */

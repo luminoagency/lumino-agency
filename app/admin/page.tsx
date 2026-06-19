@@ -37,6 +37,14 @@ export default async function AdminPage() {
         whatsapp: content?.whatsapp || '',
         opening_hours: content?.opening_hours || {},
       }}
+      featureFlags={{
+        feature_reservations_enabled:    content?.feature_reservations_enabled ?? null,
+        feature_newsletter_enabled:      content?.feature_newsletter_enabled ?? null,
+        feature_events_enabled:          content?.feature_events_enabled ?? null,
+        feature_whatsapp_button_enabled: content?.feature_whatsapp_button_enabled ?? null,
+        feature_reviews_enabled:         content?.feature_reviews_enabled ?? null,
+        feature_chef_section_enabled:    content?.feature_chef_section_enabled ?? null,
+      }}
       eventsCount={events.length}
     />
   )

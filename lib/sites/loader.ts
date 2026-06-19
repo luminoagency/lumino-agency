@@ -8,7 +8,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { TemplateKey } from '@/lib/plans'
+import { isFeatureActive, type TemplateKey, type PlanKey, type FeatureKey } from '@/lib/plans'
 
 const TEMPLATE_FALLBACK: TemplateKey = 'cinematico'
 
@@ -94,6 +94,14 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
   // WhatsApp: priority a colonna nuova (0009), fallback a quella vecchia
   const whatsappNumber = content.whatsapp_number || content.whatsapp || undefined
 
+  // Feature toggles: calcoliamo prima i flag, poi filtriamo i dati in arrivo ai template.
+  // Quando una feature è OFF, mandiamo array vuoti / undefined → la sezione scompare
+  // dai template senza dover modificare ciascuno dei 5.
+  const tierKey = site.tier as PlanKey
+  const featureKeys: FeatureKey[] = ['reservations', 'newsletter', 'events', 'whatsappButton', 'reviews', 'chef']
+  const features = {} as Record<FeatureKey, boolean>
+  for (const k of featureKeys) features[k] = isFeatureActive(tierKey, content, k)
+
   const props = {
     restaurantName: content.restaurant_name,
     tagline: content.tagline || undefined,
@@ -114,15 +122,21 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
     mapsUrl: content.google_maps_embed_url || undefined,
     socialLinks: content.social_links || {},
     tier: site.tier as 'basic' | 'pro' | 'premium',
-    events: (events || []).map(e => ({
-      title: e.title,
-      description: e.description || '',
-      date: e.event_date,
-      image: e.image_url || undefined,
-    })),
-    whatsappNumber,
-    chef,
-    reviews,
+    // Feature-gated: se OFF, vuoto/undefined → sezione invisibile
+    events: features.events
+      ? (events || []).map(e => ({
+          title: e.title,
+          description: e.description || '',
+          date: e.event_date,
+          image: e.image_url || undefined,
+        }))
+      : [],
+    whatsappNumber: features.whatsappButton ? whatsappNumber : undefined,
+    chef: features.chef ? chef : undefined,
+    reviews: features.reviews ? reviews : undefined,
+    enableReservations: features.reservations,
+    enableNewsletter: features.newsletter,
+    features,
     faq: Array.isArray(content.faq) ? content.faq : [],
     timeSlots: Array.isArray(content.time_slots) ? content.time_slots : [],
     videoUrl: site.video_url || undefined,
