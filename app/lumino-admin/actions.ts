@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { generateSiteContent } from '@/lib/pipeline/generate'
 
-const SUPER_ADMINS = ['outlumino@gmail.com', 'bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()
