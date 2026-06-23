@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/cron/diagnostics-warm",
-      "schedule": "0 5,17 * * *"
+      "schedule": "0 5 * * *"
     }
   ]
 }
