@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveSiteContent, publishSite, unpublishSite, generateMySiteContent, setFeatureFlag, type FeatureFlags } from './actions/site'
-import { logoutAction } from '../auth/actions'
+import { logoutActionState } from '../auth/actions'
 import { PLAN_FEATURE_DEFAULTS, type FeatureKey, type PlanKey } from '@/lib/plans'
 
 interface OpeningHoursDay { open?: string; close?: string; closed?: boolean }
@@ -288,7 +288,14 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
           <span className="ae-logo-dot" />
         </Link>
         <div className="ae-top-right">
-          <form action={logoutAction}><button className="ae-logout" type="submit">Esci</button></form>
+          <button
+            className="ae-logout"
+            type="button"
+            onClick={async () => {
+              const r = await logoutActionState()
+              window.location.assign(r.redirectTo)
+            }}
+          >Esci</button>
         </div>
       </nav>
 

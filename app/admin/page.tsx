@@ -1,15 +1,36 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import { getMySite } from './actions/site'
 import { AdminEditor } from './AdminEditor'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPage() {
+  // Verifica reale della sessione. Se non autenticato → login.
+  // Se autenticato ma senza sito → messaggio, NON redirect a /login
+  // (altrimenti un utente loggato verrebbe sbattuto sul form di login).
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login?next=' + encodeURIComponent('/admin') + '&error=' + encodeURIComponent('Accedi per gestire il tuo sito.'))
+  }
+
   const site = await getMySite()
   if (!site) {
-    const next = encodeURIComponent('/admin')
-    redirect('/login?next=' + next + '&error=' + encodeURIComponent('Accedi per gestire il tuo sito.'))
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', padding: '2rem' }}>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&display=swap" />
+        <div style={{ textAlign: 'center', maxWidth: 460 }}>
+          <h1 style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: 36, fontStyle: 'italic', fontWeight: 400, margin: '0 0 12px' }}>Nessun sito collegato</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.6 }}>
+            Sei loggato come <strong style={{ color: '#fff' }}>{user.email}</strong> ma a questo account non è ancora associato un sito.
+            Se hai appena completato la registrazione, attendi qualche minuto o contatta Lumino.
+          </p>
+          <Link href="/" style={{ display: 'inline-block', marginTop: 20, color: '#e52d1d', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>← Torna alla home</Link>
+        </div>
+      </div>
+    )
   }
 
   // Il join site_content può tornare array oppure oggetto a seconda della relazione

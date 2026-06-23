@@ -7,7 +7,7 @@ import {
   adminApproveReview, adminDeleteReview, adminCalculatePrice,
   adminToggleOutreachAccount,
 } from './actions'
-import { logoutAction } from '../auth/actions'
+import { logoutActionState } from '../auth/actions'
 import { DiagnosticsPanel } from './DiagnosticsPanel'
 import type { DiagnosticsData } from './DiagnosticsPanel'
 
@@ -247,7 +247,14 @@ export function SuperAdminClient(props: Props) {
           <div className="la-top-right">
             <span>Loggato come <strong>{currentUserEmail}</strong></span>
             <Link href="/admin" className="la-logout">Il mio admin</Link>
-            <form action={logoutAction}><button className="la-logout" type="submit">Esci</button></form>
+            <button
+              className="la-logout"
+              type="button"
+              onClick={async () => {
+                const r = await logoutActionState()
+                window.location.assign(r.redirectTo)
+              }}
+            >Esci</button>
           </div>
         </div>
 

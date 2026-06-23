@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { postSheetEvent } from '@/lib/integrations/googleSheets'
 import { trackEvent } from '@/lib/tracking'
@@ -191,10 +190,22 @@ export async function registerActionState(
   return { ok: true, redirectTo: '/register/grazie' }
 }
 
-export async function logoutAction() {
-  const supabase = createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
+export type LogoutState = { ok: boolean; redirectTo: string }
+
+/**
+ * Logout. Return-data pattern (niente redirect() throw nell'action:
+ * su Node 24 le server-action che lanciano redirect crashano con
+ * "Connection closed"). Il client fa window.location.assign(redirectTo)
+ * così il middleware vede i cookie sb-* puliti.
+ */
+export async function logoutActionState(): Promise<LogoutState> {
+  try {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+  } catch {
+    // anche se signOut fallisce, mandiamo l'utente al login
+  }
+  return { ok: true, redirectTo: '/login' }
 }
 
 export type ForgotPasswordState = { ok: boolean; error?: string; sent?: boolean } | null
