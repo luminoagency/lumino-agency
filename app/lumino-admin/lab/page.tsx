@@ -4,6 +4,7 @@ import { LabBoard, type LabProjectCard } from './LabBoard'
 
 export const metadata = { title: 'Lumino Lab · Super Admin' }
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime()

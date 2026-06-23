@@ -3,8 +3,12 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireSuperAdmin } from '../guard'
 import { businessTypeMeta, stepLabel, TOTAL_STEPS } from '../constants'
+import { Step1Research } from './Step1Research'
+import type { ResearchReport, ChatMessage } from '@/lib/lab/research'
 
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const maxDuration = 60
 
 const serif = { fontFamily: '"Cormorant Garamond", Georgia, serif' }
 
@@ -14,26 +18,41 @@ export default async function LabProjectPage({ params }: { params: { id: string 
 
   const { data: project } = await admin
     .from('lab_projects')
-    .select('id, business_name, business_type, status, current_step, business_input_mode, business_input_value')
+    .select('id, business_name, business_type, status, current_step, business_input_mode, business_input_value, project_data')
     .eq('id', params.id)
     .maybeSingle()
 
   if (!project) notFound()
 
-  const meta = businessTypeMeta(project.business_type)
+  const step = project.current_step ?? 1
+  const pdata = (project.project_data || {}) as any
+  const research = (pdata.research as ResearchReport) || null
+  const chat = (pdata.research_chat as ChatMessage[]) || []
 
+  // Step 1 — Research (UI interattiva)
+  if (step === 1) {
+    return (
+      <Step1Research
+        projectId={project.id}
+        businessName={project.business_name}
+        businessType={project.business_type}
+        inputMode={project.business_input_mode === 'url' ? 'url' : 'description'}
+        inputValue={project.business_input_value || ''}
+        initialResearch={research}
+        initialChat={chat}
+      />
+    )
+  }
+
+  // Step ≥ 2 — non ancora costruito: mostra che lo Step 1 è completo.
+  const meta = businessTypeMeta(project.business_type)
   return (
     <div className="min-h-screen bg-[#050505] text-white" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" />
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{ background: 'radial-gradient(800px circle at 12% 18%, rgba(229,45,29,0.06), transparent 50%), radial-gradient(700px circle at 88% 75%, rgba(167,139,250,0.05), transparent 50%)' }}
-      />
-      <div className="relative z-10 mx-auto max-w-[1000px] px-5 py-6">
+      <div className="mx-auto max-w-[1000px] px-5 py-6">
         <div className="mb-8 flex items-center gap-4 border-b border-white/10 pb-5">
           <Link href="/lumino-admin/lab" className="text-xs text-white/50 transition-colors hover:text-white">← Lab</Link>
         </div>
-
         <div className="flex items-start gap-4">
           <span className="text-5xl leading-none">{meta.icon}</span>
           <div>
@@ -42,29 +61,23 @@ export default async function LabProjectPage({ params }: { params: { id: string 
               <span>{meta.label}</span>
               <span className="text-white/20">·</span>
               <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] font-medium text-white/70">
-                Step {Math.min(project.current_step ?? 1, TOTAL_STEPS)}/{TOTAL_STEPS} — {stepLabel(project.current_step ?? 1)}
+                Step {Math.min(step, TOTAL_STEPS)}/{TOTAL_STEPS} — {stepLabel(step)}
               </span>
-              <span className="text-white/20">·</span>
-              <span className="capitalize">{String(project.status).replace('_', ' ')}</span>
             </div>
           </div>
         </div>
 
-        {project.business_input_value && (
-          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
-              Input ({project.business_input_mode === 'url' ? 'URL' : 'Descrizione'})
-            </div>
-            <div className="break-words text-sm text-white/80">{project.business_input_value}</div>
+        {research && (
+          <div className="mt-6 rounded-xl border border-green-500/25 bg-green-500/[0.06] px-4 py-3 text-sm text-green-300">
+            ✓ Step 1 — Research completato. {research.competitors.length} competitor analizzati · {research.photos.length} foto.
           </div>
         )}
 
-        <div className="mt-10 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center">
+        <div className="mt-8 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-16 text-center">
           <div className="mb-3 text-4xl">🚧</div>
-          <h2 className="m-0 text-2xl font-normal italic text-white" style={serif}>Lab in costruzione</h2>
+          <h2 className="m-0 text-2xl font-normal italic text-white" style={serif}>Step {Math.min(step, TOTAL_STEPS)} — {stepLabel(step)} in costruzione</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/50">
-            Questo è il segnaposto dello Step 0. I prossimi step (Research → Layout → Builder → Editor → Publish)
-            verranno costruiti qui sopra.
+            Questo step verrà costruito prossimamente. La ricerca dello Step 1 è salvata e disponibile.
           </p>
         </div>
       </div>
