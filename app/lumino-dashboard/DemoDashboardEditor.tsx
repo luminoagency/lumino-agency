@@ -8,7 +8,16 @@ import {
 } from './actions'
 import { DEMO_SITE_SLUG } from './constants'
 import { PLAN_FEATURE_DEFAULTS, type FeatureKey, type PlanKey } from '@/lib/plans'
-import type { FeatureFlags } from '@/app/admin/actions/site'
+
+// Definita localmente per evitare import da file 'use server' in client component
+interface FeatureFlags {
+  feature_reservations_enabled: boolean | null
+  feature_newsletter_enabled: boolean | null
+  feature_events_enabled: boolean | null
+  feature_whatsapp_button_enabled: boolean | null
+  feature_reviews_enabled: boolean | null
+  feature_chef_section_enabled: boolean | null
+}
 
 interface OpeningHoursDay { open?: string; close?: string; closed?: boolean }
 type OpeningHours = Record<string, OpeningHoursDay>
