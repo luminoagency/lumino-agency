@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
-import { registerAction } from '../auth/actions'
+import { useEffect, useState, useTransition } from 'react'
+import { useFormState } from 'react-dom'
+import { registerActionState, type RegisterState } from '../auth/actions'
 import { PLANS, type PlanKey } from '@/lib/plans'
 
 type Step = 1 | 2 | 3 | 4 | 5
@@ -41,12 +42,18 @@ const INITIAL: FormState = {
   password: '',
 }
 
-export default function RegisterPage({ searchParams }: { searchParams: { error?: string } }) {
+export default function RegisterPage() {
   const [step, setStep] = useState<Step>(1)
   const [d, setD] = useState<FormState>(INITIAL)
   const [pending, startTransition] = useTransition()
-  const errorMsg = searchParams?.error
+  const [state, formAction] = useFormState<RegisterState, FormData>(registerActionState, null)
 
+  // Full reload on success so middleware sees fresh state.
+  useEffect(() => {
+    if (state?.ok && state.redirectTo) window.location.assign(state.redirectTo)
+  }, [state])
+
+  const errorMsg = state?.ok === false ? state.error : undefined
   const isProPlus = d.plan === 'pro' || d.plan === 'premium'
 
   function set<K extends keyof FormState>(k: K, v: FormState[K]) {
@@ -93,7 +100,7 @@ export default function RegisterPage({ searchParams }: { searchParams: { error?:
     fd.set('chefQuote', d.chefQuote)
     fd.set('email', d.email)
     fd.set('password', d.password)
-    startTransition(() => { registerAction(fd) })
+    startTransition(() => { formAction(fd) })
   }
 
   return (
@@ -290,7 +297,7 @@ export default function RegisterPage({ searchParams }: { searchParams: { error?:
           ))}
         </div>
 
-        {errorMsg && <div className="rg-error">{decodeURIComponent(errorMsg)}</div>}
+        {errorMsg && <div className="rg-error">{errorMsg}</div>}
 
         <div className="rg-card">
           {step === 1 && (

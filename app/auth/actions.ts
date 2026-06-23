@@ -6,19 +6,25 @@ import { headers } from 'next/headers'
 import { postSheetEvent } from '@/lib/integrations/googleSheets'
 import { trackEvent } from '@/lib/tracking'
 
-export async function loginAction(formData: FormData) {
+export type LoginState = { ok: boolean; error?: string; redirectTo?: string } | null
+
+export async function loginActionState(
+  _prev: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
   const email = String(formData.get('email') || '').trim()
   const password = String(formData.get('password') || '')
   const nextRaw = String(formData.get('next') || '')
   const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/admin'
 
-  if (!email || !password) {
-    redirect('/login?error=' + encodeURIComponent('Compila tutti i campi.') + '&next=' + encodeURIComponent(next))
-  }
-  const supabase = createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) {
-    redirect('/login?error=' + encodeURIComponent(translateAuthError(error.message)) + '&next=' + encodeURIComponent(next))
+  if (!email || !password) return { ok: false, error: 'Compila tutti i campi.' }
+
+  try {
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) return { ok: false, error: translateAuthError(error.message) }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore imprevisto. Riprova.' }
   }
 
   // Tracking login (fire-and-forget, mai bloccante)
@@ -28,10 +34,15 @@ export async function loginAction(formData: FormData) {
     trackEvent('login', { email, ip }).catch(() => {})
   } catch {}
 
-  redirect(next)
+  return { ok: true, redirectTo: next }
 }
 
-export async function registerAction(formData: FormData) {
+export type RegisterState = { ok: boolean; error?: string; redirectTo?: string } | null
+
+export async function registerActionState(
+  _prev: RegisterState,
+  formData: FormData,
+): Promise<RegisterState> {
   const email = String(formData.get('email') || '').trim()
   const password = String(formData.get('password') || '')
   const restaurantName = String(formData.get('restaurantName') || '').trim()
@@ -50,23 +61,22 @@ export async function registerAction(formData: FormData) {
   const chefRole = String(formData.get('chefRole') || '').trim()
   const chefQuote = String(formData.get('chefQuote') || '').trim()
 
-  if (!email || !password || !restaurantName) {
-    redirect('/register?error=' + encodeURIComponent('Compila tutti i campi.'))
-  }
-  if (password.length < 8) {
-    redirect('/register?error=' + encodeURIComponent('La password deve avere almeno 8 caratteri.'))
-  }
+  if (!email || !password || !restaurantName) return { ok: false, error: 'Compila tutti i campi.' }
+  if (password.length < 8) return { ok: false, error: 'La password deve avere almeno 8 caratteri.' }
 
-  const supabase = createClient()
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { restaurant_name: restaurantName },
-    },
-  })
-  if (error) {
-    redirect('/register?error=' + encodeURIComponent(translateAuthError(error.message)))
+  let supabase
+  let data
+  try {
+    supabase = createClient()
+    const r = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { restaurant_name: restaurantName } },
+    })
+    if (r.error) return { ok: false, error: translateAuthError(r.error.message) }
+    data = r.data
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore imprevisto. Riprova.' }
   }
 
   // Sync signup to Google Sheets — fire-and-forget, MAI bloccare il signup
@@ -123,7 +133,7 @@ export async function registerAction(formData: FormData) {
         .select('id')
         .single()
       if (clientErr) console.error('[register] client insert failed:', clientErr.message)
-      if (!client) return
+      if (!client) return { ok: true, redirectTo: '/register/grazie' }
 
       const { data: site, error: siteErr } = await supabase
         .from('sites')
@@ -178,7 +188,7 @@ export async function registerAction(formData: FormData) {
     }
   }
 
-  redirect('/register/grazie')
+  return { ok: true, redirectTo: '/register/grazie' }
 }
 
 export async function logoutAction() {
@@ -213,21 +223,26 @@ export async function requestPasswordResetActionState(
   return { ok: true, sent: true }
 }
 
-export async function updatePasswordAction(formData: FormData) {
+export type UpdatePasswordState = { ok: boolean; error?: string; redirectTo?: string } | null
+
+export async function updatePasswordActionState(
+  _prev: UpdatePasswordState,
+  formData: FormData,
+): Promise<UpdatePasswordState> {
   const password = String(formData.get('password') || '')
   const confirmPassword = String(formData.get('confirmPassword') || '')
-  if (!password || password.length < 8) {
-    redirect('/reset-password?error=' + encodeURIComponent('La password deve avere almeno 8 caratteri.'))
+  if (!password || password.length < 8) return { ok: false, error: 'La password deve avere almeno 8 caratteri.' }
+  if (password !== confirmPassword) return { ok: false, error: 'Le password non coincidono.' }
+
+  try {
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) return { ok: false, error: translateAuthError(error.message) }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore imprevisto. Riprova.' }
   }
-  if (password !== confirmPassword) {
-    redirect('/reset-password?error=' + encodeURIComponent('Le password non coincidono.'))
-  }
-  const supabase = createClient()
-  const { error } = await supabase.auth.updateUser({ password })
-  if (error) {
-    redirect('/reset-password?error=' + encodeURIComponent(translateAuthError(error.message)))
-  }
-  redirect('/login?reset=1')
+
+  return { ok: true, redirectTo: '/login?reset=1' }
 }
 
 function translateAuthError(message: string): string {

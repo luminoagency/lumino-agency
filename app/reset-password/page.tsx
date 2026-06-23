@@ -1,12 +1,10 @@
 import Link from 'next/link'
-import { updatePasswordAction } from '../auth/actions'
 import { createClient } from '@/lib/supabase/server'
+import { ResetPasswordForm } from './ResetPasswordForm'
 
 export const metadata = { title: 'Nuova password · Lumino Agency' }
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: { error?: string } }) {
-  const errorMsg = searchParams?.error
-
+export default async function ResetPasswordPage() {
   // Se l'utente arriva qui senza aver cliccato il link email, non c'è sessione.
   // Mostra un messaggio chiaro invece di lasciarlo provare il form e vedere "Auth session missing".
   const supabase = createClient()
@@ -22,7 +20,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e52d1d', boxShadow: '0 0 12px #e52d1d', alignSelf: 'flex-end', marginBottom: 6 }} />
           </div>
           <div style={{ fontSize: 38, marginBottom: 14 }}>✉️</div>
-          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Apri il link dall'email</h1>
+          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, marginBottom: 10, letterSpacing: '-0.02em' }}>Apri il link dall&apos;email</h1>
           <p style={{ color: '#aaa', fontSize: 14, lineHeight: 1.6, margin: '0 0 22px' }}>
             Per cambiare password devi cliccare il link che ti abbiamo mandato per email. Non lo trovi?
             Controlla anche la cartella <strong style={{ color: '#fff' }}>Spam/Promozioni</strong>.
@@ -65,91 +63,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
           </p>
         </div>
 
-        {errorMsg && (
-          <div style={{
-            padding: '12px 14px',
-            background: 'rgba(239,68,68,0.1)',
-            border: '1px solid rgba(239,68,68,0.3)',
-            borderRadius: 8,
-            color: '#ef4444',
-            fontSize: 13,
-            marginBottom: 16,
-          }}>
-            {decodeURIComponent(errorMsg)}
-          </div>
-        )}
-
-        <form action={updatePasswordAction} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label style={{ color: '#aaa', fontSize: 12, marginBottom: 6, display: 'block', fontWeight: 500 }}>Nuova password</label>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              placeholder="Almeno 8 caratteri"
-              style={{
-                width: '100%',
-                padding: '11px 14px',
-                background: '#1a1a1a',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                color: '#fff',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={{ color: '#aaa', fontSize: 12, marginBottom: 6, display: 'block', fontWeight: 500 }}>Conferma password</label>
-            <input
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              placeholder="Riscrivi la password"
-              style={{
-                width: '100%',
-                padding: '11px 14px',
-                background: '#1a1a1a',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                color: '#fff',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            style={{
-              padding: '12px 16px',
-              background: '#e52d1d',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginTop: 8,
-              fontFamily: 'inherit',
-            }}
-          >
-            Salva nuova password
-          </button>
-
-          <p style={{ color: '#666', fontSize: 11, lineHeight: 1.6, marginTop: 4 }}>
-            Suggerimento: usa una password lunga, mescola lettere maiuscole, minuscole, numeri e simboli.
-          </p>
-        </form>
+        <ResetPasswordForm />
       </div>
     </div>
   )
