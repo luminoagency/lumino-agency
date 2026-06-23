@@ -187,25 +187,30 @@ export async function logoutAction() {
   redirect('/login')
 }
 
-export async function requestPasswordResetAction(formData: FormData) {
-  const email = String(formData.get('email') || '').trim()
-  if (!email) {
-    redirect('/forgot-password?error=' + encodeURIComponent('Inserisci la tua email.'))
-  }
-  const supabase = createClient()
+export type ForgotPasswordState = { ok: boolean; error?: string; sent?: boolean } | null
 
-  // Get the site origin to send a proper redirect URL.
-  // Il link email DEVE passare da /auth/callback per scambiare il code con una sessione,
-  // altrimenti updateUser() su /reset-password fallisce con "Auth session missing!".
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002'
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/reset-password`,
-  })
-  if (error) {
-    redirect('/forgot-password?error=' + encodeURIComponent(translateAuthError(error.message)))
+export async function requestPasswordResetActionState(
+  _prev: ForgotPasswordState,
+  formData: FormData,
+): Promise<ForgotPasswordState> {
+  const email = String(formData.get('email') || '').trim()
+  if (!email) return { ok: false, error: 'Inserisci la tua email.' }
+
+  try {
+    const supabase = createClient()
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3002')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=/reset-password`,
+    })
+    if (error) return { ok: false, error: translateAuthError(error.message) }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore imprevisto. Riprova.' }
   }
+
   // Always show success even if email doesn't exist (don't leak)
-  redirect('/forgot-password?sent=1')
+  return { ok: true, sent: true }
 }
 
 export async function updatePasswordAction(formData: FormData) {
