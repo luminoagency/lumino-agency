@@ -246,6 +246,7 @@ export function SuperAdminClient(props: Props) {
           </div>
           <div className="la-top-right">
             <span>Loggato come <strong>{currentUserEmail}</strong></span>
+            <Link href="/lumino-admin/lab" className="la-logout">🔬 Lab</Link>
             <Link href="/admin" className="la-logout">Il mio admin</Link>
             <button
               className="la-logout"
