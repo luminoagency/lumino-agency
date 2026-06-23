@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import {
   getDemoReservations, confirmDemoReservation, cancelDemoReservation,
-  SUPER_ADMINS, DEMO_SITE_SLUG,
 } from '../actions'
+import { SUPER_ADMINS, DEMO_SITE_SLUG } from '../constants'
 import { ReservationsManager } from '@/app/admin/prenotazioni/ReservationsManager'
 
 export const dynamic = 'force-dynamic'

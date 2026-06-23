@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getDemoSite, SUPER_ADMINS, DEMO_SITE_SLUG } from './actions'
+import { getDemoSite } from './actions'
+import { SUPER_ADMINS, DEMO_SITE_SLUG } from './constants'
 import { DemoDashboardEditor } from './DemoDashboardEditor'
 
 export const metadata = { title: 'Dashboard Demo Cliente · Lumino' }

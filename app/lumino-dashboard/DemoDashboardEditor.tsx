@@ -4,8 +4,9 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import {
   saveDemoContent, publishDemoSite, unpublishDemoSite,
-  generateDemoSite, setDemoFeatureFlag, DEMO_SITE_SLUG,
+  generateDemoSite, setDemoFeatureFlag,
 } from './actions'
+import { DEMO_SITE_SLUG } from './constants'
 import { PLAN_FEATURE_DEFAULTS, type FeatureKey, type PlanKey } from '@/lib/plans'
 import type { FeatureFlags } from '@/app/admin/actions/site'
 

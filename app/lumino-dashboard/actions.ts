@@ -4,9 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import type { FeatureKey } from '@/lib/plans'
-
-export const SUPER_ADMINS = ['bylumino06@gmail.com']
-export const DEMO_SITE_SLUG = 'trattoria-demo-lumino'
+import { SUPER_ADMINS, DEMO_SITE_SLUG } from './constants'
 
 async function assertSuperAdmin() {
   const sb = createClient()

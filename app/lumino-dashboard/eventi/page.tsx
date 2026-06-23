@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getDemoEvents, saveDemoEvents, SUPER_ADMINS, DEMO_SITE_SLUG } from '../actions'
+import { getDemoEvents, saveDemoEvents } from '../actions'
+import { SUPER_ADMINS, DEMO_SITE_SLUG } from '../constants'
 import { EventsEditor } from '@/app/admin/events/EventsEditor'
 
 export const dynamic = 'force-dynamic'

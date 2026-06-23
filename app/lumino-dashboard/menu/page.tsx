@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getDemoMenu, saveDemoMenu, SUPER_ADMINS, DEMO_SITE_SLUG } from '../actions'
+import { getDemoMenu, saveDemoMenu } from '../actions'
+import { SUPER_ADMINS, DEMO_SITE_SLUG } from '../constants'
 import { MenuEditor } from '@/app/admin/menu/MenuEditor'
 
 export const dynamic = 'force-dynamic'
