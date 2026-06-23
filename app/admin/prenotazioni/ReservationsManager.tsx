@@ -4,14 +4,19 @@ import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { confirmReservation, cancelReservation, type ReservationRow } from '../actions/reservations'
 
+export type { ReservationRow }
+
 type Tab = 'pending' | 'confirmed' | 'cancelled' | 'all'
 
 interface Props {
   initial: ReservationRow[]
   siteSlug: string
+  backPath?: string
+  confirmAction?: (id: string, note?: string) => Promise<{ ok: boolean; error?: string }>
+  cancelAction?: (id: string, note?: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function ReservationsManager({ initial, siteSlug }: Props) {
+export function ReservationsManager({ initial, siteSlug, backPath, confirmAction, cancelAction }: Props) {
   const [items, setItems] = useState(initial)
   const [tab, setTab] = useState<Tab>('pending')
   const [pending, startTransition] = useTransition()
@@ -38,7 +43,7 @@ export function ReservationsManager({ initial, siteSlug }: Props) {
   function handleConfirm(id: string) {
     const note = (noteDraft[id] || '').trim()
     startTransition(async () => {
-      const r = await confirmReservation(id, note || undefined)
+      const r = await (confirmAction ? confirmAction(id, note || undefined) : confirmReservation(id, note || undefined))
       if (r.ok) {
         setItems(prev => prev.map(x => x.id === id ? { ...x, status: 'confirmed', owner_note: note || null } : x))
         notify(true, '✓ Prenotazione confermata. Email inviata al cliente.')
@@ -52,7 +57,7 @@ export function ReservationsManager({ initial, siteSlug }: Props) {
     if (!confirm('Annullare questa prenotazione? Il cliente riceverà una mail di scuse.')) return
     const note = (noteDraft[id] || '').trim()
     startTransition(async () => {
-      const r = await cancelReservation(id, note || undefined)
+      const r = await (cancelAction ? cancelAction(id, note || undefined) : cancelReservation(id, note || undefined))
       if (r.ok) {
         setItems(prev => prev.map(x => x.id === id ? { ...x, status: 'cancelled', owner_note: note || null } : x))
         notify(true, '✓ Annullata. Email di scuse inviata.')
@@ -120,7 +125,7 @@ export function ReservationsManager({ initial, siteSlug }: Props) {
 
       <nav className="re-top">
         <div style={{ display:'flex', alignItems:'center' }}>
-          <Link href="/admin" className="re-back">← Pannello</Link>
+          <Link href={backPath ?? '/admin'} className="re-back">← Pannello</Link>
           <span className="re-bartitle">Prenotazioni</span>
         </div>
         <Link href={`/sites/${siteSlug}`} target="_blank" className="re-back">Vedi il sito ↗</Link>

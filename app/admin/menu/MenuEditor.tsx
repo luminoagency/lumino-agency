@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyMenu, type MenuCategoryDTO, type MenuItemDTO } from '../actions/site'
 
+export type { MenuCategoryDTO, MenuItemDTO }
+
 const ALLERGENS: Array<{ key: string; label: string; color: string }> = [
   { key: 'vegan', label: 'Vegano', color: '#5e8a3a' },
   { key: 'vegetarian', label: 'Vegetariano', color: '#7a9a4a' },
@@ -16,9 +18,11 @@ const ALLERGENS: Array<{ key: string; label: string; color: string }> = [
 interface Props {
   initial: MenuCategoryDTO[]
   siteSlug: string
+  backPath?: string
+  saveAction?: (cats: MenuCategoryDTO[]) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function MenuEditor({ initial, siteSlug }: Props) {
+export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
   const [cats, setCats] = useState<MenuCategoryDTO[]>(initial.length > 0 ? initial : [emptyCategory()])
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -88,7 +92,7 @@ export function MenuEditor({ initial, siteSlug }: Props) {
       }))
       .filter(c => c.items.length > 0)
     startTransition(async () => {
-      const r = await saveMyMenu(cleaned)
+      const r = await (saveAction ? saveAction(cleaned) : saveMyMenu(cleaned))
       if (r.ok) {
         setFeedback({ ok: true, msg: '✓ Menu salvato' })
         setTimeout(() => setFeedback(null), 3000)
@@ -158,7 +162,7 @@ export function MenuEditor({ initial, siteSlug }: Props) {
 
       <nav className="me-top">
         <div className="me-top-left">
-          <Link href="/admin" className="me-back">← Pannello</Link>
+          <Link href={backPath ?? '/admin'} className="me-back">← Pannello</Link>
           <span className="me-title-bar">Menu</span>
         </div>
         <Link href={`/sites/${siteSlug}`} target="_blank" className="me-back">Vedi il sito ↗</Link>

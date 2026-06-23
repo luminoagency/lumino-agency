@@ -4,12 +4,16 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyEvents, type EventDTO } from '../actions/site'
 
+export type { EventDTO }
+
 interface Props {
   initial: EventDTO[]
   siteSlug: string
+  backPath?: string
+  saveAction?: (events: EventDTO[]) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function EventsEditor({ initial, siteSlug }: Props) {
+export function EventsEditor({ initial, siteSlug, backPath, saveAction }: Props) {
   const [events, setEvents] = useState<EventDTO[]>(initial.length > 0 ? initial : [emptyEvent()])
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -27,7 +31,7 @@ export function EventsEditor({ initial, siteSlug }: Props) {
     setFeedback(null)
     const cleaned = events.filter(e => e.title.trim() && e.event_date)
     startTransition(async () => {
-      const r = await saveMyEvents(cleaned)
+      const r = await (saveAction ? saveAction(cleaned) : saveMyEvents(cleaned))
       if (r.ok) {
         setFeedback({ ok: true, msg: '✓ Eventi salvati' })
         setTimeout(() => setFeedback(null), 3000)
@@ -70,7 +74,7 @@ export function EventsEditor({ initial, siteSlug }: Props) {
 
       <nav className="ev-top">
         <div>
-          <Link href="/admin" className="ev-back">← Pannello</Link>
+          <Link href={backPath ?? '/admin'} className="ev-back">← Pannello</Link>
           <span className="ev-title-bar">Eventi</span>
         </div>
         <Link href={`/sites/${siteSlug}`} target="_blank" className="ev-back">Vedi il sito ↗</Link>

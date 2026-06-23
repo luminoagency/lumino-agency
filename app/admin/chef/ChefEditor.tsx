@@ -4,12 +4,16 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyChef, type ChefDTO } from '../actions/site'
 
+export type { ChefDTO }
+
 interface Props {
   initial: ChefDTO
   siteSlug: string
+  backPath?: string
+  saveAction?: (input: ChefDTO) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function ChefEditor({ initial, siteSlug }: Props) {
+export function ChefEditor({ initial, siteSlug, backPath, saveAction }: Props) {
   const [d, setD] = useState<ChefDTO>(initial)
   const [pending, startTransition] = useTransition()
   const [fb, setFb] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -21,7 +25,7 @@ export function ChefEditor({ initial, siteSlug }: Props) {
   function save() {
     setFb(null)
     startTransition(async () => {
-      const r = await saveMyChef(d)
+      const r = await (saveAction ? saveAction(d) : saveMyChef(d))
       if (r.ok) {
         setFb({ ok: true, msg: '✓ Salvato' })
         setTimeout(() => setFb(null), 3000)
@@ -67,7 +71,7 @@ export function ChefEditor({ initial, siteSlug }: Props) {
 
       <nav className="cf-top">
         <div>
-          <Link href="/admin" className="cf-back">← Pannello</Link>
+          <Link href={backPath ?? '/admin'} className="cf-back">← Pannello</Link>
           <span className="cf-bartitle">Lo chef</span>
         </div>
         <Link href={`/sites/${siteSlug}`} target="_blank" className="cf-back">Vedi il sito ↗</Link>

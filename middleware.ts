@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // La presenza del cookie qui è solo un gate ottimistico per evitare di
 // renderizzare la pagina a chi non ha proprio sessione; la verifica vera
 // la fa la pagina con supabase.auth.getUser().
-const PROTECTED_PREFIXES = ['/admin', '/lumino-admin']
+const PROTECTED_PREFIXES = ['/admin', '/lumino-admin', '/lumino-dashboard']
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -38,5 +38,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/lumino-admin', '/lumino-admin/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/lumino-admin', '/lumino-admin/:path*', '/lumino-dashboard', '/lumino-dashboard/:path*'],
 }
