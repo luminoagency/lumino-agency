@@ -5,6 +5,7 @@ import { requireSuperAdmin } from '../guard'
 import { businessTypeMeta, stepLabel, TOTAL_STEPS } from '../constants'
 import { Step1Research } from './Step1Research'
 import { Step2Layout } from './Step2Layout'
+import { Step3Builder } from './Step3Builder'
 import type { ResearchReport, ChatMessage } from '@/lib/lab/research'
 import type { LayoutProposal } from '@/lib/lab/layout'
 
@@ -55,6 +56,19 @@ export default async function LabProjectPage({ params }: { params: { id: string 
         businessType={project.business_type}
         initialProposals={(pdata.layout_proposals as LayoutProposal[]) || []}
         initialChat={(pdata.layout_chat as ChatMessage[]) || []}
+      />
+    )
+  }
+
+  // Step 3 — Builder
+  if (step === 3) {
+    return (
+      <Step3Builder
+        projectId={project.id}
+        businessName={project.business_name}
+        businessType={project.business_type}
+        hasBuild={!!pdata.build}
+        initialChat={(pdata.build_chat as ChatMessage[]) || []}
       />
     )
   }

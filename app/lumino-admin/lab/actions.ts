@@ -12,7 +12,8 @@ import { BUSINESS_TYPES } from './constants'
 import { scrapeUrl } from '@/lib/lab/firecrawl'
 import { findPlace, findCompetitors, type LabPlace } from '@/lib/lab/places'
 import { extractResearch, chatTurn, type ResearchReport, type ChatMessage } from '@/lib/lab/research'
-import { generateLayouts, layoutChatTurn, type LayoutProposal } from '@/lib/lab/layout'
+import { generateLayouts, layoutChatTurn, type LayoutProposal, type SectionKey } from '@/lib/lab/layout'
+import { buildGlobalCss, generateSection, type BuildSection, type SiteBuild } from '@/lib/lab/builder'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const SUPER_ADMINS = ['bylumino06@gmail.com']
@@ -335,6 +336,106 @@ export async function chatLayout(
 
     const newMessages = [...messages, { role: 'assistant' as const, content: r.text }]
     await saveProjectData(admin, project, { layout_chat: newMessages })
+    return { ok: true, text: r.text }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nella chat.' }
+  }
+}
+
+// ── Step 3 — Builder ──────────────────────────────────────────
+
+export interface BuildShell {
+  ok: boolean
+  sections?: SectionKey[]
+  palette?: string[]
+  globalCSS?: string
+  businessName?: string
+  error?: string
+}
+
+/** Prepara la build: ordine sezioni (dal layout), palette, globalCSS. */
+export async function getBuildShell(projectId: string): Promise<BuildShell> {
+  try {
+    await assertSuperAdmin()
+    const { project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+    const pdata = project.project_data || {}
+    const layout = pdata.layout as LayoutProposal | undefined
+    if (!layout) return { ok: false, error: 'Manca il layout dello Step 2.' }
+    const sections = (layout.sections && layout.sections.length ? layout.sections : ['hero', 'about', 'contact']) as SectionKey[]
+    return {
+      ok: true,
+      sections,
+      palette: layout.palette,
+      globalCSS: buildGlobalCss(layout.palette),
+      businessName: project.business_name,
+    }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore.' }
+  }
+}
+
+/** Genera UNA sezione del sito (chiamata in loop dal client per la progress reale). */
+export async function buildOneSection(
+  projectId: string,
+  sectionKey: SectionKey,
+): Promise<{ ok: boolean; section?: BuildSection; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+    const pdata = project.project_data || {}
+    const research = pdata.research as ResearchReport
+    const layout = pdata.layout as LayoutProposal
+    if (!research || !layout) return { ok: false, error: 'Mancano research/layout.' }
+
+    const { html, css } = await generateSection({
+      sectionKey,
+      businessName: project.business_name,
+      businessType: project.business_type,
+      research,
+      layout,
+    })
+    return { ok: true, section: { name: sectionKey, html, css } }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nella sezione.' }
+  }
+}
+
+/** Salva la build completa in project_data.build. */
+export async function saveBuild(
+  projectId: string,
+  build: { sections: BuildSection[]; globalCSS: string; palette: string[] },
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+    const full: SiteBuild = { ...build, generatedAt: new Date().toISOString() }
+    await saveProjectData(admin, project, { build: full })
+    revalidatePath(`/lumino-admin/lab/${projectId}`)
+    revalidatePath(`/lab-preview/${projectId}`)
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nel salvataggio.' }
+  }
+}
+
+/** Chat a lato dello Step 3. */
+export async function chatBuild(
+  projectId: string,
+  messages: ChatMessage[],
+): Promise<{ ok: boolean; text?: string; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+    const pdata = project.project_data || {}
+    const research = pdata.research as ResearchReport
+    const layout = pdata.layout as LayoutProposal
+    const r = await layoutChatTurn(project.business_name, research, layout ? [layout] : [], messages)
+    const newMessages = [...messages, { role: 'assistant' as const, content: r.text }]
+    await saveProjectData(admin, project, { build_chat: newMessages })
     return { ok: true, text: r.text }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore nella chat.' }
