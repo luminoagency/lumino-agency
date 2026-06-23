@@ -12,6 +12,7 @@ import { BUSINESS_TYPES } from './constants'
 import { scrapeUrl } from '@/lib/lab/firecrawl'
 import { findPlace, findCompetitors, type LabPlace } from '@/lib/lab/places'
 import { extractResearch, chatTurn, type ResearchReport, type ChatMessage } from '@/lib/lab/research'
+import { generateLayouts, layoutChatTurn, type LayoutProposal } from '@/lib/lab/layout'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const SUPER_ADMINS = ['bylumino06@gmail.com']
@@ -260,5 +261,82 @@ export async function advanceToStep(
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore.' }
+  }
+}
+
+// ── Step 2 — Layout ───────────────────────────────────────────
+
+export interface LayoutsResult {
+  ok: boolean
+  proposals?: LayoutProposal[]
+  error?: string
+}
+
+/** Genera 2-3 proposte di layout dal report dello Step 1. */
+export async function generateLayoutProposals(projectId: string): Promise<LayoutsResult> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+
+    const research = (project.project_data || {}).research as ResearchReport | undefined
+    if (!research) return { ok: false, error: 'Manca il report dello Step 1.' }
+
+    const proposals = await generateLayouts(research)
+    if (proposals.length === 0) return { ok: false, error: 'Nessuna proposta generata, riprova.' }
+
+    await saveProjectData(admin, project, { layout_proposals: proposals })
+    revalidatePath(`/lumino-admin/lab/${projectId}`)
+    return { ok: true, proposals }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nel generare i layout.' }
+  }
+}
+
+/** Salva il layout scelto e avanza allo Step 3. */
+export async function chooseLayout(
+  projectId: string,
+  layout: LayoutProposal,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+
+    await saveProjectData(admin, project, { layout })
+    const { error } = await admin
+      .from('lab_projects')
+      .update({ current_step: 3, status: 'in_costruzione', updated_at: new Date().toISOString() })
+      .eq('id', projectId)
+    if (error) return { ok: false, error: error.message }
+
+    revalidatePath(`/lumino-admin/lab/${projectId}`)
+    revalidatePath('/lumino-admin/lab')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nel salvare il layout.' }
+  }
+}
+
+/** Chat a lato dello Step 2. */
+export async function chatLayout(
+  projectId: string,
+  messages: ChatMessage[],
+): Promise<{ ok: boolean; text?: string; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+
+    const pdata = project.project_data || {}
+    const research = pdata.research as ResearchReport
+    const proposals = (pdata.layout_proposals as LayoutProposal[]) || []
+    const r = await layoutChatTurn(project.business_name, research, proposals, messages)
+
+    const newMessages = [...messages, { role: 'assistant' as const, content: r.text }]
+    await saveProjectData(admin, project, { layout_chat: newMessages })
+    return { ok: true, text: r.text }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nella chat.' }
   }
 }

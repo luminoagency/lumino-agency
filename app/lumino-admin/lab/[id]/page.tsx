@@ -4,7 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireSuperAdmin } from '../guard'
 import { businessTypeMeta, stepLabel, TOTAL_STEPS } from '../constants'
 import { Step1Research } from './Step1Research'
+import { Step2Layout } from './Step2Layout'
 import type { ResearchReport, ChatMessage } from '@/lib/lab/research'
+import type { LayoutProposal } from '@/lib/lab/layout'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
@@ -40,6 +42,19 @@ export default async function LabProjectPage({ params }: { params: { id: string 
         inputValue={project.business_input_value || ''}
         initialResearch={research}
         initialChat={chat}
+      />
+    )
+  }
+
+  // Step 2 — Layout
+  if (step === 2) {
+    return (
+      <Step2Layout
+        projectId={project.id}
+        businessName={project.business_name}
+        businessType={project.business_type}
+        initialProposals={(pdata.layout_proposals as LayoutProposal[]) || []}
+        initialChat={(pdata.layout_chat as ChatMessage[]) || []}
       />
     )
   }
