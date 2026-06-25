@@ -2,8 +2,19 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Lumino Agency',
-  description: 'AI-built professional websites for Italian restaurants.',
+  metadataBase: new URL('https://bylumino.com'),
+  title: 'Lumino — Siti web per ristoranti',
+  description:
+    'Siti web professionali su misura per ristoranti. Curiamo testi, foto, menu e prenotazioni: tu pensi alla cucina, al sito pensiamo noi.',
+  openGraph: {
+    title: 'Lumino — Siti web per ristoranti',
+    description:
+      'Siti web professionali su misura per ristoranti. Tu pensi alla cucina, al sito pensiamo noi.',
+    url: 'https://bylumino.com',
+    siteName: 'Lumino',
+    locale: 'it_IT',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
@@ -12,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="it">
       <body>{children}</body>
     </html>
   );

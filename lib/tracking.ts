@@ -1,4 +1,4 @@
-type EventKind = 'signup' | 'login' | 'plan_change' | 'reservation' | 'site_published';
+type EventKind = 'signup' | 'login' | 'plan_change' | 'reservation' | 'site_published' | 'lead';
 
 export async function trackEvent(kind: EventKind, data: Record<string, any>) {
   const url = process.env.LUMINO_SHEET_WEBHOOK_URL;

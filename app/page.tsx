@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { DEMO_RESTAURANTS } from '@/templates/_shared/demoData'
 import { PLANS, SALES_TERMS } from '@/lib/plans'
+import { COMPANY } from '@/lib/company'
 
 /* IntersectionObserver hook for scroll-triggered reveal */
 function useReveal<T extends HTMLElement>() {
@@ -557,10 +558,12 @@ export default function HomePage() {
             <span className="lm-logo-dot" />
           </Link>
           <div className="lm-nav-links">
+            <Link href="/come-funziona" className="lm-nav-link">Come funziona</Link>
             <Link href="/portfolio" className="lm-nav-link">Portfolio</Link>
             <Link href="/pricing" className="lm-nav-link">Piani</Link>
+            <Link href="/contatti" className="lm-nav-link">Contatti</Link>
             <Link href="/login" className="lm-nav-link">Accedi</Link>
-            <Link href="/register" className="lm-nav-cta">Inizia</Link>
+            <Link href="/inizia" className="lm-nav-cta">Inizia ora</Link>
           </div>
           <button
             type="button"
@@ -580,10 +583,12 @@ export default function HomePage() {
           aria-hidden={!menuOpen}
         >
           <div className="lm-drawer-inner" onClick={(e) => e.stopPropagation()}>
+            <Link href="/come-funziona" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Come funziona</Link>
             <Link href="/portfolio" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Portfolio</Link>
             <Link href="/pricing" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Piani</Link>
+            <Link href="/contatti" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Contatti</Link>
             <Link href="/login" className="lm-drawer-link" onClick={() => setMenuOpen(false)}>Accedi</Link>
-            <Link href="/register" className="lm-drawer-cta" onClick={() => setMenuOpen(false)}>Inizia ora →</Link>
+            <Link href="/inizia" className="lm-drawer-cta" onClick={() => setMenuOpen(false)}>Inizia ora →</Link>
           </div>
         </div>
 
@@ -594,17 +599,17 @@ export default function HomePage() {
         >
           <div className="lm-hero-eyebrow">
             <span className="lm-hero-eyebrow-dot" />
-            siti pronti in 24 ore
+            siti web per ristoranti
           </div>
           <h1 className="lm-hero-title">
             Il sito che il tuo<br />ristorante <em>merita</em>.
           </h1>
           <p className="lm-hero-sub">
-            La nostra AI costruisce il sito perfetto per il tuo locale: testi, foto, menu, prenotazioni — tutto automatico. Tu pensi a cucinare, al sito ci pensiamo noi.
+            Curiamo ogni dettaglio — testi, foto, menu, prenotazioni. Tu pensi alla cucina, al sito pensiamo noi.
           </p>
           <div className="lm-hero-cta-row">
-            <Link href="/register" className="lm-cta lm-cta-primary">Inizia ora →</Link>
-            <Link href="/portfolio" className="lm-cta lm-cta-secondary">Vedi esempi</Link>
+            <Link href="/inizia" className="lm-cta lm-cta-primary">Inizia ora →</Link>
+            <Link href="/portfolio" className="lm-cta lm-cta-secondary">Guarda i nostri lavori</Link>
           </div>
         </section>
 
@@ -620,13 +625,13 @@ export default function HomePage() {
             <Reveal dir="right" delay={0.1}>
               <div className="lm-split-text">
                 <p className="lm-section-eyebrow">✦ il design</p>
-                <h3>Un sito che <em>fa fame</em>.</h3>
-                <p>Layout pensati per ristoranti, non per agenzie. Animazioni eleganti, foto a tutto schermo, micro-interazioni che fanno la differenza.</p>
+                <h3>Un sito che <em>fa venire fame</em>.</h3>
+                <p>Layout pensati per ristoranti, non per agenzie. Foto a tutto schermo, menu eleganti, dettagli che fanno la differenza.</p>
                 <ul>
                   <li>Hero immersivo con foto in alta risoluzione</li>
                   <li>Menu navigabile con filtri allergeni</li>
-                  <li>Mobile-first — l'80% dei tuoi clienti è da telefono</li>
-                  <li>Tempi di caricamento sotto 2 secondi</li>
+                  <li>Pensato prima di tutto per il telefono — l'80% dei tuoi clienti è da mobile</li>
+                  <li>Caricamento sotto i 2 secondi</li>
                 </ul>
               </div>
             </Reveal>
@@ -644,14 +649,14 @@ export default function HomePage() {
             </Reveal>
             <Reveal dir="left" delay={0.1}>
               <div className="lm-split-text">
-                <p className="lm-section-eyebrow">✦ l'AI lavora per te</p>
+                <p className="lm-section-eyebrow">✦ su misura</p>
                 <h3>Niente template <em>generici</em>.</h3>
-                <p>L'AI legge il tuo locale — categoria, posizione, recensioni — e ricostruisce TUTTO su misura. Testi che parlano della tua cucina, non frasi vuote.</p>
+                <p>Studiamo il tuo locale — la cucina, la posizione, il tuo stile — e costruiamo tutto su misura. Testi che raccontano la tua cucina, non frasi vuote.</p>
                 <ul>
-                  <li>Testi generati per il tuo ristorante specifico</li>
+                  <li>Testi scritti per il tuo ristorante</li>
                   <li>Foto del menu organizzate per categoria</li>
-                  <li>Colori e font scelti per match con il tuo brand</li>
-                  <li>SEO ottimizzato per Google Maps locale</li>
+                  <li>Colori e font scelti per il tuo brand</li>
+                  <li>Ottimizzato per Google e mappe locali</li>
                 </ul>
               </div>
             </Reveal>
@@ -662,14 +667,14 @@ export default function HomePage() {
         <section className="lm-section">
           <Reveal dir="up">
             <p className="lm-section-eyebrow">✦ come funziona</p>
-            <h2 className="lm-section-title">Quattro <em>passi</em>.<br />Niente più.</h2>
+            <h2 className="lm-section-title">Come <em>lavoriamo</em>.<br />Semplice.</h2>
           </Reveal>
           <div className="lm-howit">
             {[
-              { n: '01', t: 'Ti registri', p: '30 secondi: email, password, nome del locale.' },
-              { n: '02', t: 'Noi costruiamo', p: "L'AI scrive testi, sceglie foto, organizza il menu." },
-              { n: '03', t: 'Tu approvi', p: 'In 24 ore ti mandiamo il sito. Modifichi se serve.' },
-              { n: '04', t: 'Vai online', p: 'Premi pubblica e sei online. Gestisci tutto dal pannello.' },
+              { n: '01', t: 'Ci racconti del tuo locale', p: 'Ci parli del ristorante, della cucina, di cosa ti serve.' },
+              { n: '02', t: 'Costruiamo il sito', p: 'Curiamo testi, foto e menu su misura per te.' },
+              { n: '03', t: 'Lo guardi e approvi', p: 'Ti mostriamo il sito. Se vuoi cambiare qualcosa, lo facciamo.' },
+              { n: '04', t: 'Vai online', p: 'Pubblichiamo. Gestisci tutto dal tuo pannello.' },
             ].map((s, i) => (
               <Reveal key={s.n} dir="up" delay={i * 0.08}>
                 <div className="lm-howit-card">
@@ -714,7 +719,7 @@ export default function HomePage() {
           <Reveal dir="up">
             <p className="lm-section-eyebrow">✦ scegli il tuo piano</p>
             <h2 className="lm-section-title">Trasparente.<br /><em>Senza sorprese</em>.</h2>
-            <p className="lm-section-sub">Un pagamento unico. Niente abbonamenti. Niente carte di credito al primo step.</p>
+            <p className="lm-section-sub">Un pagamento unico. Niente abbonamenti.</p>
           </Reveal>
           <div className="lm-pricing">
             {PLANS.map((p, i) => {
@@ -751,21 +756,50 @@ export default function HomePage() {
         {/* FINAL CTA */}
         <section className="lm-final">
           <Reveal dir="scale">
-            <h2>Il tuo sito è<br /><em>a 24 ore</em> da te.</h2>
-            <p>Inizia oggi. Scegli il tuo piano, ti consegniamo il sito entro domani.</p>
-            <Link href="/register" className="lm-cta lm-cta-primary">Crea il mio sito →</Link>
+            <h2>Il tuo nuovo sito è <em>più vicino</em><br />di quanto pensi.</h2>
+            <p>Raccontaci del tuo locale, ti ricontattiamo noi.</p>
+            <Link href="/inizia" className="lm-cta lm-cta-primary">Inizia ora →</Link>
           </Reveal>
         </section>
 
         {/* FOOTER */}
-        <footer className="lm-footer">
-          <div className="lm-footer-logo">Lumino<span style={{ color: '#e52d1d' }}>.</span></div>
-          <div>© {new Date().getFullYear()} Lumino Agency · Made in Italy</div>
-          <div className="lm-footer-links">
-            <Link href="/portfolio" className="lm-footer-link">Portfolio</Link>
-            <Link href="/pricing" className="lm-footer-link">Prezzi</Link>
-            <Link href="/login" className="lm-footer-link">Accedi</Link>
-            <a href="mailto:hello@bylumino.com" className="lm-footer-link">Contatti</a>
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', zIndex: 10 }}>
+          <div style={{ maxWidth: 1300, margin: '0 auto', padding: '3.5rem 2rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 40 }}>
+            <div>
+              <div className="lm-footer-logo">Lumino<span style={{ color: '#e52d1d' }}>.</span></div>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 1.6, margin: '14px 0 0', maxWidth: 260 }}>
+                Siti professionali su misura per ristoranti e attività locali, pronti in pochi giorni.
+              </p>
+            </div>
+            <div>
+              <h4 style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 14px' }}>Azienda</h4>
+              <Link href="/chi-siamo" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Chi siamo</Link>
+              <Link href="/come-funziona" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Come funziona</Link>
+              <Link href="/portfolio" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Portfolio</Link>
+              <Link href="/pricing" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Piani e prezzi</Link>
+              <Link href="/faq" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Domande frequenti</Link>
+              <Link href="/contatti" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Contatti</Link>
+            </div>
+            <div>
+              <h4 style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 14px' }}>Legale</h4>
+              <Link href="/privacy-policy" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Privacy Policy</Link>
+              <Link href="/cookie-policy" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Cookie Policy</Link>
+              <Link href="/termini-condizioni" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Termini e Condizioni</Link>
+              <Link href="/gdpr" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Informativa GDPR</Link>
+              <Link href="/resi-rimborsi" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Resi e Rimborsi</Link>
+              <Link href="/disclaimer" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Disclaimer</Link>
+            </div>
+            <div>
+              <h4 style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 14px' }}>Contatti</h4>
+              <a href={`mailto:${COMPANY.email}`} className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>{COMPANY.email}</a>
+              <Link href="/login" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Accedi</Link>
+              <Link href="/inizia" className="lm-footer-link" style={{ display: 'block', padding: '5px 0' }}>Crea il tuo sito</Link>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ maxWidth: 1300, margin: '0 auto', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+              <div>© {new Date().getFullYear()} Lumino — un brand di {COMPANY.legalName}</div>
+            </div>
           </div>
         </footer>
       </div>

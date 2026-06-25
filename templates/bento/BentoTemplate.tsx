@@ -10,6 +10,7 @@ import { InteractiveEffects } from '../_shared/InteractiveEffects'
 import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
+import GdprConsent from '../_shared/GdprConsent'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -1117,6 +1118,7 @@ export function BentoTemplate(props: BentoProps) {
                 rows={3}
                 style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const, resize: 'vertical' }}
               />
+              <GdprConsent accent={accentColor} color="rgba(0,0,0,0.55)" />
               <div>
                 <button
                   type="submit"
@@ -1277,9 +1279,10 @@ export function BentoTemplate(props: BentoProps) {
         <div className="bento-newsletter">
           <h2>Resta aggiornato</h2>
           <p>Novità del menu, eventi e offerte. Una mail al mese, niente spam.</p>
-          <form className="bento-newsletter-form" onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
+          <form className="bento-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
             <input type="email" required placeholder="tu@email.it" />
             <button type="submit">Iscriviti</button>
+            <GdprConsent accent={accentColor} color="rgba(0,0,0,0.55)" />
           </form>
         </div>
       </section>

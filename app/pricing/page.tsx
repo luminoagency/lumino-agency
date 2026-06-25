@@ -194,7 +194,7 @@ export default function PricingPage() {
             <Link href="/portfolio" className="pr-nav-link">Portfolio</Link>
             <Link href="/pricing" className="pr-nav-link">Piani</Link>
             <Link href="/login" className="pr-nav-link">Accedi</Link>
-            <Link href="/register" className="pr-nav-cta">Inizia ora</Link>
+            <Link href="/inizia" className="pr-nav-cta">Inizia ora</Link>
           </div>
           <button
             type="button"
@@ -216,7 +216,7 @@ export default function PricingPage() {
             <Link href="/portfolio" className="pr-drawer-link" onClick={() => setMenuOpen(false)}>Portfolio</Link>
             <Link href="/pricing" className="pr-drawer-link" onClick={() => setMenuOpen(false)}>Piani</Link>
             <Link href="/login" className="pr-drawer-link" onClick={() => setMenuOpen(false)}>Accedi</Link>
-            <Link href="/register" className="pr-drawer-cta" onClick={() => setMenuOpen(false)}>Inizia ora →</Link>
+            <Link href="/inizia" className="pr-drawer-cta" onClick={() => setMenuOpen(false)}>Inizia ora →</Link>
           </div>
         </div>
 
@@ -253,14 +253,14 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/register" className="pr-cta" style={{ background: p.highlight ? '#a78bfa' : p.accent === '#888' ? 'rgba(255,255,255,0.08)' : p.accent, color: p.highlight ? '#0a0a0a' : '#fff' }}>
+              <Link href="/inizia" className="pr-cta" style={{ background: p.highlight ? '#a78bfa' : p.accent === '#888' ? 'rgba(255,255,255,0.08)' : p.accent, color: p.highlight ? '#0a0a0a' : '#fff' }}>
                 {p.cta}
               </Link>
             </div>
           ))}
         </div>
 
-        <p className="pr-note">{SALES_TERMS.publicNote}</p>
+        <p className="pr-note">{SALES_TERMS.publicNote} Tutti i prezzi sono in euro (EUR).</p>
 
         {/* FAQ */}
         <section className="pr-faq">
@@ -279,7 +279,7 @@ export default function PricingPage() {
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Quanto ci mette il sito ad essere online?</p>
-            <p className="pr-faq-a">Dalla registrazione al sito pronto: 24-48 ore. Ti chiamiamo per confermare dettagli, poi pubblichiamo.</p>
+            <p className="pr-faq-a">Dal primo contatto al sito pronto: pochi giorni. Ci sentiamo per confermare i dettagli, poi pubblichiamo.</p>
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Ci sono costi nascosti?</p>

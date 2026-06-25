@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Grazie · Lumino Agency' }
+export const metadata = { title: 'Grazie · Lumino' }
 
 export default function GraziePage() {
   return (

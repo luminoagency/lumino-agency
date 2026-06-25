@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
+import GdprConsent from '../_shared/GdprConsent'
 
 interface PanoramicoProps {
   restaurantName: string
@@ -132,6 +133,7 @@ function ReservationForm({ accent, ink, paper, muted, timeSlots }: { accent: str
         <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
       <textarea placeholder="Note (allergie, occasione speciale...)" rows={3} style={{ ...inputStyle, resize: 'none', paddingTop: '0.9rem' }} />
+      <GdprConsent accent={accent} color={muted} />
       <button type="submit" style={{
         marginTop: '1rem',
         padding: '1.1rem 2.5rem',
@@ -1735,9 +1737,10 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
       <section className="pan-newsletter">
         <h2>Restate in <em style={{ color: accent, fontStyle: 'italic' }}>contatto</em>.</h2>
         <p>Iscrivetevi per scoprire piatti stagionali, eventi e serate speciali. Una mail al mese, niente più.</p>
-        <form className="pan-newsletter-form" onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
+        <form className="pan-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
           <input type="email" required placeholder="il vostro indirizzo email" />
           <button type="submit">Iscriviti</button>
+          <GdprConsent accent={accent} color={muted} />
         </form>
       </section>
 

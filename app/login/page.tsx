@@ -1,6 +1,6 @@
 import { LoginForm } from './LoginForm'
 
-export const metadata = { title: 'Accedi · Lumino Agency' }
+export const metadata = { title: 'Accedi · Lumino' }
 
 export default function LoginPage({ searchParams }: { searchParams: { registered?: string; reset?: string; next?: string } }) {
   const registered = searchParams?.registered === '1'

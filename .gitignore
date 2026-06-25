@@ -42,4 +42,8 @@ supabase/.temp/
 *.tsbuildinfo
 next-env.d.ts
 
+# Raccolta snippet UI di riferimento — non fa parte del sito, non deployare
+/lib/lab-library/
+/LIBRERIA_LUMINO_RACCOLTA.md
+
 .vercel

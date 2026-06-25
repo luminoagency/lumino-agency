@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
+import GdprConsent from '../_shared/GdprConsent'
 
 interface AuroraProps {
   restaurantName: string
@@ -234,6 +235,7 @@ function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: st
         <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
       <textarea placeholder="Note (allergie, occasione speciale...)" rows={3} style={inputStyle} />
+      <GdprConsent accent={accent} color="rgba(244,241,255,0.6)" />
       <RippleButton accent={accent} style={{ marginTop: '1rem', alignSelf: 'flex-start' }}>
         Prenota ora
       </RippleButton>
@@ -1668,9 +1670,10 @@ export function AuroraTemplate(props: AuroraProps) {
             </p>
             <h2>Resta nel <em style={{ color: accent, fontStyle: 'italic' }}>flusso</em>.</h2>
             <p>Nuovi piatti, eventi privati, momenti unici. Iscriviti per non perdere niente.</p>
-            <form className="aur-newsletter-form" onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
+            <form className="aur-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
               <input type="email" required placeholder="tuo@email.it" />
               <button type="submit">Iscriviti</button>
+              <GdprConsent accent={accent} color={muted} />
             </form>
           </div>
         </section>

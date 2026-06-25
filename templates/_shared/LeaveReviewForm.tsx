@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import GdprConsent from './GdprConsent'
 
 /**
  * Customer-facing "Leave a review" form.
@@ -128,6 +129,8 @@ export function LeaveReviewForm({ siteId, accent, theme = 'dark', scope = 'lr', 
         />
 
         {error && <p className={`${scope}-error`}>{error}</p>}
+
+        <GdprConsent accent={accent} color={muted} />
 
         <button type="submit" disabled={submitting} className={`${scope}-submit`}>
           {submitting ? 'Invio…' : 'Pubblica recensione'}

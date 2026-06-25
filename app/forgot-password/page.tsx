@@ -1,6 +1,6 @@
 import { ForgotPasswordForm } from './ForgotPasswordForm'
 
-export const metadata = { title: 'Password dimenticata · Lumino Agency' }
+export const metadata = { title: 'Password dimenticata · Lumino' }
 
 export default function ForgotPasswordPage() {
   return (

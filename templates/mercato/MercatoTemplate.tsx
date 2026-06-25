@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
+import GdprConsent from '../_shared/GdprConsent'
 
 interface MercatoProps {
   restaurantName: string
@@ -236,6 +237,7 @@ function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: st
         <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
       <textarea placeholder="Eventuali richieste speciali..." rows={3} style={{ ...inputStyle, borderBottom: '1px solid rgba(82, 60, 38, 0.25)', resize: 'none', paddingTop: '0.85rem' }} />
+      <GdprConsent accent={accent} color="#7a6754" />
       <div style={{ marginTop: '1rem' }}>
         <InkButton accent={accent}>Prenota il tavolo</InkButton>
       </div>
@@ -1990,9 +1992,10 @@ export function MercatoTemplate(props: MercatoProps) {
             <div className="mer-postcard">
               <h2>Lettera mensile</h2>
               <p>Un piccolo bollettino con piatti stagionali, eventi speciali e ricordi. Niente fretta, niente spam.</p>
-              <form className="mer-postcard-form" onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
+              <form className="mer-postcard-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
                 <input type="email" required placeholder="il vostro indirizzo email" />
                 <button type="submit">Iscriviti</button>
+                <GdprConsent accent={accent} color="#7a6754" />
               </form>
             </div>
           </FadeIn>

@@ -6,6 +6,7 @@ import { InteractiveEffects } from '../_shared/InteractiveEffects'
 import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
+import GdprConsent from '../_shared/GdprConsent'
 
 interface CinematicoProps {
   restaurantName: string
@@ -157,6 +158,7 @@ function CinematicoReservationForm({ accent, bg, text, muted, timeSlots }: { acc
             rows={3}
             style={{ ...inputStyle, resize: 'vertical' }}
           />
+          <GdprConsent accent={accent} color={muted} />
           <div>
             <button
               type="submit"
@@ -1489,13 +1491,14 @@ export function CinematicoTemplate(props: CinematicoProps) {
       <section className="cin-newsletter">
         <div className="cin-newsletter-inner">
           <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
-            ◉ STAY TUNED
+            ◉ RESTA AGGIORNATO
           </p>
-          <h2>Coming next</h2>
+          <h2>In arrivo</h2>
           <p>Le nostre serate speciali, i nuovi piatti, le sneak peek. Una mail al mese, niente spam.</p>
-          <form className="cin-newsletter-form" onSubmit={e => { e.preventDefault(); const t = e.currentTarget; const btn = t.querySelector('.cin-newsletter-btn') as HTMLButtonElement; if (btn) btn.textContent = '✓ Iscritto'; }}>
+          <form className="cin-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const t = e.currentTarget; const btn = t.querySelector('.cin-newsletter-btn') as HTMLButtonElement; if (btn) btn.textContent = '✓ Iscritto'; }}>
             <input className="cin-newsletter-input" type="email" required placeholder="tu@email.it" />
             <button type="submit" className="cin-newsletter-btn">Iscriviti</button>
+            <GdprConsent accent={accent} color={muted} />
           </form>
         </div>
       </section>

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ResetPasswordForm } from './ResetPasswordForm'
 
-export const metadata = { title: 'Nuova password · Lumino Agency' }
+export const metadata = { title: 'Nuova password · Lumino' }
 
 export default async function ResetPasswordPage() {
   // Se l'utente arriva qui senza aver cliccato il link email, non c'è sessione.
