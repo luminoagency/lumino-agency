@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { canGoLive } from '@/lib/payments/status'
 // Email transazionali: passano da Gmail + Apps Script (tracking layer).
 // Quando aggiungeremo notifiche ai clienti sostituiremo questo posto.
 import { trackEvent } from '@/lib/tracking'
@@ -191,6 +192,16 @@ export async function publishSite() {
   if (!user) return { ok: false, error: 'Non autenticato.' }
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  // Gate pagamento: il sito va online solo con il saldo (70%) confermato.
+  const { data: payRow } = await supabase
+    .from('sites')
+    .select('final_payment_confirmed')
+    .eq('id', owner.site_id)
+    .maybeSingle()
+  if (!payRow || !canGoLive(payRow as { final_payment_confirmed: boolean })) {
+    return { ok: false, error: 'Saldo finale non confermato, sito non pubblicabile' }
+  }
 
   const { error } = await supabase
     .from('sites')

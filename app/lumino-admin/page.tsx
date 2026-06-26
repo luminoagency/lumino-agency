@@ -69,6 +69,7 @@ export default async function LuminoAdminPage() {
     .from('sites')
     .select(`
       id, slug, tier, active, status, created_at, custom_domain,
+      first_payment_confirmed, final_payment_confirmed, first_payment_confirmed_at, final_payment_confirmed_at,
       client_id, clients:client_id ( id, name, email, plan, restaurant_id, restaurants:restaurant_id ( id, name, city, address ) )
     `)
     .order('created_at', { ascending: false })
@@ -187,10 +188,17 @@ export default async function LuminoAdminPage() {
     PLANS.find(p => p.key === 'pro')!.priceFrom * sites.filter(s => s.tier === 'pro' && s.status === 'live').length +
     PLANS.find(p => p.key === 'premium')!.priceFrom * sites.filter(s => s.tier === 'premium' && s.status === 'live').length
 
+  // Coda email manuale (badge in navbar)
+  const { count: outreachQueueCount } = await admin
+    .from('emails_sent')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'ready_to_send')
+
   const diagnosticsData = await diagnosticsPromise
 
   return (
     <SuperAdminClient
+      queueCount={outreachQueueCount || 0}
       currentUserEmail={user.email || ''}
       diagnostics={diagnosticsData}
       stats={{
@@ -228,6 +236,10 @@ export default async function LuminoAdminPage() {
         restaurant_name: s.restaurant?.name || s.client?.name || '—',
         city: s.restaurant?.city || null,
         client_email: s.client?.email || null,
+        first_payment_confirmed: !!s.first_payment_confirmed,
+        final_payment_confirmed: !!s.final_payment_confirmed,
+        first_payment_confirmed_at: s.first_payment_confirmed_at || null,
+        final_payment_confirmed_at: s.final_payment_confirmed_at || null,
       }))}
       reservationsAggregate={reservationsAggregate}
       outreachAccounts={outreachAccounts.map(a => ({

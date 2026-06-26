@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import CookieBanner from '@/components/cookie/CookieBanner';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bylumino.com'),
@@ -24,7 +25,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it">
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   );
 }

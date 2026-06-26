@@ -19,33 +19,38 @@ const BANNED_WORDS = [
 ]
 
 /**
- * 4 voci diverse. Ognuna ha:
- *  - greeting (saluto iniziale)
+ * 4 voci diverse, una per mittente. Ognuna ha:
+ *  - greeting (saluto iniziale, uguale per tutti: "Buongiorno")
  *  - tone_hint (consegna a Claude)
  *  - sentence_style (frasi brevi / lunghe / domande)
+ * I toni storici sono mantenuti, solo riassegnati ai nuovi nomi.
  */
 const VOICES: Record<SenderVoice, { greeting: string; toneHint: string }> = {
-  luca: {
-    greeting: 'Ciao',
+  // Tono amichevole corto
+  matteo: {
+    greeting: 'Buongiorno',
     toneHint:
       'Voce: amichevole, frasi corte (max 12-14 parole), prima persona singolare. ' +
-      'Usa "ciao" come saluto. Niente formalismi. Niente domande retoriche. ' +
+      'Usa "buongiorno" come saluto. Niente formalismi. Niente domande retoriche. ' +
       'Stile pratico, "ti scrivo perché", "ho dato un\'occhiata", "se ti va".',
   },
-  pietro: {
+  // Tono professionale Lei
+  francesca: {
     greeting: 'Buongiorno',
     toneHint:
       'Voce: professionale, sobria. Saluto "buongiorno". ' +
       'Frasi di media lunghezza (15-18 parole), terza persona del verbo (Lei). ' +
       'Niente trucchetti commerciali. Concedi al lettore di ignorarti senza colpa.',
   },
-  giovanni: {
-    greeting: 'Salve',
+  // Tono caldo curioso con domanda
+  davide: {
+    greeting: 'Buongiorno',
     toneHint:
-      'Voce: calda, curiosa. Saluto "salve". Una domanda nel testo (genuina, non retorica). ' +
+      'Voce: calda, curiosa. Saluto "buongiorno". Una domanda nel testo (genuina, non retorica). ' +
       'Es. "Avete mai pensato a...?". Tono empatico, mai pressante.',
   },
-  gabriele: {
+  // Tono diretto basato su dati
+  sara: {
     greeting: 'Buongiorno',
     toneHint:
       'Voce: diretta, basata su dati. Saluto "buongiorno". ' +
@@ -54,15 +59,27 @@ const VOICES: Record<SenderVoice, { greeting: string; toneHint: string }> = {
   },
 }
 
+/** Email del mittente per la firma, derivata dalla voce. */
+const VOICE_EMAILS: Record<SenderVoice, string> = {
+  matteo: 'matteo@bylumino.com',
+  francesca: 'francesca@bylumino.com',
+  davide: 'davide@bylumino.com',
+  sara: 'sara@bylumino.com',
+}
+
 function nameToVoice(name?: string): SenderVoice {
   const n = (name || '').toLowerCase().trim()
-  if (n === 'luca' || n === 'pietro' || n === 'giovanni' || n === 'gabriele') return n
+  // Match sul nome di battesimo (sender_name nel DB è "Matteo Conti", ecc.)
+  if (n.includes('matteo')) return 'matteo'
+  if (n.includes('francesca')) return 'francesca'
+  if (n.includes('davide')) return 'davide'
+  if (n.includes('sara')) return 'sara'
   // Default round-robin sicuro
-  return 'luca'
+  return 'matteo'
 }
 
 const GUARDRAILS_BASE = `
-Scrivi una cold email a un ristorante italiano. Sei un piccolo studio di Milano che fa siti web per ristoranti.
+Scrivi una cold email a un ristorante italiano. Sei un piccolo studio specializzato in siti per la ristorazione.
 
 REGOLE — ogni regola vale sempre, senza eccezioni:
 - Lingua: italiano. Mai parole inglesi.
@@ -79,7 +96,8 @@ export async function compose(input: ComposeInput): Promise<EmailDraft> {
   const { lead, strategy, step, priorSubject, senderName } = input
   const voiceKey = nameToVoice(senderName)
   const voice = VOICES[voiceKey]
-  const displayName = senderName || 'Luca'
+  const displayName = senderName || 'Matteo Conti'
+  const senderEmail = VOICE_EMAILS[voiceKey]
 
   // Subject: max 6 parole, niente emoji, niente caps, niente "!"
   const rawSubject =
@@ -120,7 +138,7 @@ export async function compose(input: ComposeInput): Promise<EmailDraft> {
   // Post-processing humanization
   body = sanitizeBody(body)
   body = enforceWordLimit(body, 125)
-  body = withGreetingAndSignature(body, voice.greeting, displayName)
+  body = withGreetingAndSignature(body, voice.greeting, displayName, senderEmail)
 
   const token = generateToken()
   return {
@@ -190,8 +208,19 @@ function enforceWordLimit(s: string, maxWords: number): string {
   return words.slice(0, maxWords).join(' ') + '.'
 }
 
-function withGreetingAndSignature(body: string, greeting: string, name: string): string {
+function withGreetingAndSignature(
+  body: string,
+  greeting: string,
+  name: string,
+  email: string,
+): string {
   const greetingLine = `${greeting},`
-  const signature = `${name}\nLumino — bylumino.com`
+  // Firma standard, uguale per tutti i mittenti.
+  const signature = [
+    name,
+    'Account — Team Commerciale',
+    'Lumino · siti web per la ristorazione',
+    `${email} · bylumino.com`,
+  ].join('\n')
   return `${greetingLine}\n\n${body}\n\n${signature}`
 }

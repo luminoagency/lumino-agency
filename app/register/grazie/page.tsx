@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PUBLIC_CONTACT_EMAIL } from '@/lib/company'
 
 export const metadata = { title: 'Grazie · Lumino' }
 
@@ -66,7 +67,7 @@ export default function GraziePage() {
           fontSize: 16, lineHeight: 1.6,
           margin: '0 auto 36px', maxWidth: 460,
         }}>
-          Account creato. Ora ti contattiamo <strong style={{ color: '#fff' }}>entro 24 ore</strong> per il pagamento della prima rata (50%) e per gli ultimi dettagli sul sito.
+          Account creato. Ora ti contattiamo <strong style={{ color: '#fff' }}>entro 24 ore</strong> per il pagamento della prima rata (30%) e per gli ultimi dettagli sul sito.
         </p>
 
         <div style={{
@@ -84,9 +85,9 @@ export default function GraziePage() {
 
           {[
             { n: '1', t: 'Ti chiamiamo o ti scriviamo', p: 'Entro 24h per confermare i dettagli e mandarti il link di pagamento.' },
-            { n: '2', t: 'Paghi il 50%', p: 'Pagamento sicuro online. Solo dopo iniziamo il lavoro.' },
-            { n: '3', t: 'Costruiamo il tuo sito', p: 'L\'AI scrive i testi, sceglie le foto migliori, organizza tutto. Tu non fai nulla.' },
-            { n: '4', t: 'Approvi e va online', p: 'Ti mandiamo il sito pronto. Modifichi quello che vuoi, paghi il 50% finale, andiamo live.' },
+            { n: '2', t: 'Paghi il 30%', p: 'Pagamento sicuro online. Solo dopo iniziamo il lavoro.' },
+            { n: '3', t: 'Costruiamo il tuo sito', p: 'Scriviamo i testi, scegliamo le foto migliori, organizziamo tutto. Tu non fai nulla.' },
+            { n: '4', t: 'Approvi e va online', p: 'Ti mandiamo il sito pronto. Modifichi quello che vuoi, paghi il 70% finale, andiamo live.' },
           ].map(s => (
             <div key={s.n} style={{ display: 'flex', gap: 14, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
               <div style={{
@@ -109,7 +110,7 @@ export default function GraziePage() {
           color: 'rgba(255,255,255,0.5)',
           fontSize: 13, lineHeight: 1.5,
         }}>
-          Domande? Scrivi a <a href="mailto:ciao@bylumino.com" style={{ color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.3)' }}>ciao@bylumino.com</a>
+          Domande? Scrivi a <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`} style={{ color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.3)' }}>{PUBLIC_CONTACT_EMAIL}</a>
         </p>
 
         <div style={{ marginTop: 28 }}>

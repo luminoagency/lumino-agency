@@ -220,6 +220,7 @@ export async function publishDemoSite() {
     await assertSuperAdmin()
     const siteId = await getDemoSiteId()
     const admin = createAdminClient()
+    // BYPASS INTENZIONALE: demo/seed interno, ignora il gate pagamento 30/70
     const { error } = await admin.from('sites').update({ status: 'live' }).eq('id', siteId)
     if (error) return { ok: false, error: error.message }
     revalidatePath('/lumino-dashboard')

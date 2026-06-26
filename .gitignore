@@ -46,4 +46,7 @@ next-env.d.ts
 /lib/lab-library/
 /LIBRERIA_LUMINO_RACCOLTA.md
 
+# File riservato (riferimenti admin super-admin)
+ADMIN_CONFIG.md
+
 .vercel

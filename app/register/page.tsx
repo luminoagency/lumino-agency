@@ -363,7 +363,7 @@ export default function RegisterPage() {
                   </div>
                 ))}
               </div>
-              <p className="rg-help">Il prezzo finale varia per zona e tipo di locale. Si parte con il 50% all'avvio del lavoro.</p>
+              <p className="rg-help">Il prezzo finale dipende dalle funzioni che ti servono. Si parte con il 30% all'avvio del lavoro.</p>
             </>
           )}
 
@@ -524,7 +524,7 @@ export default function RegisterPage() {
 
               <div className="rg-info">
                 <span className="rg-info-icon">✓</span>
-                Dopo la conferma ti contattiamo entro 24h per il pagamento del 50% e per qualsiasi dettaglio. Il sito è pronto subito dopo.
+                Dopo la conferma ti contattiamo entro 24h per il pagamento del 30% e per qualsiasi dettaglio. Il sito è pronto subito dopo.
               </div>
             </>
           )}

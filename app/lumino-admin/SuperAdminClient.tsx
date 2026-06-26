@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   adminGenerateSite, adminSetSiteStatus, adminSetSiteTier,
   adminApproveReview, adminDeleteReview, adminCalculatePrice,
-  adminToggleOutreachAccount,
+  adminToggleOutreachAccount, confirmFirstPayment, confirmFinalPayment,
 } from './actions'
 import { logoutActionState } from '../auth/actions'
 import { DiagnosticsPanel } from './DiagnosticsPanel'
@@ -15,6 +15,8 @@ interface SiteRow {
   id: string; slug: string; tier: string; active: boolean; status: string;
   created_at: string; custom_domain: string | null;
   restaurant_name: string; city: string | null; client_email: string | null;
+  first_payment_confirmed: boolean; final_payment_confirmed: boolean;
+  first_payment_confirmed_at: string | null; final_payment_confirmed_at: string | null;
 }
 interface UserRow {
   id: string; email: string; created_at: string; last_sign_in_at: string | null;
@@ -41,6 +43,7 @@ interface PendingReview {
 
 interface Props {
   currentUserEmail: string
+  queueCount: number
   diagnostics: DiagnosticsData | null
   stats: {
     totalUsers: number; totalSites: number; liveSites: number;
@@ -61,7 +64,7 @@ interface Props {
 }
 
 export function SuperAdminClient(props: Props) {
-  const { stats, users, sites, reservationsAggregate, outreachAccounts, pendingReviews, pricingMeta, currentUserEmail, diagnostics } = props
+  const { stats, users, sites, reservationsAggregate, outreachAccounts, pendingReviews, pricingMeta, currentUserEmail, diagnostics, queueCount } = props
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg: string } | null>(null)
 
@@ -81,6 +84,20 @@ export function SuperAdminClient(props: Props) {
     startTransition(async () => {
       const r = await adminSetSiteStatus(siteId, status)
       notify(!!r.ok, r.ok ? '✓ Stato aggiornato' : `Errore: ${r.error}`)
+    })
+  }
+  function doConfirmFirst(siteId: string) {
+    if (!confirm('Confermare l\'acconto del 30%? Sblocca la generazione del sito.')) return
+    startTransition(async () => {
+      const r = await confirmFirstPayment(siteId)
+      notify(!!r.ok, r.ok ? '✓ Acconto 30% confermato' : `Errore: ${r.error}`)
+    })
+  }
+  function doConfirmFinal(siteId: string) {
+    if (!confirm('Confermare il saldo del 70%? Sblocca la pubblicazione del sito.')) return
+    startTransition(async () => {
+      const r = await confirmFinalPayment(siteId)
+      notify(!!r.ok, r.ok ? '✓ Saldo 70% confermato' : `Errore: ${r.error}`)
     })
   }
   function doSetTier(siteId: string, tier: 'basic' | 'pro' | 'premium') {
@@ -193,6 +210,9 @@ export function SuperAdminClient(props: Props) {
         .la-btn-success { color: #22c55e; border-color: rgba(34,197,94,0.3); }
         .la-btn-success:hover:not(:disabled) { background: rgba(34,197,94,0.1); }
 
+        .la-pay { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+        .la-pay-ok { font-size: 11px; font-weight: 600; color: #22c55e; white-space: nowrap; }
+
         .la-tier-sel { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-family: inherit; cursor: pointer; }
         .la-tier-sel option { background: #1a1a1a; }
 
@@ -246,6 +266,9 @@ export function SuperAdminClient(props: Props) {
           </div>
           <div className="la-top-right">
             <span>Loggato come <strong>{currentUserEmail}</strong></span>
+            <Link href="/lumino-admin/outreach-queue" className="la-logout">
+              📬 Coda email{queueCount > 0 ? ` (${queueCount})` : ''}
+            </Link>
             <Link href="/lumino-admin/lab" className="la-logout">🔬 Lab</Link>
             <Link href="/admin" className="la-logout">Il mio admin</Link>
             <button
@@ -538,11 +561,11 @@ export function SuperAdminClient(props: Props) {
               <table className="la-table">
                 <thead>
                   <tr>
-                    <th>Ristorante</th><th>Slug</th><th>Piano</th><th>Stato</th><th>Azioni</th>
+                    <th>Ristorante</th><th>Slug</th><th>Piano</th><th>Stato</th><th>Pagamento</th><th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sites.length === 0 && <tr><td colSpan={5} className="la-empty">Nessun sito.</td></tr>}
+                  {sites.length === 0 && <tr><td colSpan={6} className="la-empty">Nessun sito.</td></tr>}
                   {sites.map(s => (
                     <tr key={s.id}>
                       <td>
@@ -558,6 +581,16 @@ export function SuperAdminClient(props: Props) {
                         </select>
                       </td>
                       <td><span className={`la-pill ${s.status}`}>{s.status}</span></td>
+                      <td>
+                        <div className="la-pay">
+                          {s.first_payment_confirmed
+                            ? <span className="la-pay-ok">✓ Acconto 30% {fmtDate(s.first_payment_confirmed_at)}</span>
+                            : <button className="la-btn" disabled={pending} onClick={() => doConfirmFirst(s.id)}>Conferma acconto 30%</button>}
+                          {s.final_payment_confirmed
+                            ? <span className="la-pay-ok">✓ Saldo 70% {fmtDate(s.final_payment_confirmed_at)}</span>
+                            : <button className="la-btn" disabled={pending} onClick={() => doConfirmFinal(s.id)}>Conferma saldo 70%</button>}
+                        </div>
+                      </td>
                       <td>
                         <div className="la-actions">
                           {s.status === 'live' && <a className="la-btn" href={`/sites/${s.slug}`} target="_blank" rel="noopener noreferrer">Apri ↗</a>}
@@ -582,6 +615,14 @@ export function SuperAdminClient(props: Props) {
       )}
     </div>
   )
+}
+
+/** Data breve it-IT per le conferme di pagamento (vuoto se assente). */
+function fmtDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function topPlan(c: { basic: number; pro: number; premium: number }): string {

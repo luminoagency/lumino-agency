@@ -122,11 +122,27 @@ const GROUPS: FaqGroup[] = [
     title: 'Dominio e dati',
     items: [
       {
-        q: 'Posso usare un mio dominio?',
+        q: 'Il dominio è incluso?',
         a: (
           <>
-            Sì sui piani Pro e Premium. Sul piano Basic il sito è pubblicato su{' '}
-            <code>tuonome.bylumino.com</code>, già professionale e incluso.
+            <p style={{ margin: '0 0 10px' }}>Dipende dal piano.</p>
+            <p style={{ margin: '0 0 10px' }}>
+              Col piano Basic il tuo sito sarà su un sottodominio del nostro studio (es.{' '}
+              <code>tuoristorante.bylumino.com</code>). È incluso e non scade. Se in futuro vuoi
+              un dominio personalizzato (tipo <code>tuoristorante.it</code>), basta passare al
+              piano Pro pagando la differenza.
+            </p>
+            <p style={{ margin: '0 0 10px' }}>Coi piani Pro e Premium la scelta è tua:</p>
+            <p style={{ margin: '0 0 10px' }}>
+              — Se hai già un dominio che usi o vuoi usare, lo colleghiamo noi al nuovo sito. Il
+              rinnovo annuale resta a casa tua, dove l’hai sempre pagato.
+            </p>
+            <p style={{ margin: 0 }}>
+              — Se non hai un dominio o ne vuoi uno nuovo, lo registriamo noi a tuo nome. Il primo
+              anno è incluso. Dal secondo anno te lo rinnoviamo annualmente: quando si avvicina la
+              scadenza ti scriviamo con il prezzo aggiornato e il link per il rinnovo. Se decidi di
+              non rinnovarlo, il dominio si libera.
+            </p>
           </>
         ),
       },

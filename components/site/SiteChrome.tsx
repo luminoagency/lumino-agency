@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { COMPANY } from '@/lib/company'
+import { OPEN_PREFERENCES_EVENT } from '@/lib/cookies/consent'
 
 /**
  * Cornice condivisa per le pagine istituzionali e legali del sito Lumino.
@@ -165,6 +166,8 @@ export default function SiteChrome({
         .ls-footer-col h4 { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.4); font-weight: 700; margin: 0 0 16px; }
         .ls-footer-col a { display: block; color: rgba(255,255,255,0.62); text-decoration: none; font-size: 13.5px; padding: 5px 0; transition: color 0.2s; }
         .ls-footer-col a:hover { color: #fff; }
+        .ls-cookie-link { display: block; background: none; border: 0; padding: 5px 0; margin: 0; font-family: inherit; font-size: 13.5px; color: rgba(255,255,255,0.62); cursor: pointer; text-align: left; transition: color 0.2s; }
+        .ls-cookie-link:hover { color: #fff; }
         .ls-footer-bottom { border-top: 1px solid rgba(255,255,255,0.06); }
         .ls-footer-bottom-in { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: rgba(255,255,255,0.4); font-size: 12px; }
         .ls-footer-bottom-in a { color: rgba(255,255,255,0.5); text-decoration: none; }
@@ -278,6 +281,13 @@ export default function SiteChrome({
                   {l.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                className="ls-cookie-link"
+                onClick={() => window.dispatchEvent(new CustomEvent(OPEN_PREFERENCES_EVENT))}
+              >
+                Gestisci cookie
+              </button>
             </div>
             <div className="ls-footer-col">
               <h4>Contatti</h4>

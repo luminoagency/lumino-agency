@@ -47,6 +47,8 @@ export interface ConversationRow {
   form_link_sent_at: string | null;
   restaurant_id: string | null;
   approach: WhatsAppApproach | null;
+  /** Nome del team assegnato a questo numero (resta fisso per la conversazione). */
+  bot_persona: string | null;
   created_at: string;
   updated_at: string;
 }

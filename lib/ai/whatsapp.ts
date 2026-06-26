@@ -1,6 +1,6 @@
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
-import { BOT_NAME, FAQ, FORM_URL } from '../whatsapp/config';
+import { BOT_PERSONAS, FAQ, FORM_URL } from '../whatsapp/config';
 import type {
   ConversationRow,
   MessageRow,
@@ -73,11 +73,11 @@ function stageGuide(stage: Stage, approachBrief: string | null): string {
 
 // ── Transcript builder ───────────────────────────────────────
 
-function buildHistory(messages: MessageRow[]): string {
+function buildHistory(messages: MessageRow[], persona: string): string {
   if (messages.length === 0) return '(nessun messaggio precedente)';
   return messages
     .map((m) => {
-      const speaker = m.direction === 'outbound' ? BOT_NAME : 'Lead';
+      const speaker = m.direction === 'outbound' ? persona : 'Lead';
       return `[${speaker}]: ${m.body}`;
     })
     .join('\n');
@@ -85,9 +85,9 @@ function buildHistory(messages: MessageRow[]): string {
 
 // ── Prompt builders ──────────────────────────────────────────
 
-function buildSystem(): string {
+function buildSystem(persona: string): string {
   return `
-You are ${BOT_NAME}, an Italian. Your persona and goal depend on the conversation stage — read the stage guidance in each message carefully and follow it exactly.
+You are ${persona}, a member of the Lumino team. Italian. Your persona and goal depend on the conversation stage — read the stage guidance in each message carefully and follow it exactly.
 
 TONE — always:
 - Maximum 3–4 short sentences. This is WhatsApp, not email.
@@ -96,15 +96,16 @@ TONE — always:
 - Mirror their register: "tu" if they use "tu", "Lei" if they use "Lei".
 - Italian only — even if they write in another language, always reply in Italian.
 - Never use the words "bot", "automatico", "sistema", "AI", "intelligenza artificiale".
-- If they ask "sei un bot?" reply: "No, sono ${BOT_NAME}."
+- If they ask "sei un bot?" reply: "No, sono ${persona}."
 - No marketing language. Never say "opportunità unica", "offerta speciale", "non perdere".
 - Never write ${FORM_URL} in the reply — set sendFormLink: true and it is appended automatically.
 
-LUMINO AGENCY INFO (use ONLY when stage is warm or later, and only when relevant or asked):
-Lumino è una piccola agenzia digitale italiana che costruisce siti per ristoranti.
+LUMINO INFO (use ONLY when stage is warm or later, and only when relevant or asked):
+Lumino è uno studio specializzato in siti web per la ristorazione.
 Prezzi: ${FAQ.pricing}
 Tempi: ${FAQ.delivery}
 Cosa include: ${FAQ.included}
+Dominio: ${FAQ.domain}
 
 OUTPUT: return a JSON object with these four fields:
 - reply: the Italian message to send (plain text, no URL)
@@ -120,6 +121,7 @@ function buildUserMessage(
   inboundText: string,
   restaurant: RestaurantContext | null,
   approachBrief: string | null,
+  persona: string,
 ): string {
   const isFirstContact = !history.some((m) => m.direction === 'outbound');
   const lines: string[] = [];
@@ -157,12 +159,12 @@ function buildUserMessage(
 
   lines.push('');
   lines.push('Conversation history:');
-  lines.push(buildHistory(history));
+  lines.push(buildHistory(history, persona));
   lines.push('');
   lines.push('New message from the lead:');
   lines.push(`"${inboundText}"`);
   lines.push('');
-  lines.push(`Reply as ${BOT_NAME}. Return JSON only.`);
+  lines.push(`Reply as ${persona}. Return JSON only.`);
 
   return lines.join('\n');
 }
@@ -178,14 +180,20 @@ export async function generateReply(
 ): Promise<BotOutput> {
   const claude = getClaude();
 
+  // Persona fissa del numero; fallback per conversazioni create prima di questa feature.
+  const persona =
+    conversation.bot_persona ?? BOT_PERSONAS[0];
+
   const response = await claude.messages.parse({
     model: WHATSAPP_MODEL,
     max_tokens: 512,
-    system: buildSystem(),
+    system: buildSystem(persona),
     messages: [
       {
         role: 'user',
-        content: buildUserMessage(conversation, history, inboundText, restaurant, approachBrief),
+        content: buildUserMessage(
+          conversation, history, inboundText, restaurant, approachBrief, persona,
+        ),
       },
     ],
     output_config: { format: zodOutputFormat(BotOutputSchema) },
@@ -194,7 +202,7 @@ export async function generateReply(
   const parsed = response.parsed_output as BotOutput | null;
   if (!parsed) {
     throw new Error(
-      `${BOT_NAME} did not return valid JSON (stop_reason: ${response.stop_reason})`,
+      `${persona} did not return valid JSON (stop_reason: ${response.stop_reason})`,
     );
   }
   return parsed;

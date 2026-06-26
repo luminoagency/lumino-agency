@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { generateSiteContent } from '@/lib/pipeline/generate'
+import { canGoLive } from '@/lib/payments/status'
 
 const SUPER_ADMINS = ['bylumino06@gmail.com']
 
@@ -35,11 +36,24 @@ export async function adminGenerateSite(siteId: string) {
   }
 }
 
-/** Cambia lo status del sito (building → live → error). */
+/** Cambia lo status del sito (building → live → error).
+ *  Gate: si può andare 'live' solo con il saldo (70%) confermato. */
 export async function adminSetSiteStatus(siteId: string, status: 'building' | 'live' | 'error') {
   try {
     await assertSuperAdmin()
     const admin = createAdminClient()
+
+    if (status === 'live') {
+      const { data: siteRow } = await admin
+        .from('sites')
+        .select('final_payment_confirmed')
+        .eq('id', siteId)
+        .maybeSingle()
+      if (!siteRow || !canGoLive(siteRow as { final_payment_confirmed: boolean })) {
+        return { ok: false, error: 'Saldo finale non confermato, sito non pubblicabile' }
+      }
+    }
+
     const { error } = await admin.from('sites').update({ status }).eq('id', siteId)
     if (error) return { ok: false, error: error.message }
     revalidatePath('/lumino-admin')
@@ -51,17 +65,92 @@ export async function adminSetSiteStatus(siteId: string, status: 'building' | 'l
 }
 
 /**
- * Conferma il pagamento del 50% per un sito (flag manuale).
- * Quando true, la pipeline AI puo essere triggerata. Va sostituito in futuro
- * con un webhook automatico del payment provider.
+ * Conferma l'acconto (30%) di un sito. Sblocca la generazione del sito.
+ * Flag manuale del super-admin; in futuro lo setterà il webhook del provider.
  */
-export async function adminConfirmPayment(siteId: string, confirmed: boolean) {
+export async function confirmFirstPayment(siteId: string) {
   try {
     await assertSuperAdmin()
     const admin = createAdminClient()
-    const { error } = await admin.from('sites').update({ payment_confirmed: confirmed }).eq('id', siteId)
+    const { error } = await admin
+      .from('sites')
+      .update({
+        first_payment_confirmed: true,
+        first_payment_confirmed_at: new Date().toISOString(),
+      })
+      .eq('id', siteId)
     if (error) return { ok: false, error: error.message }
     revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/**
+ * Conferma il saldo (70%) di un sito. Sblocca la pubblicazione.
+ * Scrive anche il vecchio payment_confirmed = true per backward-compat
+ * con eventuale codice non ancora migrato.
+ */
+export async function confirmFinalPayment(siteId: string) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('sites')
+      .update({
+        final_payment_confirmed: true,
+        final_payment_confirmed_at: new Date().toISOString(),
+        payment_confirmed: true,
+      })
+      .eq('id', siteId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/**
+ * Marca un'email della coda come inviata manualmente (warmup).
+ * status 'ready_to_send' → 'sent' + manually_sent_at/by.
+ */
+export async function markEmailManuallySent(emailId: string) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('emails_sent')
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        manually_sent_at: new Date().toISOString(),
+        manually_sent_by: 'admin',
+      })
+      .eq('id', emailId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin/outreach-queue')
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore' }
+  }
+}
+
+/**
+ * Marca una risposta (email_replies) come inviata manualmente.
+ * reply_status 'ready_to_send' → 'sent'.
+ */
+export async function markReplyManuallySent(replyId: string) {
+  try {
+    await assertSuperAdmin()
+    const admin = createAdminClient()
+    const { error } = await admin
+      .from('email_replies')
+      .update({ reply_status: 'sent' })
+      .eq('id', replyId)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/lumino-admin/outreach-queue')
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore' }

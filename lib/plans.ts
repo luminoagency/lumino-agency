@@ -63,13 +63,13 @@ export const PLANS: Plan[] = [
     features: [
       'Tutto del piano Basic',
       'Sezione "Lo chef"',
-      'Pulsante WhatsApp diretto',
+      'Pulsante WhatsApp sul sito (clienti ti scrivono direttamente)',
       'Prenotazioni online dal sito',
       'Avviso a ogni nuova prenotazione',
       'Pubblicazione eventi sul sito',
       'Raccolta recensioni dal sito (con approvazione)',
       'Newsletter (lista iscritti + invio)',
-      'Dominio personalizzato (es. tuoristorante.it)',
+      'Dominio personalizzato incluso il primo anno (o colleghiamo il tuo)',
       'Statistiche visite al sito',
       'Pannello admin base',
     ],
@@ -93,6 +93,7 @@ export const PLANS: Plan[] = [
     priceMax: 850,
     features: [
       'Tutto del piano Pro',
+      'Logo personalizzato disegnato dal nostro studio',
       'Upload foto e logo custom',
       'Modifica tutti i testi del sito',
       'CRM clienti con storico prenotazioni',
@@ -134,7 +135,7 @@ export interface TierCapabilities {
   reviewsCapture: boolean
   // Tech avanzato
   heroVideo: boolean
-  advancedAnimations: boolean   // GSAP + Lenis smooth scroll
+  advancedAnimations: boolean   // GSAP + ScrollTrigger + animazioni reveal allo scroll
   multiHero: boolean
   // Asset / contenuti
   customAssetsUpload: boolean   // foto + logo custom (override sistema)
@@ -200,7 +201,7 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
     events: true,
     newsletter: true,
     reviewsCapture: true,
-    heroVideo: true,
+    heroVideo: false, // DISATTIVATA: nessun template implementa <video> al momento. Riattivare quando un template aggiunge il supporto.
     advancedAnimations: true,
     multiHero: true,
     customAssetsUpload: true,
@@ -338,7 +339,7 @@ export const QUALITY_REFERENCES = [
 ]
 
 export const SALES_TERMS = {
-  upfrontPercent: 50,
+  upfrontPercent: 30,
   isOneShot: true,
-  publicNote: 'Il prezzo varia in base alla zona e al tipo di locale. Si parte con il 50% all\'avvio del lavoro.',
+  publicNote: 'Pagamento in due parti: 30% all\'avvio del lavoro, 70% alla consegna del sito.',
 }

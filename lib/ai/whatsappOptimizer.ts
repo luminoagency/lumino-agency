@@ -105,7 +105,7 @@ async function rewriteApproach(
   const system = `
 You are optimizing WhatsApp cold-opening messages for a small Italian digital agency that builds websites for restaurants.
 
-Each approach is a disguised opener — Ezio does NOT reveal he works for an agency in the first message. He poses as a customer or interested person to start a natural conversation that leads to a reveal later.
+Each approach is a disguised opener — the Lumino team member does NOT reveal they work for an agency in the first message. They pose as a customer or interested person to start a natural conversation that leads to a reveal later.
 
 RULES the new prompt_brief must follow:
 - Italian restaurant owners receive these on WhatsApp. Extremely short (2-4 lines).

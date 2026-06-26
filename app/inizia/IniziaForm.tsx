@@ -6,17 +6,24 @@ import { useState } from 'react'
  * Form di acquisizione "Inizia ora".
  * Il cliente lascia i suoi dati e lo ricontattiamo noi — NON è una
  * registrazione self-service. I dati vengono inviati a /api/inizia.
+ *
+ * Pre-compilazione smart: se la pagina è aperta da un link di cold outreach
+ * (?lead=<uuid>), i campi arrivano già compilati via `prefill` + `known`.
  */
-export default function IniziaForm() {
+interface Props {
+  leadId?: string
+  known?: boolean
+  prefill?: { restaurantName?: string; phone?: string; email?: string }
+}
+
+export default function IniziaForm({ leadId, known = false, prefill }: Props) {
   const [form, setForm] = useState({
     name: '',
-    restaurantName: '',
-    city: '',
-    cuisine: '',
-    phone: '',
-    email: '',
-    message: '',
+    restaurantName: prefill?.restaurantName ?? '',
+    phone: prefill?.phone ?? '',
+    email: prefill?.email ?? '',
   })
+  const [wantsContact, setWantsContact] = useState(true)
   const [privacy, setPrivacy] = useState(false)
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -28,8 +35,6 @@ export default function IniziaForm() {
   const disabled =
     !form.name.trim() ||
     !form.restaurantName.trim() ||
-    !form.city.trim() ||
-    !form.cuisine.trim() ||
     !form.phone.trim() ||
     !form.email.trim() ||
     !privacy ||
@@ -44,7 +49,7 @@ export default function IniziaForm() {
       const res = await fetch('/api/inizia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, privacy }),
+        body: JSON.stringify({ ...form, wantsContact, privacy, leadId }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -81,13 +86,15 @@ export default function IniziaForm() {
         .cf { display: flex; flex-direction: column; gap: 16px; }
         .cf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .cf label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); font-weight: 600; margin-bottom: 6px; display: block; }
-        .cf input[type=text], .cf input[type=email], .cf input[type=tel], .cf textarea {
+        .cf input[type=text], .cf input[type=email], .cf input[type=tel] {
           width: 100%; padding: 13px 16px; background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
           color: #fff; font-size: 14px; font-family: inherit; transition: border-color 0.2s, background 0.2s;
         }
-        .cf input:focus, .cf textarea:focus { outline: none; border-color: rgba(167,139,250,0.6); background: rgba(255,255,255,0.06); }
-        .cf textarea { resize: vertical; min-height: 110px; }
+        .cf input:focus { outline: none; border-color: rgba(167,139,250,0.6); background: rgba(255,255,255,0.06); }
+        .cf-known { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; background: rgba(34,197,94,0.10); border: 1px solid rgba(34,197,94,0.25); color: #86efac; font-size: 13.5px; }
+        .cf-check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+        .cf-check input { margin-top: 3px; accent-color: #e52d1d; width: 16px; height: 16px; flex-shrink: 0; }
         .cf-privacy { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
         .cf-privacy input { margin-top: 3px; accent-color: #e52d1d; width: 16px; height: 16px; flex-shrink: 0; }
         .cf-privacy a { color: #a78bfa; }
@@ -97,6 +104,13 @@ export default function IniziaForm() {
         .cf-submit:disabled { opacity: 0.45; cursor: not-allowed; }
         @media (max-width: 560px) { .cf-row { grid-template-columns: 1fr; } }
       ` }} />
+
+      {known && (
+        <div className="cf-known">
+          <span aria-hidden>✓</span>
+          <span>Conosciamo già il tuo locale</span>
+        </div>
+      )}
 
       <div className="cf-row">
         <div>
@@ -111,17 +125,6 @@ export default function IniziaForm() {
 
       <div className="cf-row">
         <div>
-          <label htmlFor="in-city">Città</label>
-          <input id="in-city" type="text" value={form.city} onChange={(e) => set('city', e.target.value)} placeholder="Es. Bologna" required />
-        </div>
-        <div>
-          <label htmlFor="in-cuisine">Tipo di cucina</label>
-          <input id="in-cuisine" type="text" value={form.cuisine} onChange={(e) => set('cuisine', e.target.value)} placeholder="Es. Pizzeria, sushi, trattoria" required />
-        </div>
-      </div>
-
-      <div className="cf-row">
-        <div>
           <label htmlFor="in-phone">Telefono</label>
           <input id="in-phone" type="tel" value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="Es. 333 1234567" required />
         </div>
@@ -131,10 +134,10 @@ export default function IniziaForm() {
         </div>
       </div>
 
-      <div>
-        <label htmlFor="in-message">Messaggio (facoltativo)</label>
-        <textarea id="in-message" value={form.message} onChange={(e) => set('message', e.target.value)} placeholder="Raccontaci cosa ti serve" />
-      </div>
+      <label className="cf-check">
+        <input type="checkbox" checked={wantsContact} onChange={(e) => setWantsContact(e.target.checked)} />
+        <span>Vuoi essere ricontattato</span>
+      </label>
 
       <label className="cf-privacy">
         <input type="checkbox" checked={privacy} onChange={(e) => setPrivacy(e.target.checked)} required />

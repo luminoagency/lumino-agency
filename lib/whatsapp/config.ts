@@ -1,13 +1,28 @@
 export const HISTORY_WINDOW = 20;
 export const FORM_URL = 'bylumino.com';
-export const BOT_NAME = 'Ezio';
+
+/**
+ * Nomi del team usati come persona del bot. Al primo messaggio di un nuovo
+ * numero se ne sceglie uno a caso e si salva in whatsapp_conversations.bot_persona,
+ * così resta lo stesso per tutta la conversazione e nei messaggi futuri.
+ */
+export const BOT_PERSONAS = ['Matteo', 'Francesca', 'Davide', 'Sara'] as const;
+export type BotPersona = (typeof BOT_PERSONAS)[number];
+
+/** Sceglie a caso una persona del team per una nuova conversazione. */
+export function pickBotPersona(): BotPersona {
+  return BOT_PERSONAS[Math.floor(Math.random() * BOT_PERSONAS.length)];
+}
 
 export const FAQ = {
   pricing:
-    'I prezzi partono da €99 per un sito base. Il pacchetto più richiesto è tra €219 e €379. ' +
-    'Per siti con funzioni avanzate siamo tra €449 e €749. Dipende da cosa ti serve esattamente.',
-  delivery: 'Di solito siamo online in 48 ore dalla conferma.',
+    'I prezzi partono da €190 per il piano base, €390 per quello principale, €590 per quello completo. ' +
+    'Il prezzo esatto dipende da cosa ti serve.',
+  delivery: 'Di solito siamo online in pochi giorni dalla conferma.',
   included: 'Sito professionale, dominio incluso per il primo anno, mobile-friendly e pronto da subito.',
+  domain:
+    'Il dominio è incluso il primo anno. Dal secondo anno costa 12 euro all\'anno, ti arriva ' +
+    'un\'email quando è in scadenza con il link per rinnovarlo.',
 };
 
 export function whapiToken(): string {

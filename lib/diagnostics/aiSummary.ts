@@ -30,7 +30,7 @@ export async function generateDailySummary(metrics: SummaryInput): Promise<strin
           '4. Tono diretto, no inglese, no tecnicismi inutili\n' +
           '5. Usa nomi italiani delle strategie quando possibile\n\n' +
           "Esempio output:\n'Oggi è andata sotto media: solo 42 email mandate (target 60). " +
-          'Possibile causa: rate limit Gmail su outlumino3, che sta ancora in warm-up. ' +
+          'Possibile causa: limite di invio sull\'account di Sara, che sta ancora in warm-up. ' +
           'La strategia case study funziona 2x meglio delle altre questa settimana, ' +
           "conviene aumentare il suo peso. Suggerisco di pausare la strategia urgency e farla rivedere al weekly-learn martedì.'",
       },

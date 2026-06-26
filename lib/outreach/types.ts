@@ -6,19 +6,19 @@
 /** Step in the send sequence — mirrors emails_sent.step constraint. */
 export type OutreachStep = 'initial' | 'followup_3' | 'followup_7';
 
-/** Send lifecycle status — mirrors emails_sent.status constraint. */
-export type SendStatus = 'sending' | 'sent' | 'failed' | 'skipped';
+/** Send lifecycle status — mirrors emails_sent.status constraint.
+ *  'ready_to_send' = generata in MANUAL_SEND_MODE, in attesa di invio manuale dalla coda. */
+export type SendStatus = 'sending' | 'sent' | 'failed' | 'skipped' | 'ready_to_send';
 
 /**
- * Sender identities — ora 4 mittenti @bylumino.com con prima persona.
- * (Legacy outlumino1..4 dei vecchi Gmail Apps Script restano accettati per backward-compat.)
+ * Sender identities — 4 mittenti @bylumino.com con prima persona.
+ * I legacy outlumino1..4 sono stati rimossi dal DB dalla migration 0020.
  */
 export type AccountName =
-  | 'luca' | 'pietro' | 'giovanni' | 'gabriele'
-  | 'outlumino1' | 'outlumino2' | 'outlumino3' | 'outlumino4';
+  | 'matteo' | 'francesca' | 'davide' | 'sara';
 
 /** Voci umane parametriche (vedi lib/outreach/compose.ts). */
-export type SenderVoice = 'luca' | 'pietro' | 'giovanni' | 'gabriele';
+export type SenderVoice = 'matteo' | 'francesca' | 'davide' | 'sara';
 
 /** Strategy slot number — mirrors email_strategies.strategy_number constraint. */
 export type StrategyNumber = 1 | 2 | 3 | 4 | 5;
@@ -83,7 +83,8 @@ export interface EmailDraft {
 
 // ── Send pipeline ────────────────────────────────────────────
 
-/** Row inserted into emails_sent to atomically claim a lead (status='sending'). */
+/** Row inserted into emails_sent to atomically claim a lead.
+ *  status='sending' in invio automatico, 'ready_to_send' in MANUAL_SEND_MODE. */
 export interface ClaimInsert {
   restaurant_id: string;
   strategy: StrategyNumber;
@@ -91,7 +92,7 @@ export interface ClaimInsert {
   body: string;
   account: AccountName;
   step: OutreachStep;
-  status: 'sending';
+  status: 'sending' | 'ready_to_send';
   token: string;
 }
 

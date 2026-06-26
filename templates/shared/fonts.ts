@@ -1,3 +1,6 @@
+// NOTA: i template attivi (cinematico, bento, panoramico, aurora, mercato)
+// usano templates/_shared/ (con underscore).
+// Questo file in templates/shared/ è usato solo da app/preview/layout.tsx.
 import {
   Cormorant_Garamond,
   Libre_Baskerville,

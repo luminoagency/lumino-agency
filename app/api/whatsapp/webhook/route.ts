@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       // Log and continue. Always return 200 so Whapi does not retry — the
       // inbound was not logged on failure, so the next user message will carry
-      // the full context and Ezio will pick up where he left off.
+      // the full context and the conversation picks up where it left off.
       console.error(
         `WhatsApp handleInbound error [${phone}]:`,
         err instanceof Error ? err.message : err,

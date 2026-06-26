@@ -6,6 +6,7 @@ import { releaseStaleClaims } from '@/lib/outreach/report'
 import { getActiveStrategies, pickStrategy } from '@/lib/outreach/strategies'
 import { sendOutreachEmail, type OutreachAccount } from '@/lib/outreach/smtpSender'
 import { preflightCheck } from '@/lib/outreach/preflight'
+import { FEATURE_FLAGS } from '@/lib/feature-flags'
 import type { ClaimInsert } from '@/lib/outreach/types'
 
 /**
@@ -42,17 +43,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // PIANO B — finché le email pro non sono attive, l'outreach resta spento.
+  if (!FEATURE_FLAGS.OUTREACH_ENABLED) {
+    console.log('Outreach disabled — PIANO B not active')
+    return NextResponse.json({ ok: true, sent: 0, reason: 'Outreach disabled — PIANO B not active' })
+  }
+
   const db = createAdminClient()
+
+  // MANUAL_SEND_MODE (warmup): genera le email ma NON le invia via SMTP.
+  // Le salva con status 'ready_to_send' → finiscono nella coda /lumino-admin/outreach-queue.
+  const manualMode = FEATURE_FLAGS.MANUAL_SEND_MODE
 
   // 1. Rilascia claim 'sending' vecchi (deploy crash mid-run)
   await releaseStaleClaims(db)
 
-  // 2. Account attivi (no warming, no paused, no burned)
+  // 2. Account selezionati.
+  // In manual mode usiamo anche gli account warming: non c'è invio SMTP reale,
+  // è solo generazione testuale via Claude API. Gli account passeranno ad 'active'
+  // quando partirà l'invio automatico (MANUAL_SEND_MODE=false).
+  const accountStatuses = manualMode ? ['active', 'warming'] : ['active']
   const { data: rawAccounts } = await db
     .from('outreach_accounts')
     .select('id, email, sender_name, smtp_host, smtp_port, smtp_user, smtp_password_encrypted, provider, daily_cap, name')
     .eq('active', true)
-    .eq('status', 'active')
+    .in('status', accountStatuses)
 
   const accounts = (rawAccounts || []) as Array<OutreachAccount & { daily_cap: number; name: string }>
   if (accounts.length === 0) {
@@ -68,6 +83,7 @@ export async function GET(req: NextRequest) {
   let totalSent = 0
   let totalSkipped = 0
   let totalFailed = 0
+  let totalGenerated = 0
 
   // Per ogni account: quanti slot rimanenti oggi → quanti lead prelevare
   for (const account of accounts) {
@@ -104,7 +120,7 @@ export async function GET(req: NextRequest) {
         senderName: account.sender_name || 'Lumino',
       } as any)
 
-      // Claim
+      // Claim — in manual mode entra in coda come 'ready_to_send' (niente SMTP).
       const claim: ClaimInsert = {
         restaurant_id: lead.id,
         strategy: draft.strategyNumber,
@@ -112,12 +128,18 @@ export async function GET(req: NextRequest) {
         body: draft.body,
         account: account.name as any,
         step: item.step,
-        status: 'sending',
+        status: manualMode ? 'ready_to_send' : 'sending',
         token: draft.token,
       }
       const { error: claimErr } = await db.from('emails_sent').insert(claim)
       if (claimErr) {
         totalSkipped++
+        continue
+      }
+
+      // MANUAL_SEND_MODE: ci fermiamo qui. L'email resta in coda, la manda l'utente a mano.
+      if (manualMode) {
+        totalGenerated++
         continue
       }
 
@@ -148,6 +170,17 @@ export async function GET(req: NextRequest) {
         totalFailed++
       }
     }
+  }
+
+  if (manualMode) {
+    console.log(`Generated ${totalGenerated} emails in manual mode, ready in queue`)
+    return NextResponse.json({
+      ok: true,
+      mode: 'manual',
+      generated: totalGenerated,
+      skipped: totalSkipped,
+      accountsProcessed: accounts.length,
+    })
   }
 
   return NextResponse.json({

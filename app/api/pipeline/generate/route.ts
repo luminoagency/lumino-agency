@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateSiteContent } from '@/lib/pipeline/generate'
+import { canStartWork } from '@/lib/payments/status'
 
 export async function POST(req: NextRequest) {
   let body: any = {}
@@ -39,19 +40,19 @@ export async function POST(req: NextRequest) {
     if (!owner) return NextResponse.json({ error: 'Non autorizzato per questo sito' }, { status: 403 })
   }
 
-  // Gate pagamento: la pipeline parte SOLO se il pagamento del 50% è stato confermato.
-  // Il flag `sites.payment_confirmed` viene messo a true a mano (dal super-admin) o, in futuro,
+  // Gate pagamento: la generazione del sito parte SOLO con l'acconto (30%) confermato.
+  // first_payment_confirmed viene messo a true a mano (dal super-admin) o, in futuro,
   // automaticamente dal webhook del payment provider. Bypass via CRON_SECRET per testing.
   if (!viaCron) {
     const admin = createAdminClient()
     const { data: siteRow } = await admin
       .from('sites')
-      .select('payment_confirmed')
+      .select('first_payment_confirmed')
       .eq('id', siteId)
       .maybeSingle()
-    if (!siteRow?.payment_confirmed) {
+    if (!siteRow || !canStartWork(siteRow as { first_payment_confirmed: boolean })) {
       return NextResponse.json(
-        { error: 'Pagamento non confermato. La generazione AI parte dopo la prima rata.' },
+        { error: 'Primo acconto non confermato' },
         { status: 402 },
       )
     }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { PLANS, SALES_TERMS } from '@/lib/plans'
+import { PLANS } from '@/lib/plans'
 
 export default function PricingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -223,7 +223,7 @@ export default function PricingPage() {
         <section className="pr-hero">
           <p className="pr-eyebrow">✦ i nostri piani</p>
           <h1 className="pr-title">Scegli il piano <em>giusto</em><br />per il tuo locale.</h1>
-          <p className="pr-sub">Iniziamo con il sito già pronto. Tu scegli quanto vuoi avere il controllo. Cambi piano quando vuoi, senza vincoli.</p>
+          <p className="pr-sub">Iniziamo con il sito già pronto. Tu scegli quanto vuoi avere il controllo.</p>
         </section>
 
         <div className="pr-cards">
@@ -260,14 +260,14 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="pr-note">{SALES_TERMS.publicNote} Tutti i prezzi sono in euro (EUR).</p>
+        <p className="pr-note">Il prezzo finale dipende dalle funzioni che ti servono. Il pagamento è in due parti: 30% all’avvio del lavoro, 70% alla consegna del sito. Tutti i prezzi sono in euro (EUR).</p>
 
         {/* FAQ */}
         <section className="pr-faq">
           <h2>Domande frequenti</h2>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Come funziona il pagamento?</p>
-            <p className="pr-faq-a">Pagamento unico, senza abbonamento. Il 50% all'avvio del lavoro, il 50% alla consegna del sito.</p>
+            <p className="pr-faq-a">Pagamento unico, senza abbonamento. Il 30% all’avvio del lavoro, il 70% alla consegna del sito.</p>
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Posso passare a un piano superiore?</p>
@@ -275,7 +275,7 @@ export default function PricingPage() {
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Posso usare un mio dominio?</p>
-            <p className="pr-faq-a">Su Pro e Premium sì. Su Basic il sito è su <code>tuonome.bylumino.com</code> — già professionale e gratis.</p>
+            <p className="pr-faq-a">Coi piani Pro e Premium puoi usare il tuo dominio: lo colleghiamo noi al nuovo sito e il rinnovo annuale resta dove l’hai sempre pagato. Se non hai un dominio o ne vuoi uno nuovo, lo registriamo noi a tuo nome — il primo anno è incluso, dal secondo è a rinnovo annuale. Col Basic il sito è su <code>tuonome.bylumino.com</code>.</p>
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Quanto ci mette il sito ad essere online?</p>
@@ -283,7 +283,7 @@ export default function PricingPage() {
           </div>
           <div className="pr-faq-item">
             <p className="pr-faq-q">Ci sono costi nascosti?</p>
-            <p className="pr-faq-a">No. Il prezzo include hosting, dominio (su Pro/Premium), aggiornamenti, supporto. Niente sorprese.</p>
+            <p className="pr-faq-a">No. Il prezzo include hosting, dominio il primo anno (su Pro e Premium), aggiornamenti e supporto. Dal secondo anno il dominio è a rinnovo annuale, te lo ricordiamo prima della scadenza.</p>
           </div>
         </section>
       </div>

@@ -72,6 +72,7 @@ export async function GET() {
       slug: DEMO_SLUG,
       tier: 'premium',
       active: true,
+      // BYPASS INTENZIONALE: demo/seed interno, ignora il gate pagamento 30/70
       status: 'live',
     })
     .select('id')

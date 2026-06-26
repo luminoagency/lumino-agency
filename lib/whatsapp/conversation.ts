@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { HISTORY_WINDOW } from './config';
+import { HISTORY_WINDOW, pickBotPersona } from './config';
 import type { ConversationRow, MessageRow, Stage, WhatsAppApproach } from './types';
 
 export async function getOrCreateConversation(
@@ -17,6 +17,8 @@ export async function getOrCreateConversation(
 
   if (existing) return existing as ConversationRow;
 
+  // Primo messaggio da un nuovo numero: assegna una persona del team a caso.
+  // Resta fissa per tutta la conversazione e nei messaggi futuri.
   const { data, error } = await db
     .from('whatsapp_conversations')
     .insert({
@@ -24,6 +26,7 @@ export async function getOrCreateConversation(
       contact_name: contactName ?? null,
       restaurant_id: restaurantId ?? null,
       approach: approach ?? null,
+      bot_persona: pickBotPersona(),
     })
     .select()
     .single();

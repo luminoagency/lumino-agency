@@ -288,11 +288,13 @@ export async function getAnomalies(precomputedWaResponseTime?: number): Promise<
     }
   }
 
-  // 5. Sites with payment_confirmed=false for >24h (created within last 7 days)
+  // 5. Sites with first_payment_confirmed=false for >24h (created within last 7 days)
+  //    L'alert utile è "acconto non confermato da >24h" (qualcosa è bloccato);
+  //    il saldo non confermato è normale per giorni, quindi non genera alert.
   const { count: pendingPayment } = await admin
     .from('sites')
     .select('id', { count: 'exact', head: true })
-    .eq('payment_confirmed', false)
+    .eq('first_payment_confirmed', false)
     .lte('created_at', h24)
     .gte('created_at', week7ago)
 
@@ -300,7 +302,7 @@ export async function getAnomalies(precomputedWaResponseTime?: number): Promise<
     anomalies.push({
       severity: 'info',
       type: 'pending_payment',
-      message: `${pendingPayment} siti in attesa di conferma pagamento`,
+      message: `${pendingPayment} siti in attesa di conferma acconto`,
       suggestion: 'Contatta il cliente o controlla il payment provider',
     })
   }

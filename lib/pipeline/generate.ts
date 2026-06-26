@@ -10,7 +10,7 @@
  *  3. Chiama Claude con tool-use forzato per produrre JSON strutturato
  *  4. Sceglie 6 foto da Unsplash basate su cuisine/tipo locale
  *  5. Aggiorna site_content + crea/aggiorna site_menus
- *  6. Marca sito 'live'
+ *  6. Marca sito 'live' (solo se saldo 70% confermato, altrimenti resta 'building')
  *
  * Idempotente: rigenerare sovrascrive il contenuto precedente.
  */
@@ -43,7 +43,7 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
   const { data: site, error: siteErr } = await supabase
     .from('sites')
     .select(`
-      id, tier, slug, status,
+      id, tier, slug, status, final_payment_confirmed,
       client_id,
       clients:client_id (
         id, name, email, phone,
@@ -99,9 +99,12 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
   })
 
   // 4c. Hero video gratis da Pexels (solo Premium).
+  // DISATTIVATO: nessun template renderizza video_url al momento. Riattivare quando un template aggiunge il supporto.
+  // Codice del fetch lasciato come riferimento, gated dal flag interno qui sotto.
   // Fail-soft: se manca PEXELS_API_KEY o Pexels è down, video resta null
   // e il sito usa la sola hero image. Non blocca mai la generazione.
-  const heroVideo = tier === 'premium'
+  const HERO_VIDEO_ENABLED = false
+  const heroVideo = HERO_VIDEO_ENABLED && tier === 'premium'
     ? await searchHeroVideoForTemplate(template as LogoTemplate)
     : null
 
@@ -157,9 +160,11 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
     if (mErr) return { ok: false, error: 'site_menus: ' + mErr.message }
   }
 
-  // 7. Marca live + salva eventuale hero video (Premium)
+  // 7. Salva eventuale hero video (Premium). Va 'live' SOLO se il saldo (70%)
+  //    è confermato; altrimenti resta 'building' (pronto, in attesa di pubblicazione).
+  const finalPaid = !!(site as any).final_payment_confirmed
   await supabase.from('sites').update({
-    status: 'live',
+    status: finalPaid ? 'live' : 'building',
     ...(heroVideo ? { video_url: heroVideo.url } : {}),
   }).eq('id', site.id)
 

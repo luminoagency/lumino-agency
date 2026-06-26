@@ -202,7 +202,7 @@ export function DiagnosticsPanel({ initialData }: Props) {
 
             {/* Card 2: WhatsApp */}
             <div className={`dp-card ${data.whatsapp.avg_response_time > 120 ? 'crit-border' : ''}`}>
-              <p className="dp-card-head">💬 WhatsApp Ezio</p>
+              <p className="dp-card-head">💬 WhatsApp Team Lumino</p>
               <div className="dp-row">
                 <span className="dp-label">Conversazioni attive</span>
                 <span className="dp-value">{data.whatsapp.active_conversations}</span>

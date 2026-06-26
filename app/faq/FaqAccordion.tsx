@@ -28,9 +28,9 @@ export default function FaqAccordion({ groups }: { groups: FaqGroup[] }) {
         .fa-icon::before { width: 13px; height: 2px; }
         .fa-icon::after { width: 2px; height: 13px; transition: transform 0.3s; }
         .fa-item.open .fa-icon::after { transform: translate(-50%,-50%) scaleY(0); }
-        .fa-a { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.22,1,0.36,1); }
-        .fa-item.open .fa-a { max-height: 600px; }
-        .fa-a-inner { padding: 0 22px 20px; color: rgba(255,255,255,0.66); font-size: 14px; line-height: 1.65; }
+        .fa-a { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s cubic-bezier(0.22,1,0.36,1); }
+        .fa-item.open .fa-a { grid-template-rows: 1fr; }
+        .fa-a-inner { overflow: hidden; min-height: 0; padding: 0 22px 20px; color: rgba(255,255,255,0.66); font-size: 14px; line-height: 1.65; }
         .fa-a-inner a { color: #a78bfa; }
       ` }} />
 
