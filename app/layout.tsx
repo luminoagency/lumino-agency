@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import CookieBanner from '@/components/cookie/CookieBanner';
+import WhatsAppFloatingButton from '@/components/WhatsAppFloatingButton';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bylumino.com'),
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="it">
       <body>
         {children}
+        <WhatsAppFloatingButton />
         <CookieBanner />
       </body>
     </html>

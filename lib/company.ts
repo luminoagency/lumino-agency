@@ -36,6 +36,14 @@ export const COMPANY = {
   supportEmail: PUBLIC_CONTACT_EMAIL,
   privacyEmail: PUBLIC_CONTACT_EMAIL,
 
+  /** WhatsApp pubblico — link wa.me PULITO, senza testo precompilato. */
+  whatsapp: {
+    /** Numero in formato wa.me (prefisso internazionale, niente + né spazi). */
+    number: '447454751562',
+    /** Link pronto all'uso. NESSUN ?text= (lo studio è fatto di persone reali). */
+    waLink: 'https://wa.me/447454751562',
+  },
+
   /** Web. */
   website: 'https://bylumino.com',
   domain: 'bylumino.com',
