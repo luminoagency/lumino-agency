@@ -25,6 +25,10 @@ export default function ResiRimborsiPage() {
         <article className="ls-prose">
           <h2>1. Natura del servizio</h2>
           <p>
+            Il servizio è fornito da <strong>{COMPANY.legalName}</strong> (Company No.{' '}
+            {COMPANY.companyNumber}), con sede legale in {COMPANY.address.full}.
+          </p>
+          <p>
             {COMPANY.brand} fornisce un <strong>servizio digitale su misura</strong>: la
             realizzazione di un sito web personalizzato per la tua attività. Questo incide sulle
             modalità di recesso e rimborso, come spiegato di seguito.

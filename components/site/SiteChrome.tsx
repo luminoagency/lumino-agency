@@ -301,6 +301,9 @@ export default function SiteChrome({
               <div>
                 © {year} Lumino — un brand di {COMPANY.legalName}
               </div>
+              <div style={{ width: '100%', fontSize: 11, color: 'rgba(255,255,255,0.32)', lineHeight: 1.5 }}>
+                {COMPANY.legalName} · Company No. {COMPANY.companyNumber} · {COMPANY.address.full}
+              </div>
             </div>
           </div>
         </footer>

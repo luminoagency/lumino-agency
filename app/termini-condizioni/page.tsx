@@ -25,8 +25,9 @@ export default function TerminiCondizioniPage() {
         <article className="ls-prose">
           <h2>1. Chi siamo</h2>
           <p>
-            Il servizio è fornito da <strong>{COMPANY.legalName}</strong>, società titolare del
-            brand «{COMPANY.brand}». Contatti: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+            Il servizio è fornito da <strong>{COMPANY.legalName}</strong> (Company No.{' '}
+            {COMPANY.companyNumber}), società titolare del brand «{COMPANY.brand}», con sede legale
+            in {COMPANY.address.full}. Contatti: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
           </p>
 
           <h2>2. Oggetto del servizio</h2>

@@ -24,8 +24,9 @@ export default function GdprPage() {
         <article className="ls-prose">
           <h2>1. Titolare del trattamento</h2>
           <p>
-            Titolare del trattamento è <strong>{COMPANY.legalName}</strong>, società titolare del
-            brand «{COMPANY.brand}». Per ogni
+            Titolare del trattamento è <strong>{COMPANY.legalName}</strong> (Company No.{' '}
+            {COMPANY.companyNumber}), società titolare del brand «{COMPANY.brand}», con sede legale
+            in {COMPANY.address.full}. Per ogni
             richiesta in materia di dati personali puoi scrivere a{' '}
             <a href={`mailto:${COMPANY.privacyEmail}`}>{COMPANY.privacyEmail}</a>.
           </p>

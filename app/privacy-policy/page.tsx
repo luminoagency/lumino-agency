@@ -24,8 +24,9 @@ export default function PrivacyPolicyPage() {
         <article className="ls-prose">
           <h2>1. Titolare del trattamento</h2>
           <p>
-            Il titolare del trattamento dei dati è <strong>{COMPANY.legalName}</strong>, società
-            titolare del brand «{COMPANY.brand}» (di seguito «{COMPANY.brand}», «noi»).
+            Il titolare del trattamento dei dati è <strong>{COMPANY.legalName}</strong> (Company
+            No. {COMPANY.companyNumber}), società titolare del brand «{COMPANY.brand}» (di seguito
+            «{COMPANY.brand}», «noi»), con sede legale in {COMPANY.address.full}.
           </p>
           <p>
             Per qualsiasi questione relativa al trattamento dei tuoi dati puoi scriverci a{' '}

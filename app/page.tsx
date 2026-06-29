@@ -799,6 +799,9 @@ export default function HomePage() {
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ maxWidth: 1300, margin: '0 auto', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
               <div>© {new Date().getFullYear()} Lumino — un brand di {COMPANY.legalName}</div>
+              <div style={{ width: '100%', fontSize: 11, color: 'rgba(255,255,255,0.32)', lineHeight: 1.5 }}>
+                {COMPANY.legalName} · Company No. {COMPANY.companyNumber} · {COMPANY.address.full}
+              </div>
             </div>
           </div>
         </footer>

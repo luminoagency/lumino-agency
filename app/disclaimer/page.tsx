@@ -24,7 +24,8 @@ export default function DisclaimerPage() {
         <article className="ls-prose">
           <h2>1. Informazioni generali</h2>
           <p>
-            Le informazioni pubblicate su questo sito da <strong>{COMPANY.legalName}</strong> («
+            Le informazioni pubblicate su questo sito da <strong>{COMPANY.legalName}</strong> (Company
+            No. {COMPANY.companyNumber}, sede legale in {COMPANY.address.full}) («
             {COMPANY.brand}») hanno scopo informativo. Pur impegnandoci a mantenerle accurate e
             aggiornate, non garantiamo che siano sempre complete, corrette o prive di errori, e non
             costituiscono consulenza professionale.

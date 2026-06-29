@@ -52,7 +52,11 @@ export default function ContattiPage() {
               <div className="ls-card">
                 <h3>Dati aziendali</h3>
                 <p>
-                  {COMPANY.brand} è un brand di {COMPANY.legalName}.
+                  {COMPANY.brand} è un brand di <strong>{COMPANY.legalName}</strong>.
+                  <br />
+                  Company No. {COMPANY.companyNumber}
+                  <br />
+                  {COMPANY.address.full}
                 </p>
               </div>
             </div>

@@ -18,6 +18,19 @@ export const COMPANY = {
   /** Società titolare del brand. */
   legalName: 'EMYRA LTD',
 
+  /** Registro imprese UK (Companies House). */
+  companyNumber: '16999697',
+
+  /** Sede legale registrata (UK). */
+  address: {
+    line1: '27 Old Gloucester Street',
+    line2: 'Covent Garden',
+    city: 'London',
+    postalCode: 'WC1N 3AX',
+    country: 'United Kingdom',
+    full: '27 Old Gloucester Street, Covent Garden, London, WC1N 3AX, United Kingdom',
+  },
+
   /** Contatti pubblici — tutti leggono dalla costante centrale. */
   email: PUBLIC_CONTACT_EMAIL,
   supportEmail: PUBLIC_CONTACT_EMAIL,

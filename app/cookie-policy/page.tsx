@@ -93,7 +93,9 @@ export default function CookiePolicyPage() {
 
           <h2>5. Dati personali e cookie</h2>
           <p>
-            Il trattamento dei dati raccolti tramite cookie è descritto nella nostra{' '}
+            Il titolare del trattamento è <strong>{COMPANY.legalName}</strong> (Company No.{' '}
+            {COMPANY.companyNumber}), con sede legale in {COMPANY.address.full}. Il trattamento dei
+            dati raccolti tramite cookie è descritto nella nostra{' '}
             <Link href="/privacy-policy">Privacy Policy</Link>. Per i tuoi diritti consulta anche
             l’<Link href="/gdpr">Informativa GDPR</Link>.
           </p>
