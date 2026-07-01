@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireSuperAdmin } from '../lab/guard'
-import { OrdersClient, type OrderCard } from './OrdersClient'
+import { OrdersClient, type OrderCard, type ClientOption } from './OrdersClient'
 import type { OrderRow } from '@/lib/orders/tranche'
 
 export const metadata = { title: 'Ordini & Pagamenti · Super Admin' }
@@ -11,13 +11,21 @@ export default async function OrdersPage() {
   await requireSuperAdmin('/lumino-admin/orders')
   const admin = createAdminClient()
 
-  const { data } = await admin
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(500)
+  // Ordini + anagrafica clienti, letti lato server con la service role.
+  const [{ data: ordersData }, { data: clientsData }] = await Promise.all([
+    admin
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500),
+    admin
+      .from('clients')
+      .select('id, name, email, price')
+      .order('name', { ascending: true })
+      .limit(1000),
+  ])
 
-  const orders: OrderCard[] = ((data as OrderRow[]) || []).map((o) => ({
+  const orders: OrderCard[] = ((ordersData as OrderRow[]) || []).map((o) => ({
     id: o.id,
     clientName: o.client_name,
     clientEmail: o.client_email,
@@ -32,5 +40,14 @@ export default async function OrdersPage() {
     createdAt: o.created_at,
   }))
 
-  return <OrdersClient orders={orders} />
+  const clients: ClientOption[] = (
+    (clientsData as { id: string; name: string; email: string | null; price: number | string | null }[]) || []
+  ).map((c) => ({
+    id: c.id,
+    name: c.name || '(senza nome)',
+    email: c.email || '',
+    price: c.price == null ? null : Number(c.price),
+  }))
+
+  return <OrdersClient orders={orders} clients={clients} />
 }

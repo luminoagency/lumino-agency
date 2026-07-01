@@ -24,6 +24,15 @@ export interface OrderCard {
   createdAt: string
 }
 
+/** Cliente selezionabile dal menu a tendina (da tabella clients). */
+export interface ClientOption {
+  id: string
+  name: string
+  email: string
+  /** Prezzo concordato in anagrafica, per precompilare il totale. */
+  price: number | null
+}
+
 const serif = { fontFamily: '"Cormorant Garamond", Georgia, serif' }
 
 function payLink(id: string, type: 'deposit' | 'balance', base = PAY_BASE) {
@@ -88,8 +97,18 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-export function OrdersClient({ orders }: { orders: OrderCard[] }) {
+export function OrdersClient({
+  orders,
+  clients,
+}: {
+  orders: OrderCard[]
+  clients: ClientOption[]
+}) {
   const router = useRouter()
+  // Modalità: 'select' = scelgo dalla lista clienti (default), 'manual' = fallback.
+  // Se non ci sono clienti in anagrafica, parto direttamente in manuale.
+  const [manual, setManual] = useState(clients.length === 0)
+  const [clientId, setClientId] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -101,25 +120,57 @@ export function OrdersClient({ orders }: { orders: OrderCard[] }) {
   const preview =
     Number.isFinite(totalNum) && totalNum > 0 ? computeTranches(totalNum) : null
 
+  const selectedClient = clients.find((c) => c.id === clientId) || null
+
+  function onSelectClient(id: string) {
+    setClientId(id)
+    const c = clients.find((x) => x.id === id)
+    // Precompila il totale dal prezzo in anagrafica (se presente), lasciandolo
+    // modificabile: si può concordare un importo diverso.
+    if (c && c.price != null && c.price > 0) {
+      setTotal(String(c.price))
+    }
+  }
+
+  function resetForm() {
+    setClientId('')
+    setName('')
+    setEmail('')
+    setWhatsapp('')
+    setTotal('')
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    // Validazione lato client per un feedback immediato (il server rivalida).
+    if (!manual && !clientId) {
+      setError('Seleziona un cliente dalla lista (o passa a inserimento manuale).')
+      return
+    }
+
     setSubmitting(true)
-    const res = await createOrder({
-      clientName: name,
-      clientEmail: email,
-      clientWhatsapp: whatsapp,
-      totalAmount: totalNum,
-    })
+    const res = await createOrder(
+      manual
+        ? {
+            clientName: name,
+            clientEmail: email,
+            clientWhatsapp: whatsapp,
+            totalAmount: totalNum,
+          }
+        : {
+            clientId,
+            clientWhatsapp: whatsapp,
+            totalAmount: totalNum,
+          },
+    )
     setSubmitting(false)
     if (!res.ok) {
       setError(res.error || 'Errore')
       return
     }
-    setName('')
-    setEmail('')
-    setWhatsapp('')
-    setTotal('')
+    resetForm()
     router.refresh()
   }
 
@@ -167,58 +218,139 @@ export function OrdersClient({ orders }: { orders: OrderCard[] }) {
           onSubmit={onSubmit}
           className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
         >
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white/60">
-            Nuovo ordine
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-xs text-white/60">
-                Nome cliente *
-              </span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                placeholder="Trattoria da Mario"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-white/60">Email *</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                placeholder="mario@ristorante.it"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-white/60">
-                WhatsApp (opzionale)
-              </span>
-              <input
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                placeholder="+39 333 1234567"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-white/60">
-                Importo totale concordato (EUR) *
-              </span>
-              <input
-                inputMode="decimal"
-                value={total}
-                onChange={(e) => setTotal(e.target.value)}
-                required
-                className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                placeholder="es. 1500"
-              />
-            </label>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-white/60">
+              Nuovo ordine
+            </h2>
+            {/* Toggle lista clienti ↔ inserimento manuale */}
+            {clients.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  resetForm()
+                  setManual((m) => !m)
+                }}
+                className="text-xs text-brand-300 underline-offset-2 hover:underline"
+              >
+                {manual
+                  ? '← Scegli dalla lista clienti'
+                  : 'Cliente non in lista? Inserimento manuale →'}
+              </button>
+            )}
           </div>
+
+          {!manual ? (
+            /* ---------- Modalità: selezione dalla lista clienti ---------- */
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-xs text-white/60">
+                  Cliente *
+                </span>
+                <select
+                  value={clientId}
+                  onChange={(e) => onSelectClient(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-brand-400"
+                >
+                  <option value="" className="bg-[#111]">
+                    — Seleziona un cliente —
+                  </option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id} className="bg-[#111]">
+                      {c.name}
+                      {c.email ? ` — ${c.email}` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedClient && (
+                  <span className="mt-1 block text-[11px] text-white/40">
+                    {selectedClient.email || 'nessuna email in anagrafica'}
+                    {selectedClient.price != null
+                      ? ` · prezzo anagrafica ${formatEuro(selectedClient.price)}`
+                      : ''}
+                  </span>
+                )}
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  WhatsApp (opzionale)
+                </span>
+                <input
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="+39 333 1234567"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  Importo totale concordato (EUR) *
+                </span>
+                <input
+                  inputMode="decimal"
+                  value={total}
+                  onChange={(e) => setTotal(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="es. 1500"
+                />
+              </label>
+            </div>
+          ) : (
+            /* ---------- Modalità: inserimento manuale (fallback) ---------- */
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  Nome cliente *
+                </span>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="Trattoria da Mario"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">Email *</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="mario@ristorante.it"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  WhatsApp (opzionale)
+                </span>
+                <input
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="+39 333 1234567"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  Importo totale concordato (EUR) *
+                </span>
+                <input
+                  inputMode="decimal"
+                  value={total}
+                  onChange={(e) => setTotal(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="es. 1500"
+                />
+              </label>
+            </div>
+          )}
 
           {preview && (
             <p className="mt-3 text-xs text-white/60">
