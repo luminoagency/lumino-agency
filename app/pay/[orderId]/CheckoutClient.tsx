@@ -133,8 +133,16 @@ export function CheckoutClient({
           setPhase('ready')
         },
         style: {
-          input: { color: '#ffffff', 'font-size': '15px' },
-          '.invalid': { color: '#f87171' },
+          // Gli hosted field PayPal hanno sfondo bianco (non modificabile via
+          // stile per policy anti-frode): il testo DEVE essere scuro, altrimenti
+          // sarebbe bianco-su-bianco e invisibile.
+          input: {
+            color: '#111827',
+            'font-family': "Inter, system-ui, sans-serif",
+            'font-size': '15px',
+          },
+          '.invalid': { color: '#dc2626' },
+          ':focus': { color: '#111827' },
         },
       })
 
@@ -209,36 +217,52 @@ export function CheckoutClient({
         può renderizzarci dentro gli iframe subito dopo isEligible(): se li
         montassimo solo dopo, PayPal fallirebbe con "element does not exist".
         Nascondiamo il blocco solo se, a check fatto, l'account non è idoneo.
+
+        Ogni campo è un iframe PayPal: il div contenitore ha min-height
+        esplicita (classe .pp-field, definita in globals.css) così non
+        collassa, e forziamo l'iframe a riempirlo. Sfondo bianco perché gli
+        hosted field PayPal lo sono.
       */}
       <div
         className={busy ? 'pointer-events-none opacity-50' : ''}
         hidden={cardChecked && !cardEligible}
       >
-        <label className="mb-1 block text-xs text-white/60">
+        {/* Titolare carta */}
+        <label className="mb-1.5 block text-xs font-medium text-white/70">
           Titolare carta
         </label>
         <div
           id="card-name-field"
-          className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+          className="pp-field mb-4 w-full rounded-lg border border-white/15 bg-white px-3"
         />
-        <label className="mb-1 block text-xs text-white/60">Numero carta</label>
+
+        {/* Numero carta */}
+        <label className="mb-1.5 block text-xs font-medium text-white/70">
+          Numero carta
+        </label>
         <div
           id="card-number-field"
-          className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+          className="pp-field mb-4 w-full rounded-lg border border-white/15 bg-white px-3"
         />
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="mb-1 block text-xs text-white/60">Scadenza</label>
+
+        {/* Scadenza + CVV sulla stessa riga */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-xs font-medium text-white/70">
+              Scadenza
+            </label>
             <div
               id="card-expiry-field"
-              className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+              className="pp-field w-full rounded-lg border border-white/15 bg-white px-3"
             />
           </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-xs text-white/60">CVV</label>
+          <div className="min-w-0">
+            <label className="mb-1.5 block text-xs font-medium text-white/70">
+              CVV
+            </label>
             <div
               id="card-cvv-field"
-              className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+              className="pp-field w-full rounded-lg border border-white/15 bg-white px-3"
             />
           </div>
         </div>
@@ -247,7 +271,7 @@ export function CheckoutClient({
           type="button"
           onClick={payWithCard}
           disabled={busy || !cardEligible}
-          className="mt-2 w-full rounded-full bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+          className="w-full rounded-full bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
         >
           {busy ? 'Attendere…' : `Paga ${amountLabel} con carta`}
         </button>
