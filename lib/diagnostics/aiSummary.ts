@@ -17,7 +17,7 @@ export async function generateDailySummary(metrics: SummaryInput): Promise<strin
     max_tokens: 512,
     system:
       'Sei un assistente che scrive un riepilogo giornaliero in italiano colloquiale per il founder di Lumino, ' +
-      "un'agenzia che fa siti per ristoranti.",
+      'uno studio specializzato in siti web per la ristorazione.',
     messages: [
       {
         role: 'user',

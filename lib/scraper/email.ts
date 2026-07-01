@@ -25,8 +25,7 @@ export interface EmailSearchProvider {
   ): Promise<{ email: string; source: 'facebook' | 'instagram' } | null>;
 }
 
-const UA =
-  'Mozilla/5.0 (compatible; LuminoBot/1.0; +https://lumino.agency/bot)';
+const UA = 'Lumino/1.0 (+https://bylumino.com)';
 const FETCH_TIMEOUT_MS = 6_000;
 const MAX_HTML_BYTES = 500_000;
 

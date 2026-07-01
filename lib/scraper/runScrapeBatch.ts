@@ -1,6 +1,7 @@
 import { createAdminClient } from '../supabase/admin';
 import { Budget } from './budget';
 import { orderedCategories } from './categories';
+import { defaultProfileWeights } from './config';
 import { filterKnown, insertRestaurant } from './dedup';
 import { placeDetails, searchNearby, searchText } from './googlePlaces';
 import { generateTiles } from './grid';
@@ -8,7 +9,6 @@ import { toRestaurantRow } from './normalize';
 import { detectOpening } from './opening';
 import * as scanState from './scanState';
 import { scoreCandidate } from './selection';
-import { getActiveStrategy } from './strategy';
 import type { BatchSummary, Category, PlaceSearchResult, ScanTile } from './types';
 
 /**
@@ -67,8 +67,8 @@ export async function runScrapeBatch(): Promise<BatchSummary> {
     const tiles = generateTiles(city.bbox, { radiusM: city.search_radius_m });
     await scanState.beginCity(db, city, tiles.length);
 
-    const strategy = await getActiveStrategy(db);
-    const cats = orderedCategories(strategy.prioritizedCategories);
+    // Strategia fissa: ordine categorie di default (niente learning).
+    const cats = orderedCategories([]);
 
     let tileCursor = city.tile_cursor;
     let categoryCursor = city.category_cursor;
@@ -105,7 +105,7 @@ export async function runScrapeBatch(): Promise<BatchSummary> {
           // Discovery only (option b): email is left as 'pending' (the default
           // from normalize) for a separate enrichment cron pass to process.
           // This keeps the nightly run fast and well inside the time box.
-          row.priority_score = scoreCandidate(row, strategy.weights).score;
+          row.priority_score = scoreCandidate(row, defaultProfileWeights).score;
 
           const { inserted } = await insertRestaurant(db, row);
           if (inserted) {

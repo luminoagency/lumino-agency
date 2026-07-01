@@ -88,7 +88,7 @@ export interface ApproachRow {
   created_at: string;
 }
 
-// ── Claude bot output ────────────────────────────────────────
+// ── Output generato ──────────────────────────────────────────
 
 export interface BotResponse {
   reply: string;

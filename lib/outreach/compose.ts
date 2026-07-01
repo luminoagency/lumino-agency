@@ -10,11 +10,13 @@ import type { ComposeInput, EmailDraft, SenderVoice } from './types'
  */
 const COMPOSE_MODEL = 'claude-haiku-4-5-20251001'
 
-/** Parole vietate: triggher classici dei filtri anti-spam o segnali "automation" */
+/** Parole vietate: voce di brand + trigger anti-spam / segnali "automation". */
 const BANNED_WORDS = [
-  'AI', 'agency', 'automatizzato', 'automatizzata',
-  'intelligenza artificiale', 'automatico', 'automatica',
-  'piattaforma', 'platform',
+  'AI', 'agency', 'agenzia',
+  'automatizzato', 'automatizzata', 'automatico', 'automatica',
+  'intelligenza artificiale',
+  'piattaforma', 'platform', 'algoritmo',
+  'bot', 'sistema',
   'newsletter', // troppo "marketing", usiamo "comunicazione"
 ]
 
@@ -85,7 +87,7 @@ REGOLE — ogni regola vale sempre, senza eccezioni:
 - Lingua: italiano. Mai parole inglesi.
 - Lunghezza: ${outreachConfig.targetLines.min}-${outreachConfig.targetLines.max} righe di body. Tra 50 e 125 parole TOTALI.
 - Tono: piano, umano, una persona che ne scrive a un'altra. Niente marketing, mai punti esclamativi, mai emoji, mai caps.
-- Niente parole proibite: AI, agency, automatizzato, intelligenza artificiale, automatico, piattaforma.
+- Niente parole proibite: AI, agenzia, automatico, automatizzato, intelligenza artificiale, piattaforma, algoritmo, bot, sistema (riferito a noi).
 - Mai inventare fatti, testimonianze, statistiche. Solo cio che ti e stato dato.
 - NON includere subject, NON includere saluto iniziale, NON includere firma. Solo il corpo.
 - Niente link "www." o "https://". Se devi citare il sito di Lumino scrivi solo "bylumino.com" nel testo (senza http).
@@ -186,13 +188,19 @@ function redactionFor(word: string): string {
   const map: Record<string, string> = {
     AI: 'studio',
     agency: 'studio',
+    agenzia: 'studio',
     automatizzato: 'curato',
     automatizzata: 'curata',
     'intelligenza artificiale': 'attenzione',
     automatico: 'rapido',
     automatica: 'rapida',
-    piattaforma: 'sistema',
-    platform: 'sistema',
+    piattaforma: 'servizio',
+    platform: 'servizio',
+    algoritmo: 'procedura',
+    // "sistema" riferito a Lumino → "studio" (sanitizzazione totale: l'email
+    // parla sempre di "studio"; vedi nota nel report FASE 4 STEP C).
+    sistema: 'studio',
+    bot: 'persona',
     newsletter: 'comunicazione',
   }
   return map[word.toLowerCase()] || map[word] || ''

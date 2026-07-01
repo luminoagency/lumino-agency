@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   // 2. Account selezionati.
   // In manual mode usiamo anche gli account warming: non c'è invio SMTP reale,
   // è solo generazione testuale via Claude API. Gli account passeranno ad 'active'
-  // quando partirà l'invio automatico (MANUAL_SEND_MODE=false).
+  // quando partirà l'invio diretto (MANUAL_SEND_MODE=false).
   const accountStatuses = manualMode ? ['active', 'warming'] : ['active']
   const { data: rawAccounts } = await db
     .from('outreach_accounts')

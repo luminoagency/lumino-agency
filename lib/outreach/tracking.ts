@@ -7,7 +7,7 @@ export function generateToken(): string {
 }
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? 'https://lumino.agency';
+  return process.env.NEXT_PUBLIC_APP_URL ?? 'https://bylumino.com';
 }
 
 /** URL that marks the email as opened when the pixel is loaded. */

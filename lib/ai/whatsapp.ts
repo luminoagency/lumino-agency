@@ -41,7 +41,7 @@ function stageGuide(stage: Stage, approachBrief: string | null): string {
   if (stage === 'cold') {
     return [
       'COLD STAGE — DISGUISED OPENING.',
-      'You are NOT introducing yourself as someone who builds websites or works for an agency.',
+      'You are NOT introducing yourself as someone who builds websites or as a marketing salesperson.',
       'Follow the approach instructions below exactly. No deviation.',
       '',
       approachBrief ??
@@ -54,7 +54,7 @@ function stageGuide(stage: Stage, approachBrief: string | null): string {
       'WARM STAGE — NATURAL REVEAL.',
       'The owner replied. Now you can gradually let slip that you work with restaurants on their online presence — as if it came up in conversation, not as a pitch.',
       `Example: "Tra l'altro, mi occupo di queste cose con alcuni ristoranti — ma ne parliamo solo se ti interessa."`,
-      'Never say "agenzia digitale" or use marketing language. Keep it personal.',
+      'Do not describe Lumino using generalist terms — always use "studio specializzato in siti web per la ristorazione". No marketing language. Keep it personal.',
       'Do not volunteer pricing. Let them ask. Move to interested stage if they want to know more.',
     ].join('\n'),
     interested:

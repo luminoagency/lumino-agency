@@ -7,8 +7,7 @@ import type { Category } from './types';
  *   kind 'keyword' → no exact native type; queried via searchText, optionally
  *                    narrowed by includedType.
  *
- * The order here is the default scan order; the active search_strategy may
- * reorder it at runtime. scan_state.category_cursor indexes this list.
+ * The order here is the fixed scan order. scan_state.category_cursor indexes this list.
  *
  * NOTE: the spec's "new brand" is NOT a searchable category — newly opened
  * businesses are detected in opening.ts, not via a dedicated search pass.

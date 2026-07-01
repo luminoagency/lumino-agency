@@ -2,9 +2,8 @@ import type { ProfileWeights } from './types';
 
 /**
  * Central configuration for the nightly scraper. All tunables live here so
- * behavior can be adjusted without touching logic. The weekly AI learner
- * overrides selection weights via the search_strategy table at runtime;
- * the values here are the cold-start fallback.
+ * behavior can be adjusted without touching logic. These are the fixed
+ * selection weights and scan order used by every run.
  */
 export const scraperConfig = {
   // ── Google Places API budget ──────────────────────────────
@@ -57,8 +56,7 @@ export const scraperConfig = {
 } as const;
 
 /**
- * Cold-start selection weights, used when no active search_strategy row
- * exists. Kept separate (and typed) so the learner can swap it out.
+ * Selection weights fissi usati dallo scraper per il punteggio dei lead.
  */
 export const defaultProfileWeights: ProfileWeights = {
   no_site: 0.4,

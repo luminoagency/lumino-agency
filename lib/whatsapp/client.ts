@@ -41,6 +41,6 @@ export async function markRead(
       message_id: messageId,
     });
   } catch {
-    // Best-effort — bot works fine even if read receipt fails.
+    // Best-effort — funziona comunque anche se la conferma di lettura fallisce.
   }
 }

@@ -283,7 +283,7 @@ export async function getAnomalies(precomputedWaResponseTime?: number): Promise<
         severity: 'critical',
         type: 'deliverability',
         message: `Account ${acc.sender_name || acc.email} delivery rate al ${Math.round(rate * 100)}%`,
-        suggestion: 'Sistema auto-pausa attiva',
+        suggestion: 'Auto-pausa attiva',
       })
     }
   }

@@ -2,7 +2,7 @@ export const HISTORY_WINDOW = 20;
 export const FORM_URL = 'bylumino.com';
 
 /**
- * Nomi del team usati come persona del bot. Al primo messaggio di un nuovo
+ * Nomi del team usati come identità nella conversazione. Al primo messaggio di un nuovo
  * numero se ne sceglie uno a caso e si salva in whatsapp_conversations.bot_persona,
  * così resta lo stesso per tutta la conversazione e nei messaggi futuri.
  */

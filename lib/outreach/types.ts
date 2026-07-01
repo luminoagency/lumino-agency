@@ -52,7 +52,7 @@ export interface EmailStrategy {
 
 // ── Compose ─────────────────────────────────────────────────
 
-/** Minimal lead shape the outreach system reads from restaurants. */
+/** Minimal lead shape the outreach flow reads from restaurants. */
 export interface OutreachLead {
   id: string;
   name: string;
@@ -69,7 +69,7 @@ export interface ComposeInput {
   step: OutreachStep;
   /** Subject of the original email, required to thread follow-ups. */
   priorSubject?: string;
-  /** Nome del mittente (es. 'Luca'). Usato per la firma e per scegliere la voce. */
+  /** Nome del mittente (es. 'Matteo'). Usato per la firma e per scegliere la voce. */
   senderName?: string;
 }
 
@@ -84,7 +84,7 @@ export interface EmailDraft {
 // ── Send pipeline ────────────────────────────────────────────
 
 /** Row inserted into emails_sent to atomically claim a lead.
- *  status='sending' in invio automatico, 'ready_to_send' in MANUAL_SEND_MODE. */
+ *  status='sending' con invio SMTP diretto, 'ready_to_send' in MANUAL_SEND_MODE. */
 export interface ClaimInsert {
   restaurant_id: string;
   strategy: StrategyNumber;

@@ -17,8 +17,7 @@ export async function getActiveStrategies(
 /**
  * Round-robin assignment keyed on the lead's index in the current batch.
  * Distributes evenly across all 5 slots within a run without any extra DB
- * reads. The weekly AI learner uses reply_rate to swap in better strategy
- * versions; this picker just cycles whatever is currently active.
+ * reads. This picker just cycles whatever strategy versions are currently active.
  */
 export function pickStrategy(
   strategies: EmailStrategy[],

@@ -58,6 +58,9 @@ Allineamento codice, identità, pagamento 30/70, GDPR, modalità manuale.
 - Migration 0014 INSERT su colonne non create
 - Tabelle gmail_oauth_tokens + email_replies create ma inutilizzate
   (attivare in FASE 2)
+- Tabella `search_strategy` non più letta dal codice (learner rimosso in FASE 4) → cancellare in FASE 9
+- Rinomina file `lib/whatsapp/bot.ts` (nome con parola vietata) → FASE 9 (refactor + import)
+- Commento "risposta del bot" in `app/api/cron/read-gmail-replies/route.ts` → FASE 10 (OAuth Gmail)
 
 ---
 *Documento vivo — aggiornare quando si completa una fase o cambiano piani futuri.*
