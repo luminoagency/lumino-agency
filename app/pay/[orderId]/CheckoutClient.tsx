@@ -27,6 +27,7 @@ export function CheckoutClient({
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState<string | null>(null)
   const [cardEligible, setCardEligible] = useState(false)
+  const [cardChecked, setCardChecked] = useState(false)
   const cardFieldRef = useRef<any>(null)
   const initedRef = useRef(false)
 
@@ -72,6 +73,8 @@ export function CheckoutClient({
       existing.addEventListener('load', () => setPhase('ready'))
       return
     }
+    // NB: niente parametro `enable-funding` vuoto — PayPal risponde 400 e
+    // l'SDK non carica. Passiamo solo i parametri valorizzati.
     const params = new URLSearchParams({
       'client-id': clientId,
       components: 'buttons,card-fields',
@@ -79,7 +82,6 @@ export function CheckoutClient({
       intent: 'capture',
       // Niente Venmo, niente Pay Later.
       'disable-funding': 'venmo,paylater',
-      'enable-funding': '',
     })
     const script = document.createElement('script')
     script.id = SDK_SCRIPT_ID
@@ -136,18 +138,22 @@ export function CheckoutClient({
       })
 
       if (cardField.isEligible()) {
-        setCardEligible(true)
         cardFieldRef.current = cardField
+        // I contenitori #card-*-field sono SEMPRE montati nel DOM (vedi JSX),
+        // quindi qui esistono di sicuro: nessun errore "element does not exist".
         cardField.NameField().render('#card-name-field')
         cardField.NumberField().render('#card-number-field')
         cardField.ExpiryField().render('#card-expiry-field')
         cardField.CVVField().render('#card-cvv-field')
+        setCardEligible(true)
       } else {
         setCardEligible(false)
       }
     } catch (e) {
       console.error('CardFields non disponibile:', e)
       setCardEligible(false)
+    } finally {
+      setCardChecked(true)
     }
   }, [phase, createOrderOnServer, captureOnServer])
 
@@ -197,56 +203,60 @@ export function CheckoutClient({
         <span className="h-px flex-1 bg-white/10" />
       </div>
 
-      {/* Campi carta */}
-      {cardEligible ? (
-        <div className={busy ? 'pointer-events-none opacity-50' : ''}>
-          <label className="mb-1 block text-xs text-white/60">
-            Titolare carta
-          </label>
-          <div
-            id="card-name-field"
-            className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
-          />
-          <label className="mb-1 block text-xs text-white/60">
-            Numero carta
-          </label>
-          <div
-            id="card-number-field"
-            className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
-          />
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-white/60">Scadenza</label>
-              <div
-                id="card-expiry-field"
-                className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="mb-1 block text-xs text-white/60">CVV</label>
-              <div
-                id="card-cvv-field"
-                className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
-              />
-            </div>
+      {/*
+        Campi carta. I contenitori restano SEMPRE nel DOM così l'SDK PayPal
+        può renderizzarci dentro gli iframe subito dopo isEligible(): se li
+        montassimo solo dopo, PayPal fallirebbe con "element does not exist".
+        Nascondiamo il blocco solo se, a check fatto, l'account non è idoneo.
+      */}
+      <div
+        className={busy ? 'pointer-events-none opacity-50' : ''}
+        hidden={cardChecked && !cardEligible}
+      >
+        <label className="mb-1 block text-xs text-white/60">
+          Titolare carta
+        </label>
+        <div
+          id="card-name-field"
+          className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+        />
+        <label className="mb-1 block text-xs text-white/60">Numero carta</label>
+        <div
+          id="card-number-field"
+          className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+        />
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-white/60">Scadenza</label>
+            <div
+              id="card-expiry-field"
+              className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+            />
           </div>
-
-          <button
-            type="button"
-            onClick={payWithCard}
-            disabled={busy}
-            className="mt-2 w-full rounded-full bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
-          >
-            {busy ? 'Attendere…' : `Paga ${amountLabel} con carta`}
-          </button>
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-white/60">CVV</label>
+            <div
+              id="card-cvv-field"
+              className="mb-3 h-11 rounded-lg border border-white/15 bg-black/40 px-1"
+            />
+          </div>
         </div>
-      ) : (
-        phase !== 'loading' && (
-          <p className="text-xs text-white/40">
-            Il pagamento con carta non è disponibile al momento: usa il bottone
-            PayPal qui sopra.
-          </p>
-        )
+
+        <button
+          type="button"
+          onClick={payWithCard}
+          disabled={busy || !cardEligible}
+          className="mt-2 w-full rounded-full bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+        >
+          {busy ? 'Attendere…' : `Paga ${amountLabel} con carta`}
+        </button>
+      </div>
+
+      {cardChecked && !cardEligible && (
+        <p className="text-xs text-white/40">
+          Il pagamento con carta non è disponibile al momento: usa il bottone
+          PayPal qui sopra.
+        </p>
       )}
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
