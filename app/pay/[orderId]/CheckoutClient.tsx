@@ -80,8 +80,9 @@ export function CheckoutClient({
       components: 'buttons,card-fields',
       currency: 'EUR',
       intent: 'capture',
-      // Niente Venmo, niente Pay Later.
-      'disable-funding': 'venmo,paylater',
+      // Niente Venmo, niente Pay Later, niente MyBank: checkout solo
+      // PayPal wallet + carta.
+      'disable-funding': 'venmo,paylater,mybank',
     })
     const script = document.createElement('script')
     script.id = SDK_SCRIPT_ID
