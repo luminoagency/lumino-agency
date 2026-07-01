@@ -74,10 +74,7 @@ export const PLANS: Plan[] = [
       'Pannello admin base',
     ],
     excluded: [
-      'Upload foto e logo custom',
       'Modifica testi del sito',
-      'CRM clienti con storico',
-      'Cambio stile/template del sito',
     ],
     cta: 'Inizia ora',
     highlight: true,
@@ -94,17 +91,8 @@ export const PLANS: Plan[] = [
     features: [
       'Tutto del piano Pro',
       'Logo personalizzato disegnato dal nostro studio',
-      'Upload foto e logo custom',
       'Modifica tutti i testi del sito',
-      'CRM clienti con storico prenotazioni',
-      'Cambio stile del sito quando vuoi',
-      'Personalizzazione colori + font',
-      'Hero con più foto in evidenza',
-      'Video cinematografici',
-      'Animazioni avanzate + smooth scroll',
       'Supporto WhatsApp prioritario (entro 1h)',
-      'Backup contenuti settimanale',
-      'Export clienti / iscritti in CSV',
       'Pannello admin completo',
     ],
     excluded: [],
@@ -202,15 +190,15 @@ export const TIER_CAPS: Record<PlanKey, TierCapabilities> = {
     newsletter: true,
     reviewsCapture: true,
     heroVideo: false, // DISATTIVATA: nessun template implementa <video> al momento. Riattivare quando un template aggiunge il supporto.
-    advancedAnimations: true,
-    multiHero: true,
-    customAssetsUpload: true,
+    advancedAnimations: false,   // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    multiHero: false,            // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    customAssetsUpload: false,   // Deprecato FASE 5A — feature non implementata, rimossa dal piano
     editAllTexts: true,
-    changeTemplate: true,
-    customColorsAndFont: true,
-    crm: true,
-    weeklyBackup: true,
-    csvExport: true,
+    changeTemplate: false,       // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    customColorsAndFont: false,  // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    crm: false,                  // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    weeklyBackup: false,         // Deprecato FASE 5A — feature non implementata, rimossa dal piano
+    csvExport: false,            // Deprecato FASE 5A — feature non implementata, rimossa dal piano
     priorityWhatsappSupport: true,
   },
 }

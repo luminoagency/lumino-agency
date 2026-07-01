@@ -61,3 +61,12 @@ export const COMPANY = {
 
 /** Email come link mailto pronto all'uso. */
 export const MAILTO = `mailto:${COMPANY.email}`
+
+/**
+ * Attribuzione discreta mostrata nel footer dei siti dei ristoratori.
+ * Fonte unica: i 5 template la leggono da qui.
+ */
+export const POWERED_BY = {
+  label: 'Sito realizzato da Lumino',
+  url: COMPANY.website,
+} as const

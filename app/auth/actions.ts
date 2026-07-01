@@ -84,7 +84,7 @@ export async function registerActionState(
     const ip = hdrs.get('x-forwarded-for')?.split(',')[0].trim() || hdrs.get('x-real-ip') || ''
     const userAgent = hdrs.get('user-agent') || ''
     const referrer = hdrs.get('referer') || ''
-    // Nuovo sistema (lib/tracking) — Apps Script con secret token
+    // Nuovo tracking (lib/tracking) — Apps Script con secret token
     trackEvent('signup', {
       email,
       restaurantName,
@@ -93,7 +93,7 @@ export async function registerActionState(
       userAgent,
       referrer,
     }).catch(() => {})
-    // Vecchio sistema (lib/integrations/googleSheets) — no-op se GOOGLE_SHEETS_WEBHOOK_URL non è settato
+    // Vecchio tracking (lib/integrations/googleSheets) — no-op se GOOGLE_SHEETS_WEBHOOK_URL non è settato
     postSheetEvent({
       kind: 'signup',
       email,

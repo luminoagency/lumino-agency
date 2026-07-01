@@ -169,7 +169,7 @@ export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
       </nav>
 
       <div className="me-wrap">
-        <p className="me-hint">Organizza il tuo menu per categorie (es. <em>Antipasti</em>, <em>Primi</em>, <em>Cocktail</em>). Per ogni piatto puoi mettere il prezzo e gli allergeni. Niente foto qui — quelle le sceglie il sistema.</p>
+        <p className="me-hint">Organizza il tuo menu per categorie (es. <em>Antipasti</em>, <em>Primi</em>, <em>Cocktail</em>). Per ogni piatto puoi mettere il prezzo e gli allergeni. Niente foto qui — quelle le curiamo noi.</p>
 
         {cats.map((cat, ci) => (
           <div key={ci} className="me-cat">

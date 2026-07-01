@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { saveSiteContent, publishSite, unpublishSite, generateMySiteContent, setFeatureFlag, type FeatureFlags } from './actions/site'
+import { saveSiteContent, publishSite, unpublishSite, setFeatureFlag, type FeatureFlags } from './actions/site'
 import { logoutActionState } from '../auth/actions'
 import { PLAN_FEATURE_DEFAULTS, type FeatureKey, type PlanKey } from '@/lib/plans'
 
@@ -89,21 +89,6 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
         setTimeout(() => setFeedback(null), 3000)
       } else {
         setFeedback({ ok: false, msg: r.error || 'Errore' })
-      }
-    })
-  }
-
-  function generateAI() {
-    if (!confirm('Generare il contenuto del sito con AI? Sovrascrive testi, foto e menu attuali.')) return
-    setFeedback(null)
-    startTransition(async () => {
-      const r = await generateMySiteContent()
-      if (r.ok) {
-        setStatus('live')
-        setFeedback({ ok: true, msg: '✓ Sito generato. Ricarica la pagina per vedere.' })
-        setTimeout(() => window.location.reload(), 1500)
-      } else {
-        setFeedback({ ok: false, msg: r.error || 'Generazione fallita' })
       }
     })
   }
@@ -195,8 +180,6 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
         .ae-btn-primary:hover:not(:disabled) { transform: translateY(-2px); }
         .ae-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .ae-btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 10px 24px rgba(34,197,94,0.3); }
-        .ae-btn-ai { background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; box-shadow: 0 10px 24px rgba(167,139,250,0.3); }
-        .ae-btn-ai:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(167,139,250,0.45); }
         .ae-btn-ghost { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.12); }
         .ae-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .ae-btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
@@ -318,15 +301,6 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
                 Vedi il sito ↗
               </Link>
             )}
-            <button
-              type="button"
-              onClick={generateAI}
-              disabled={pending}
-              className="ae-btn ae-btn-ai"
-              title="L'AI scrive testi, sceglie foto e crea il menu in base al tipo di locale"
-            >
-              ✨ Genera con AI
-            </button>
             <button
               type="button"
               onClick={togglePublish}
@@ -479,7 +453,7 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
             </Link>
           </div>
           <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.4)', marginTop: 14 }}>
-            Foto e gallery sono gestite automaticamente dal sistema. Clicca "✨ Genera con AI" per rifare tutto da zero.
+            Foto e gallery sono curate dal nostro studio. Scrivici se vuoi cambiarle.
           </p>
         </div>
       </div>

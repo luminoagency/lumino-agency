@@ -1,5 +1,5 @@
 /**
- * Pipeline AI — genera tutto il contenuto del sito ristorante dai dati che abbiamo.
+ * Pipeline generazione contenuti sito — genera tutto il contenuto del sito ristorante dai dati che abbiamo.
  *
  * Input: site_id già creato in DB (dalla registrazione)
  * Output: site_content riempito + site_menus + template scelto + status='live'
@@ -84,13 +84,13 @@ export async function generateSiteContent(opts: GenerateOptions): Promise<Genera
   })
 
   if (!generated) {
-    return { ok: false, error: 'AI generation failed' }
+    return { ok: false, error: 'Generazione contenuti fallita' }
   }
 
   // 4. Foto da Unsplash (hero + about + 6 gallery)
   const photos = await pickPhotos(cuisine)
 
-  // 4b. Logo wordmark SVG (sostituisce la vecchia generazione AI Ideogram).
+  // 4b. Logo wordmark SVG (sostituisce la vecchia generazione logo Ideogram).
   // Render text-based in font coerente col template scelto.
   const logo = generateWordmarkLogo({
     restaurantName,
@@ -340,7 +340,19 @@ async function callClaudeForContent(args: {
   const systemPrompt = `Sei un copywriter italiano di altissimo livello specializzato in siti per ristoranti.
 Scrivi sempre in italiano elegante, mai banale, con voce calda e mai vendereccia.
 Genera testi e menu COERENTI tra di loro (la tagline deve riflettere la stessa anima del menu).
-Inventare ricette plausibili per il tipo di cucina richiesto, con prezzi realistici italiani.`
+Inventare ricette plausibili per il tipo di cucina richiesto, con prezzi realistici italiani.
+
+Stai scrivendo per il RISTORANTE (ne racconti la voce), rivolgendoti a chi lo leggerà.
+
+Regole di scrittura obbligatorie:
+- Frasi brevi. Verbi attivi.
+- Usa sempre "tu", mai "Lei".
+- Niente slogan, niente esclamativi multipli, niente emoji nei testi formali.
+- Niente promesse di numeri (mai "+300%", "raddoppierai", ecc.).
+- Niente inglesismi non necessari.
+- Tono: competente, calmo, diretto, caldo ma non amichevole, concreto.
+- Onestà tecnica (usa "dipende", "spesso", "in molti casi" invece di garantire).
+- MAI usare queste parole: agenzia, automatico, automatizzato, piattaforma, algoritmo, intelligenza artificiale — nemmeno in negativo o tra virgolette.`
 
   const userPrompt = `Genera il contenuto del sito per questo ristorante:
 

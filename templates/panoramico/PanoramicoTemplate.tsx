@@ -6,6 +6,8 @@ import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
+import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
+import { POWERED_BY } from '@/lib/company'
 
 interface PanoramicoProps {
   restaurantName: string
@@ -31,6 +33,7 @@ interface PanoramicoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -163,9 +166,12 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
     restaurantName, tagline, description, heroImage, aboutImage,
     menuCategories, galleryImages, address, phone, email,
     hours, mapsUrl, socialLinks, accentColor = '#b58a2f', logoUrl,
-    tier = 'basic', events, whatsappNumber,
+    tier = 'basic', events, whatsappNumber, features,
     heroImages, chef, reviews, faq, timeSlots,
   } = props
+
+  // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
+  const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
 
   // Hero carousel
   const heroSlides = heroImages && heroImages.length > 0 ? heroImages : [props.heroImage]
@@ -1824,10 +1830,15 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         <p style={{ fontSize: '0.75rem', color: muted, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
           © {new Date().getFullYear()} {restaurantName}
         </p>
+        <p style={{ marginTop: 10, fontSize: '0.7rem', color: muted, opacity: 0.55 }}>
+          <a href={POWERED_BY.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', borderBottom: '1px solid currentColor', paddingBottom: 1 }}>
+            {POWERED_BY.label}
+          </a>
+        </p>
       </footer>
 
       {/* WhatsApp FAB (Premium) */}
-      {tier === 'premium' && whatsappNumber && (
+      {whatsappEnabled && whatsappNumber && (
         <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="pan-fab">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.84 14.18c-.25.7-1.21 1.28-1.99 1.45-.54.11-1.24.21-3.6-.75-3.03-1.26-4.97-4.35-5.12-4.55-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.37.79-.37.2 0 .39.01.57.02.18.01.42-.07.66.5.25.59.84 2.03.91 2.18.07.15.13.32.02.52-.1.2-.15.32-.3.5-.15.18-.32.4-.45.54-.15.15-.31.31-.13.61.18.3.81 1.33 1.74 2.15 1.19 1.06 2.2 1.39 2.5 1.55.3.15.47.13.65-.08.18-.21.75-.87.95-1.17.2-.3.39-.25.66-.15.27.1 1.71.81 2 .96.3.15.49.22.56.35.07.13.07.74-.18 1.43z"/>
@@ -1839,7 +1850,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         phone={phone}
         address={address}
         hasReservation={tier !== 'basic'}
-        whatsapp={tier === 'premium' ? whatsappNumber : undefined}
+        whatsapp={whatsappEnabled ? whatsappNumber : undefined}
         accent={accent}
         theme="light"
         scope="pan-smb"

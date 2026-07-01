@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { canGoLive } from '@/lib/payments/status'
+import { canGoLive, canStartWork } from '@/lib/payments/status'
 // Email transazionali: passano da Gmail + Apps Script (tracking layer).
 // Quando aggiungeremo notifiche ai clienti sostituiremo questo posto.
 import { trackEvent } from '@/lib/tracking'
@@ -163,7 +163,7 @@ export async function setFeatureFlag(feature: FeatureKey, enabled: boolean | nul
 }
 
 /**
- * Triggera la pipeline AI per generare il contenuto del sito dell'utente loggato.
+ * Triggera la pipeline generazione contenuti per il sito dell'utente loggato.
  * Sovrascrive tagline/descrizione/menu/foto. Lo status passa a 'live' al successo.
  */
 export async function generateMySiteContent() {
@@ -172,6 +172,16 @@ export async function generateMySiteContent() {
   if (!user) return { ok: false, error: 'Non autenticato.' }
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  // Gate pagamento: la generazione parte solo con l'acconto (30%) confermato.
+  const { data: payRow } = await supabase
+    .from('sites')
+    .select('first_payment_confirmed')
+    .eq('id', owner.site_id)
+    .maybeSingle()
+  if (!payRow || !canStartWork(payRow as { first_payment_confirmed: boolean })) {
+    return { ok: false, error: 'Acconto non ancora confermato. Contatta il team Lumino per procedere.' }
+  }
 
   const { generateSiteContent } = await import('@/lib/pipeline/generate')
   const result = await generateSiteContent({ siteId: owner.site_id })

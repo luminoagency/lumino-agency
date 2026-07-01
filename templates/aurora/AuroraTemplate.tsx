@@ -6,6 +6,8 @@ import { StickyMobileBar } from '../_shared/StickyMobileBar'
 import { AllergenBadges } from '../_shared/AllergenBadges'
 import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
+import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
+import { POWERED_BY } from '@/lib/company'
 
 interface AuroraProps {
   restaurantName: string
@@ -31,6 +33,7 @@ interface AuroraProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -249,9 +252,12 @@ export function AuroraTemplate(props: AuroraProps) {
     menuCategories = [], galleryImages = [],
     address, phone, email, hours, mapsUrl, socialLinks,
     accentColor = '#a78bfa', logoUrl,
-    tier = 'basic', events = [], whatsappNumber,
+    tier = 'basic', events = [], whatsappNumber, features,
     chef, reviews, faq, timeSlots,
   } = props
+
+  // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
+  const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
 
   const accent = accentColor
   const accent2 = '#f0abfc'  // pink
@@ -1773,11 +1779,16 @@ export function AuroraTemplate(props: AuroraProps) {
           <p style={{ fontSize: '0.8rem', color: muted, letterSpacing: '0.1em' }}>
             © {new Date().getFullYear()} {restaurantName}
           </p>
+          <p style={{ marginTop: 10, fontSize: '0.7rem', color: muted, opacity: 0.55 }}>
+            <a href={POWERED_BY.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', borderBottom: '1px solid currentColor', paddingBottom: 1 }}>
+              {POWERED_BY.label}
+            </a>
+          </p>
         </footer>
       </div>
 
       {/* WhatsApp FAB (Premium) */}
-      {tier === 'premium' && whatsappNumber && (
+      {whatsappEnabled && whatsappNumber && (
         <a
           href={`https://wa.me/${whatsappNumber}`}
           target="_blank"
@@ -1794,7 +1805,7 @@ export function AuroraTemplate(props: AuroraProps) {
         phone={phone}
         address={address}
         hasReservation={tier !== 'basic'}
-        whatsapp={tier === 'premium' ? whatsappNumber : undefined}
+        whatsapp={whatsappEnabled ? whatsappNumber : undefined}
         accent={accent}
         theme="dark"
         scope="aur-smb"
