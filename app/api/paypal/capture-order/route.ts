@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { capturePayPalOrder } from '@/lib/paypal/client';
+import { syncSitePaymentFlags } from '@/lib/orders/sync';
 import { trancheOf, type OrderRow, type TrancheType } from '@/lib/orders/tranche';
 
 export const dynamic = 'force-dynamic';
@@ -109,6 +110,11 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+
+  // Sincronizza i flag sul sito del cliente collegato (coerenza dashboard).
+  // Il webhook fa comunque lo stesso in modo indipendente: qui è per
+  // aggiornare subito, senza aspettare la notifica di PayPal.
+  await syncSitePaymentFlags(admin, order.client_id, type, nowIso);
 
   return NextResponse.json({ status: 'COMPLETED' });
 }

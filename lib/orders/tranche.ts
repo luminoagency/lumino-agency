@@ -50,6 +50,7 @@ export function formatEuro(n: number): string {
 /** Riga `orders` come letta da Supabase (campi che ci servono). */
 export interface OrderRow {
   id: string;
+  client_id: string | null;
   client_name: string;
   client_email: string;
   client_whatsapp: string | null;

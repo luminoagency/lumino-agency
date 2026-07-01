@@ -114,6 +114,70 @@ export async function createPayPalOrder(
   return { id: json.id, status: json.status || 'CREATED' };
 }
 
+/**
+ * Verifica la firma di una notifica webhook PayPal chiamando l'API ufficiale
+ * verify-webhook-signature. Richiede PAYPAL_WEBHOOK_ID (dall'app PayPal).
+ *
+ * Ritorna true solo se PayPal conferma la firma (verification_status SUCCESS).
+ * Un webhook non verificato NON deve mai aggiornare i pagamenti: chiunque
+ * potrebbe altrimenti fingere un "pagamento completato".
+ */
+export async function verifyWebhookSignature(params: {
+  authAlgo: string | null;
+  certUrl: string | null;
+  transmissionId: string | null;
+  transmissionSig: string | null;
+  transmissionTime: string | null;
+  /** L'evento webhook come oggetto JSON (già parsato). */
+  webhookEvent: unknown;
+}): Promise<boolean> {
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  if (!webhookId) {
+    throw new Error('PAYPAL_WEBHOOK_ID non configurato');
+  }
+  if (
+    !params.authAlgo ||
+    !params.certUrl ||
+    !params.transmissionId ||
+    !params.transmissionSig ||
+    !params.transmissionTime
+  ) {
+    // Header di firma mancanti → non è una richiesta PayPal valida.
+    return false;
+  }
+
+  const token = await getAccessToken();
+  const res = await fetch(
+    `${paypalApiBase()}/v1/notifications/verify-webhook-signature`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        auth_algo: params.authAlgo,
+        cert_url: params.certUrl,
+        transmission_id: params.transmissionId,
+        transmission_sig: params.transmissionSig,
+        transmission_time: params.transmissionTime,
+        webhook_id: webhookId,
+        webhook_event: params.webhookEvent,
+      }),
+      cache: 'no-store',
+    },
+  );
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    console.error(`[verifyWebhookSignature] HTTP ${res.status}: ${detail}`);
+    return false;
+  }
+
+  const json = (await res.json()) as { verification_status?: string };
+  return json.verification_status === 'SUCCESS';
+}
+
 export interface PayPalCaptureResult {
   id: string;
   /** COMPLETED quando il pagamento è andato a buon fine. */
