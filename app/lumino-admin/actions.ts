@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache'
 import { generateSiteContent } from '@/lib/pipeline/generate'
 import { canGoLive } from '@/lib/payments/status'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()

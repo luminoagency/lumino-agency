@@ -10,7 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { computeTranches, round2 } from '@/lib/orders/tranche'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()

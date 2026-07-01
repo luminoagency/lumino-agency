@@ -9,7 +9,7 @@ import { generateDailySummary } from '@/lib/diagnostics/aiSummary'
 import { cacheGet, cacheSet, AI_SUMMARY_TTL } from '@/lib/diagnostics/cache'
 
 // SUPER ADMIN ALLOWLIST
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 export const metadata = { title: 'Lumino Control · Super Admin' }
 export const dynamic = 'force-dynamic'
