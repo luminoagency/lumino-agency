@@ -17,6 +17,11 @@ interface SiteRow {
   restaurant_name: string; city: string | null; client_email: string | null;
   first_payment_confirmed: boolean; final_payment_confirmed: boolean;
   first_payment_confirmed_at: string | null; final_payment_confirmed_at: string | null;
+  // Stato pagamenti effettivo: deriva da orders quando il cliente ha ordini
+  // collegati (has_orders), altrimenti dai flag manuali qui sopra.
+  has_orders: boolean;
+  deposit_paid: boolean; deposit_paid_at: string | null;
+  balance_paid: boolean; balance_paid_at: string | null;
 }
 interface UserRow {
   id: string; email: string; created_at: string; last_sign_in_at: string | null;
@@ -212,6 +217,7 @@ export function SuperAdminClient(props: Props) {
 
         .la-pay { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
         .la-pay-ok { font-size: 11px; font-weight: 600; color: #22c55e; white-space: nowrap; }
+        .la-pay-wait { font-size: 11px; font-weight: 600; color: #f59e0b; white-space: nowrap; }
 
         .la-tier-sel { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-family: inherit; cursor: pointer; }
         .la-tier-sel option { background: #1a1a1a; }
@@ -269,6 +275,7 @@ export function SuperAdminClient(props: Props) {
             <Link href="/lumino-admin/outreach-queue" className="la-logout">
               📬 Coda email{queueCount > 0 ? ` (${queueCount})` : ''}
             </Link>
+            <Link href="/lumino-admin/orders" className="la-logout">💶 Pagamenti</Link>
             <Link href="/lumino-admin/lab" className="la-logout">🔬 Lab</Link>
             <Link href="/admin" className="la-logout">Il mio admin</Link>
             <button
@@ -583,12 +590,19 @@ export function SuperAdminClient(props: Props) {
                       <td><span className={`la-pill ${s.status}`}>{s.status}</span></td>
                       <td>
                         <div className="la-pay">
-                          {s.first_payment_confirmed
-                            ? <span className="la-pay-ok">✓ Acconto 30% {fmtDate(s.first_payment_confirmed_at)}</span>
-                            : <button className="la-btn" disabled={pending} onClick={() => doConfirmFirst(s.id)}>Conferma acconto 30%</button>}
-                          {s.final_payment_confirmed
-                            ? <span className="la-pay-ok">✓ Saldo 70% {fmtDate(s.final_payment_confirmed_at)}</span>
-                            : <button className="la-btn" disabled={pending} onClick={() => doConfirmFinal(s.id)}>Conferma saldo 70%</button>}
+                          {/* Acconto 30% — se il sito ha ordini collegati lo stato
+                              viene da orders (PayPal); altrimenti resta il flag manuale. */}
+                          {s.deposit_paid
+                            ? <span className="la-pay-ok">✓ Acconto 30%{s.has_orders ? ' · PayPal' : ''} {fmtDate(s.deposit_paid_at)}</span>
+                            : s.has_orders
+                              ? <span className="la-pay-wait">◷ Acconto 30% · in attesa</span>
+                              : <button className="la-btn" disabled={pending} onClick={() => doConfirmFirst(s.id)}>Conferma acconto 30%</button>}
+                          {/* Saldo 70% */}
+                          {s.balance_paid
+                            ? <span className="la-pay-ok">✓ Saldo 70%{s.has_orders ? ' · PayPal' : ''} {fmtDate(s.balance_paid_at)}</span>
+                            : s.has_orders
+                              ? <span className="la-pay-wait">◷ Saldo 70% · in attesa</span>
+                              : <button className="la-btn" disabled={pending} onClick={() => doConfirmFinal(s.id)}>Conferma saldo 70%</button>}
                         </div>
                       </td>
                       <td>

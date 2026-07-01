@@ -84,6 +84,42 @@ export default async function LuminoAdminPage() {
       : null,
   }))
 
+  // 2b. Ordini (pagamenti PayPal) collegati ai clienti dei siti.
+  // Fonte di verità dello stato pagamenti quando il sito ha ordini collegati.
+  const siteClientIds = Array.from(
+    new Set(sites.map(s => s.client_id).filter(Boolean)),
+  ) as string[]
+  type OrdAgg = {
+    hasOrders: boolean
+    depositPaid: boolean; depositPaidAt: string | null
+    balancePaid: boolean; balancePaidAt: string | null
+  }
+  const ordersByClient = new Map<string, OrdAgg>()
+  if (siteClientIds.length > 0) {
+    const { data: ordRows } = await admin
+      .from('orders')
+      .select('client_id, deposit_status, balance_status, deposit_paid_at, balance_paid_at')
+      .in('client_id', siteClientIds)
+      .limit(2000)
+    for (const o of (ordRows || []) as any[]) {
+      const cur: OrdAgg = ordersByClient.get(o.client_id) || {
+        hasOrders: false,
+        depositPaid: false, depositPaidAt: null,
+        balancePaid: false, balancePaidAt: null,
+      }
+      cur.hasOrders = true
+      if (o.deposit_status === 'paid') {
+        cur.depositPaid = true
+        cur.depositPaidAt = cur.depositPaidAt || o.deposit_paid_at
+      }
+      if (o.balance_status === 'paid') {
+        cur.balancePaid = true
+        cur.balancePaidAt = cur.balancePaidAt || o.balance_paid_at
+      }
+      ordersByClient.set(o.client_id, cur)
+    }
+  }
+
   // 3. site_owners per mappare user → site
   const { data: ownersRaw } = await admin.from('site_owners').select('site_id, user_id, role').limit(500)
   const owners = ownersRaw || []
@@ -240,6 +276,19 @@ export default async function LuminoAdminPage() {
         final_payment_confirmed: !!s.final_payment_confirmed,
         first_payment_confirmed_at: s.first_payment_confirmed_at || null,
         final_payment_confirmed_at: s.final_payment_confirmed_at || null,
+        // Stato pagamenti effettivo: da orders se il cliente ha ordini collegati,
+        // altrimenti dai flag manuali. Coerente coi flag (che il webhook sincronizza).
+        ...(() => {
+          const ord = s.client_id ? ordersByClient.get(s.client_id) : null
+          const hasOrders = !!ord
+          return {
+            has_orders: hasOrders,
+            deposit_paid: hasOrders ? ord!.depositPaid : !!s.first_payment_confirmed,
+            deposit_paid_at: hasOrders ? ord!.depositPaidAt : (s.first_payment_confirmed_at || null),
+            balance_paid: hasOrders ? ord!.balancePaid : !!s.final_payment_confirmed,
+            balance_paid_at: hasOrders ? ord!.balancePaidAt : (s.final_payment_confirmed_at || null),
+          }
+        })(),
       }))}
       reservationsAggregate={reservationsAggregate}
       outreachAccounts={outreachAccounts.map(a => ({
