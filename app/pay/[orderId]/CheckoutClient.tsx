@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TrancheType } from '@/lib/orders/tranche'
+import { GooglePayButton } from './GooglePayButton'
 
 declare global {
   interface Window {
@@ -18,11 +19,17 @@ export function CheckoutClient({
   type,
   clientId,
   amountLabel,
+  amountValue,
+  googlePayEnv,
 }: {
   orderId: string
   type: TrancheType
   clientId: string
   amountLabel: string
+  /** Importo numerico display per Google Pay (es. "0.30"), reso dal server. */
+  amountValue: string
+  /** Ambiente Google Pay: 'TEST' in sandbox, 'PRODUCTION' in live. */
+  googlePayEnv: 'TEST' | 'PRODUCTION'
 }) {
   const [phase, setPhase] = useState<Phase>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +37,8 @@ export function CheckoutClient({
   const [cardChecked, setCardChecked] = useState(false)
   const cardFieldRef = useRef<any>(null)
   const initedRef = useRef(false)
+  // Flag "pagamento in corso" leggibile dai handler dei wallet (Google Pay).
+  const busyRef = useRef(false)
 
   /** Crea l'ordine PayPal lato server (l'importo lo decide il server). */
   const createOrderOnServer = useCallback(async (): Promise<string> => {
@@ -62,6 +71,12 @@ export function CheckoutClient({
     setPhase('success')
   }, [])
 
+  /** Handler errori stabile per i wallet (Google Pay): riporta la UI a 'ready'. */
+  const handleWalletError = useCallback((msg: string) => {
+    setError(msg)
+    setPhase('ready')
+  }, [])
+
   // 1) Carica lo script SDK PayPal una sola volta.
   useEffect(() => {
     if (window.paypal) {
@@ -77,7 +92,7 @@ export function CheckoutClient({
     // l'SDK non carica. Passiamo solo i parametri valorizzati.
     const params = new URLSearchParams({
       'client-id': clientId,
-      components: 'buttons,card-fields',
+      components: 'buttons,card-fields,googlepay',
       currency: 'EUR',
       intent: 'capture',
       // Niente Venmo, niente Pay Later, niente MyBank: checkout solo
@@ -195,6 +210,9 @@ export function CheckoutClient({
   }
 
   const busy = phase === 'paying'
+  // Tiene il ref allineato allo stato, così i handler Google Pay (che leggono
+  // busyRef nel loro closure) vedono sempre il valore aggiornato.
+  busyRef.current = busy
 
   return (
     <div>
@@ -204,6 +222,19 @@ export function CheckoutClient({
 
       {/* Bottone PayPal / wallet */}
       <div id="paypal-button-container" className={busy ? 'opacity-50' : ''} />
+
+      {/* Google Pay (compare solo se il dispositivo è idoneo) */}
+      <div className={busy ? 'pointer-events-none opacity-50' : ''}>
+        <GooglePayButton
+          sdkReady={phase !== 'loading'}
+          env={googlePayEnv}
+          amountValue={amountValue}
+          onCreateOrder={createOrderOnServer}
+          onApprove={captureOnServer}
+          onError={handleWalletError}
+          disabledRef={busyRef}
+        />
+      </div>
 
       {/* Separatore */}
       <div className="my-5 flex items-center gap-3 text-xs text-white/40">

@@ -3,6 +3,7 @@ import {
   isTrancheType,
   trancheOf,
   formatEuro,
+  toAmountString,
   type OrderRow,
 } from '@/lib/orders/tranche'
 import { CheckoutClient } from './CheckoutClient'
@@ -88,6 +89,8 @@ export default async function PayPage({ params, searchParams }: PageProps) {
           type={type}
           clientId={clientId}
           amountLabel={formatEuro(tranche.amount)}
+          amountValue={toAmountString(tranche.amount)}
+          googlePayEnv={process.env.PAYPAL_MODE === 'live' ? 'PRODUCTION' : 'TEST'}
         />
       ) : (
         <p className="text-red-400">
