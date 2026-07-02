@@ -6,12 +6,26 @@ import { businessTypeMeta, stepLabel, TOTAL_STEPS } from '../constants'
 import { Step1Research } from './Step1Research'
 import { Step2Layout } from './Step2Layout'
 import { Step3Builder } from './Step3Builder'
+import Step4Editor from '../Step4Editor'
+import Step5Publish from '../Step5Publish'
+import Step6Subscription from '../Step6Subscription'
 import type { ResearchReport, ChatMessage } from '@/lib/lab/research'
 import type { LayoutProposal } from '@/lib/lab/layout'
+import { normalizeBuild } from '@/lib/lab/builder'
 
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 export const maxDuration = 60
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  try {
+    const admin = createAdminClient()
+    const { data } = await admin.from('lab_projects').select('business_name').eq('id', params.id).maybeSingle()
+    return { title: data?.business_name ? `${data.business_name} | Lumino Admin` : 'Progetto | Lumino Admin' }
+  } catch {
+    return { title: 'Lumino Admin' }
+  }
+}
 
 const serif = { fontFamily: '"Cormorant Garamond", Georgia, serif' }
 
@@ -69,6 +83,52 @@ export default async function LabProjectPage({ params }: { params: { id: string 
         businessType={project.business_type}
         hasBuild={!!pdata.build}
         initialChat={(pdata.build_chat as ChatMessage[]) || []}
+      />
+    )
+  }
+
+  // Step 4 — Editor
+  if (step === 4) {
+    if (!pdata.build) {
+      return <div className="min-h-screen bg-[#050505] p-8 text-white/60">Errore: build mancante. Torna allo Step 3.</div>
+    }
+    return (
+      <Step4Editor
+        projectId={project.id}
+        build={normalizeBuild(pdata.build)}
+        businessName={project.business_name}
+        businessType={project.business_type}
+      />
+    )
+  }
+
+  // Step 5 — Publish
+  if (step === 5) {
+    if (!pdata.build) {
+      return <div className="min-h-screen bg-[#050505] p-8 text-white/60">Errore: build mancante. Torna allo Step 3.</div>
+    }
+    return (
+      <Step5Publish
+        projectId={project.id}
+        build={normalizeBuild(pdata.build)}
+        businessName={project.business_name}
+        businessType={project.business_type}
+        publishedUrl={pdata.publish?.url}
+        customDomain={pdata.publish?.customDomain}
+        publishedAt={pdata.publish?.publishedAt}
+        history={pdata.publish?.history || []}
+        snapshots={(pdata.snapshots || []).map((s: any) => ({ id: s.id, reason: s.reason, created_at: s.created_at }))}
+      />
+    )
+  }
+
+  // Step 6 — Subscription (hotel)
+  if (step === 6) {
+    return (
+      <Step6Subscription
+        projectId={project.id}
+        businessName={project.business_name}
+        businessType={project.business_type}
       />
     )
   }

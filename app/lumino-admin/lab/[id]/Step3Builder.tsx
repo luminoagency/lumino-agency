@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getBuildShell, buildOneSection, saveBuild, chatBuild, advanceToStep } from '../actions'
-import type { SectionKey } from '@/lib/lab/layout'
 import type { ChatMessage } from '@/lib/lab/research'
+import type { SiteSection, SitePage } from '@/lib/lab/builder'
 
 const serif = { fontFamily: '"Cormorant Garamond", Georgia, serif' }
 
@@ -36,22 +36,27 @@ export function Step3Builder({ projectId, businessName, businessType, hasBuild, 
   async function generate() {
     setErr(null); setBuilding(true); setDone(0); setLabel('Preparo la struttura…')
     const shell = await getBuildShell(projectId)
-    if (!shell.ok || !shell.sections) { setBuilding(false); setErr(shell.error || 'Errore.'); return }
+    if (!shell.ok || !shell.pages || !shell.globalConfig || !shell.navigation) { setBuilding(false); setErr(shell.error || 'Errore.'); return }
 
-    const sections = shell.sections
-    setTotal(sections.length)
-    const collected = []
-    for (let i = 0; i < sections.length; i++) {
-      const key = sections[i] as SectionKey
-      setLabel(`Generando ${LABELS[key] || key}…`)
-      const r = await buildOneSection(projectId, key)
-      if (!r.ok || !r.section) { setBuilding(false); setErr(r.error || `Errore sezione ${key}.`); return }
-      collected.push(r.section)
-      setDone(i + 1)
+    const pages = shell.pages
+    const totalSections = pages.reduce((n, p) => n + p.sections.length, 0)
+    setTotal(totalSections)
+    let count = 0
+    const builtPages: SitePage[] = []
+    for (const page of pages) {
+      const sections: SiteSection[] = []
+      for (const sk of page.sections) {
+        setLabel(`${page.title}: genero ${LABELS[sk] || sk}…`)
+        const r = await buildOneSection(projectId, sk)
+        if (!r.ok || !r.section) { setBuilding(false); setErr(r.error || `Errore sezione ${sk} (${page.title}).`); return }
+        sections.push(r.section)
+        count++; setDone(count)
+      }
+      builtPages.push({ slug: page.slug, title: page.title, sections, isHomepage: page.isHomepage || page.slug === 'home' })
     }
 
     setLabel('Salvo il sito…')
-    const save = await saveBuild(projectId, { sections: collected, globalCSS: shell.globalCSS!, palette: shell.palette! })
+    const save = await saveBuild(projectId, { pages: builtPages, globalConfig: shell.globalConfig, navigation: shell.navigation, locales: shell.locales, defaultLocale: shell.defaultLocale })
     setBuilding(false)
     if (!save.ok) { setErr(save.error || 'Errore nel salvataggio.'); return }
     setBuilt(true)

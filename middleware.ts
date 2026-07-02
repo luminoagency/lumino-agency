@@ -12,6 +12,21 @@ const PROTECTED_PREFIXES = ['/admin', '/lumino-admin', '/lumino-dashboard']
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // Portal cliente (Layer 5): auth separata con cookie proprio ('lumino_client_session').
+  // login/reset sono aperti; il resto richiede il cookie (verifica piena nel gate requireClient).
+  if (pathname === '/portal' || pathname.startsWith('/portal/')) {
+    const open = pathname.startsWith('/portal/login') || pathname.startsWith('/portal/reset-password')
+    if (open) return NextResponse.next()
+    const hasClient = !!request.cookies.get('lumino_client_session')?.value
+    if (!hasClient) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/portal/login'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
+  }
+
   let isProtected = false
   for (const p of PROTECTED_PREFIXES) {
     if (pathname === p || pathname.startsWith(p + '/')) { isProtected = true; break }
@@ -38,5 +53,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/lumino-admin', '/lumino-admin/:path*', '/lumino-dashboard', '/lumino-dashboard/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/lumino-admin', '/lumino-admin/:path*', '/lumino-dashboard', '/lumino-dashboard/:path*', '/portal', '/portal/:path*'],
 }

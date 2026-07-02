@@ -1,6 +1,7 @@
 import Script from 'next/script'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { SiteBuild } from '@/lib/lab/builder'
+import { normalizeBuild } from '@/lib/lab/builder'
+import { RenderSite } from '@/lib/lab/render'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,9 +19,11 @@ export default async function LabPreviewPage({ params }: { params: { id: string 
     .eq('id', params.id)
     .maybeSingle()
 
-  const build = (data?.project_data?.build as SiteBuild | undefined) || null
+  const raw = data?.project_data?.build
+  const build = raw ? normalizeBuild(raw) : null
+  const hasContent = !!build && build.pages.some(p => p.sections.length > 0)
 
-  if (!data || !build || !build.sections?.length) {
+  if (!data || !build || !hasContent) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', textAlign: 'center', padding: '2rem' }}>
         <div>
@@ -31,17 +34,12 @@ export default async function LabPreviewPage({ params }: { params: { id: string 
     )
   }
 
-  const css = [build.globalCSS, ...build.sections.map(s => s.css || '')].join('\n\n')
-
   return (
     <>
-      {/* Tailwind Play CDN: compila a runtime le classi generate dall'AI (solo per preview). */}
+      {/* Tailwind Play CDN: compila a runtime le classi Tailwind dei componenti libreria (solo preview). */}
       <Script src="https://cdn.tailwindcss.com" strategy="afterInteractive" />
-      <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="lab-site">
-        {build.sections.map((s, i) => (
-          <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} />
-        ))}
+        <RenderSite build={build} projectId={params.id} />
       </div>
     </>
   )
