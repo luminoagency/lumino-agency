@@ -63,26 +63,6 @@ export type GlobalConfig = {
 /** Link di navigazione (header/footer). */
 export type NavLink = { label: string; slug: string }
 
-/* ── WOW effects (Layer WOW): overlay data-driven, deterministici ── */
-
-/** Categoria di effetto "wow" (per classificare i componenti libreria). */
-export type WowType = 'cursor' | 'background' | 'text-animation' | 'hover' | '3d' | 'scroll' | 'standard'
-export type WowLevel = 'basic' | 'medium' | 'premium'
-
-/** Un layer wow serializzabile: chiave componente libreria + props JSON. */
-export type WowLayer = { component: string; props?: Record<string, unknown> }
-
-/** Config wow a livello di sito: il cursore è globale (uno per sito). */
-export interface WowConfig {
-  enabled: boolean
-  cursor?: WowLayer   // cursore custom globale (position:fixed)
-}
-
-/** Effetti wow a livello di pagina: background animato dietro l'hero. */
-export interface PageEffects {
-  heroBackground?: WowLayer   // layer decorativo absolute dietro la prima sezione hero
-}
-
 /** Una pagina del sito (modello multi-pagina). */
 export type SitePage = {
   slug: string
@@ -91,7 +71,6 @@ export type SitePage = {
   metaDescription?: LocalizedString
   sections: SiteSection[]
   isHomepage?: boolean
-  effects?: PageEffects   // Layer WOW — background hero (overlay)
 }
 
 /** Stato dell'editor (Step 4): per-pagina override palette + visibilità/ordine/props sezioni. */
@@ -130,7 +109,6 @@ export interface SiteBuild {
   assets?: ProjectAsset[]      // galleria immagini del progetto (Layer 3)
   locales?: Locale[]           // lingue attive (default ['it']) — Layer 4.5
   defaultLocale?: Locale       // lingua base (default 'it')
-  wow?: WowConfig              // Layer WOW — cursore globale + flag effetti
   generatedAt?: string
   editorState?: EditorState
 }
@@ -151,7 +129,6 @@ export function normalizeBuild(raw: any): SiteBuild {
       assets: Array.isArray(raw.assets) ? raw.assets : [],
       locales: Array.isArray(raw.locales) && raw.locales.length ? raw.locales : ['it'],
       defaultLocale: raw.defaultLocale || 'it',
-      wow: raw.wow && typeof raw.wow === 'object' ? raw.wow as WowConfig : undefined,
       generatedAt: raw.generatedAt,
       editorState: normalizeEditorState(raw.editorState, raw.pages as SitePage[]),
     }
@@ -331,9 +308,14 @@ Il tono di voce del business ti viene indicato nei dati (campo "tonoBrand"). Ada
 - professional: autorevole, preciso, business
 - friendly: caldo, accogliente, conversazionale
 
-REGOLA VARIETÀ + EFFETTI WOW:
-- Varia i componenti: NON usare sempre gli stessi 8-10 "sicuri". Attingi all'intera libreria (gallery diverse, feature-section vs magic-bento, testimonial mosaico vs carosello) per differenziare le pagine.
-- NON aggiungere come sezioni di contenuto: cursori (categoria cursors/*), background decorativi (backgrounds/*) o showcase 3D di sfondo. Questi "layer wow" (cursore globale, background dietro l'hero, sfera 3D) vengono aggiunti AUTOMATICAMENTE dal sistema dopo la tua generazione. Tu concentrati sulle sezioni di contenuto.
+REGOLA VARIETÀ CRITICA:
+Hai a disposizione oltre 100 componenti certificati. Il tuo compito è FAR VEDERE la ricchezza della libreria, NON ripetere gli stessi 8 componenti "sicuri".
+- Ogni pagina del sito deve includere ALMENO 1 componente MAI usato nelle altre pagine.
+- MAI lo stesso hero-variant tra pagine diverse. Hero disponibili: hero/aurora-hero, hero/aether-hero, hero/pixel-hero, hero/halide-landing, hero/preview-switch-hero, hero/floating-food-hero. Usane uno DIVERSO per ogni pagina.
+- Per le gallery, varia il componente tra pagine: gallery/dome-gallery, gallery/masonry-images, gallery/circular-gallery, gallery/stack-gallery, gallery/marquee, scroll-animations/zoom-parallax.
+- Alterna sezioni "text-heavy" (about, feature-highlight, feature-section) e "visual-heavy" (gallery, showcase).
+- Su hotel/business premium: OBBLIGATORIO includere almeno una sezione con un componente avanzato (features/features-cards-shader, structural/magic-bento, testimonial/case-studies) oltre alle sezioni base.
+- Non ripetere lo schema. Ogni cliente merita un mix unico, non "il solito sito".
 
 REGOLA CTA (hero e pulsanti — importantissima):
 - OGNI CTA deve avere un href reale. MAI generare CTA senza href.

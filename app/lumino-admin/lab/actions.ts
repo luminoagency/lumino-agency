@@ -16,7 +16,6 @@ import { generateLayouts, layoutChatTurn, localesForBusiness, type LayoutProposa
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { generateSection, paletteRoles, normalizeBuild, makeHotelFooterSection, isHotelBusinessType, type SiteSection, type SiteBuild, type SitePage, type GlobalConfig, type NavLink, type EditorState, type ProjectAsset } from '@/lib/lab/builder'
-import { computeWowForBuild } from '@/lib/lab/wow'
 import { uploadLogo, extractPaletteFromLogo, uploadAsset, deleteAsset } from '@/lib/lab/branding'
 import { exportSiteToStatic } from '@/lib/lab/static-export'
 import { getOrCreateVercelProject, deploySite, addCustomDomain, removeCustomDomain } from '@/lib/lab/vercel'
@@ -153,12 +152,18 @@ export async function runUrlResearch(projectId: string): Promise<ResearchResult>
       return { ok: false, fallback: true, error: scrape.error || 'Scraping non riuscito.' }
     }
 
-    const place = await findPlace(project.business_name).catch(() => null)
+    // Places URL-aware: cerca per nome + DOMINIO del sito → evita omonimi (es. "Hotel Aurora").
+    console.log('[research] Place lookup:', { businessName: project.business_name, websiteUrl: url })
+    const place = await findPlace({ businessName: project.business_name, websiteUrl: url }).catch(() => null)
+    const domainsMatch = !!place  // findPlace ritorna un place SOLO se il dominio combacia
+    console.log('[research] Place result:', { found: !!place, place_website: place?.website, domainsMatch })
+
     const analysis = await extractResearch({
       businessName: project.business_name,
       businessType: project.business_type,
       source: scrape.markdown || '',
       place,
+      placeIsAuthoritative: domainsMatch,
     })
     const competitors = await competitorsFor(place, project.business_type)
 
@@ -453,36 +458,12 @@ export async function saveBuild(
       }
     }
 
-    // Layer WOW — applica cursore/background/showcase in modo deterministico e idempotente.
-    full = computeWowForBuild(full, project.business_type)
-
     await saveProjectData(admin, project, { build: full })
     revalidatePath(`/lumino-admin/lab/${projectId}`)
     revalidatePath(`/lab-preview/${projectId}`)
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore nel salvataggio.' }
-  }
-}
-
-/** Step 4 — attiva/disattiva gli effetti WOW e ricalcola la build (idempotente). */
-export async function setWowEnabled(
-  projectId: string,
-  enabled: boolean,
-): Promise<{ ok: boolean; error?: string }> {
-  try {
-    await assertSuperAdmin()
-    const { admin, project } = await loadProject(projectId)
-    if (!project) return { ok: false, error: 'Progetto non trovato.' }
-    const build = normalizeBuild(project.project_data?.build)
-    build.wow = { ...(build.wow || {}), enabled }
-    const full = computeWowForBuild(build, project.business_type)
-    await saveProjectData(admin, project, { build: full })
-    revalidatePath(`/lumino-admin/lab/${projectId}`)
-    revalidatePath(`/lab-preview/${projectId}`)
-    return { ok: true }
-  } catch (e: any) {
-    return { ok: false, error: e?.message || 'Errore nel toggle WOW.' }
   }
 }
 

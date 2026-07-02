@@ -55,8 +55,53 @@ function haversine(aLat: number, aLng: number, bLat: number, bLng: number): numb
   return Math.round(2 * R * Math.asin(Math.sqrt(s)))
 }
 
-/** Trova il place più probabile per una query testuale (nome + città). */
-export async function findPlace(query: string): Promise<LabPlace | null> {
+/** Normalizza un URL al suo dominio "nudo" (senza protocollo, www, path, porta). */
+export function domainOf(url?: string | null): string | null {
+  if (!url) return null
+  let u = url.trim().toLowerCase()
+  if (!u) return null
+  u = u.replace(/^https?:\/\//, '').replace(/^www\./, '')
+  u = u.split('/')[0].split('?')[0].split('#')[0].split(':')[0]
+  return u || null
+}
+
+function mapPlace(p: any): LabPlace {
+  return {
+    placeId: p.id,
+    name: p.displayName?.text ?? '',
+    address: p.formattedAddress,
+    phone: p.internationalPhoneNumber,
+    website: p.websiteUri,
+    lat: p.location?.latitude,
+    lng: p.location?.longitude,
+    rating: p.rating,
+    reviewsCount: p.userRatingCount,
+    primaryType: p.primaryType,
+    hours: p.regularOpeningHours?.weekdayDescriptions ?? undefined,
+    photoNames: (p.photos ?? []).map((ph: any) => ph.name).filter(Boolean).slice(0, 8),
+  }
+}
+
+export interface FindPlaceInput {
+  businessName: string
+  websiteUrl?: string   // se presente → match per DOMINIO (evita omonimi)
+  address?: string      // bias geografico opzionale
+}
+
+/**
+ * Trova il place Google più probabile.
+ *
+ * URL-aware (fix omonimi): se `websiteUrl` è fornito, la query include il dominio
+ * e i risultati vengono filtrati preferendo quello il cui sito ha lo STESSO dominio.
+ * Se nessun risultato combacia col dominio → ritorna null (meglio nessun dato che
+ * l'attività sbagliata: es. "Hotel Aurora" Abano vs Sperlonga). Senza websiteUrl
+ * mantiene il vecchio comportamento (miglior match per nome).
+ */
+export async function findPlace(input: string | FindPlaceInput): Promise<LabPlace | null> {
+  const opts: FindPlaceInput = typeof input === 'string' ? { businessName: input } : input
+  const domain = domainOf(opts.websiteUrl)
+  const textQuery = [opts.businessName, domain, opts.address].filter(Boolean).join(' ')
+
   const fieldMask = [
     'places.id', 'places.displayName', 'places.formattedAddress', 'places.location',
     'places.rating', 'places.userRatingCount', 'places.primaryType',
@@ -73,30 +118,24 @@ export async function findPlace(query: string): Promise<LabPlace | null> {
         'X-Goog-Api-Key': apiKey(),
         'X-Goog-FieldMask': fieldMask,
       },
-      body: JSON.stringify({ textQuery: query, maxResultCount: 1, languageCode: 'it', regionCode: 'IT' }),
+      // Con dominio cerchiamo tra più candidati per poterli filtrare; senza, il top match.
+      body: JSON.stringify({ textQuery, maxResultCount: domain ? 5 : 1, languageCode: 'it', regionCode: 'IT' }),
     })
   } catch {
     return null
   }
   if (!res.ok) return null
   const json: any = await res.json()
-  const p = json?.places?.[0]
-  if (!p) return null
+  const places: any[] = json?.places ?? []
+  if (!places.length) return null
 
-  return {
-    placeId: p.id,
-    name: p.displayName?.text ?? '',
-    address: p.formattedAddress,
-    phone: p.internationalPhoneNumber,
-    website: p.websiteUri,
-    lat: p.location?.latitude,
-    lng: p.location?.longitude,
-    rating: p.rating,
-    reviewsCount: p.userRatingCount,
-    primaryType: p.primaryType,
-    hours: p.regularOpeningHours?.weekdayDescriptions ?? undefined,
-    photoNames: (p.photos ?? []).map((ph: any) => ph.name).filter(Boolean).slice(0, 8),
+  // Con dominio noto: accetta SOLO un match di dominio (niente omonimi sbagliati).
+  if (domain) {
+    const matched = places.find(p => domainOf(p.websiteUri) === domain)
+    return matched ? mapPlace(matched) : null
   }
+
+  return mapPlace(places[0])
 }
 
 /** I 3 competitor più vicini geograficamente (escluso il business stesso). */

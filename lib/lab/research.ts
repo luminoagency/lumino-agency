@@ -56,6 +56,12 @@ export interface ExtractInput {
   /** markdown scrapato (mode url) oppure trascrizione chat (mode description) */
   source: string
   place?: LabPlace | null
+  /**
+   * true se i dati Places sono verificati come coerenti col sito (dominio combaciante).
+   * Se false/omesso con place presente, il materiale scrapato ha priorità sull'identità.
+   * Default: true quando place è presente (retro-compat).
+   */
+  placeIsAuthoritative?: boolean
 }
 
 export interface ExtractOutput {
@@ -68,8 +74,12 @@ export interface ExtractOutput {
 export async function extractResearch(input: ExtractInput): Promise<ExtractOutput> {
   const claude = getClaude()
 
+  const placeAuthoritative = input.placeIsAuthoritative ?? !!input.place
+  const placeLabel = placeAuthoritative
+    ? 'Dati Google My Business (VERIFICATI coerenti col sito — autorevoli, usali per indirizzo/telefono/orari/sito):'
+    : 'Dati Google My Business (NON verificati: potrebbero riferirsi a un\'attività OMONIMA diversa — usali SOLO come ipotesi di riserva, NON per sovrascrivere nome/indirizzo/telefono presi dal materiale):'
   const placeBlock = input.place
-    ? `\n\nDati Google My Business (autorevoli, usali per indirizzo/telefono/orari/sito):\n${JSON.stringify(
+    ? `\n\n${placeLabel}\n${JSON.stringify(
         {
           name: input.place.name,
           address: input.place.address,
@@ -83,6 +93,9 @@ export async function extractResearch(input: ExtractInput): Promise<ExtractOutpu
         2,
       )}`
     : ''
+  const identityRule = placeAuthoritative
+    ? ''
+    : '\n\nIMPORTANTE: per nome, indirizzo, telefono e descrizione dai PRIORITÀ ASSOLUTA al materiale (il sito ufficiale del business). Non usare i dati Google se contraddicono il materiale.'
 
   const msg = await claude.messages.create({
     model: MODEL,
@@ -97,7 +110,7 @@ export async function extractResearch(input: ExtractInput): Promise<ExtractOutpu
       {
         role: 'user',
         content:
-          `Business: "${input.businessName}" (tipo: ${input.businessType}).${placeBlock}\n\n` +
+          `Business: "${input.businessName}" (tipo: ${input.businessType}).${placeBlock}${identityRule}\n\n` +
           `Materiale:\n"""\n${input.source.slice(0, 11000)}\n"""\n\n` +
           'Produci questo JSON:\n' +
           '{\n' +
@@ -133,8 +146,9 @@ export async function extractResearch(input: ExtractInput): Promise<ExtractOutpu
     }
   }
 
-  // Fallback ai dati Places per i campi mancanti.
-  const p = input.place
+  // Fallback ai dati Places per i campi mancanti — SOLO se il place è autorevole
+  // (dominio coerente). Se non lo è, non riempiamo con dati potenzialmente di un'altra attività.
+  const p = placeAuthoritative ? input.place : null
   parsed.info.address = parsed.info.address || p?.address
   parsed.info.phone = parsed.info.phone || p?.phone
   parsed.info.website = parsed.info.website || p?.website
