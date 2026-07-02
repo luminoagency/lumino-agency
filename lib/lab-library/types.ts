@@ -19,5 +19,8 @@ export interface ComponentMeta {
   // "single" = una istanza per sezione (default se non specificato)
   // "collection" = serve un array di items (es. menu-item-card per menu di N piatti)
   // "wrapper" = contenitore con children (es. masonry-grid)
+  // Layer WOW — classificazione effetti (usata dal motore deterministico wow.ts)
+  wowType?: "cursor" | "background" | "text-animation" | "hover" | "3d" | "scroll" | "standard";
+  wowLevel?: "basic" | "medium" | "premium";
   notes?: string;
 }

@@ -15,7 +15,8 @@ import { extractResearch, chatTurn, type ResearchReport, type ChatMessage } from
 import { generateLayouts, layoutChatTurn, localesForBusiness, type LayoutProposal, type SectionKey } from '@/lib/lab/layout'
 import path from 'path'
 import { randomUUID } from 'crypto'
-import { generateSection, paletteRoles, normalizeBuild, type SiteSection, type SiteBuild, type SitePage, type GlobalConfig, type NavLink, type EditorState, type ProjectAsset } from '@/lib/lab/builder'
+import { generateSection, paletteRoles, normalizeBuild, makeHotelFooterSection, isHotelBusinessType, type SiteSection, type SiteBuild, type SitePage, type GlobalConfig, type NavLink, type EditorState, type ProjectAsset } from '@/lib/lab/builder'
+import { computeWowForBuild } from '@/lib/lab/wow'
 import { uploadLogo, extractPaletteFromLogo, uploadAsset, deleteAsset } from '@/lib/lab/branding'
 import { exportSiteToStatic } from '@/lib/lab/static-export'
 import { getOrCreateVercelProject, deploySite, addCustomDomain, removeCustomDomain } from '@/lib/lab/vercel'
@@ -437,13 +438,51 @@ export async function saveBuild(
     await assertSuperAdmin()
     const { admin, project } = await loadProject(projectId)
     if (!project) return { ok: false, error: 'Progetto non trovato.' }
-    const full: SiteBuild = { ...build, generatedAt: new Date().toISOString() }
+    let full: SiteBuild = { ...build, generatedAt: new Date().toISOString() }
+
+    // Hotel: garantisci un site-footer ricco (Booking/social/legali) su ogni pagina.
+    if (isHotelBusinessType(project.business_type)) {
+      const footer = makeHotelFooterSection(full)
+      full = {
+        ...full,
+        pages: full.pages.map(p =>
+          p.sections.some(s => s.type === 'library' && s.component.startsWith('footer/'))
+            ? p
+            : { ...p, sections: [...p.sections, footer] }
+        ),
+      }
+    }
+
+    // Layer WOW — applica cursore/background/showcase in modo deterministico e idempotente.
+    full = computeWowForBuild(full, project.business_type)
+
     await saveProjectData(admin, project, { build: full })
     revalidatePath(`/lumino-admin/lab/${projectId}`)
     revalidatePath(`/lab-preview/${projectId}`)
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Errore nel salvataggio.' }
+  }
+}
+
+/** Step 4 — attiva/disattiva gli effetti WOW e ricalcola la build (idempotente). */
+export async function setWowEnabled(
+  projectId: string,
+  enabled: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await assertSuperAdmin()
+    const { admin, project } = await loadProject(projectId)
+    if (!project) return { ok: false, error: 'Progetto non trovato.' }
+    const build = normalizeBuild(project.project_data?.build)
+    build.wow = { ...(build.wow || {}), enabled }
+    const full = computeWowForBuild(build, project.business_type)
+    await saveProjectData(admin, project, { build: full })
+    revalidatePath(`/lumino-admin/lab/${projectId}`)
+    revalidatePath(`/lab-preview/${projectId}`)
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Errore nel toggle WOW.' }
   }
 }
 

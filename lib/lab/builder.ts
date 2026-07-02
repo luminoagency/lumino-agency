@@ -63,6 +63,26 @@ export type GlobalConfig = {
 /** Link di navigazione (header/footer). */
 export type NavLink = { label: string; slug: string }
 
+/* ── WOW effects (Layer WOW): overlay data-driven, deterministici ── */
+
+/** Categoria di effetto "wow" (per classificare i componenti libreria). */
+export type WowType = 'cursor' | 'background' | 'text-animation' | 'hover' | '3d' | 'scroll' | 'standard'
+export type WowLevel = 'basic' | 'medium' | 'premium'
+
+/** Un layer wow serializzabile: chiave componente libreria + props JSON. */
+export type WowLayer = { component: string; props?: Record<string, unknown> }
+
+/** Config wow a livello di sito: il cursore è globale (uno per sito). */
+export interface WowConfig {
+  enabled: boolean
+  cursor?: WowLayer   // cursore custom globale (position:fixed)
+}
+
+/** Effetti wow a livello di pagina: background animato dietro l'hero. */
+export interface PageEffects {
+  heroBackground?: WowLayer   // layer decorativo absolute dietro la prima sezione hero
+}
+
 /** Una pagina del sito (modello multi-pagina). */
 export type SitePage = {
   slug: string
@@ -71,6 +91,7 @@ export type SitePage = {
   metaDescription?: LocalizedString
   sections: SiteSection[]
   isHomepage?: boolean
+  effects?: PageEffects   // Layer WOW — background hero (overlay)
 }
 
 /** Stato dell'editor (Step 4): per-pagina override palette + visibilità/ordine/props sezioni. */
@@ -109,6 +130,7 @@ export interface SiteBuild {
   assets?: ProjectAsset[]      // galleria immagini del progetto (Layer 3)
   locales?: Locale[]           // lingue attive (default ['it']) — Layer 4.5
   defaultLocale?: Locale       // lingua base (default 'it')
+  wow?: WowConfig              // Layer WOW — cursore globale + flag effetti
   generatedAt?: string
   editorState?: EditorState
 }
@@ -129,6 +151,7 @@ export function normalizeBuild(raw: any): SiteBuild {
       assets: Array.isArray(raw.assets) ? raw.assets : [],
       locales: Array.isArray(raw.locales) && raw.locales.length ? raw.locales : ['it'],
       defaultLocale: raw.defaultLocale || 'it',
+      wow: raw.wow && typeof raw.wow === 'object' ? raw.wow as WowConfig : undefined,
       generatedAt: raw.generatedAt,
       editorState: normalizeEditorState(raw.editorState, raw.pages as SitePage[]),
     }
@@ -307,6 +330,16 @@ Il tono di voce del business ti viene indicato nei dati (campo "tonoBrand"). Ada
 - playful: divertente, informale, vibrante
 - professional: autorevole, preciso, business
 - friendly: caldo, accogliente, conversazionale
+
+REGOLA VARIETÀ + EFFETTI WOW:
+- Varia i componenti: NON usare sempre gli stessi 8-10 "sicuri". Attingi all'intera libreria (gallery diverse, feature-section vs magic-bento, testimonial mosaico vs carosello) per differenziare le pagine.
+- NON aggiungere come sezioni di contenuto: cursori (categoria cursors/*), background decorativi (backgrounds/*) o showcase 3D di sfondo. Questi "layer wow" (cursore globale, background dietro l'hero, sfera 3D) vengono aggiunti AUTOMATICAMENTE dal sistema dopo la tua generazione. Tu concentrati sulle sezioni di contenuto.
+
+REGOLA CTA (hero e pulsanti — importantissima):
+- OGNI CTA deve avere un href reale. MAI generare CTA senza href.
+- href ammessi: '#<sectionKey>' di una sezione della STESSA pagina (es. '#booking'), '/<slug>' di un'altra pagina del sito (es. '/camere'), URL esterni completi (es. 'https://www.booking.com/...'), 'tel:...' o 'mailto:...'.
+- NON inventare ancore che non corrispondono a nessuna sezione della pagina.
+- Hotel: 'Prenota' → ancora della sezione booking della pagina o URL Booking.com; 'Scopri le camere' → '/camere'; 'Contattaci' → '/contatti' o '#contact'.
 
 REGOLA CUSTOM GENERATION (importante):
 Quando devi creare una sezione che NON ha nessun componente compatibile nella libreria, NON inventare TSX da zero. Segui questo processo:
@@ -509,9 +542,17 @@ export async function generateSection(input: SectionGenInput, library?: LibraryS
     }
 
     // single / wrapper: "props" è un singolo oggetto.
-    const props = parsed.props && typeof parsed.props === 'object' && !Array.isArray(parsed.props)
+    let props = parsed.props && typeof parsed.props === 'object' && !Array.isArray(parsed.props)
       ? (parsed.props as Record<string, unknown>) : {}
     checkMissing(props, '')
+
+    // Fix CTA hero: href sempre presenti/validi (àncora di sezione della stessa pagina o pagina reale).
+    if (component.startsWith('hero/')) {
+      const pages = (input.layout as LayoutProposal).pages || []
+      const page = pages.find(p => p.sections.includes(input.sectionKey))
+      props = normalizeHeroCtas(props, page?.sections || [], pages.map(p => p.slug))
+    }
+
     return { type: 'library', sectionKey: input.sectionKey, component, props }
   }
 
@@ -572,5 +613,129 @@ export async function generatePage(input: PageGenInput, library?: LibrarySummary
     metaDescription: input.research.info?.description?.slice(0, 155),
     sections,
     isHomepage: input.page.slug === 'home' || !!input.page.isHomepage,
+  }
+}
+
+/* ── Fix CTA hero (Layer QA): href sempre presenti e ancorati a target reali ── */
+
+/**
+ * Normalizza le CTA di un hero: garantisce href validi.
+ * Un href è valido se esterno (http/tel/mailto), se àncora a una sezione della
+ * stessa pagina ('#<sectionKey>') o se punta a una pagina esistente ('/<slug>').
+ * Gli href mancanti o "morti" vengono rimappati in base al testo del label.
+ */
+export function normalizeHeroCtas(
+  props: Record<string, unknown>,
+  pageSectionKeys: string[],
+  pageSlugs: string[],
+): Record<string, unknown> {
+  const keys = pageSectionKeys || []
+  const slugs = pageSlugs || []
+  const findKey = (re: RegExp) => keys.find(k => re.test(k))
+  const findSlug = (re: RegExp) => slugs.find(s => re.test(s))
+  const bookingAnchor = findKey(/book|prenot/i)
+  const roomsAnchor = findKey(/camer|room|galler/i)
+  const contactAnchor = findKey(/contact|contatt|form/i)
+  const roomsPage = findSlug(/camer|room/i)
+  const contactPage = findSlug(/contatt|contact/i)
+
+  const isValid = (href: string) =>
+    /^(https?:\/\/|tel:|mailto:)/i.test(href) ||
+    (href.startsWith('#') && keys.includes(href.slice(1))) ||
+    (href.startsWith('/') && slugs.includes(href.replace(/^\/+|\/+$/g, '')))
+
+  const resolve = (label: string, kind: 'primary' | 'secondary'): string => {
+    if (/prenot|book/i.test(label)) return bookingAnchor ? `#${bookingAnchor}` : (contactPage ? `/${contactPage}` : '#contact')
+    if (/camer|room|galler/i.test(label)) return roomsPage ? `/${roomsPage}` : (roomsAnchor ? `#${roomsAnchor}` : (contactPage ? `/${contactPage}` : '#contact'))
+    if (/contatt|contact|chiam|scriv/i.test(label)) return contactPage ? `/${contactPage}` : (contactAnchor ? `#${contactAnchor}` : '#contact')
+    if (kind === 'primary') return bookingAnchor ? `#${bookingAnchor}` : (contactPage ? `/${contactPage}` : (contactAnchor ? `#${contactAnchor}` : '#contact'))
+    return roomsPage ? `/${roomsPage}` : (roomsAnchor ? `#${roomsAnchor}` : (contactPage ? `/${contactPage}` : '#contact'))
+  }
+
+  const out: Record<string, unknown> = { ...props }
+  const fixCta = (key: 'primaryCta' | 'secondaryCta', kind: 'primary' | 'secondary') => {
+    const cta = out[key]
+    if (!cta || typeof cta !== 'object' || Array.isArray(cta)) return
+    const c = cta as { label?: unknown; href?: unknown }
+    const href = typeof c.href === 'string' ? c.href : ''
+    if (!href || !isValid(href)) out[key] = { ...c, href: resolve(String(c.label || ''), kind) }
+  }
+  fixCta('primaryCta', 'primary')
+  fixCta('secondaryCta', 'secondary')
+
+  // Hero legacy con ctaLabel/ctaHref (halide, aether)
+  if (typeof out.ctaLabel === 'string') {
+    const href = typeof out.ctaHref === 'string' ? out.ctaHref : ''
+    if (!href || !isValid(href)) out.ctaHref = resolve(out.ctaLabel, 'primary')
+  }
+  if (typeof out.secondaryCtaLabel === 'string') {
+    const href = typeof out.secondaryCtaHref === 'string' ? out.secondaryCtaHref : ''
+    if (!href || !isValid(href)) out.secondaryCtaHref = resolve(out.secondaryCtaLabel, 'secondary')
+  }
+  return out
+}
+
+/* ── Footer hotel (Layer QA): site-footer ricco con Booking/social/legali ── */
+
+/** True se il business_type è una struttura ricettiva. */
+export function isHotelBusinessType(businessType?: string): boolean {
+  return /hotel|b&b|b\.?n\.?b|bnb|resort|agriturismo|ostello|locanda|relais/i.test(businessType || '')
+}
+
+/**
+ * Costruisce una sezione footer/site-footer per hotel: colonna Prenota
+ * (Booking/Expedia/Trivago — URL reali se presenti in una sezione booking-links),
+ * colonna pagine del sito, colonna legali, social e contatti da globalConfig.
+ */
+export function makeHotelFooterSection(build: SiteBuild): SiteSection {
+  const cfg = build.globalConfig || ({ palette: { bg: '#ffffff', ink: '#1a1a1a', accent: '#8b5cf6', muted: '#f5f5f5' } } as GlobalConfig)
+  const bi = cfg.businessInfo || {}
+
+  // Recupera gli URL reali dei portali dalla prima sezione booking-links del sito.
+  let platforms: Array<{ name?: string; url?: string }> = []
+  outer: for (const p of build.pages) {
+    for (const s of p.sections) {
+      if (s.type === 'library' && s.component === 'booking/booking-links' && !Array.isArray(s.props)) {
+        const pl = (s.props as Record<string, unknown>).platforms
+        if (Array.isArray(pl)) { platforms = pl as Array<{ name?: string; url?: string }>; break outer }
+      }
+    }
+  }
+  const urlOf = (name: string, fallback: string) => platforms.find(x => x.name === name)?.url || fallback
+  const bookingLinks = [
+    { label: 'Booking.com', href: urlOf('booking', 'https://www.booking.com') },
+    { label: 'Expedia', href: urlOf('expedia', 'https://www.expedia.it') },
+    { label: 'Trivago', href: urlOf('trivago', 'https://www.trivago.it') },
+  ]
+
+  const slugHref = (slug: string) => (slug === 'home' ? '/' : `/${slug}`)
+  const navPages = (build.navigation?.header?.length ? build.navigation.header : build.pages.map(p => ({ label: p.title, slug: p.slug })))
+    .filter(l => !/privacy|cookie/i.test(l.slug))
+    .map(l => ({ label: l.label, href: slugHref(l.slug) }))
+  const legals = build.pages
+    .filter(p => /privacy|cookie/i.test(p.slug))
+    .map(p => ({ label: p.title, href: slugHref(p.slug) }))
+  const legalLinks = legals.length ? legals : [{ label: 'Privacy Policy', href: '/privacy' }]
+
+  return {
+    type: 'library',
+    sectionKey: 'footer',
+    component: 'footer/site-footer',
+    props: {
+      businessName: cfg.businessName || '',
+      description: 'Prenota il tuo soggiorno sui principali portali o contattaci direttamente.',
+      columns: [
+        { title: 'Prenota', links: bookingLinks },
+        { title: 'Il sito', links: navPages },
+        { title: 'Legali', links: legalLinks },
+      ],
+      socials: bi.socials || [],
+      address: bi.address,
+      phone: bi.phone,
+      email: bi.email,
+      legalLinks,
+      layout: 'multi-column',
+      palette: cfg.palette,
+    },
   }
 }

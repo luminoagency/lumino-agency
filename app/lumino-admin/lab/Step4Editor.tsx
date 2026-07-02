@@ -5,7 +5,7 @@ import { RenderSection } from '@/lib/lab/render';
 import { updateSectionProps } from '@/lib/lab/section-utils';
 import { LUMINO_LIBRARY } from '@/lib/lab-library';
 import type { SiteBuild, SiteSection, EditorState, GlobalConfig, ProjectAsset, Locale } from '@/lib/lab/builder';
-import { saveEditorState, advanceToStep, setActivePage, uploadLogoAction, updateGlobalConfig, uploadAssetAction, deleteAssetAction, updateAssetAction, setProjectLocales, autoTranslateProject, updateSectionTranslation, translateOneSection, startPhotoImport } from './actions';
+import { saveEditorState, advanceToStep, setActivePage, uploadLogoAction, updateGlobalConfig, uploadAssetAction, deleteAssetAction, updateAssetAction, setProjectLocales, autoTranslateProject, updateSectionTranslation, translateOneSection, startPhotoImport, setWowEnabled } from './actions';
 import AssetPicker, { categoriesForBusiness } from './AssetPicker';
 import {
   ChevronUp, ChevronDown, Eye, EyeOff, Save, ArrowRight,
@@ -341,6 +341,8 @@ export default function Step4Editor({ projectId, build, businessName, businessTy
   const [savedSnapshot, setSavedSnapshot] = useState<string>(() => JSON.stringify(initial));
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [wowEnabled, setWowEnabledState] = useState<boolean>(!!build.wow?.enabled);
+  const [wowBusy, setWowBusy] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [device, setDevice] = useState<DeviceKey>('desktop');
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
@@ -513,6 +515,21 @@ export default function Step4Editor({ projectId, build, businessName, businessTy
   const [transOverrides, setTransOverrides] = useState<Record<string, any>>({});
   const transTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHotelBiz = /hotel|b&b|bnb|resort|agriturismo|ostello|locanda|relais/i.test(businessType || '');
+
+  // ── Layer WOW — toggle effetti (cursore, background hero, showcase 3D) ──
+  const handleToggleWow = async () => {
+    if (wowBusy) return;
+    setWowBusy(true);
+    const res = await setWowEnabled(projectId, !wowEnabled);
+    if (res.ok) {
+      setWowEnabledState(!wowEnabled);
+      // Il toggle aggiunge/rimuove sezioni ed effetti lato server → ricarico per riflettere la build.
+      window.location.reload();
+    } else {
+      setWowBusy(false);
+      alert(res.error || 'Errore nel toggle WOW.');
+    }
+  };
 
   const toggleLocale = (loc: Locale) => {
     if (loc === 'it') return;
@@ -821,6 +838,11 @@ export default function Step4Editor({ projectId, build, businessName, businessTy
               <Languages className="w-3.5 h-3.5" /> {translating ? 'Traduco…' : '🌐 Traduci tutto'}
             </button>
           )}
+          <button onClick={handleToggleWow} disabled={wowBusy}
+            title="Attiva/disattiva effetti WOW: cursore custom, background animato dietro l'hero, showcase 3D"
+            className={`px-3 py-1.5 rounded text-sm flex items-center gap-2 disabled:opacity-50 ${wowEnabled ? 'bg-fuchsia-700 hover:bg-fuchsia-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'}`}>
+            <Sparkles className="w-3.5 h-3.5" /> {wowBusy ? '…' : `WOW ${wowEnabled ? 'ON' : 'OFF'}`}
+          </button>
           <button onClick={handleUndo} disabled={!dirty}
             className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded text-sm flex items-center gap-2 disabled:opacity-40" title="Annulla modifiche non salvate">
             <Undo2 className="w-3.5 h-3.5" /> Annulla

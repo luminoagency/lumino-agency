@@ -72,7 +72,7 @@ function formSectionHtml(section: SiteSection, p: Record<string, any>): string {
   const success = esc(p?.successMessage || 'Grazie! Ti contatteremo presto.')
   const fieldCls = 'w-full rounded-lg border px-3 py-2.5 text-sm'
   const style = 'style="background:var(--lumino-bg);color:var(--lumino-ink);border-color:var(--lumino-muted)"'
-  return `<section id="contact" class="mx-auto max-w-2xl px-6 py-14" data-section="${esc(section.sectionKey)}">
+  return `<section id="${esc(section.sectionKey || 'contact')}" class="mx-auto max-w-2xl px-6 py-14" data-section="${esc(section.sectionKey)}">
     <h2 class="text-3xl md:text-4xl font-bold tracking-tight" style="font-family:var(--lumino-font-heading,inherit)">${title}</h2>${desc}
     <form class="lumino-form mt-6 space-y-3" data-message-type="contact" data-success-message="${success}">
       <input name="name" required placeholder="Nome *" class="${fieldCls}" ${style} />
@@ -92,7 +92,8 @@ function sectionToHtml(section: SiteSection, locale: Locale, def: Locale): strin
     return `<section class="px-6 py-10" data-custom="${esc(section.categoryHint)}"><!-- custom: ${esc(section.reason)} --></section>`
   }
   const props = localizedProps(section, locale, def)
-  const wrap = (inner: string) => `<section class="mx-auto max-w-6xl px-6 py-14" data-section="${esc(section.sectionKey)}">${inner}</section>`
+  // id = sectionKey → le àncore '#<sectionKey>' delle CTA funzionano anche nel sito statico.
+  const wrap = (inner: string) => `<section id="${esc(section.sectionKey)}" class="mx-auto max-w-6xl px-6 py-14" data-section="${esc(section.sectionKey)}">${inner}</section>`
   if (FORM_COMPONENTS.has(section.component)) return formSectionHtml(section, (props || {}) as Record<string, any>)
   if (Array.isArray(props)) return wrap(collectionHtml(props))
 
@@ -154,6 +155,8 @@ function buildPageHtml(page: SitePage, build: SiteBuild, locale: Locale, project
   const desc = esc(resolveLocalized(page.metaDescription, locale, def))
   const hreflang = localesOf(build).map(loc => `<link rel="alternate" hreflang="${loc}" href="${esc(pageUrl(page.slug, loc, def))}" />`).join('')
   const sections = page.sections.map(s => sectionToHtml(s, locale, def)).join('\n')
+  // Se la pagina ha già un footer di libreria, non duplicare quello minimale.
+  const hasFooterSection = page.sections.some(s => s.type === 'library' && s.component.startsWith('footer/'))
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -172,7 +175,7 @@ ${fontLink}
 <body>
 ${navHtml(build, page.slug, locale, def, businessName)}
 <main>${sections}</main>
-${footerHtml(build.navigation?.footer || [], locale, def, businessName)}
+${hasFooterSection ? '' : footerHtml(build.navigation?.footer || [], locale, def, businessName)}
 ${projectId ? formScript(projectId) : ''}
 </body>
 </html>`

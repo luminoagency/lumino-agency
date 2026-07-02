@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, lazy, useEffect } from 'react';
-import type { SiteSection, SitePage, SiteBuild, GlobalConfig, NavLink } from './builder';
+import type { SiteSection, SitePage, SiteBuild, GlobalConfig, NavLink, WowConfig, WowLayer } from './builder';
 
 // Mappa ESPLICITA dei loader: solo i componenti SAFE (zero pacchetti da installare).
 // NB: niente template-string `import(`.../${key}`)` — quel pattern crea un context webpack
@@ -163,6 +163,25 @@ const componentLoaders: Record<string, () => Promise<{ default: React.ComponentT
 // Componenti con form di contatto: ricevono projectId per postare a /api/messages/{projectId}.
 const FORM_COMPONENTS = new Set(['form/contact', 'form/contact-2']);
 
+/**
+ * Renderizza un componente libreria "nudo" (senza wrapping/sezione) dai suoi
+ * props JSON. Usato per i layer WOW (cursore globale, background hero) che sono
+ * overlay decorativi, non sezioni di contenuto. Ignora silenziosamente le chiavi
+ * senza loader (nessun placeholder rosso: sono decorazioni opzionali).
+ */
+export function RenderBareLibrary({ component, props }: { component: string; props?: Record<string, unknown> }) {
+  const loader = componentLoaders[component];
+  if (!loader) return null;
+  const Lazy = lazy(loader);
+  return <Suspense fallback={null}><Lazy {...(props || {})} /></Suspense>;
+}
+
+/** Indice della prima sezione hero (o prima sezione libreria) di una pagina. */
+function heroSectionIndex(page: SitePage): number {
+  const h = page.sections.findIndex(s => s.type === 'library' && s.component.startsWith('hero/'));
+  return h >= 0 ? h : page.sections.findIndex(s => s.type === 'library');
+}
+
 export function RenderSection({ section, projectId }: { section: SiteSection; projectId?: string }) {
   if (section.type === 'library') {
     const loader = componentLoaders[section.component];
@@ -244,7 +263,7 @@ export function RenderFooter({ links, businessName }: { links: NavLink[]; busine
 }
 
 /** Renderizza una singola pagina del sito (header + sezioni + footer), con palette + font globali. */
-export function RenderPage({ page, globalConfig, navigation, projectId }: { page: SitePage; globalConfig?: GlobalConfig; navigation?: { header: NavLink[]; footer: NavLink[] }; projectId?: string }) {
+export function RenderPage({ page, globalConfig, navigation, projectId, wow }: { page: SitePage; globalConfig?: GlobalConfig; navigation?: { header: NavLink[]; footer: NavLink[] }; projectId?: string; wow?: WowConfig }) {
   const businessName = globalConfig?.businessName;
   const p = globalConfig?.palette;
   const font = globalConfig?.font;
@@ -266,13 +285,37 @@ export function RenderPage({ page, globalConfig, navigation, projectId }: { page
     ...(font?.heading ? { '--lumino-font-heading': `'${font.heading}', Georgia, serif` } : {}),
   } as React.CSSProperties;
 
+  // Se la pagina ha già un footer di libreria (es. site-footer hotel), non duplicare quello minimale.
+  const hasFooterSection = page.sections.some(s => s.type === 'library' && s.component.startsWith('footer/'));
+
+  // Layer WOW — cursore globale (fixed) + background animato dietro l'hero.
+  const heroBg = page.effects?.heroBackground;
+  const heroIdx = heroBg ? heroSectionIndex(page) : -1;
+
   return (
     <div className="lab-page" style={style}>
       {/* I titoli ereditano il font heading se impostato. */}
       {font?.heading && <style>{`.lab-page h1,.lab-page h2,.lab-page h3{font-family:var(--lumino-font-heading);}`}</style>}
+      {/* WOW: cursore custom globale (position:fixed nel componente). */}
+      {wow?.enabled && wow.cursor && <RenderBareLibrary component={wow.cursor.component} props={wow.cursor.props} />}
       {navigation?.header && navigation.header.length > 0 && <RenderHeader links={navigation.header} businessName={businessName} />}
-      {page.sections.map((section, i) => <RenderSection key={i} section={section} projectId={projectId} />)}
-      {navigation?.footer && navigation.footer.length > 0 && <RenderFooter links={navigation.footer} businessName={businessName} />}
+      {/* id = sectionKey → le àncore '#<sectionKey>' delle CTA funzionano. */}
+      {page.sections.map((section, i) => {
+        const bg = i === heroIdx ? heroBg : undefined;
+        return (
+          <div key={i} id={section.sectionKey || undefined} style={bg ? { position: 'relative' } : undefined}>
+            {bg && (
+              <div className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
+                <RenderBareLibrary component={bg.component} props={bg.props} />
+              </div>
+            )}
+            <div style={bg ? { position: 'relative', zIndex: 1 } : undefined}>
+              <RenderSection section={section} projectId={projectId} />
+            </div>
+          </div>
+        );
+      })}
+      {!hasFooterSection && navigation?.footer && navigation.footer.length > 0 && <RenderFooter links={navigation.footer} businessName={businessName} />}
     </div>
   );
 }
@@ -283,5 +326,5 @@ export function RenderSite({ build, currentSlug, projectId }: { build: SiteBuild
     ? build.pages.find(p => p.slug === currentSlug)
     : (build.pages.find(p => p.isHomepage) || build.pages[0]);
   if (!page) return <div className="p-8 text-center text-sm text-zinc-500">Pagina non trovata</div>;
-  return <RenderPage page={page} globalConfig={build.globalConfig} navigation={build.navigation} projectId={projectId} />;
+  return <RenderPage page={page} globalConfig={build.globalConfig} navigation={build.navigation} projectId={projectId} wow={build.wow} />;
 }
