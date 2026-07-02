@@ -6,7 +6,7 @@
 import { getClaude } from '@/lib/ai/claude'
 import type { Competitor, LabPlace } from './places'
 
-const SONNET = 'claude-sonnet-4-6'
+const MODEL = 'claude-opus-4-7'
 
 export interface ResearchInfo {
   name: string
@@ -85,7 +85,9 @@ export async function extractResearch(input: ExtractInput): Promise<ExtractOutpu
     : ''
 
   const msg = await claude.messages.create({
-    model: SONNET,
+    model: MODEL,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium' },
     max_tokens: 1600,
     system:
       'Sei un analista che prepara la ricerca per costruire il sito di un business locale italiano. ' +
@@ -111,8 +113,8 @@ export async function extractResearch(input: ExtractInput): Promise<ExtractOutpu
     ],
   })
 
-  const block = msg.content[0]
-  const text = block.type === 'text' ? block.text : '{}'
+  const block = msg.content.find(b => b.type === 'text')
+  const text = block?.type === 'text' ? block.text : '{}'
   const parsed = parseJson<ExtractOutput>(text)
 
   if (!parsed || !parsed.info) {
@@ -155,7 +157,9 @@ export async function chatTurn(
   const claude = getClaude()
 
   const msg = await claude.messages.create({
-    model: SONNET,
+    model: MODEL,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium' },
     max_tokens: 500,
     system:
       `Sei l'assistente di ricerca di Lumino. Stai raccogliendo le informazioni per costruire il sito di "${businessName}" (tipo: ${businessType}). ` +
@@ -166,8 +170,8 @@ export async function chatTurn(
     messages: messages.map(m => ({ role: m.role, content: m.content })),
   })
 
-  const block = msg.content[0]
-  let text = block.type === 'text' ? block.text : ''
+  const block = msg.content.find(b => b.type === 'text')
+  let text = block?.type === 'text' ? block.text : ''
   const ready = text.includes(READY_MARKER)
   text = text.replace(READY_MARKER, '').trim()
   return { text, ready }
