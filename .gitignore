@@ -42,9 +42,13 @@ supabase/.temp/
 *.tsbuildinfo
 next-env.d.ts
 
-# Raccolta snippet UI di riferimento — non fa parte del sito, non deployare
-/lib/lab-library/
+# Raccolta snippet UI di riferimento (solo il doc; la libreria lab-library ORA fa parte del Lab)
 /LIBRERIA_LUMINO_RACCOLTA.md
+
+# Lumino Lab — file generati/locali
+lumino-backup-*/
+scripts/last-smoke-output.json
+/public/published/
 
 # File riservato (riferimenti admin super-admin)
 ADMIN_CONFIG.md
