@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 // Stessa allowlist del resto di /lumino-admin.
-export const SUPER_ADMINS = ['bylumino06@gmail.com']
+export const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 /**
  * Gate per le pagine del Lab. Usabile nei Server Component (chiama redirect()).

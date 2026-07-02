@@ -16,3 +16,18 @@ body {
 body {
   @apply bg-white text-neutral-900 antialiased;
 }
+
+/* Campi carta PayPal (hosted fields) — pagina /pay/[orderId].
+   Ogni campo è un iframe: il container deve avere un'altezza minima
+   esplicita, altrimenti collassa; forziamo l'iframe a riempirlo. */
+.pp-field {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.pp-field > iframe {
+  width: 100% !important;
+  height: 46px !important;
+  min-height: 46px !important;
+}

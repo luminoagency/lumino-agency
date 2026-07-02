@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 /**
  * Proxy per le foto di Google Places: la media URL incorpora la API key,

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAuthUrl } from '@/lib/integrations/gmail-oauth'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 export const metadata = { title: 'Collega Gmail · Super Admin' }
 export const dynamic = 'force-dynamic'

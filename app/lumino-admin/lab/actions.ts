@@ -16,7 +16,7 @@ import { generateLayouts, layoutChatTurn, type LayoutProposal, type SectionKey }
 import { buildGlobalCss, generateSection, type BuildSection, type SiteBuild } from '@/lib/lab/builder'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 async function assertSuperAdmin() {
   const sb = createClient()

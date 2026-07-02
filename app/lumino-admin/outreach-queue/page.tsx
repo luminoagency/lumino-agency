@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getWarmupInfo } from '@/lib/warmup'
 import { OutreachQueueClient } from './OutreachQueueClient'
 
-const SUPER_ADMINS = ['bylumino06@gmail.com']
+const SUPER_ADMINS = ['bylumino06@gmail.com', 'siwaky.assistance@gmail.com']
 
 export const metadata = { title: 'Coda email · Super Admin' }
 export const dynamic = 'force-dynamic'
