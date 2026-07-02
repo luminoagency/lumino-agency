@@ -14,6 +14,13 @@
       "runtimeArgs": ["next", "dev", "-H", "0.0.0.0"],
       "port": 3003,
       "autoPort": false
+    },
+    {
+      "name": "prod",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "start", "-p", "3004"],
+      "port": 3004,
+      "autoPort": false
     }
   ]
 }
