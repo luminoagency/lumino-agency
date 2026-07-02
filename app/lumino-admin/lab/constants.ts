@@ -2,6 +2,7 @@
 
 export const BUSINESS_TYPES = [
   { key: 'ristorante', label: 'Ristorante', icon: '🍽️' },
+  { key: 'hotel',      label: 'Hotel / B&B / Resort', icon: '🏨' },
   { key: 'barbiere',   label: 'Barbiere',   icon: '💈' },
   { key: 'dentista',   label: 'Dentista',   icon: '🦷' },
   { key: 'palestra',   label: 'Palestra',   icon: '🏋️' },
