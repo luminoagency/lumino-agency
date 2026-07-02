@@ -39,6 +39,9 @@ export function CheckoutClient({
   const initedRef = useRef(false)
   // Flag "pagamento in corso" leggibile dai handler dei wallet (Google Pay).
   const busyRef = useRef(false)
+  // true appena onApprove parte: da quel punto l'esito è deciso dalla cattura,
+  // non da un eventuale rifiuto post-3DS di submit() (evita falsi errori SCA).
+  const approveStartedRef = useRef(false)
 
   /** Crea l'ordine PayPal lato server (l'importo lo decide il server). */
   const createOrderOnServer = useCallback(async (): Promise<string> => {
@@ -56,6 +59,9 @@ export function CheckoutClient({
 
   /** Cattura il pagamento lato server e aggiorna lo stato UI. */
   const captureOnServer = useCallback(async (paypalOrderId: string) => {
+    // Da qui l'esito lo decide la cattura: eventuali errori successivi di
+    // submit() non devono più mostrare un falso "pagamento non riuscito".
+    approveStartedRef.current = true
     setPhase('paying')
     const res = await fetch('/api/paypal/capture-order', {
       method: 'POST',
@@ -144,6 +150,9 @@ export function CheckoutClient({
         onApprove: (data: { orderID: string }) => captureOnServer(data.orderID),
         onError: (err: unknown) => {
           console.error('PayPal CardFields error:', err)
+          // Se il pagamento è già stato approvato/catturato, NON mostrare errore:
+          // la cattura è la fonte di verità (evita falsi errori dopo il 3DS).
+          if (approveStartedRef.current) return
           setError('Pagamento con carta non riuscito. Controlla i dati e riprova.')
           setPhase('ready')
         },
@@ -184,14 +193,22 @@ export function CheckoutClient({
   async function payWithCard() {
     if (!cardFieldRef.current) return
     setError(null)
+    approveStartedRef.current = false
     setPhase('paying')
     try {
-      // submit() innesca createOrder → approvazione → onApprove (capture).
+      // submit() innesca createOrder → 3DS → onApprove (capture).
       await cardFieldRef.current.submit()
+      // Esito reale gestito da onApprove/onError: qui non decidiamo nulla.
     } catch (e) {
-      console.error(e)
-      setError('Pagamento con carta non riuscito. Controlla i dati e riprova.')
-      setPhase('ready')
+      console.error('[card submit]', e)
+      // Con il 3D Secure (SCA), submit() può rifiutare ANCHE dopo che il
+      // pagamento è stato approvato e catturato: in quel caso l'ordine è già
+      // pagato, quindi NON mostrare un falso errore. Segnaliamo un errore solo
+      // se l'approvazione non è mai partita (es. dati carta non validi).
+      if (!approveStartedRef.current) {
+        setError('Controlla i dati della carta e riprova.')
+        setPhase('ready')
+      }
     }
   }
 
