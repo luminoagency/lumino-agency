@@ -8,6 +8,8 @@ import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
 import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
+import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
+import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
 
 interface MercatoProps {
   restaurantName: string
@@ -33,6 +35,7 @@ interface MercatoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
@@ -254,7 +257,7 @@ export function MercatoTemplate(props: MercatoProps) {
     menuCategories = [], galleryImages = [],
     address, phone, email, hours, mapsUrl, socialLinks,
     accentColor = '#b8451f', logoUrl,
-    tier = 'basic', events = [], whatsappNumber, features,
+    tier = 'basic', events = [], whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
   } = props
 
@@ -321,6 +324,7 @@ export function MercatoTemplate(props: MercatoProps) {
 
   return (
     <div style={{ background: paper, color: ink, fontFamily: '"Cormorant Garamond", "Georgia", serif', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
+      <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
 
@@ -2115,6 +2119,7 @@ export function MercatoTemplate(props: MercatoProps) {
               {POWERED_BY.label}
             </a>
           </p>
+          <RestaurantFooterLinks slug={slug} />
         </footer>
       </div>
 

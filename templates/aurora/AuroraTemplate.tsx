@@ -8,6 +8,8 @@ import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
 import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
+import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
+import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
 
 interface AuroraProps {
   restaurantName: string
@@ -33,6 +35,7 @@ interface AuroraProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
@@ -252,7 +255,7 @@ export function AuroraTemplate(props: AuroraProps) {
     menuCategories = [], galleryImages = [],
     address, phone, email, hours, mapsUrl, socialLinks,
     accentColor = '#a78bfa', logoUrl,
-    tier = 'basic', events = [], whatsappNumber, features,
+    tier = 'basic', events = [], whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
   } = props
 
@@ -308,6 +311,7 @@ export function AuroraTemplate(props: AuroraProps) {
 
   return (
     <div style={{ background: bg, color: text, fontFamily: '"Inter", system-ui, sans-serif', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap');
 
@@ -1784,6 +1788,7 @@ export function AuroraTemplate(props: AuroraProps) {
               {POWERED_BY.label}
             </a>
           </p>
+          <RestaurantFooterLinks slug={slug} />
         </footer>
       </div>
 

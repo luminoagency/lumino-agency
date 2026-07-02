@@ -9,6 +9,8 @@ import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
 import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
+import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
+import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
 
 interface CinematicoProps {
   restaurantName: string
@@ -34,6 +36,7 @@ interface CinematicoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
@@ -257,7 +260,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
     restaurantName, tagline, description, heroImage, heroImages, aboutImage,
     menuCategories, galleryImages, address, phone, email,
     hours, mapsUrl, socialLinks, accentColor = '#e52d1d', logoUrl,
-    tier = 'basic', events, whatsappNumber, features,
+    tier = 'basic', events, whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
   } = props
 
@@ -293,6 +296,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
 
   return (
     <div style={{ background: bg, color: text, fontFamily: "'Inter', sans-serif" }}>
+      <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
       <InteractiveEffects accent={accent} scope="cin" />
       <style>{`
         :where(div) { --ripple-color: rgba(229, 45, 29, 0.55); }
@@ -1640,6 +1644,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
             {POWERED_BY.label}
           </a>
         </p>
+        <RestaurantFooterLinks slug={slug} />
       </footer>
 
       {/* ── WHATSAPP BUTTON (Premium only) ── */}

@@ -17,6 +17,8 @@ export interface LoadedSite {
   accentColor: string
   tier: 'basic' | 'pro' | 'premium'
   seo: { title: string; description?: string }
+  /** Dati del ristoratore usati dalle pagine legali (Cookie/Privacy Policy). */
+  policy: { name: string; address?: string; email?: string; city?: string }
   props: any  // shape: vedi templates/_shared (matches DemoRestaurant.data)
 }
 
@@ -103,6 +105,7 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
   for (const k of featureKeys) features[k] = isFeatureActive(tierKey, content, k)
 
   const props = {
+    slug,
     restaurantName: content.restaurant_name,
     tagline: content.tagline || undefined,
     description: content.description || undefined,
@@ -151,6 +154,12 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
     seo: {
       title: content.seo_title || `${content.restaurant_name}${content.city ? ' · ' + content.city : ''}`,
       description: content.seo_description || content.description || undefined,
+    },
+    policy: {
+      name: content.restaurant_name,
+      address: content.address || undefined,
+      email: content.email || undefined,
+      city: content.city || undefined,
     },
     props,
   }

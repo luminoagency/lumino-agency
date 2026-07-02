@@ -8,6 +8,8 @@ import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
 import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
+import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
+import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
 
 interface PanoramicoProps {
   restaurantName: string
@@ -33,6 +35,7 @@ interface PanoramicoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
@@ -166,7 +169,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
     restaurantName, tagline, description, heroImage, aboutImage,
     menuCategories, galleryImages, address, phone, email,
     hours, mapsUrl, socialLinks, accentColor = '#b58a2f', logoUrl,
-    tier = 'basic', events, whatsappNumber, features,
+    tier = 'basic', events, whatsappNumber, features, slug,
     heroImages, chef, reviews, faq, timeSlots,
   } = props
 
@@ -282,6 +285,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
 
   return (
     <div style={{ background: paper, color: ink, fontFamily: '"Inter", system-ui, sans-serif', overflowX: 'hidden' }}>
+      <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&display=swap');
 
@@ -1835,6 +1839,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
             {POWERED_BY.label}
           </a>
         </p>
+        <RestaurantFooterLinks slug={slug} />
       </footer>
 
       {/* WhatsApp FAB (Premium) */}

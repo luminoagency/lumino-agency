@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   getConsent,
   setConsent,
@@ -19,6 +20,7 @@ import {
  * Montato una sola volta app-wide (vedi app/layout.tsx).
  */
 export default function CookieBanner() {
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [decided, setDecided] = useState(true) // assume deciso finché non sappiamo (no flash SSR)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -69,6 +71,9 @@ export default function CookieBanner() {
   }, [analytics, marketing, finish])
 
   if (!mounted) return null
+  // Sui siti dei ristoratori (e sui loro demo) vale il loro banner cookie,
+  // non quello di Lumino: qui ci togliamo di mezzo.
+  if (pathname?.startsWith('/sites/') || pathname?.startsWith('/demo/')) return null
   // Niente banner se già deciso, a meno che il pannello sia stato riaperto dal footer.
   if (decided && !panelOpen) return null
 

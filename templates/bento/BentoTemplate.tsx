@@ -13,6 +13,8 @@ import { LeaveReviewForm } from '../_shared/LeaveReviewForm'
 import GdprConsent from '../_shared/GdprConsent'
 import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
+import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
+import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -58,6 +60,7 @@ export interface BentoProps {
   tier?: 'basic' | 'pro' | 'premium'
   events?: Array<{ title: string; description?: string; date: string; imageUrl?: string }>
   whatsappNumber?: string
+  slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
   heroImages?: string[]
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
@@ -130,6 +133,7 @@ export function BentoTemplate(props: BentoProps) {
     events,
     whatsappNumber,
     features,
+    slug,
     heroImages,
     chef,
     reviews,
@@ -322,6 +326,7 @@ export function BentoTemplate(props: BentoProps) {
         overflowX: 'hidden',
       }}
     >
+      <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
       <InteractiveEffects accent={accentColor} scope="ben" />
       <style jsx global>{`
         :root { --ripple-color: ${accentColor}55; }
@@ -1648,6 +1653,7 @@ export function BentoTemplate(props: BentoProps) {
               {POWERED_BY.label}
             </a>
           </p>
+          <RestaurantFooterLinks slug={slug} />
         </div>
       </footer>
 
