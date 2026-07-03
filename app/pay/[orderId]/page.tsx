@@ -1,12 +1,13 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
-  isTrancheType,
-  trancheOf,
+  isPaymentType,
+  paymentPlan,
   formatEuro,
   toAmountString,
   type OrderRow,
+  type PaymentType,
 } from '@/lib/orders/tranche'
-import { CheckoutClient } from './CheckoutClient'
+import { CheckoutClient, type PayOption } from './CheckoutClient'
 import { AlreadyPaid, PayShell } from './PayShell'
 
 export const dynamic = 'force-dynamic'
@@ -18,21 +19,14 @@ interface PageProps {
   searchParams: { type?: string }
 }
 
+const TITLES: Record<PayOption['type'], string> = {
+  deposit: 'Acconto 30%',
+  balance: 'Saldo 70%',
+  full: 'Paga tutto (100%)',
+}
+
 export default async function PayPage({ params, searchParams }: PageProps) {
   const { orderId } = params
-  const type = searchParams.type
-
-  if (!isTrancheType(type)) {
-    return (
-      <PayShell>
-        <h1 className="text-xl font-semibold">Link non valido</h1>
-        <p className="mt-2 text-white/60">
-          Manca o non è corretto il tipo di pagamento. Contatta Lumino per un
-          nuovo link.
-        </p>
-      </PayShell>
-    )
-  }
 
   const admin = createAdminClient()
   const { data } = await admin
@@ -53,12 +47,40 @@ export default async function PayPage({ params, searchParams }: PageProps) {
   }
 
   const order = data as OrderRow
-  const tranche = trancheOf(order, type)
+  const depositPaid = order.deposit_status === 'paid'
+  const balancePaid = order.balance_status === 'paid'
 
-  // Già pagata → niente checkout.
-  if (tranche.status === 'paid') {
-    return <AlreadyPaid clientName={order.client_name} label={tranche.label} />
+  // Ordine completamente pagato → niente checkout.
+  if (depositPaid && balancePaid) {
+    return (
+      <AlreadyPaid clientName={order.client_name} label="Pagamento completo" />
+    )
   }
+
+  // Opzioni disponibili in base allo stato dell'ordine.
+  // Caso principale (niente pagato): "Acconto 30%" oppure "Paga tutto".
+  // Se l'acconto è già pagato: resta solo il saldo.
+  let candidates: PaymentType[]
+  if (!depositPaid && !balancePaid) candidates = ['deposit', 'full']
+  else if (depositPaid && !balancePaid) candidates = ['balance']
+  else candidates = ['deposit'] // saldo già pagato, resta l'acconto (raro)
+
+  const options: PayOption[] = candidates.map((t) => {
+    const plan = paymentPlan(order, t)
+    return {
+      type: t,
+      title: TITLES[t],
+      amountLabel: formatEuro(plan.amount),
+      amountValue: toAmountString(plan.amount),
+    }
+  })
+
+  // Selezione iniziale = query "type" se valida e disponibile, altrimenti la prima.
+  const qType = searchParams.type
+  const initialType =
+    isPaymentType(qType) && options.some((o) => o.type === qType)
+      ? qType
+      : options[0].type
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ''
 
@@ -67,29 +89,16 @@ export default async function PayPage({ params, searchParams }: PageProps) {
       <div className="mb-6">
         <p className="text-sm text-white/50">Ciao {order.client_name},</p>
         <h1 className="mt-1 text-2xl font-semibold">
-          {tranche.label} — sito web Lumino
+          Completa il pagamento del tuo sito
         </h1>
-        <p className="mt-3 text-white/70">
-          Stai pagando <strong className="text-white">{tranche.label}</strong>{' '}
-          del tuo sito.
-        </p>
-        <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-white/70">Importo da pagare</span>
-            <span className="text-xl font-semibold">
-              {formatEuro(tranche.amount)}
-            </span>
-          </div>
-        </div>
       </div>
 
       {clientId ? (
         <CheckoutClient
           orderId={order.id}
-          type={type}
+          options={options}
+          initialType={initialType}
           clientId={clientId}
-          amountLabel={formatEuro(tranche.amount)}
-          amountValue={toAmountString(tranche.amount)}
           googlePayEnv={process.env.PAYPAL_MODE === 'live' ? 'PRODUCTION' : 'TEST'}
         />
       ) : (

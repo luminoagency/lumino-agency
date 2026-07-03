@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyWebhookSignature } from '@/lib/paypal/client';
-import { syncSitePaymentFlags } from '@/lib/orders/sync';
+import { markOrderTranchesPaid } from '@/lib/orders/sync';
 import {
-  isTrancheType,
-  trancheOf,
+  isPaymentType,
+  paymentPlan,
   type OrderRow,
-  type TrancheType,
+  type PaymentType,
 } from '@/lib/orders/tranche';
 
 export const dynamic = 'force-dynamic';
@@ -76,12 +76,12 @@ export async function POST(req: Request) {
   //    Fallback: paypal order id da supplementary_data.related_ids.order_id.
   const admin = createAdminClient();
   let order: OrderRow | null = null;
-  let type: TrancheType | null = null;
+  let type: PaymentType | null = null;
 
   const customId: string = resource?.custom_id || '';
   if (customId.includes(':')) {
     const [oid, t] = customId.split(':');
-    if (oid && isTrancheType(t)) {
+    if (oid && isPaymentType(t)) {
       const { data } = await admin
         .from('orders')
         .select('*')
@@ -102,15 +102,18 @@ export async function POST(req: Request) {
         .from('orders')
         .select('*')
         .or(
-          `paypal_deposit_order_id.eq.${ppOrderId},paypal_balance_order_id.eq.${ppOrderId}`,
+          `paypal_deposit_order_id.eq.${ppOrderId},paypal_balance_order_id.eq.${ppOrderId},paypal_full_order_id.eq.${ppOrderId}`,
         )
         .maybeSingle();
       if (data) {
-        order = data as OrderRow;
+        const o = data as OrderRow;
+        order = o;
         type =
-          (data as OrderRow).paypal_deposit_order_id === ppOrderId
-            ? 'deposit'
-            : 'balance';
+          o.paypal_full_order_id === ppOrderId
+            ? 'full'
+            : o.paypal_deposit_order_id === ppOrderId
+              ? 'deposit'
+              : 'balance';
       }
     }
   }
@@ -121,28 +124,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, matched: false });
   }
 
-  const tranche = trancheOf(order, type);
+  // 5) Marca le tranche del piano 'paid' + sincronizza i flag (idempotente).
+  //    Per "full" sono entrambe → ordine completamente pagato.
+  const plan = paymentPlan(order, type);
   const nowIso = new Date().toISOString();
+  const res = await markOrderTranchesPaid(admin, order, plan.tranches, nowIso);
 
-  // 5) Segna la tranche 'paid' (idempotente: solo se ancora 'pending').
-  const { error: updErr } = await admin
-    .from('orders')
-    .update({
-      [tranche.statusColumn]: 'paid',
-      [tranche.paidAtColumn]: nowIso,
-    })
-    .eq('id', order.id)
-    .eq(tranche.statusColumn, 'pending');
-
-  if (updErr) {
-    console.error('[webhook] update orders fallito:', updErr.message);
+  if (!res.ok) {
+    console.error('[webhook] update orders fallito:', res.error);
     // 500 → PayPal ritenterà l'invio.
     return NextResponse.json({ error: 'Update fallito' }, { status: 500 });
   }
 
-  // 6) Sincronizza i flag sul sito del cliente (se collegato). Idempotente.
-  //    Nessun client_id → salta, senza errori.
-  await syncSitePaymentFlags(admin, order.client_id, type, nowIso);
-
-  return NextResponse.json({ ok: true, orderId: order.id, tranche: type });
+  return NextResponse.json({ ok: true, orderId: order.id, type });
 }

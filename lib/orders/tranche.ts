@@ -6,6 +6,14 @@
 
 export type TrancheType = 'deposit' | 'balance';
 
+/**
+ * Tipo di pagamento scelto sulla pagina di checkout:
+ *  - deposit → solo acconto 30%
+ *  - balance → solo saldo 70%
+ *  - full    → tutto il residuo non ancora pagato (100% se nulla è pagato)
+ */
+export type PaymentType = 'deposit' | 'balance' | 'full';
+
 /** Percentuali del modello 30/70. */
 export const DEPOSIT_RATE = 0.3;
 export const BALANCE_RATE = 0.7;
@@ -13,6 +21,11 @@ export const BALANCE_RATE = 0.7;
 /** True se la stringa è un tipo di tranche valido. */
 export function isTrancheType(v: unknown): v is TrancheType {
   return v === 'deposit' || v === 'balance';
+}
+
+/** True se la stringa è un tipo di pagamento valido (deposit/balance/full). */
+export function isPaymentType(v: unknown): v is PaymentType {
+  return v === 'deposit' || v === 'balance' || v === 'full';
 }
 
 /** Arrotonda a 2 decimali (centesimi) in modo stabile. */
@@ -63,6 +76,7 @@ export interface OrderRow {
   balance_paid_at: string | null;
   paypal_deposit_order_id: string | null;
   paypal_balance_order_id: string | null;
+  paypal_full_order_id: string | null;
   created_at: string;
 }
 
@@ -107,4 +121,91 @@ export function trancheOf(order: OrderRow, type: TrancheType): TrancheView {
     statusColumn: 'balance_status',
     paidAtColumn: 'balance_paid_at',
   };
+}
+
+export interface PaymentPlan {
+  type: PaymentType;
+  /** Importo da addebitare (EUR), calcolato dal server sul residuo. */
+  amount: number;
+  /** Etichetta per il cliente. */
+  label: string;
+  /** Colonna Supabase dove salvare l'ID ordine PayPal di questo pagamento. */
+  paypalOrderIdColumn:
+    | 'paypal_deposit_order_id'
+    | 'paypal_balance_order_id'
+    | 'paypal_full_order_id';
+  /** Tranche che verranno marcate 'paid' al completamento. */
+  tranches: TrancheType[];
+  /** True se non c'è più nulla da pagare per questo tipo. */
+  alreadyPaid: boolean;
+}
+
+/**
+ * Calcola il "piano di pagamento" per un ordine e un tipo scelto dal cliente.
+ * L'importo è SEMPRE derivato dallo stato dell'ordine lato server (mai dal
+ * browser). Per "full" considera solo le tranche ancora da pagare, così se
+ * l'acconto è già stato pagato "Paga tutto" addebita solo il saldo restante.
+ */
+export function paymentPlan(order: OrderRow, type: PaymentType): PaymentPlan {
+  const depositPending = order.deposit_status !== 'paid';
+  const balancePending = order.balance_status !== 'paid';
+
+  if (type === 'deposit') {
+    return {
+      type,
+      amount: round2(Number(order.deposit_amount)),
+      label: 'Acconto 30%',
+      paypalOrderIdColumn: 'paypal_deposit_order_id',
+      tranches: ['deposit'],
+      alreadyPaid: !depositPending,
+    };
+  }
+
+  if (type === 'balance') {
+    return {
+      type,
+      amount: round2(Number(order.balance_amount)),
+      label: 'Saldo 70%',
+      paypalOrderIdColumn: 'paypal_balance_order_id',
+      tranches: ['balance'],
+      alreadyPaid: !balancePending,
+    };
+  }
+
+  // type === 'full': somma delle tranche ancora pendenti.
+  const tranches: TrancheType[] = [];
+  let amount = 0;
+  if (depositPending) {
+    tranches.push('deposit');
+    amount += Number(order.deposit_amount);
+  }
+  if (balancePending) {
+    tranches.push('balance');
+    amount += Number(order.balance_amount);
+  }
+  const label =
+    tranches.length === 2
+      ? 'Pagamento completo (100%)'
+      : tranches[0] === 'balance'
+        ? 'Saldo restante'
+        : 'Acconto restante';
+
+  return {
+    type,
+    amount: round2(amount),
+    label,
+    paypalOrderIdColumn: 'paypal_full_order_id',
+    tranches,
+    alreadyPaid: tranches.length === 0,
+  };
+}
+
+/** Colonne stato/timestamp per una tranche. */
+export function trancheColumns(t: TrancheType): {
+  statusColumn: 'deposit_status' | 'balance_status';
+  paidAtColumn: 'deposit_paid_at' | 'balance_paid_at';
+} {
+  return t === 'deposit'
+    ? { statusColumn: 'deposit_status', paidAtColumn: 'deposit_paid_at' }
+    : { statusColumn: 'balance_status', paidAtColumn: 'balance_paid_at' };
 }

@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPayPalOrder } from '@/lib/paypal/client';
 import {
-  isTrancheType,
+  isPaymentType,
   toAmountString,
-  trancheOf,
+  paymentPlan,
   type OrderRow,
 } from '@/lib/orders/tranche';
 
@@ -13,11 +13,11 @@ export const runtime = 'nodejs';
 
 /**
  * POST /api/paypal/create-order
- * Body: { orderId: string, type: 'deposit' | 'balance' }
+ * Body: { orderId: string, type: 'deposit' | 'balance' | 'full' }
  *
- * L'importo viene letto SEMPRE dal server da Supabase (orderId + type):
- * il browser non lo trasmette mai. Crea l'ordine PayPal in EUR, salva il
- * paypal order id sulla riga e restituisce { id }.
+ * L'importo viene SEMPRE calcolato dal server da Supabase (orderId + type):
+ * il browser sceglie solo QUALE tipo pagare, mai l'importo. Crea l'ordine
+ * PayPal in EUR, salva il paypal order id sulla colonna del tipo e ritorna { id }.
  */
 export async function POST(req: Request) {
   let body: { orderId?: string; type?: string };
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   }
 
   const { orderId, type } = body;
-  if (!orderId || !isTrancheType(type)) {
+  if (!orderId || !isPaymentType(type)) {
     return NextResponse.json(
       { error: 'Parametri mancanti o non validi (orderId, type)' },
       { status: 400 },
@@ -50,33 +50,30 @@ export async function POST(req: Request) {
   }
 
   const order = data as OrderRow;
-  const tranche = trancheOf(order, type);
+  const plan = paymentPlan(order, type);
 
-  // Se già pagata, non creare un nuovo ordine PayPal.
-  if (tranche.status === 'paid') {
+  // Se non c'è nulla da pagare per questo tipo, niente ordine PayPal.
+  if (plan.alreadyPaid) {
     return NextResponse.json(
-      { error: 'Questa tranche è già stata pagata' },
+      { error: 'Questo pagamento risulta già completato' },
       { status: 409 },
     );
   }
 
-  if (!(tranche.amount > 0)) {
+  if (!(plan.amount > 0)) {
     return NextResponse.json(
-      { error: 'Importo non valido per questa tranche' },
+      { error: 'Importo non valido per questo pagamento' },
       { status: 400 },
     );
   }
 
-  const description =
-    tranche.type === 'deposit'
-      ? `Acconto 30% — sito web Lumino (${order.client_name})`
-      : `Saldo 70% — sito web Lumino (${order.client_name})`;
+  const description = `${plan.label} — sito web Lumino (${order.client_name})`;
 
   let ppOrder;
   try {
-    ppOrder = await createPayPalOrder(toAmountString(tranche.amount), {
-      referenceId: `${order.id}:${tranche.type}`,
-      customId: `${order.id}:${tranche.type}`,
+    ppOrder = await createPayPalOrder(toAmountString(plan.amount), {
+      referenceId: `${order.id}:${plan.type}`,
+      customId: `${order.id}:${plan.type}`,
       description,
     });
   } catch (e) {
@@ -84,10 +81,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 
-  // Salva l'id ordine PayPal sulla tranche corrispondente (per tracciamento).
+  // Salva l'id ordine PayPal sulla colonna del tipo (per tracciamento + lookup).
   const { error: updErr } = await admin
     .from('orders')
-    .update({ [tranche.paypalOrderIdColumn]: ppOrder.id })
+    .update({ [plan.paypalOrderIdColumn]: ppOrder.id })
     .eq('id', order.id);
 
   if (updErr) {

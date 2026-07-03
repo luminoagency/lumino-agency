@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { TrancheType } from './tranche';
+import { trancheColumns, type OrderRow, type TrancheType } from './tranche';
 
 /**
  * Sincronizza i flag di pagamento sul/i sito/i del cliente collegato quando
@@ -45,4 +45,31 @@ export async function syncSitePaymentFlags(
   } catch (e) {
     console.error('[syncSitePaymentFlags] eccezione:', e);
   }
+}
+
+/**
+ * Marca 'paid' una o più tranche di un ordine (usato dopo una cattura riuscita)
+ * e sincronizza i flag sul sito del cliente. Idempotente: aggiorna una tranche
+ * solo se ancora 'pending', così eventi/chiamate ripetute non fanno danni.
+ *
+ * Per il pagamento "full" si passano entrambe le tranche pendenti: l'ordine
+ * viene marcato completamente pagato in un colpo solo.
+ */
+export async function markOrderTranchesPaid(
+  admin: SupabaseClient,
+  order: OrderRow,
+  tranches: TrancheType[],
+  nowIso: string,
+): Promise<{ ok: boolean; error?: string }> {
+  for (const t of tranches) {
+    const { statusColumn, paidAtColumn } = trancheColumns(t);
+    const { error } = await admin
+      .from('orders')
+      .update({ [statusColumn]: 'paid', [paidAtColumn]: nowIso })
+      .eq('id', order.id)
+      .eq(statusColumn, 'pending'); // idempotenza
+    if (error) return { ok: false, error: error.message };
+    await syncSitePaymentFlags(admin, order.client_id, t, nowIso);
+  }
+  return { ok: true };
 }

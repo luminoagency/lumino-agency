@@ -28,7 +28,7 @@ const PAYJS_SCRIPT_ID = 'google-pay-js-sdk'
 export function GooglePayButton({
   sdkReady,
   env,
-  amountValue,
+  amountValueRef,
   currency = 'EUR',
   onCreateOrder,
   onApprove,
@@ -39,8 +39,9 @@ export function GooglePayButton({
   sdkReady: boolean
   /** 'TEST' in sandbox, 'PRODUCTION' in live. */
   env: 'TEST' | 'PRODUCTION'
-  /** Importo display (es. "0.30"), reso dal server. */
-  amountValue: string
+  /** Ref all'importo display (es. "0.30"), reso dal server. Letto al click così
+   *  segue la scelta acconto/totale senza re-inizializzare il bottone. */
+  amountValueRef: React.MutableRefObject<string>
   currency?: string
   onCreateOrder: () => Promise<string>
   onApprove: (paypalOrderId: string) => Promise<void>
@@ -117,7 +118,7 @@ export function GooglePayButton({
                 countryCode: countryCode || 'IT',
                 currencyCode: currency,
                 totalPriceStatus: 'FINAL',
-                totalPrice: amountValue, // valore display reso dal server
+                totalPrice: amountValueRef.current, // importo scelto, reso dal server
               },
             }
 
@@ -178,7 +179,7 @@ export function GooglePayButton({
     sdkReady,
     payjsReady,
     env,
-    amountValue,
+    amountValueRef,
     currency,
     onCreateOrder,
     onApprove,

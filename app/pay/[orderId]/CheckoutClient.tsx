@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TrancheType } from '@/lib/orders/tranche'
+import type { PaymentType } from '@/lib/orders/tranche'
 import { GooglePayButton } from './GooglePayButton'
 
 declare global {
@@ -14,20 +14,29 @@ type Phase = 'loading' | 'ready' | 'paying' | 'success' | 'error'
 
 const SDK_SCRIPT_ID = 'paypal-sdk'
 
+/** Opzione di pagamento mostrata al cliente (importi resi dal server). */
+export interface PayOption {
+  type: PaymentType
+  /** Titolo del bottone/scelta (es. "Acconto 30%", "Paga tutto (100%)"). */
+  title: string
+  /** Importo formattato (es. "240,00 €"). */
+  amountLabel: string
+  /** Importo numerico per Google Pay (es. "240.00"). */
+  amountValue: string
+}
+
 export function CheckoutClient({
   orderId,
-  type,
+  options,
+  initialType,
   clientId,
-  amountLabel,
-  amountValue,
   googlePayEnv,
 }: {
   orderId: string
-  type: TrancheType
+  /** Opzioni disponibili (1 o 2): scelta del cliente tra acconto e totale. */
+  options: PayOption[]
+  initialType: PaymentType
   clientId: string
-  amountLabel: string
-  /** Importo numerico display per Google Pay (es. "0.30"), reso dal server. */
-  amountValue: string
   /** Ambiente Google Pay: 'TEST' in sandbox, 'PRODUCTION' in live. */
   googlePayEnv: 'TEST' | 'PRODUCTION'
 }) {
@@ -35,6 +44,7 @@ export function CheckoutClient({
   const [error, setError] = useState<string | null>(null)
   const [cardEligible, setCardEligible] = useState(false)
   const [cardChecked, setCardChecked] = useState(false)
+  const [selectedType, setSelectedType] = useState<PaymentType>(initialType)
   const cardFieldRef = useRef<any>(null)
   const initedRef = useRef(false)
   // Flag "pagamento in corso" leggibile dai handler dei wallet (Google Pay).
@@ -42,20 +52,37 @@ export function CheckoutClient({
   // true appena onApprove parte: da quel punto l'esito è deciso dalla cattura,
   // non da un eventuale rifiuto post-3DS di submit() (evita falsi errori SCA).
   const approveStartedRef = useRef(false)
+  // Il tipo scelto letto dai closure di PayPal Buttons/CardFields (inizializzati
+  // una sola volta): così cambiare opzione aggiorna cosa si paga senza re-init.
+  const selectedTypeRef = useRef<PaymentType>(initialType)
+
+  const selectedOption =
+    options.find((o) => o.type === selectedType) || options[0]
+  const amountLabel = selectedOption.amountLabel
+  // amountValue letto via ref dai closure di Google Pay (importo display aggiornato).
+  const amountValueRef = useRef<string>(selectedOption.amountValue)
+  amountValueRef.current = selectedOption.amountValue
+
+  function chooseType(t: PaymentType) {
+    setSelectedType(t)
+    selectedTypeRef.current = t
+    setError(null)
+  }
 
   /** Crea l'ordine PayPal lato server (l'importo lo decide il server). */
   const createOrderOnServer = useCallback(async (): Promise<string> => {
     const res = await fetch('/api/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, type }),
+      // selectedTypeRef: il cliente sceglie il TIPO; l'importo lo calcola il server.
+      body: JSON.stringify({ orderId, type: selectedTypeRef.current }),
     })
     const data = await res.json()
     if (!res.ok || !data.id) {
       throw new Error(data.error || 'Errore nella creazione del pagamento')
     }
     return data.id as string
-  }, [orderId, type])
+  }, [orderId])
 
   /** Cattura il pagamento lato server e aggiorna lo stato UI. */
   const captureOnServer = useCallback(async (paypalOrderId: string) => {
@@ -233,6 +260,52 @@ export function CheckoutClient({
 
   return (
     <div>
+      {/* Scelta cosa pagare (acconto / tutto). Solo se c'è più di un'opzione. */}
+      {options.length > 1 && (
+        <div className="mb-4">
+          <p className="mb-2 text-sm text-white/70">Cosa vuoi pagare?</p>
+          <div className={'grid gap-2 ' + (busy ? 'pointer-events-none opacity-50' : '')}>
+            {options.map((o) => {
+              const active = o.type === selectedType
+              return (
+                <button
+                  key={o.type}
+                  type="button"
+                  onClick={() => chooseType(o.type)}
+                  className={
+                    'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ' +
+                    (active
+                      ? 'border-brand-400 bg-brand-500/10'
+                      : 'border-white/15 bg-white/[0.03] hover:border-white/30')
+                  }
+                >
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <span
+                      className={
+                        'flex h-4 w-4 items-center justify-center rounded-full border ' +
+                        (active ? 'border-brand-400' : 'border-white/30')
+                      }
+                    >
+                      {active && <span className="h-2 w-2 rounded-full bg-brand-400" />}
+                    </span>
+                    {o.title}
+                  </span>
+                  <span className="text-base font-semibold">{o.amountLabel}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Importo selezionato */}
+      <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-white/70">Importo da pagare</span>
+          <span className="text-xl font-semibold">{amountLabel}</span>
+        </div>
+      </div>
+
       {phase === 'loading' && (
         <p className="text-sm text-white/50">Carico il pagamento…</p>
       )}
@@ -245,7 +318,7 @@ export function CheckoutClient({
         <GooglePayButton
           sdkReady={phase !== 'loading'}
           env={googlePayEnv}
-          amountValue={amountValue}
+          amountValueRef={amountValueRef}
           onCreateOrder={createOrderOnServer}
           onApprove={captureOnServer}
           onError={handleWalletError}

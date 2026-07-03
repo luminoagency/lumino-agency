@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { capturePayPalOrder } from '@/lib/paypal/client';
-import { syncSitePaymentFlags } from '@/lib/orders/sync';
-import { trancheOf, type OrderRow, type TrancheType } from '@/lib/orders/tranche';
+import { markOrderTranchesPaid } from '@/lib/orders/sync';
+import {
+  paymentPlan,
+  trancheColumns,
+  type OrderRow,
+  type PaymentType,
+} from '@/lib/orders/tranche';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -14,10 +19,10 @@ const PAYPAL_ID_RE = /^[A-Z0-9]{5,40}$/;
  * POST /api/paypal/capture-order
  * Body: { paypalOrderId: string }
  *
- * Cattura il pagamento e aggiorna Supabase. La tranche (deposit/balance) e
+ * Cattura il pagamento e aggiorna Supabase. Il tipo (deposit/balance/full) e
  * l'ordine interno vengono ricavati dal paypalOrderId salvato in create-order,
- * NON da parametri del browser. Idempotente: se la tranche è già 'paid', o se
- * PayPal risponde ORDER_ALREADY_CAPTURED, non ricattura e conferma lo stato.
+ * NON da parametri del browser. Idempotente: se le tranche sono già 'paid', o
+ * se PayPal risponde ORDER_ALREADY_CAPTURED, non ricattura e conferma lo stato.
  */
 export async function POST(req: Request) {
   let body: { paypalOrderId?: string };
@@ -37,12 +42,12 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // Trova l'ordine e la tranche corrispondenti all'id PayPal salvato.
+  // Trova l'ordine tramite l'id PayPal salvato (deposit / balance / full).
   const { data, error } = await admin
     .from('orders')
     .select('*')
     .or(
-      `paypal_deposit_order_id.eq.${paypalOrderId},paypal_balance_order_id.eq.${paypalOrderId}`,
+      `paypal_deposit_order_id.eq.${paypalOrderId},paypal_balance_order_id.eq.${paypalOrderId},paypal_full_order_id.eq.${paypalOrderId}`,
     )
     .maybeSingle();
 
@@ -57,12 +62,20 @@ export async function POST(req: Request) {
   }
 
   const order = data as OrderRow;
-  const type: TrancheType =
-    order.paypal_deposit_order_id === paypalOrderId ? 'deposit' : 'balance';
-  const tranche = trancheOf(order, type);
+  const type: PaymentType =
+    order.paypal_full_order_id === paypalOrderId
+      ? 'full'
+      : order.paypal_deposit_order_id === paypalOrderId
+        ? 'deposit'
+        : 'balance';
 
-  // Idempotenza #1: già segnata pagata → non ricatturare.
-  if (tranche.status === 'paid') {
+  const plan = paymentPlan(order, type);
+
+  // Idempotenza #1: se tutte le tranche di questo piano sono già pagate.
+  const allPaid = plan.tranches.every(
+    (t) => order[trancheColumns(t).statusColumn] === 'paid',
+  );
+  if (plan.tranches.length === 0 || allPaid) {
     return NextResponse.json({ status: 'COMPLETED', alreadyPaid: true });
   }
 
@@ -93,28 +106,16 @@ export async function POST(req: Request) {
     );
   }
 
-  // Aggiorna la tranche solo se ancora 'pending' (guardia contro doppie scritture).
+  // Marca le tranche del piano come 'paid' + sincronizza i flag del sito.
+  // Per "full" sono entrambe: l'ordine risulta completamente pagato.
   const nowIso = new Date().toISOString();
-  const { error: updErr } = await admin
-    .from('orders')
-    .update({
-      [tranche.statusColumn]: 'paid',
-      [tranche.paidAtColumn]: nowIso,
-    })
-    .eq('id', order.id)
-    .eq(tranche.statusColumn, 'pending');
-
-  if (updErr) {
+  const res = await markOrderTranchesPaid(admin, order, plan.tranches, nowIso);
+  if (!res.ok) {
     return NextResponse.json(
       { error: 'Pagamento catturato ma aggiornamento stato fallito', status: 'COMPLETED' },
       { status: 500 },
     );
   }
-
-  // Sincronizza i flag sul sito del cliente collegato (coerenza dashboard).
-  // Il webhook fa comunque lo stesso in modo indipendente: qui è per
-  // aggiornare subito, senza aspettare la notifica di PayPal.
-  await syncSitePaymentFlags(admin, order.client_id, type, nowIso);
 
   return NextResponse.json({ status: 'COMPLETED' });
 }
