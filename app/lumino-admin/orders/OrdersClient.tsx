@@ -81,6 +81,66 @@ function CopyLink({ id, type }: { id: string; type: 'deposit' | 'balance' }) {
   )
 }
 
+/**
+ * Normalizza un numero per wa.me: solo cifre, con prefisso internazionale.
+ * "+39 340 111 22 33" → "393401112233". I cellulari italiani senza prefisso
+ * (10 cifre che iniziano per 3) ottengono automaticamente il "39".
+ * Ritorna '' se non ricava un numero plausibile.
+ */
+function toWaNumber(raw: string | null): string {
+  if (!raw) return ''
+  let d = raw.replace(/\D/g, '') // toglie +, spazi, trattini, parentesi
+  if (d.startsWith('00')) d = d.slice(2) // 0039… → 39…
+  // Cellulare IT senza prefisso internazionale (es. 3401112233)
+  if ((d.length === 9 || d.length === 10) && d.startsWith('3')) d = '39' + d
+  return d.length >= 8 ? d : ''
+}
+
+/** Link di pagamento (pagina dove il cliente sceglie acconto/totale). */
+function payChoiceLink(id: string, base = PAY_BASE) {
+  return `${base}/pay/${id}`
+}
+
+function WhatsAppButton({
+  id,
+  name,
+  whatsapp,
+}: {
+  id: string
+  name: string
+  whatsapp: string | null
+}) {
+  const number = toWaNumber(whatsapp)
+
+  if (!number) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Aggiungi un numero di telefono all'ordine (modalità manuale) per abilitare l'invio"
+        className="cursor-not-allowed rounded-full border border-white/10 px-3 py-1.5 text-[12px] font-medium text-white/30"
+      >
+        📱 Invia su WhatsApp
+      </button>
+    )
+  }
+
+  const link = payChoiceLink(id)
+  const message = `Ciao ${name}, ecco il link per completare il pagamento del tuo sito web Lumino: ${link}\n\nGrazie!`
+  const href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-[12px] font-semibold text-black transition-opacity hover:opacity-90"
+    >
+      📱 Invia su WhatsApp
+    </a>
+  )
+}
+
 function StatusBadge({ status }: { status: string }) {
   const paid = status === 'paid'
   return (
@@ -396,17 +456,22 @@ export function OrdersClient({
                   <div>
                     <div className="text-base font-semibold">{o.clientName}</div>
                     <div className="text-xs text-white/50">
-                      {o.clientEmail}
+                      {o.clientEmail || '(nessuna email)'}
                       {o.clientWhatsapp ? ` · ${o.clientWhatsapp}` : ''}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex flex-col items-end gap-2">
                     <div className="text-sm text-white/70">
                       Totale{' '}
                       <strong className="text-white">
                         {formatEuro(o.total)}
                       </strong>
                     </div>
+                    <WhatsAppButton
+                      id={o.id}
+                      name={o.clientName}
+                      whatsapp={o.clientWhatsapp}
+                    />
                   </div>
                 </div>
 
