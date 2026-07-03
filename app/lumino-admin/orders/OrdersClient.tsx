@@ -300,7 +300,9 @@ export function OrdersClient({
               </label>
             </div>
           ) : (
-            /* ---------- Modalità: inserimento manuale (fallback) ---------- */
+            /* ---------- Modalità: inserimento manuale (fallback) ----------
+               Per creare ordini a CHIUNQUE, anche non registrati: bastano
+               nome + telefono + importo libero. Email facoltativa. */
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1 block text-xs text-white/60">
@@ -315,19 +317,8 @@ export function OrdersClient({
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs text-white/60">Email *</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                  placeholder="mario@ristorante.it"
-                />
-              </label>
-              <label className="block">
                 <span className="mb-1 block text-xs text-white/60">
-                  WhatsApp (opzionale)
+                  Telefono / WhatsApp
                 </span>
                 <input
                   value={whatsapp}
@@ -338,7 +329,19 @@ export function OrdersClient({
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs text-white/60">
-                  Importo totale concordato (EUR) *
+                  Email (opzionale)
+                </span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                  placeholder="mario@ristorante.it"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-white/60">
+                  Importo totale (EUR) — libero *
                 </span>
                 <input
                   inputMode="decimal"
@@ -346,7 +349,7 @@ export function OrdersClient({
                   onChange={(e) => setTotal(e.target.value)}
                   required
                   className="w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm outline-none focus:border-brand-400"
-                  placeholder="es. 1500"
+                  placeholder="es. 800"
                 />
               </label>
             </div>

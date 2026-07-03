@@ -59,6 +59,8 @@ export async function createOrder(input: {
     let clientName: string
     let clientEmail: string
 
+    const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+
     if (input.clientId) {
       // Cliente dalla lista: fonte di verità = tabella clients.
       const { data: client, error: cErr } = await admin
@@ -73,21 +75,17 @@ export async function createOrder(input: {
       clientId = client.id
       clientName = (client.name || '').trim()
       clientEmail = (client.email || '').trim()
-
-      if (!clientEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clientEmail)) {
-        return {
-          ok: false,
-          error:
-            'Il cliente selezionato non ha un’email valida. Aggiungila in anagrafica o usa l’inserimento manuale.',
-        }
-      }
+      // Email facoltativa: se presente ma malformata, la ignoriamo (no blocco).
+      if (clientEmail && !EMAIL_RE.test(clientEmail)) clientEmail = ''
     } else {
-      // Fallback manuale.
+      // Fallback manuale: bastano nome + importo. Telefono ed email facoltativi
+      // (permette ordini a chiunque, anche non registrati). L'email vuota è
+      // ammessa dalla colonna (NOT NULL accetta stringa vuota).
       clientName = (input.clientName || '').trim()
       clientEmail = (input.clientEmail || '').trim()
       if (!clientName) return { ok: false, error: 'Nome cliente obbligatorio' }
-      if (!clientEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clientEmail)) {
-        return { ok: false, error: 'Email cliente non valida' }
+      if (clientEmail && !EMAIL_RE.test(clientEmail)) {
+        return { ok: false, error: 'Email non valida (lasciala vuota se non ce l’hai)' }
       }
     }
 
