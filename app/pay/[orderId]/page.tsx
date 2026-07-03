@@ -57,15 +57,7 @@ export default async function PayPage({ params, searchParams }: PageProps) {
     )
   }
 
-  // Opzioni disponibili in base allo stato dell'ordine.
-  // Caso principale (niente pagato): "Acconto 30%" oppure "Paga tutto".
-  // Se l'acconto è già pagato: resta solo il saldo.
-  let candidates: PaymentType[]
-  if (!depositPaid && !balancePaid) candidates = ['deposit', 'full']
-  else if (depositPaid && !balancePaid) candidates = ['balance']
-  else candidates = ['deposit'] // saldo già pagato, resta l'acconto (raro)
-
-  const options: PayOption[] = candidates.map((t) => {
+  const mkOption = (t: PaymentType): PayOption => {
     const plan = paymentPlan(order, t)
     return {
       type: t,
@@ -73,15 +65,31 @@ export default async function PayPage({ params, searchParams }: PageProps) {
       amountLabel: formatEuro(plan.amount),
       amountValue: toAmountString(plan.amount),
     }
-  })
+  }
 
-  // Selezione iniziale = query "type" se valida e disponibile, altrimenti la prima.
   const qType = searchParams.type
-  const initialType =
-    isPaymentType(qType) && options.some((o) => o.type === qType)
-      ? qType
-      : options[0].type
+  let options: PayOption[]
 
+  if (isPaymentType(qType)) {
+    // LINK CON type esplicito (es. ?type=deposit / ?type=balance dai link storici):
+    // paga direttamente quella tranche, nessun selettore. Comportamento invariato.
+    const plan = paymentPlan(order, qType)
+    if (plan.alreadyPaid) {
+      return <AlreadyPaid clientName={order.client_name} label={TITLES[qType]} />
+    }
+    options = [mkOption(qType)]
+  } else {
+    // NESSUN type (es. link WhatsApp): il cliente sceglie in base allo stato.
+    //  - niente pagato → "Acconto 30%" oppure "Paga tutto"
+    //  - acconto già pagato → resta il saldo
+    let candidates: PaymentType[]
+    if (!depositPaid && !balancePaid) candidates = ['deposit', 'full']
+    else if (depositPaid && !balancePaid) candidates = ['balance']
+    else candidates = ['deposit'] // saldo già pagato, resta l'acconto (raro)
+    options = candidates.map(mkOption)
+  }
+
+  const initialType = options[0].type
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ''
 
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createOrder } from './actions'
@@ -112,6 +112,14 @@ function WhatsAppButton({
 }) {
   const number = toWaNumber(whatsapp)
 
+  // Base del link = ambiente corrente (produzione in prod, URL preview in
+  // anteprima), così il link è testabile ovunque. Parte da PAY_BASE per
+  // combaciare col render SSR ed evitare mismatch di hydration.
+  const [base, setBase] = useState(PAY_BASE)
+  useEffect(() => {
+    if (typeof window !== 'undefined') setBase(window.location.origin)
+  }, [])
+
   if (!number) {
     return (
       <button
@@ -125,7 +133,7 @@ function WhatsAppButton({
     )
   }
 
-  const link = payChoiceLink(id)
+  const link = payChoiceLink(id, base)
   const message = `Ciao ${name}, ecco il link per completare il pagamento del tuo sito web Lumino: ${link}\n\nGrazie!`
   const href = `https://wa.me/${number}?text=${encodeURIComponent(message)}`
 
