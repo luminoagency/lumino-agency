@@ -10,6 +10,10 @@ import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
 import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
 import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
+import HomePreviews from '@/components/restaurant/HomePreviews'
+import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 interface AuroraProps {
   restaurantName: string
@@ -37,6 +41,11 @@ interface AuroraProps {
   whatsappNumber?: string
   slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
+  page?: PageMode
+  locale?: Locale
+  pages?: SitePages
+  aboutText?: string
+  aboutTitle?: string
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -257,7 +266,11 @@ export function AuroraTemplate(props: AuroraProps) {
     accentColor = '#a78bfa', logoUrl,
     tier = 'basic', events = [], whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
+    page = 'landing', locale = 'it', pages, aboutText, aboutTitle,
   } = props
+
+  // Multi-pagina (Pro/Premium): config pagine per header/anteprime.
+  const resolvedPages = pages ?? defaultSitePages(locale)
 
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
@@ -312,6 +325,18 @@ export function AuroraTemplate(props: AuroraProps) {
   return (
     <div style={{ background: bg, color: text, fontFamily: '"Inter", system-ui, sans-serif', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
       <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
+      {page !== 'landing' && (
+        <RestaurantHeader
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          pages={resolvedPages}
+          currentPage={page}
+          slug={slug || ''}
+          locale={locale}
+          variant="default"
+        />
+      )}
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap');
 
@@ -1284,6 +1309,7 @@ export function AuroraTemplate(props: AuroraProps) {
       />
 
       <div className="aur-content">
+        {sectionVisible(page, 'hero') && (<>
         {/* HERO */}
         <section style={{
           minHeight: '100vh',
@@ -1355,6 +1381,24 @@ export function AuroraTemplate(props: AuroraProps) {
           </div>
         </section>
 
+        </>)}
+        {isSyntheticHome(page) && (
+          <HomePreviews
+            slug={slug || ''}
+            locale={locale}
+            accentColor={accentColor}
+            theme="dark"
+            pages={resolvedPages}
+            menuCategories={menuCategories as any}
+            aboutTitle={aboutTitle}
+            aboutText={aboutText || description}
+            events={events as any}
+            galleryImages={galleryImages as any}
+            address={address}
+            hours={hours}
+          />
+        )}
+        {sectionVisible(page, 'about') && (<>
         {/* ABOUT */}
         <section style={{ padding: '8rem 2rem', maxWidth: 1300, margin: '0 auto' }}>
           <FadeIn>
@@ -1386,6 +1430,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </FadeIn>
         </section>
 
+        </>)}
+        {sectionVisible(page, 'menu') && (<>
         {/* MENU */}
         <section id="menu" style={{ padding: '6rem 2rem', maxWidth: 1400, margin: '0 auto' }}>
           <FadeIn>
@@ -1445,6 +1491,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </FadeIn>
         </section>
 
+        </>)}
+        {sectionVisible(page, 'gallery') && (<>
         {/* GALLERY — glow carousel */}
         {galleryImages.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 1300, margin: '0 auto' }}>
@@ -1491,6 +1539,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'events') && (<>
         {/* EVENTS — celestial bodies flowing diagonally */}
         {tier !== 'basic' && events.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 1300, margin: '0 auto' }}>
@@ -1532,6 +1582,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
         {/* RESERVATION (Pro+) */}
         {tier !== 'basic' && (
           <section id="prenotazioni" style={{ padding: '6rem 2rem', maxWidth: 800, margin: '0 auto' }}>
@@ -1578,6 +1630,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'chef') && (<>
         {/* CHEF */}
         {chef && (
           <section className="aur-chef">
@@ -1602,6 +1656,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'reviews') && (<>
         {/* REVIEWS */}
         {reviews && reviews.items.length > 0 && (
           <section className="aur-reviews">
@@ -1641,6 +1697,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'faq') && (<>
         {/* FAQ */}
         {faq && faq.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 900, margin: '0 auto' }}>
@@ -1672,6 +1730,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'newsletter') && (<>
         {/* NEWSLETTER */}
         <section className="aur-newsletter">
           <div className="aur-newsletter-inner">
@@ -1688,6 +1748,8 @@ export function AuroraTemplate(props: AuroraProps) {
           </div>
         </section>
 
+        </>)}
+        {sectionVisible(page, 'contact') && (<>
         {/* CONTACT */}
         <section style={{ padding: '6rem 2rem', maxWidth: 1300, margin: '0 auto' }}>
           <FadeIn>
@@ -1778,6 +1840,7 @@ export function AuroraTemplate(props: AuroraProps) {
           </FadeIn>
         </section>
 
+        </>)}
         {/* FOOTER */}
         <footer style={{ padding: '3rem 2rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <p style={{ fontSize: '0.8rem', color: muted, letterSpacing: '0.1em' }}>

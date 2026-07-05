@@ -10,6 +10,10 @@ import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
 import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
 import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
+import HomePreviews from '@/components/restaurant/HomePreviews'
+import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 interface PanoramicoProps {
   restaurantName: string
@@ -37,6 +41,11 @@ interface PanoramicoProps {
   whatsappNumber?: string
   slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
+  page?: PageMode
+  locale?: Locale
+  pages?: SitePages
+  aboutText?: string
+  aboutTitle?: string
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -171,7 +180,11 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
     hours, mapsUrl, socialLinks, accentColor = '#b58a2f', logoUrl,
     tier = 'basic', events, whatsappNumber, features, slug,
     heroImages, chef, reviews, faq, timeSlots,
+    page = 'landing', locale = 'it', pages, aboutText, aboutTitle,
   } = props
+
+  // Multi-pagina (Pro/Premium): config pagine per header/anteprime.
+  const resolvedPages = pages ?? defaultSitePages(locale)
 
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
@@ -286,6 +299,18 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
   return (
     <div style={{ background: paper, color: ink, fontFamily: '"Inter", system-ui, sans-serif', overflowX: 'hidden' }}>
       <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
+      {page !== 'landing' && (
+        <RestaurantHeader
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          pages={resolvedPages}
+          currentPage={page}
+          slug={slug || ''}
+          locale={locale}
+          variant="default"
+        />
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&display=swap');
 
@@ -1321,6 +1346,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         <div className="pan-progress" style={{ transform: `scaleX(${panoramaProgress})` }} />
       </header>
 
+      {sectionVisible(page, 'hero') && (<>
       {/* HERO */}
       <section className="pan-hero">
         <div ref={heroImgRef} style={{ position: 'absolute', inset: '-10% 0', zIndex: 0, willChange: 'transform' }}>
@@ -1463,6 +1489,24 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </div>
       </div>
 
+      </>)}
+      {isSyntheticHome(page) && (
+        <HomePreviews
+          slug={slug || ''}
+          locale={locale}
+          accentColor={accentColor}
+          theme="light"
+          pages={resolvedPages}
+          menuCategories={menuCategories as any}
+          aboutTitle={aboutTitle}
+          aboutText={aboutText || description}
+          events={events as any}
+          galleryImages={galleryImages as any}
+          address={address}
+          hours={hours}
+        />
+      )}
+      {sectionVisible(page, 'about') && (<>
       {/* ABOUT IMAGE SECTION (after panorama for visual rhythm) */}
       {aboutImage && (
         <section className="pan-section">
@@ -1485,6 +1529,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'menu') && (<>
       {/* MENU */}
       <section id="menu" className="pan-menu" style={{ padding: '8rem 0' }}>
         <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 2rem' }}>
@@ -1526,6 +1572,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </div>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'gallery') && (<>
       {/* GALLERY — editorial magazine spread */}
       {galleryImages.length > 0 && (
         <section className="pan-section">
@@ -1580,6 +1628,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'events') && (<>
       {/* EVENTS — horizontal timeline */}
       {tier !== 'basic' && events && events.length > 0 && (
         <section className="pan-section" style={{ background: paperWarm, maxWidth: 'none', padding: '6rem 0' }}>
@@ -1620,6 +1670,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
       {/* RESERVATION (Pro+) */}
       {tier !== 'basic' && (
         <section id="prenotazioni" className="pan-section" style={{ maxWidth: 800 }}>
@@ -1660,6 +1712,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'chef') && (<>
       {/* CHEF */}
       {chef && (
         <section className="pan-chef">
@@ -1679,6 +1733,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'reviews') && (<>
       {/* REVIEWS */}
       {reviews && reviews.items.length > 0 && (
         <section className="pan-reviews" style={{ background: paperWarm, maxWidth: 'none', padding: '8rem 2rem' }}>
@@ -1716,6 +1772,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'faq') && (<>
       {/* FAQ */}
       {faq && faq.length > 0 && (
         <section className="pan-faq">
@@ -1743,6 +1801,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'newsletter') && (<>
       {/* NEWSLETTER */}
       <section className="pan-newsletter">
         <h2>Restate in <em style={{ color: accent, fontStyle: 'italic' }}>contatto</em>.</h2>
@@ -1754,6 +1814,8 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </form>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'contact') && (<>
       {/* CONTACT */}
       <section id="contatti" className="pan-section">
         <Reveal>
@@ -1829,6 +1891,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
         </Reveal>
       </section>
 
+      </>)}
       {/* FOOTER */}
       <footer style={{ padding: '3rem 2rem', textAlign: 'center', borderTop: `1px solid ${line}`, background: paperWarm }}>
         <p style={{ fontSize: '0.75rem', color: muted, letterSpacing: '0.2em', textTransform: 'uppercase' }}>

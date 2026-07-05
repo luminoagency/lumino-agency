@@ -1,23 +1,13 @@
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import { loadSiteBySlug } from '@/lib/sites/loader'
-import { CinematicoTemplate } from '@/templates/cinematico/CinematicoTemplate'
-import { BentoTemplate } from '@/templates/bento/BentoTemplate'
-import { PanoramicoTemplate } from '@/templates/panoramico/PanoramicoTemplate'
-import { AuroraTemplate } from '@/templates/aurora/AuroraTemplate'
-import { MercatoTemplate } from '@/templates/mercato/MercatoTemplate'
+import { resolveLocale, LOCALE_COOKIE } from '@/lib/sites/i18n'
+import RenderSiteTemplate from '@/components/restaurant/RenderSiteTemplate'
 
 // ISR: la pagina si rigenera ogni ora — il ristoratore vede le sue modifiche al massimo dopo 60min,
 // ma i visitatori la prendono dalla cache CDN (velocissima).
 export const revalidate = 3600
-
-const TEMPLATES = {
-  cinematico: CinematicoTemplate,
-  bento: BentoTemplate,
-  panoramico: PanoramicoTemplate,
-  aurora: AuroraTemplate,
-  mercato: MercatoTemplate,
-} as const
 
 export async function generateMetadata(
   { params }: { params: { slug: string } },
@@ -31,9 +21,11 @@ export async function generateMetadata(
 }
 
 export default async function PublicSitePage({ params }: { params: { slug: string } }) {
-  const site = await loadSiteBySlug(params.slug)
+  const locale = resolveLocale(cookies().get(LOCALE_COOKIE)?.value)
+  const site = await loadSiteBySlug(params.slug, locale)
   if (!site) return notFound()
 
-  const Template = TEMPLATES[site.template] as any
-  return <Template {...site.props} />
+  // Basic → landing singola (invariata). Pro/Premium → Home sintetica multi-pagina.
+  const page = site.tier === 'basic' ? 'landing' : 'home'
+  return <RenderSiteTemplate site={site} page={page} locale={locale} />
 }

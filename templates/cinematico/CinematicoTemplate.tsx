@@ -11,6 +11,10 @@ import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
 import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
 import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
+import HomePreviews from '@/components/restaurant/HomePreviews'
+import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 interface CinematicoProps {
   restaurantName: string
@@ -38,6 +42,11 @@ interface CinematicoProps {
   whatsappNumber?: string
   slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
+  page?: PageMode
+  locale?: Locale
+  pages?: SitePages
+  aboutText?: string
+  aboutTitle?: string
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -262,10 +271,14 @@ export function CinematicoTemplate(props: CinematicoProps) {
     hours, mapsUrl, socialLinks, accentColor = '#e52d1d', logoUrl,
     tier = 'basic', events, whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
+    page = 'landing', locale = 'it', pages, aboutText, aboutTitle,
   } = props
 
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
+
+  // Multi-pagina (Pro/Premium): config pagine per header/anteprime.
+  const resolvedPages = pages ?? defaultSitePages(locale)
 
   const accent = accentColor
   const bg = '#0a0a08'
@@ -297,6 +310,18 @@ export function CinematicoTemplate(props: CinematicoProps) {
   return (
     <div style={{ background: bg, color: text, fontFamily: "'Inter', sans-serif" }}>
       <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
+      {page !== 'landing' && (
+        <RestaurantHeader
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          pages={resolvedPages}
+          currentPage={page}
+          slug={slug || ''}
+          locale={locale}
+          variant="default"
+        />
+      )}
       <InteractiveEffects accent={accent} scope="cin" />
       <style>{`
         :where(div) { --ripple-color: rgba(229, 45, 29, 0.55); }
@@ -1064,6 +1089,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
         }
       `}</style>
 
+      {sectionVisible(page, 'hero') && (<>
       {/* ── HERO ── */}
       <section style={{ position: 'relative', height: '100vh', overflow: 'hidden' }}>
         {heroSlides.map((src, i) => (
@@ -1182,6 +1208,24 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </div>
       </section>
 
+      </>)}
+      {isSyntheticHome(page) && (
+        <HomePreviews
+          slug={slug || ''}
+          locale={locale}
+          accentColor={accentColor}
+          theme="dark"
+          pages={resolvedPages}
+          menuCategories={menuCategories as any}
+          aboutTitle={aboutTitle}
+          aboutText={aboutText || description}
+          events={events as any}
+          galleryImages={galleryImages as any}
+          address={address}
+          hours={hours}
+        />
+      )}
+      {sectionVisible(page, 'about') && (<>
       {/* ── ABOUT: split layout ── */}
       <section style={{ padding: 'clamp(4rem, 10vh, 8rem) 0' }}>
         <div style={{
@@ -1252,6 +1296,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'menu') && (<>
       {/* ── MENU ── */}
       <section id="menu" style={{ padding: 'clamp(4rem, 10vh, 8rem) 0', scrollMarginTop: '2rem' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)' }}>
@@ -1319,6 +1365,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </div>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'gallery') && (<>
       {/* ── GALLERY: horizontal film strip ── */}
       <section style={{ padding: 'clamp(2rem, 5vh, 4rem) 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 clamp(1.5rem, 5vw, 4rem)', marginBottom: '2rem' }}>
@@ -1383,6 +1431,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'chef') && (<>
       {/* ── CHEF section ── */}
       {chef && (
         <section className="cin-chef">
@@ -1412,6 +1462,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'reviews') && (<>
       {/* ── REVIEWS carousel ── */}
       {reviews && reviews.items.length > 0 && (
         <section className="cin-reviews">
@@ -1456,14 +1508,20 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </section>
       )}
 
+      </>)}
+      {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
       {/* ── RESERVATION FORM (Pro + Premium) ── */}
       {tier !== 'basic' && <CinematicoReservationForm accent={accent} bg={bg} text={text} muted={muted} timeSlots={timeSlots} />}
 
+      </>)}
+      {sectionVisible(page, 'events') && (<>
       {/* ── EVENTS (Pro + Premium) ── */}
       {tier !== 'basic' && events && events.length > 0 && (
         <CinematicoEvents events={events} accent={accent} bg={bg} text={text} muted={muted} />
       )}
 
+      </>)}
+      {sectionVisible(page, 'faq') && (<>
       {/* ── FAQ accordion ── */}
       {faq && faq.length > 0 && (
         <section className="cin-faq">
@@ -1497,6 +1555,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'newsletter') && (<>
       {/* ── NEWSLETTER ── */}
       <section className="cin-newsletter">
         <div className="cin-newsletter-inner">
@@ -1513,6 +1573,8 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </div>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'contact') && (<>
       {/* ── CONTACT ── */}
       <section style={{
         padding: 'clamp(4rem, 10vh, 8rem) 0',
@@ -1630,6 +1692,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
         </div>
       </section>
 
+      </>)}
       {/* ── FOOTER ── */}
       <footer style={{
         padding: '2rem 0',

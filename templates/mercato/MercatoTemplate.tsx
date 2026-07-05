@@ -10,6 +10,10 @@ import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
 import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
 import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
+import HomePreviews from '@/components/restaurant/HomePreviews'
+import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 interface MercatoProps {
   restaurantName: string
@@ -37,6 +41,11 @@ interface MercatoProps {
   whatsappNumber?: string
   slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
+  page?: PageMode
+  locale?: Locale
+  pages?: SitePages
+  aboutText?: string
+  aboutTitle?: string
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
   faq?: Array<{ q: string; a: string }>
@@ -259,7 +268,11 @@ export function MercatoTemplate(props: MercatoProps) {
     accentColor = '#b8451f', logoUrl,
     tier = 'basic', events = [], whatsappNumber, features, slug,
     chef, reviews, faq, timeSlots,
+    page = 'landing', locale = 'it', pages, aboutText, aboutTitle,
   } = props
+
+  // Multi-pagina (Pro/Premium): config pagine per header/anteprime.
+  const resolvedPages = pages ?? defaultSitePages(locale)
 
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
@@ -325,6 +338,18 @@ export function MercatoTemplate(props: MercatoProps) {
   return (
     <div style={{ background: paper, color: ink, fontFamily: '"Cormorant Garamond", "Georgia", serif', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
       <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
+      {page !== 'landing' && (
+        <RestaurantHeader
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          pages={resolvedPages}
+          currentPage={page}
+          slug={slug || ''}
+          locale={locale}
+          variant="default"
+        />
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap');
 
@@ -1345,6 +1370,7 @@ export function MercatoTemplate(props: MercatoProps) {
       <div className="mer-paper-texture" />
 
       <div className="mer-content">
+        {sectionVisible(page, 'hero') && (<>
         {/* HERO with parallax */}
         <section className="mer-hero">
           <div ref={heroImgRef} style={{ position: 'absolute', inset: '-10% 0', zIndex: 0, willChange: 'transform' }}>
@@ -1455,6 +1481,24 @@ export function MercatoTemplate(props: MercatoProps) {
           </div>
         </div>
 
+        </>)}
+        {isSyntheticHome(page) && (
+          <HomePreviews
+            slug={slug || ''}
+            locale={locale}
+            accentColor={accentColor}
+            theme="light"
+            pages={resolvedPages}
+            menuCategories={menuCategories as any}
+            aboutTitle={aboutTitle}
+            aboutText={aboutText || description}
+            events={events as any}
+            galleryImages={galleryImages as any}
+            address={address}
+            hours={hours}
+          />
+        )}
+        {sectionVisible(page, 'about') && (<>
         {/* ABOUT with parallax + word reveal */}
         <section className="mer-about">
           <div className="mer-about-grid" style={{ display: 'grid', gridTemplateColumns: aboutImage ? '0.9fr 1.1fr' : '1fr', gap: '5rem', alignItems: 'center' }}>
@@ -1590,6 +1634,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </div>
         </div>
 
+        </>)}
+        {sectionVisible(page, 'menu') && (<>
         {/* MENU - full list */}
         <section id="menu" style={{ padding: '6rem 2rem', maxWidth: 1100, margin: '0 auto' }}>
           <FadeIn>
@@ -1691,6 +1737,8 @@ export function MercatoTemplate(props: MercatoProps) {
           ))}
         </section>
 
+        </>)}
+        {sectionVisible(page, 'gallery') && (<>
         {/* GALLERY */}
         {galleryImages.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 1300, margin: '0 auto' }}>
@@ -1748,6 +1796,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'events') && (<>
         {/* EVENTS (Pro+) */}
         {tier !== 'basic' && events.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 1100, margin: '0 auto' }}>
@@ -1801,6 +1851,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
         {/* RESERVATION (Pro+) */}
         {tier !== 'basic' && (
           <section id="prenotazioni" style={{ padding: '6rem 2rem', maxWidth: 700, margin: '0 auto' }}>
@@ -1871,6 +1923,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'chef') && (<>
         {/* CHEF */}
         {chef && (
           <section className="mer-chef">
@@ -1900,6 +1954,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'reviews') && (<>
         {/* REVIEWS — newspaper clippings */}
         {reviews && reviews.items.length > 0 && (
           <section className="mer-reviews-wrap">
@@ -1950,6 +2006,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'faq') && (<>
         {/* FAQ */}
         {faq && faq.length > 0 && (
           <section style={{ padding: '6rem 2rem', maxWidth: 1000, margin: '0 auto' }}>
@@ -1996,6 +2054,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </section>
         )}
 
+        </>)}
+        {sectionVisible(page, 'newsletter') && (<>
         {/* NEWSLETTER — postcard */}
         <section style={{ padding: '6rem 2rem' }}>
           <FadeIn>
@@ -2011,6 +2071,8 @@ export function MercatoTemplate(props: MercatoProps) {
           </FadeIn>
         </section>
 
+        </>)}
+        {sectionVisible(page, 'contact') && (<>
         {/* CONTACT */}
         <section style={{ padding: '6rem 2rem', maxWidth: 1200, margin: '0 auto' }}>
           <FadeIn>
@@ -2109,6 +2171,7 @@ export function MercatoTemplate(props: MercatoProps) {
           </FadeIn>
         </section>
 
+        </>)}
         {/* FOOTER */}
         <footer style={{ padding: '3rem 2rem', textAlign: 'center', borderTop: `1px solid ${ink}20` }}>
           <p style={{ fontFamily: 'Cormorant Garamond, serif', fontStyle: 'italic', fontSize: '0.95rem', color: muted, letterSpacing: '0.1em' }}>

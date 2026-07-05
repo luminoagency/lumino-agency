@@ -9,6 +9,8 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFeatureActive, type TemplateKey, type PlanKey, type FeatureKey } from '@/lib/plans'
+import { resolveSitePages, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 const TEMPLATE_FALLBACK: TemplateKey = 'cinematico'
 
@@ -19,10 +21,22 @@ export interface LoadedSite {
   seo: { title: string; description?: string }
   /** Dati del ristoratore usati dalle pagine legali (Cookie/Privacy Policy). */
   policy: { name: string; address?: string; email?: string; city?: string }
+  /**
+   * Config multi-pagina (Pro/Premium): quali pagine sono attive + le loro
+   * label. Su Basic è comunque calcolata (con 'menu'/'chiSiamo'/'contatti'
+   * enabled) ma NON usata per il routing — Basic resta landing singola.
+   */
+  pages: SitePages
   props: any  // shape: vedi templates/_shared (matches DemoRestaurant.data)
 }
 
-export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
+/**
+ * `locale` determina le label di default delle pagine quando il ristoratore
+ * non le ha rinominate (le pagine dedicate/l'header passano la lingua letta
+ * dal cookie restaurant_locale). Default 'it' per compatibilità con la Home
+ * esistente, che non la passa.
+ */
+export async function loadSiteBySlug(slug: string, locale: Locale = 'it'): Promise<LoadedSite | null> {
   if (!slug || typeof slug !== 'string') return null
   // Usa il client admin (bypassa RLS). Sicuro perché:
   //   - filtra esplicitamente active=true AND status='live'
@@ -104,8 +118,13 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
   const features = {} as Record<FeatureKey, boolean>
   for (const k of featureKeys) features[k] = isFeatureActive(tierKey, content, k)
 
+  // Multi-pagina (Pro/Premium): config attivazione + label. Su Basic viene
+  // comunque calcolata ma il routing delle sotto-pagine la ignora sempre.
+  const pages = resolveSitePages((content as any).pages, locale)
+
   const props = {
     slug,
+    pages,
     restaurantName: content.restaurant_name,
     tagline: content.tagline || undefined,
     description: content.description || undefined,
@@ -161,6 +180,7 @@ export async function loadSiteBySlug(slug: string): Promise<LoadedSite | null> {
       email: content.email || undefined,
       city: content.city || undefined,
     },
+    pages,
     props,
   }
 }

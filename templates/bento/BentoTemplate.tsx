@@ -15,6 +15,10 @@ import { TIER_CAPS, type FeatureKey } from '@/lib/plans'
 import { POWERED_BY } from '@/lib/company'
 import CookieBannerRestaurant from '@/components/restaurant/CookieBannerRestaurant'
 import RestaurantFooterLinks from '@/components/restaurant/RestaurantFooterLinks'
+import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
+import HomePreviews from '@/components/restaurant/HomePreviews'
+import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
+import type { Locale } from '@/lib/sites/i18n'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -62,6 +66,11 @@ export interface BentoProps {
   whatsappNumber?: string
   slug?: string
   features?: Partial<Record<FeatureKey, boolean>>
+  page?: PageMode
+  locale?: Locale
+  pages?: SitePages
+  aboutText?: string
+  aboutTitle?: string
   heroImages?: string[]
   chef?: { name: string; role: string; quote: string; photo?: string; years?: number }
   reviews?: { score: number; count: number; source: string; items: Array<{ author: string; rating: number; text: string; source?: string; date?: string }> }
@@ -139,7 +148,11 @@ export function BentoTemplate(props: BentoProps) {
     reviews,
     faq,
     timeSlots,
+    page = 'landing', locale = 'it', pages, aboutText, aboutTitle,
   } = props
+
+  // Multi-pagina (Pro/Premium): config pagine per header/anteprime.
+  const resolvedPages = pages ?? defaultSitePages(locale)
 
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
@@ -327,6 +340,18 @@ export function BentoTemplate(props: BentoProps) {
       }}
     >
       <CookieBannerRestaurant accentColor={accentColor} cookiePolicyHref={slug ? `/sites/${slug}/cookie-policy` : '/cookie-policy'} />
+      {page !== 'landing' && (
+        <RestaurantHeader
+          restaurantName={restaurantName}
+          logoUrl={logoUrl}
+          accentColor={accentColor}
+          pages={resolvedPages}
+          currentPage={page}
+          slug={slug || ''}
+          locale={locale}
+          variant="default"
+        />
+      )}
       <InteractiveEffects accent={accentColor} scope="ben" />
       <style jsx global>{`
         :root { --ripple-color: ${accentColor}55; }
@@ -346,6 +371,7 @@ export function BentoTemplate(props: BentoProps) {
         button { transition: transform 0.25s, box-shadow 0.3s, background 0.3s, color 0.3s !important; }
         button:hover { transform: translateY(-2px); }
       `}</style>
+      {sectionVisible(page, 'hero') && (<>
       {/* ═══════════════════════ HERO — true bento grid ═══════════════════════ */}
       <section className="bento-hero-section">
         <div className="bento-hero-grid">
@@ -692,6 +718,24 @@ export function BentoTemplate(props: BentoProps) {
         }
       `}</style>
 
+      </>)}
+      {isSyntheticHome(page) && (
+        <HomePreviews
+          slug={slug || ''}
+          locale={locale}
+          accentColor={accentColor}
+          theme="light"
+          pages={resolvedPages}
+          menuCategories={menuCategories as any}
+          aboutTitle={aboutTitle}
+          aboutText={aboutText || description}
+          events={events as any}
+          galleryImages={galleryImages as any}
+          address={address}
+          hours={hours}
+        />
+      )}
+      {sectionVisible(page, 'about') && (<>
       {/* ═══════════════════════ BENTO ABOUT ═══════════════════════ */}
       <section style={{ padding: '3rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
         <h2
@@ -860,6 +904,8 @@ export function BentoTemplate(props: BentoProps) {
         </div>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'menu') && (<>
       {/* ═══════════════════════ MENU PHOTO GRID ═══════════════════════ */}
       <section
         id="menu"
@@ -1013,6 +1059,8 @@ export function BentoTemplate(props: BentoProps) {
         </p>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'gallery') && (<>
       {/* ═══════════════════════ GALLERY MASONRY ═══════════════════════ */}
       {galleryImages.length > 0 && (
         <section style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
@@ -1070,6 +1118,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
       {/* ═══════════════════════ RESERVATION FORM (Pro + Premium) ═══════════════════════ */}
       {tier !== 'basic' && (
         <section id="prenotazioni" style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto', scrollMarginTop: '2rem' }}>
@@ -1158,6 +1208,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'events') && (<>
       {/* ═══════════════════════ EVENTS (Pro + Premium) ═══════════════════════ */}
       {tier !== 'basic' && events && events.length > 0 && (
         <section style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
@@ -1222,6 +1274,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'chef') && (<>
       {/* ═══════════════════════ CHEF ═══════════════════════ */}
       {chef && (
         <section className="bento-chef">
@@ -1242,6 +1296,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'reviews') && (<>
       {/* ═══════════════════════ REVIEWS ═══════════════════════ */}
       {reviews && reviews.items.length > 0 && (
         <section className="bento-reviews">
@@ -1266,6 +1322,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'faq') && (<>
       {/* ═══════════════════════ FAQ ═══════════════════════ */}
       {faq && faq.length > 0 && (
         <section className="bento-faq">
@@ -1286,6 +1344,8 @@ export function BentoTemplate(props: BentoProps) {
         </section>
       )}
 
+      </>)}
+      {sectionVisible(page, 'newsletter') && (<>
       {/* ═══════════════════════ NEWSLETTER ═══════════════════════ */}
       <section style={{ padding: '0 1.5rem' }}>
         <div className="bento-newsletter">
@@ -1299,6 +1359,8 @@ export function BentoTemplate(props: BentoProps) {
         </div>
       </section>
 
+      </>)}
+      {sectionVisible(page, 'contact') && (<>
       {/* ═══════════════════════ CONTACT CARDS ═══════════════════════ */}
       <section style={{ padding: '4rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
         <h2
@@ -1584,6 +1646,7 @@ export function BentoTemplate(props: BentoProps) {
         </div>
       </section>
 
+      </>)}
       {/* ═══════════════════════ FOOTER ═══════════════════════ */}
       <footer
         style={{
