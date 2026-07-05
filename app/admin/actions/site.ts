@@ -30,7 +30,7 @@ export async function getMySite() {
     .from('sites')
     .select(`
       *,
-      restaurant:restaurants(*),
+      client:clients(*, restaurant:restaurants(*)),
       content:site_content(*),
       menus:site_menus(*),
       events:site_events(*)
