@@ -6,6 +6,7 @@ import { canGoLive, canStartWork } from '@/lib/payments/status'
 // Email transazionali: passano da Gmail + Apps Script (tracking layer).
 // Quando aggiungeremo notifiche ai clienti sostituiremo questo posto.
 import { trackEvent } from '@/lib/tracking'
+import { resolveSitePages, type SitePages } from '@/lib/sites/pages'
 
 /**
  * Returns the site owned by the currently logged-in user, or null if they don't have one yet.
@@ -154,6 +155,43 @@ export async function setFeatureFlag(feature: FeatureKey, enabled: boolean | nul
   if (error) {
     if (/column .* does not exist|Could not find the/i.test(error.message)) {
       return { ok: false, error: 'Migrazione 0013 non applicata: applicala dal SQL editor di Supabase.' }
+    }
+    return { ok: false, error: error.message }
+  }
+  revalidatePath('/admin')
+  revalidatePath('/sites/[slug]', 'page')
+  return { ok: true }
+}
+
+/**
+ * Salva la configurazione delle pagine multi-pagina (Pro/Premium): quali sono
+ * attive + le loro label. Persiste sulla colonna JSONB `site_content.pages`.
+ * Home è forzata sempre attiva lato server (non ci si fida del client) e i dati
+ * in arrivo passano da resolveSitePages, che normalizza label vuote/malformate.
+ */
+export async function saveSitePages(pages: SitePages): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Non autenticato.' }
+  const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
+  if (!owner) return { ok: false, error: 'Nessun sito associato.' }
+
+  // Gate piano: la gestione multi-pagina è inclusa solo in Pro e Premium.
+  const { data: siteRow } = await supabase.from('sites').select('tier').eq('id', owner.site_id).maybeSingle()
+  if (!siteRow || (siteRow as { tier: string }).tier === 'basic') {
+    return { ok: false, error: 'Funzionalità non inclusa nel piano Basic.' }
+  }
+
+  // Normalizza (label trim, tipi corretti) e forza Home sempre attiva.
+  const safe = resolveSitePages(pages, 'it')
+  safe.home.enabled = true
+
+  const { error } = await supabase
+    .from('site_content')
+    .upsert({ site_id: owner.site_id, pages: safe }, { onConflict: 'site_id' })
+  if (error) {
+    if (/column .* does not exist|Could not find the/i.test(error.message)) {
+      return { ok: false, error: 'Migrazione 0027 non applicata: applicala dal SQL editor di Supabase.' }
     }
     return { ok: false, error: error.message }
   }

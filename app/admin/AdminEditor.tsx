@@ -439,6 +439,15 @@ export function AdminEditor({ site, initial, featureFlags, eventsCount }: Props)
           <h2 className="ae-h2">Altre sezioni</h2>
           <p className="ae-h2-sub">Gestisci menu, eventi e altro nelle pagine dedicate.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            {site.tier !== 'basic' && (
+              <Link href="/admin/pagine" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '16px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', color: '#fff' }}>
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>📄 Pagine del sito</span>
+                  <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>Attiva, disattiva e rinomina le pagine</span>
+                </span>
+                <span style={{ opacity: 0.5 }}>→</span>
+              </Link>
+            )}
             <Link href="/admin/prenotazioni" className="ae-btn ae-btn-ghost" style={{ justifyContent: 'space-between' }}>
               <span>📋 Prenotazioni</span><span style={{ opacity: 0.5 }}>→</span>
             </Link>
