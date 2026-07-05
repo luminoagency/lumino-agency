@@ -347,7 +347,7 @@ export function MercatoTemplate(props: MercatoProps) {
           currentPage={page}
           slug={slug || ''}
           locale={locale}
-          variant="default"
+          variant="static"
         />
       )}
       <style>{`

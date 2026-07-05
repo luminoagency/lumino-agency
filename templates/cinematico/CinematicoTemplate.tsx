@@ -319,7 +319,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
           currentPage={page}
           slug={slug || ''}
           locale={locale}
-          variant="default"
+          variant="sticky-transparent"
         />
       )}
       <InteractiveEffects accent={accent} scope="cin" />

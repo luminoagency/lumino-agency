@@ -334,7 +334,7 @@ export function AuroraTemplate(props: AuroraProps) {
           currentPage={page}
           slug={slug || ''}
           locale={locale}
-          variant="default"
+          variant="sticky-minimal"
         />
       )}
       <style jsx global>{`

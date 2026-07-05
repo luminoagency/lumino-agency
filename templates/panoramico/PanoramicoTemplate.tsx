@@ -308,7 +308,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
           currentPage={page}
           slug={slug || ''}
           locale={locale}
-          variant="default"
+          variant="show-hide"
         />
       )}
       <style>{`

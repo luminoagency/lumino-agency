@@ -349,7 +349,7 @@ export function BentoTemplate(props: BentoProps) {
           currentPage={page}
           slug={slug || ''}
           locale={locale}
-          variant="default"
+          variant="sticky-compact"
         />
       )}
       <InteractiveEffects accent={accentColor} scope="ben" />
