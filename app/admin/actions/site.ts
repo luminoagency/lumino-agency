@@ -98,18 +98,21 @@ export async function saveSiteContent(input: SiteContentInput) {
   const { data: owner } = await supabase.from('site_owners').select('site_id').eq('user_id', user.id).maybeSingle()
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
-  // Filtra i campi 0008/0009 se la colonna non esiste sul DB live (retry pulito)
-  const baseSafe = { site_id: owner.site_id, ...input }
+  // UPDATE (non upsert): la riga site_content esiste sempre (creata all'onboarding).
+  // Un upsert parziale proverebbe a INSERT una riga senza le colonne NOT NULL
+  // (es. restaurant_name) e verrebbe rifiutato. Filtra i campi 0008/0009 con un
+  // retry se la colonna non esiste sul DB live.
   let { error } = await supabase
     .from('site_content')
-    .upsert(baseSafe as any, { onConflict: 'site_id' })
+    .update(input as any)
+    .eq('site_id', owner.site_id)
 
   if (error && /column .* does not exist|Could not find the/i.test(error.message)) {
     // Rimuovi le colonne che probabilmente non esistono e riprova
-    const safe: any = { site_id: owner.site_id }
+    const safe: any = {}
     const allowed = ['restaurant_name', 'tagline', 'description', 'hero_headline', 'hero_subheadline', 'hero_image_url', 'about_title', 'about_text', 'about_image_url', 'team_photos', 'address', 'city', 'phone', 'email', 'whatsapp', 'google_place_id', 'google_maps_embed_url', 'opening_hours', 'gallery_images', 'style_override', 'social_links', 'seo_title', 'seo_description', 'seo_keywords']
     for (const k of allowed) if (k in (input as any)) safe[k] = (input as any)[k]
-    const retry = await supabase.from('site_content').upsert(safe, { onConflict: 'site_id' })
+    const retry = await supabase.from('site_content').update(safe).eq('site_id', owner.site_id)
     error = retry.error
   }
 
@@ -150,8 +153,8 @@ export async function setFeatureFlag(feature: FeatureKey, enabled: boolean | nul
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
   const col = FEATURE_COL[feature]
-  const payload: any = { site_id: owner.site_id, [col]: enabled }
-  const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'site_id' })
+  // UPDATE (la riga esiste sempre): un upsert parziale violerebbe NOT NULL su restaurant_name.
+  const { error } = await supabase.from('site_content').update({ [col]: enabled }).eq('site_id', owner.site_id)
   if (error) {
     if (/column .* does not exist|Could not find the/i.test(error.message)) {
       return { ok: false, error: 'Migrazione 0013 non applicata: applicala dal SQL editor di Supabase.' }
@@ -186,9 +189,11 @@ export async function saveSitePages(pages: SitePages): Promise<{ ok: boolean; er
   const safe = resolveSitePages(pages, 'it')
   safe.home.enabled = true
 
+  // UPDATE (la riga esiste sempre): un upsert parziale violerebbe NOT NULL su restaurant_name.
   const { error } = await supabase
     .from('site_content')
-    .upsert({ site_id: owner.site_id, pages: safe }, { onConflict: 'site_id' })
+    .update({ pages: safe })
+    .eq('site_id', owner.site_id)
   if (error) {
     if (/column .* does not exist|Could not find the/i.test(error.message)) {
       return { ok: false, error: 'Migrazione 0027 non applicata: applicala dal SQL editor di Supabase.' }
@@ -303,6 +308,7 @@ export interface MenuItemDTO {
   description?: string
   price: number
   allergens?: string[]
+  image_url?: string
 }
 export interface MenuCategoryDTO {
   name: string
@@ -417,14 +423,14 @@ export async function saveMyChef(input: ChefDTO) {
   if (!owner) return { ok: false, error: 'Nessun sito associato.' }
 
   const payload: any = {
-    site_id: owner.site_id,
     chef_active: input.chef_active,
     chef_name: input.chef_name || null,
     chef_role: input.chef_role || null,
     chef_quote: input.chef_quote || null,
     chef_photo_url: input.chef_photo_url || null,
   }
-  const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'site_id' })
+  // UPDATE (la riga esiste sempre): un upsert parziale violerebbe NOT NULL su restaurant_name.
+  const { error } = await supabase.from('site_content').update(payload).eq('site_id', owner.site_id)
   if (error) {
     if (/column .* does not exist|Could not find the/i.test(error.message)) {
       return { ok: false, error: 'Sezione chef richiede la migrazione 0008 applicata al DB.' }
