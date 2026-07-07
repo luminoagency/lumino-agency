@@ -19,6 +19,7 @@ import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
 import HomePreviews from '@/components/restaurant/HomePreviews'
 import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
 import type { Locale } from '@/lib/sites/i18n'
+import { useReservationForm } from '@/templates/_shared/useReservationForm'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -29,6 +30,7 @@ interface MenuItemData {
   description?: string
   price: number
   photo_url?: string
+  image_url?: string
   allergens?: string[]
 }
 
@@ -157,7 +159,7 @@ export function BentoTemplate(props: BentoProps) {
   // WhatsApp: attivo se la feature è accesa (fallback al default del piano)
   const whatsappEnabled = features?.whatsappButton ?? TIER_CAPS[tier].whatsappButton
 
-  const [reservationSubmitted, setReservationSubmitted] = useState(false)
+  const { submitted: reservationSubmitted, submitting: rsvSubmitting, error: rsvError, date: rsvDate, pickDate: rsvPickDate, time: rsvTime, setTime: rsvSetTime, slots: rsvSlots, closed: rsvClosed, onSubmit: rsvOnSubmit, todayISO: rsvToday } = useReservationForm(slug, hours, timeSlots)
 
   // Hero carousel
   const heroSlides = heroImages && heroImages.length > 0 ? heroImages : [heroImage]
@@ -171,7 +173,6 @@ export function BentoTemplate(props: BentoProps) {
   // Reviews + FAQ + slot state
   const [reviewIdx, setReviewIdx] = useState(0)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeCategory, setActiveCategory] = useState(0)
@@ -1007,9 +1008,9 @@ export function BentoTemplate(props: BentoProps) {
             >
               {/* Image area */}
               <div style={{ position: 'relative', aspectRatio: '16/10', overflow: 'hidden' }}>
-                {item.photo_url ? (
+                {(item.image_url || item.photo_url) ? (
                   <Image
-                    src={item.photo_url}
+                    src={(item.image_url || item.photo_url)!}
                     alt={item.name}
                     fill
                     style={{ objectFit: 'cover' }}
@@ -1143,7 +1144,7 @@ export function BentoTemplate(props: BentoProps) {
             </div>
           ) : (
             <form
-              onSubmit={e => { e.preventDefault(); setReservationSubmitted(true) }}
+              onSubmit={rsvOnSubmit}
               style={{
                 background: 'var(--bento-surface)',
                 borderRadius: 'var(--bento-radius)',
@@ -1154,36 +1155,32 @@ export function BentoTemplate(props: BentoProps) {
                 gap: '1.25rem',
               }}
             >
-              {timeSlots && timeSlots.length > 0 && (
-                <div className="bento-slots">
-                  <div className="bento-slots-title">Disponibilità per stasera</div>
-                  <div className="bento-slots-row">
-                    {timeSlots.map(slot => (
-                      <button key={slot} type="button" className={`bento-slot ${pickedSlot === slot ? 'active' : ''}`} onClick={() => setPickedSlot(slot)}>
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
               <div className="bento-form-grid-2">
-                <input required type="text" placeholder="Nome" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
-                <input required type="tel" placeholder="Telefono" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
+                <input required name="name" type="text" placeholder="Nome" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
+                <input required name="phone" type="tel" placeholder="Telefono" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
               </div>
+              <input name="email" type="email" placeholder="Email (opzionale)" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
               <div className="bento-form-grid-3">
-                <input required type="date" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
-                <input required type="time" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
-                <input required type="number" min={1} max={20} placeholder="Persone" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
+                <input required type="date" min={rsvToday} value={rsvDate} onChange={e => rsvPickDate(e.target.value)} style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
+                <select required value={rsvTime} onChange={e => rsvSetTime(e.target.value)} disabled={!rsvDate || rsvClosed} style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }}>
+                  <option value="" disabled style={{ color: '#1a1a1a', background: '#fff' }}>{!rsvDate ? 'Prima la data' : rsvClosed ? 'Chiuso' : 'Orario'}</option>
+                  {rsvSlots.map(s => <option key={s} value={s} style={{ color: '#1a1a1a', background: '#fff' }}>{s}</option>)}
+                </select>
+                <input required name="people" type="number" min={1} max={20} placeholder="Persone" style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const }} />
               </div>
+              {rsvClosed && <p style={{ color: accentColor, fontSize: '0.85rem', margin: 0 }}>Il ristorante è chiuso in questa data. Scegli un altro giorno.</p>}
               <textarea
+                name="notes"
                 placeholder="Note (opzionale)"
                 rows={3}
                 style={{ padding: '0.85rem 1rem', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: 'var(--bento-text)', fontSize: '0.9rem', fontFamily: 'inherit', outline: 'none', width: '100%', boxSizing: 'border-box' as const, resize: 'vertical' }}
               />
               <GdprConsent accent={accentColor} color="rgba(0,0,0,0.55)" />
+              {rsvError && <p style={{ color: '#c0392b', fontSize: '0.85rem', margin: 0 }}>{rsvError}</p>}
               <div>
                 <button
                   type="submit"
+                  disabled={rsvSubmitting}
                   style={{
                     padding: '1rem 2.5rem',
                     background: accentColor,
@@ -1192,15 +1189,16 @@ export function BentoTemplate(props: BentoProps) {
                     borderRadius: '999px',
                     fontSize: '0.95rem',
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: rsvSubmitting ? 'default' : 'pointer',
+                    opacity: rsvSubmitting ? 0.6 : 1,
                     fontFamily: 'inherit',
                     boxShadow: `0 4px 16px ${accentBg(accentColor, 0.3)}`,
                     transition: 'opacity 0.2s',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = rsvSubmitting ? '0.6' : '0.85')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = rsvSubmitting ? '0.6' : '1')}
                 >
-                  Prenota ora
+                  {rsvSubmitting ? 'Invio…' : 'Prenota ora'}
                 </button>
               </div>
             </form>
@@ -1343,21 +1341,6 @@ export function BentoTemplate(props: BentoProps) {
           ))}
         </section>
       )}
-
-      </>)}
-      {sectionVisible(page, 'newsletter') && (<>
-      {/* ═══════════════════════ NEWSLETTER ═══════════════════════ */}
-      <section style={{ padding: '0 1.5rem' }}>
-        <div className="bento-newsletter">
-          <h2>Resta aggiornato</h2>
-          <p>Novità del menu, eventi e offerte. Una mail al mese, niente spam.</p>
-          <form className="bento-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
-            <input type="email" required placeholder="tu@email.it" />
-            <button type="submit">Iscriviti</button>
-            <GdprConsent accent={accentColor} color="rgba(0,0,0,0.55)" />
-          </form>
-        </div>
-      </section>
 
       </>)}
       {sectionVisible(page, 'contact') && (<>
@@ -2018,61 +2001,6 @@ export function BentoTemplate(props: BentoProps) {
           font-size: 0.95rem;
         }
 
-        /* ── NEWSLETTER ── */
-        .bento-newsletter {
-          max-width: 1100px;
-          margin: 4rem auto;
-          padding: 3rem;
-          background: linear-gradient(135deg, var(--bento-accent, ${accentColor}) 0%, color-mix(in oklch, var(--bento-accent, ${accentColor}) 65%, #000) 100%);
-          border-radius: var(--bento-radius);
-          color: white;
-          text-align: center;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-        }
-        .bento-newsletter h2 {
-          font-size: clamp(1.7rem, 3vw, 2.5rem);
-          font-weight: 800;
-          letter-spacing: -0.03em;
-          margin-bottom: 0.75rem;
-        }
-        .bento-newsletter p {
-          opacity: 0.9;
-          margin-bottom: 1.75rem;
-          font-size: 1rem;
-        }
-        .bento-newsletter-form {
-          display: flex;
-          gap: 0.5rem;
-          max-width: 500px;
-          margin: 0 auto;
-        }
-        .bento-newsletter input {
-          flex: 1;
-          padding: 0.95rem 1.25rem;
-          border: none;
-          border-radius: 100px;
-          background: rgba(255,255,255,0.95);
-          font-family: inherit;
-          font-size: 0.95rem;
-          color: #1a1a1a;
-          outline: none;
-        }
-        .bento-newsletter button {
-          padding: 0.95rem 1.75rem;
-          border: none;
-          border-radius: 100px;
-          background: #1a1a1a;
-          color: white;
-          font-family: inherit;
-          font-size: 0.85rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: transform 0.25s;
-        }
-        .bento-newsletter button:hover { transform: translateY(-2px); }
-
         /* Time slots */
         .bento-slots {
           margin: 0.5rem 0 1.5rem;
@@ -2378,7 +2306,6 @@ export function BentoTemplate(props: BentoProps) {
           .bento-chef { grid-template-columns: 1fr; }
           .bento-reviews-grid { grid-template-columns: 1fr; }
           .bento-review:first-child { grid-column: span 1; }
-          .bento-newsletter-form { flex-direction: column; }
           .bento-press { flex-direction: column; gap: 0.75rem; }
           .bento-press-pipe { width: 60%; height: 1px; }
         }

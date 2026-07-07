@@ -14,6 +14,7 @@ import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
 import HomePreviews from '@/components/restaurant/HomePreviews'
 import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
 import type { Locale } from '@/lib/sites/i18n'
+import { useReservationForm } from '@/templates/_shared/useReservationForm'
 
 interface MercatoProps {
   restaurantName: string
@@ -25,7 +26,7 @@ interface MercatoProps {
   menuCategories: Array<{
     name: string
     description?: string
-    items: Array<{ name: string; description?: string; price: number; allergens?: string[] }>
+    items: Array<{ name: string; description?: string; price: number; allergens?: string[]; image_url?: string }>
   }>
   galleryImages: Array<{ url: string; alt: string; caption?: string }>
   address?: string
@@ -192,9 +193,8 @@ function InkButton({ children, onClick, href, accent, variant = 'primary' }: {
   )
 }
 
-function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: string[] }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
+function ReservationForm({ accent, timeSlots, slug, hours }: { accent: string; timeSlots?: string[]; slug?: string; hours?: any }) {
+  const { submitted, submitting, error, date, pickDate, time, setTime, slots, closed, onSubmit, todayISO } = useReservationForm(slug, hours, timeSlots)
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '0.85rem 0',
@@ -224,37 +224,30 @@ function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: st
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); setSubmitted(true) }}
+    <form onSubmit={onSubmit}
       style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {timeSlots && timeSlots.length > 0 && (
-        <div className="mer-slots">
-          <div className="mer-slots-title">— Disponibilità per stasera —</div>
-          <div className="mer-slots-row">
-            {timeSlots.map(slot => (
-              <button key={slot} type="button" className={`mer-slot ${pickedSlot === slot ? 'active' : ''}`} onClick={() => setPickedSlot(slot)}>
-                {slot}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="mer-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <input required type="text" placeholder="Nome" style={inputStyle} />
-        <input required type="text" placeholder="Cognome" style={inputStyle} />
+        <input required name="name" type="text" placeholder="Nome" style={inputStyle} />
+        <input required name="surname" type="text" placeholder="Cognome" style={inputStyle} />
       </div>
       <div className="mer-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <input required type="email" placeholder="Email" style={inputStyle} />
-        <input required type="tel" placeholder="Telefono" style={inputStyle} />
+        <input name="email" type="email" placeholder="Email (opzionale)" style={inputStyle} />
+        <input required name="phone" type="tel" placeholder="Telefono" style={inputStyle} />
       </div>
       <div className="mer-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' }}>
-        <input required type="date" style={inputStyle} />
-        <input required type="time" value={pickedSlot || ''} onChange={e => setPickedSlot(e.target.value)} style={inputStyle} />
-        <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
+        <input required type="date" min={todayISO} value={date} onChange={e => pickDate(e.target.value)} style={inputStyle} />
+        <select required value={time} onChange={e => setTime(e.target.value)} disabled={!date || closed} style={inputStyle}>
+          <option value="" disabled style={{ color: '#1a1a1a', background: '#fff' }}>{!date ? 'Prima la data' : closed ? 'Chiuso' : 'Orario'}</option>
+          {slots.map(s => <option key={s} value={s} style={{ color: '#1a1a1a', background: '#fff' }}>{s}</option>)}
+        </select>
+        <input required name="people" type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
-      <textarea placeholder="Eventuali richieste speciali..." rows={3} style={{ ...inputStyle, borderBottom: '1px solid rgba(82, 60, 38, 0.25)', resize: 'none', paddingTop: '0.85rem' }} />
+      {closed && <p style={{ color: accent, fontSize: '0.9rem', fontStyle: 'italic', margin: 0 }}>Siamo chiusi in questa data. Scegliete un altro giorno.</p>}
+      <textarea name="notes" placeholder="Eventuali richieste speciali..." rows={3} style={{ ...inputStyle, borderBottom: '1px solid rgba(82, 60, 38, 0.25)', resize: 'none', paddingTop: '0.85rem' }} />
       <GdprConsent accent={accent} color="#7a6754" />
-      <div style={{ marginTop: '1rem' }}>
-        <InkButton accent={accent}>Prenota il tavolo</InkButton>
+      {error && <p style={{ color: '#b23b2e', fontSize: '0.9rem', fontStyle: 'italic', margin: 0 }}>{error}</p>}
+      <div style={{ marginTop: '1rem', opacity: submitting ? 0.6 : 1 }}>
+        <InkButton accent={accent}>{submitting ? 'Invio…' : 'Prenota il tavolo'}</InkButton>
       </div>
     </form>
   )
@@ -1096,66 +1089,6 @@ export function MercatoTemplate(props: MercatoProps) {
           line-height: 1.7;
         }
 
-        /* ── NEWSLETTER (postcard) ── */
-        .mer-postcard {
-          background: ${paper};
-          padding: 3.5rem 3rem;
-          box-shadow: 0 8px 32px rgba(61, 43, 28, 0.18);
-          border: 1px solid ${ink}15;
-          text-align: center;
-          position: relative;
-          max-width: 700px;
-          margin: 0 auto;
-        }
-        .mer-postcard h2 {
-          font-family: 'Playfair Display', serif;
-          font-style: italic;
-          font-size: clamp(2rem, 4vw, 3rem);
-          font-weight: 400;
-          letter-spacing: -0.02em;
-          margin-bottom: 1rem;
-          color: ${ink};
-        }
-        .mer-postcard p {
-          font-family: 'Cormorant Garamond', serif;
-          font-style: italic;
-          color: ${muted};
-          margin-bottom: 2rem;
-          font-size: 1.15rem;
-        }
-        .mer-postcard-form {
-          display: flex;
-          gap: 0.75rem;
-          max-width: 480px;
-          margin: 0 auto;
-        }
-        .mer-postcard-form input {
-          flex: 1;
-          padding: 0.95rem 1.2rem;
-          background: transparent;
-          border: 1px solid ${ink}30;
-          color: ${ink};
-          font-family: 'Cormorant Garamond', serif;
-          font-style: italic;
-          font-size: 1rem;
-          outline: none;
-          transition: border-color 0.3s;
-        }
-        .mer-postcard-form input:focus { border-color: ${accent}; }
-        .mer-postcard-form button {
-          padding: 0.95rem 1.75rem;
-          background: ${ink};
-          color: ${paper};
-          border: none;
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.85rem;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: background 0.3s;
-        }
-        .mer-postcard-form button:hover { background: ${accent}; }
-
         /* ── Time slots ── */
         .mer-slots { margin: 0 0 1.5rem; }
         .mer-slots-title {
@@ -1193,8 +1126,6 @@ export function MercatoTemplate(props: MercatoProps) {
           .mer-reviews-grid { grid-template-columns: 1fr; }
           .mer-press-inner { gap: 1.5rem; }
           .mer-press-pipe { display: none; }
-          .mer-postcard { padding: 2.5rem 1.5rem; }
-          .mer-postcard-form { flex-direction: column; }
         }
 
         /* ── PLAYBILL events ── */
@@ -1696,6 +1627,10 @@ export function MercatoTemplate(props: MercatoProps) {
                 <div>
                   {cat.items.map((item, i) => (
                     <div key={i} className="mer-menu-item">
+                      {item.image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.image_url} alt={item.name} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, flexShrink: 0, alignSelf: 'center', filter: 'sepia(0.15)' }} />
+                      )}
                       <div className="mer-menu-item-info">
                         <h4 style={{
                           fontFamily: '"Playfair Display", serif',
@@ -1892,7 +1827,7 @@ export function MercatoTemplate(props: MercatoProps) {
                 border: `1px solid ${ink}20`,
                 boxShadow: '0 4px 30px rgba(61, 43, 28, 0.08)',
               }}>
-                <ReservationForm accent={accent} timeSlots={timeSlots} />
+                <ReservationForm accent={accent} timeSlots={timeSlots} slug={slug} hours={hours} />
               </div>
             </FadeIn>
           </section>
@@ -2053,23 +1988,6 @@ export function MercatoTemplate(props: MercatoProps) {
             </FadeIn>
           </section>
         )}
-
-        </>)}
-        {sectionVisible(page, 'newsletter') && (<>
-        {/* NEWSLETTER — postcard */}
-        <section style={{ padding: '6rem 2rem' }}>
-          <FadeIn>
-            <div className="mer-postcard">
-              <h2>Lettera mensile</h2>
-              <p>Un piccolo bollettino con piatti stagionali, eventi speciali e ricordi. Niente fretta, niente spam.</p>
-              <form className="mer-postcard-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
-                <input type="email" required placeholder="il vostro indirizzo email" />
-                <button type="submit">Iscriviti</button>
-                <GdprConsent accent={accent} color="#7a6754" />
-              </form>
-            </div>
-          </FadeIn>
-        </section>
 
         </>)}
         {sectionVisible(page, 'contact') && (<>

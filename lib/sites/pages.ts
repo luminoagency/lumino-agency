@@ -96,9 +96,9 @@ export type SectionName =
  * 'landing' non è qui: mostra tutto (gestito da sectionVisible).
  */
 export const SECTIONS_BY_PAGE: Record<Exclude<PageMode, 'landing'>, SectionName[]> = {
-  // Home sintetica: hero + newsletter come sezioni "vere"; il resto sono
-  // anteprime compatte (HomePreviews), quindi le sezioni full sono OFF qui.
-  home:     ['hero', 'newsletter'],
+  // Home sintetica: solo hero come sezione "vera"; il resto sono anteprime
+  // compatte (HomePreviews), quindi le sezioni full sono OFF qui.
+  home:     ['hero'],
   menu:     ['menu', 'faq'],
   chiSiamo: ['about', 'chef', 'reviews'],
   contatti: ['contact'],

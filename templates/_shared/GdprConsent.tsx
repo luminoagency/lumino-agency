@@ -1,6 +1,6 @@
 /**
  * Checkbox GDPR riutilizzabile per i form dei siti clienti
- * (prenotazioni, newsletter, recensioni).
+ * (prenotazioni, recensioni).
  *
  * - `required` rende il consenso obbligatorio: il browser blocca l'invio
  *   del form finché la casella non è spuntata.

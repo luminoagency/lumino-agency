@@ -14,6 +14,7 @@ import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
 import HomePreviews from '@/components/restaurant/HomePreviews'
 import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
 import type { Locale } from '@/lib/sites/i18n'
+import { useReservationForm } from '@/templates/_shared/useReservationForm'
 
 interface AuroraProps {
   restaurantName: string
@@ -25,7 +26,7 @@ interface AuroraProps {
   menuCategories: Array<{
     name: string
     description?: string
-    items: Array<{ name: string; description?: string; price: number; allergens?: string[] }>
+    items: Array<{ name: string; description?: string; price: number; allergens?: string[]; image_url?: string }>
   }>
   galleryImages: Array<{ url: string; alt: string; caption?: string }>
   address?: string
@@ -199,9 +200,8 @@ function GlowCard({ children, accent, style, className = '' }: {
   )
 }
 
-function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: string[] }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
+function ReservationForm({ accent, timeSlots, slug, hours }: { accent: string; timeSlots?: string[]; slug?: string; hours?: any }) {
+  const { submitted, submitting, error, date, pickDate, time, setTime, slots, closed, onSubmit, todayISO } = useReservationForm(slug, hours, timeSlots)
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '0.95rem 1.1rem',
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
@@ -222,37 +222,30 @@ function ReservationForm({ accent, timeSlots }: { accent: string; timeSlots?: st
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); setSubmitted(true) }}
+    <form onSubmit={onSubmit}
       style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {timeSlots && timeSlots.length > 0 && (
-        <div className="aur-slots">
-          <div className="aur-slots-title">Disponibilità per stasera</div>
-          <div className="aur-slots-row">
-            {timeSlots.map(slot => (
-              <button key={slot} type="button" className={`aur-slot ${pickedSlot === slot ? 'active' : ''}`} onClick={() => setPickedSlot(slot)}>
-                {slot}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="aur-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <input required type="text" placeholder="Nome" style={inputStyle} />
-        <input required type="text" placeholder="Cognome" style={inputStyle} />
+        <input required name="name" type="text" placeholder="Nome" style={inputStyle} />
+        <input required name="surname" type="text" placeholder="Cognome" style={inputStyle} />
       </div>
       <div className="aur-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <input required type="email" placeholder="Email" style={inputStyle} />
-        <input required type="tel" placeholder="Telefono" style={inputStyle} />
+        <input name="email" type="email" placeholder="Email (opzionale)" style={inputStyle} />
+        <input required name="phone" type="tel" placeholder="Telefono" style={inputStyle} />
       </div>
       <div className="aur-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-        <input required type="date" style={inputStyle} />
-        <input required type="time" value={pickedSlot || ''} onChange={e => setPickedSlot(e.target.value)} style={inputStyle} />
-        <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
+        <input required type="date" min={todayISO} value={date} onChange={e => pickDate(e.target.value)} style={inputStyle} />
+        <select required value={time} onChange={e => setTime(e.target.value)} disabled={!date || closed} style={inputStyle}>
+          <option value="" disabled style={{ color: '#1a1a1a', background: '#fff' }}>{!date ? 'Prima la data' : closed ? 'Chiuso' : 'Orario'}</option>
+          {slots.map(s => <option key={s} value={s} style={{ color: '#1a1a1a', background: '#fff' }}>{s}</option>)}
+        </select>
+        <input required name="people" type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
-      <textarea placeholder="Note (allergie, occasione speciale...)" rows={3} style={inputStyle} />
+      {closed && <p style={{ color: accent, fontSize: '0.82rem', margin: 0 }}>Il ristorante è chiuso in questa data. Scegli un altro giorno.</p>}
+      <textarea name="notes" placeholder="Note (allergie, occasione speciale...)" rows={3} style={inputStyle} />
       <GdprConsent accent={accent} color="rgba(244,241,255,0.6)" />
-      <RippleButton accent={accent} style={{ marginTop: '1rem', alignSelf: 'flex-start' }}>
-        Prenota ora
+      {error && <p style={{ color: '#ff8a8a', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+      <RippleButton accent={accent} style={{ marginTop: '1rem', alignSelf: 'flex-start', opacity: submitting ? 0.6 : 1 }}>
+        {submitting ? 'Invio…' : 'Prenota ora'}
       </RippleButton>
     </form>
   )
@@ -874,84 +867,6 @@ export function AuroraTemplate(props: AuroraProps) {
           font-size: 0.95rem;
         }
 
-        /* ── NEWSLETTER ── */
-        .aur-newsletter {
-          padding: 6rem 2rem;
-          text-align: center;
-          position: relative;
-        }
-        .aur-newsletter-inner {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 3rem 2rem;
-          background: rgba(255,255,255,0.03);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 28px;
-          position: relative;
-          overflow: hidden;
-        }
-        .aur-newsletter-inner::before {
-          content: '';
-          position: absolute;
-          inset: -50%;
-          background:
-            radial-gradient(circle at 20% 30%, ${accent}33, transparent 50%),
-            radial-gradient(circle at 80% 70%, ${accent2}33, transparent 50%);
-          filter: blur(40px);
-          z-index: 0;
-          animation: aurFloat 12s ease-in-out infinite;
-        }
-        .aur-newsletter-inner > * { position: relative; z-index: 1; }
-        .aur-newsletter h2 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(1.8rem, 3vw, 2.6rem);
-          font-weight: 300;
-          letter-spacing: -0.03em;
-          margin-bottom: 1rem;
-        }
-        .aur-newsletter p {
-          color: ${muted};
-          margin-bottom: 2rem;
-          font-size: 1rem;
-        }
-        .aur-newsletter-form {
-          display: flex;
-          gap: 8px;
-        }
-        .aur-newsletter input {
-          flex: 1;
-          padding: 1rem 1.25rem;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px;
-          color: ${text};
-          font-family: inherit;
-          font-size: 0.95rem;
-          outline: none;
-          transition: border-color 0.3s;
-        }
-        .aur-newsletter input:focus { border-color: ${accent}; }
-        .aur-newsletter input::placeholder { color: ${muted}; }
-        .aur-newsletter button {
-          padding: 1rem 1.75rem;
-          background: ${accent};
-          color: #0a0612;
-          border: none;
-          border-radius: 12px;
-          font-family: inherit;
-          font-size: 0.85rem;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .aur-newsletter button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 32px ${accent}55;
-        }
-
         /* ── Time slots ── */
         .aur-slots { margin: 0 0 1.5rem; }
         .aur-slots-title {
@@ -986,7 +901,6 @@ export function AuroraTemplate(props: AuroraProps) {
           .aur-chef { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.5rem; }
           .aur-press-inner { gap: 1.5rem; }
           .aur-press-pipe { display: none; }
-          .aur-newsletter-form { flex-direction: column; }
         }
 
         /* GLOW CAROUSEL gallery */
@@ -1466,6 +1380,10 @@ export function AuroraTemplate(props: AuroraProps) {
               {menuCategories[activeCategory]?.items.map((item, i) => (
                 <div key={i} className="aur-menu-item">
                   <GlowCard accent={accent} style={{ minHeight: 220 }}>
+                    {item.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.image_url} alt={item.name} style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 12, marginBottom: '1.1rem', display: 'block' }} />
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', marginBottom: '1rem' }}>
                       <h3 style={{ fontFamily: 'Fraunces, serif', fontSize: '1.4rem', fontWeight: 400, letterSpacing: '-0.01em' }}>
                         {item.name}
@@ -1599,7 +1517,7 @@ export function AuroraTemplate(props: AuroraProps) {
             </FadeIn>
             <FadeIn delay={0.1}>
               <GlowCard accent={accent} style={{ padding: '2.5rem' }}>
-                <ReservationForm accent={accent} timeSlots={timeSlots} />
+                <ReservationForm accent={accent} timeSlots={timeSlots} slug={slug} hours={hours} />
               </GlowCard>
             </FadeIn>
           </section>
@@ -1729,24 +1647,6 @@ export function AuroraTemplate(props: AuroraProps) {
             </FadeIn>
           </section>
         )}
-
-        </>)}
-        {sectionVisible(page, 'newsletter') && (<>
-        {/* NEWSLETTER */}
-        <section className="aur-newsletter">
-          <div className="aur-newsletter-inner">
-            <p style={{ fontSize: '0.85rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 500 }}>
-              ✦ in orbita
-            </p>
-            <h2>Resta nel <em style={{ color: accent, fontStyle: 'italic' }}>flusso</em>.</h2>
-            <p>Nuovi piatti, eventi privati, momenti unici. Iscriviti per non perdere niente.</p>
-            <form className="aur-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
-              <input type="email" required placeholder="tuo@email.it" />
-              <button type="submit">Iscriviti</button>
-              <GdprConsent accent={accent} color={muted} />
-            </form>
-          </div>
-        </section>
 
         </>)}
         {sectionVisible(page, 'contact') && (<>

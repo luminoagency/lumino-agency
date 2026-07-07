@@ -15,6 +15,7 @@ import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
 import HomePreviews from '@/components/restaurant/HomePreviews'
 import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
 import type { Locale } from '@/lib/sites/i18n'
+import { useReservationForm } from '@/templates/_shared/useReservationForm'
 
 interface CinematicoProps {
   restaurantName: string
@@ -26,7 +27,7 @@ interface CinematicoProps {
   menuCategories: Array<{
     name: string
     description?: string
-    items: Array<{ name: string; description?: string; price: number; allergens?: string[] }>
+    items: Array<{ name: string; description?: string; price: number; allergens?: string[]; image_url?: string }>
   }>
   galleryImages: Array<{ url: string; alt: string; caption?: string }>
   address?: string
@@ -95,9 +96,8 @@ function Reveal({ children, delay = 0, className = '' }: {
   )
 }
 
-function CinematicoReservationForm({ accent, bg, text, muted, timeSlots }: { accent: string; bg: string; text: string; muted: string; timeSlots?: string[] }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
+function CinematicoReservationForm({ accent, bg, text, muted, timeSlots, slug, hours }: { accent: string; bg: string; text: string; muted: string; timeSlots?: string[]; slug?: string; hours?: any }) {
+  const { submitted, submitting, error, date, pickDate, time, setTime, slots, closed, onSubmit, todayISO } = useReservationForm(slug, hours, timeSlots)
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -139,44 +139,35 @@ function CinematicoReservationForm({ accent, bg, text, muted, timeSlots }: { acc
           </h2>
         </Reveal>
         <form
-          onSubmit={e => { e.preventDefault(); setSubmitted(true) }}
+          onSubmit={onSubmit}
           style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
         >
-          {timeSlots && timeSlots.length > 0 && (
-            <div className="cin-slots">
-              <div className="cin-slots-title">▸ Disponibilità per stasera</div>
-              <div className="cin-slots-row">
-                {timeSlots.map(slot => (
-                  <button
-                    key={slot}
-                    type="button"
-                    className={`cin-slot ${pickedSlot === slot ? 'active' : ''}`}
-                    onClick={() => setPickedSlot(slot)}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           <div className="cin-form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-            <input required type="text" placeholder="Nome" style={inputStyle} />
-            <input required type="tel" placeholder="Telefono" style={inputStyle} />
+            <input required name="name" type="text" placeholder="Nome" style={inputStyle} />
+            <input required name="phone" type="tel" placeholder="Telefono" style={inputStyle} />
           </div>
+          <input name="email" type="email" placeholder="Email (opzionale)" style={inputStyle} />
           <div className="cin-form-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem' }}>
-            <input required type="date" style={inputStyle} />
-            <input required type="time" value={pickedSlot || ''} onChange={e => setPickedSlot(e.target.value)} style={inputStyle} />
-            <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
+            <input required type="date" min={todayISO} value={date} onChange={e => pickDate(e.target.value)} style={inputStyle} />
+            <select required value={time} onChange={e => setTime(e.target.value)} disabled={!date || closed} style={inputStyle}>
+              <option value="" disabled style={{ color: '#1a1a1a', background: '#fff' }}>{!date ? 'Prima la data' : closed ? 'Chiuso' : 'Orario'}</option>
+              {slots.map(s => <option key={s} value={s} style={{ color: '#1a1a1a', background: '#fff' }}>{s}</option>)}
+            </select>
+            <input required name="people" type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
           </div>
+          {closed && <p style={{ color: accent, fontSize: '0.8rem', margin: 0 }}>Il ristorante è chiuso in questa data. Scegli un altro giorno.</p>}
           <textarea
+            name="notes"
             placeholder="Note (opzionale)"
             rows={3}
             style={{ ...inputStyle, resize: 'vertical' }}
           />
           <GdprConsent accent={accent} color={muted} />
+          {error && <p style={{ color: '#ff6b6b', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
           <div>
             <button
               type="submit"
+              disabled={submitting}
               style={{
                 padding: '1rem 2.5rem',
                 background: accent,
@@ -187,14 +178,15 @@ function CinematicoReservationForm({ accent, bg, text, muted, timeSlots }: { acc
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                cursor: 'pointer',
+                cursor: submitting ? 'default' : 'pointer',
+                opacity: submitting ? 0.6 : 1,
                 fontFamily: 'inherit',
                 transition: 'opacity 0.3s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+              onMouseEnter={e => (e.currentTarget.style.opacity = submitting ? '0.6' : '0.85')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = submitting ? '0.6' : '1')}
             >
-              Prenota ora
+              {submitting ? 'Invio…' : 'Prenota ora'}
             </button>
           </div>
         </form>
@@ -884,62 +876,6 @@ export function CinematicoTemplate(props: CinematicoProps) {
           font-size: 1rem;
         }
 
-        /* ── NEWSLETTER ── */
-        .cin-newsletter {
-          padding: clamp(4rem, 8vh, 6rem) 0;
-          border-top: 1px solid rgba(250, 242, 232, 0.06);
-          background: linear-gradient(180deg, rgba(229, 45, 29, 0.04) 0%, transparent 100%);
-        }
-        .cin-newsletter-inner {
-          max-width: 700px;
-          margin: 0 auto;
-          padding: 0 clamp(1.5rem, 5vw, 4rem);
-          text-align: center;
-        }
-        .cin-newsletter h2 {
-          font-size: clamp(1.8rem, 3vw, 2.5rem);
-          font-weight: 800;
-          letter-spacing: -0.03em;
-          margin-bottom: 1rem;
-        }
-        .cin-newsletter p {
-          color: ${muted};
-          margin-bottom: 2rem;
-          font-size: 1rem;
-        }
-        .cin-newsletter-form {
-          display: flex;
-          gap: 0.5rem;
-          max-width: 500px;
-          margin: 0 auto;
-        }
-        .cin-newsletter-input {
-          flex: 1;
-          padding: 1rem 1.2rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(250, 242, 232, 0.15);
-          color: ${text};
-          font-family: inherit;
-          font-size: 0.95rem;
-          outline: none;
-          transition: border-color 0.3s;
-        }
-        .cin-newsletter-input:focus { border-color: ${accent}; }
-        .cin-newsletter-btn {
-          padding: 1rem 2rem;
-          background: ${accent};
-          color: #fff;
-          border: none;
-          font-family: inherit;
-          font-size: 0.75rem;
-          font-weight: 700;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: background 0.3s;
-        }
-        .cin-newsletter-btn:hover { background: #b81f12; }
-
         /* ── Time slots in reservation ── */
         .cin-slots {
           margin: 1rem 0 1.25rem;
@@ -979,7 +915,6 @@ export function CinematicoTemplate(props: CinematicoProps) {
         @media (max-width: 768px) {
           .cin-chef-grid { grid-template-columns: 1fr; }
           .cin-press-bar-inner { gap: 1.5rem; }
-          .cin-newsletter-form { flex-direction: column; }
           .cin-press-divider { display: none; }
         }
         .cin-poster-date {
@@ -1343,6 +1278,10 @@ export function CinematicoTemplate(props: CinematicoProps) {
                   e.currentTarget.style.setProperty('--gx', `${((e.clientX-r.left)/r.width)*100}%`)
                   e.currentTarget.style.setProperty('--gy', `${((e.clientY-r.top)/r.height)*100}%`)
                 }}>
+                {item.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.image_url} alt={item.name} style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 8, marginBottom: '0.85rem', display: 'block' }} />
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
                   <h4 style={{ fontSize: '1rem', fontWeight: 600, color: text, lineHeight: 1.3, maxWidth: '70%', margin: 0 }}>
                     {item.name}
@@ -1511,7 +1450,7 @@ export function CinematicoTemplate(props: CinematicoProps) {
       </>)}
       {(page === 'landing' || page === 'contatti' || page === 'eventi') && (<>
       {/* ── RESERVATION FORM (Pro + Premium) ── */}
-      {tier !== 'basic' && <CinematicoReservationForm accent={accent} bg={bg} text={text} muted={muted} timeSlots={timeSlots} />}
+      {tier !== 'basic' && <CinematicoReservationForm accent={accent} bg={bg} text={text} muted={muted} timeSlots={timeSlots} slug={slug} hours={hours} />}
 
       </>)}
       {sectionVisible(page, 'events') && (<>
@@ -1554,24 +1493,6 @@ export function CinematicoTemplate(props: CinematicoProps) {
           </div>
         </section>
       )}
-
-      </>)}
-      {sectionVisible(page, 'newsletter') && (<>
-      {/* ── NEWSLETTER ── */}
-      <section className="cin-newsletter">
-        <div className="cin-newsletter-inner">
-          <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', color: accent, marginBottom: '1rem', fontWeight: 600 }}>
-            ◉ RESTA AGGIORNATO
-          </p>
-          <h2>In arrivo</h2>
-          <p>Le nostre serate speciali, i nuovi piatti, le sneak peek. Una mail al mese, niente spam.</p>
-          <form className="cin-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const t = e.currentTarget; const btn = t.querySelector('.cin-newsletter-btn') as HTMLButtonElement; if (btn) btn.textContent = '✓ Iscritto'; }}>
-            <input className="cin-newsletter-input" type="email" required placeholder="tu@email.it" />
-            <button type="submit" className="cin-newsletter-btn">Iscriviti</button>
-            <GdprConsent accent={accent} color={muted} />
-          </form>
-        </div>
-      </section>
 
       </>)}
       {sectionVisible(page, 'contact') && (<>

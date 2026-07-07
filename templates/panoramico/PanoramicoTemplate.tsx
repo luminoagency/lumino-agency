@@ -14,6 +14,7 @@ import RestaurantHeader from '@/components/restaurant/RestaurantHeader'
 import HomePreviews from '@/components/restaurant/HomePreviews'
 import { sectionVisible, isSyntheticHome, defaultSitePages, type PageMode, type SitePages } from '@/lib/sites/pages'
 import type { Locale } from '@/lib/sites/i18n'
+import { useReservationForm } from '@/templates/_shared/useReservationForm'
 
 interface PanoramicoProps {
   restaurantName: string
@@ -25,7 +26,7 @@ interface PanoramicoProps {
   menuCategories: Array<{
     name: string
     description?: string
-    items: Array<{ name: string; description?: string; price: number; allergens?: string[] }>
+    items: Array<{ name: string; description?: string; price: number; allergens?: string[]; image_url?: string }>
   }>
   galleryImages: Array<{ url: string; alt: string; caption?: string }>
   address?: string
@@ -90,9 +91,8 @@ function Reveal({ children, delay = 0, className = '' }: {
   )
 }
 
-function ReservationForm({ accent, ink, paper, muted, timeSlots }: { accent: string; ink: string; paper: string; muted: string; timeSlots?: string[] }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [pickedSlot, setPickedSlot] = useState<string | null>(null)
+function ReservationForm({ accent, ink, paper, muted, timeSlots, slug, hours }: { accent: string; ink: string; paper: string; muted: string; timeSlots?: string[]; slug?: string; hours?: any }) {
+  const { submitted, submitting, error, date, pickDate, time, setTime, slots, closed, onSubmit, todayISO } = useReservationForm(slug, hours, timeSlots)
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '0.9rem 0',
@@ -120,42 +120,36 @@ function ReservationForm({ accent, ink, paper, muted, timeSlots }: { accent: str
   }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); setSubmitted(true) }}
+    <form onSubmit={onSubmit}
       style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {timeSlots && timeSlots.length > 0 && (
-        <div className="pan-slots">
-          <div className="pan-slots-title">Disponibilità per stasera</div>
-          <div className="pan-slots-row">
-            {timeSlots.map(slot => (
-              <button key={slot} type="button" className={`pan-slot ${pickedSlot === slot ? 'active' : ''}`} onClick={() => setPickedSlot(slot)}>
-                {slot}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="pan-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <input required type="text" placeholder="Nome" style={inputStyle} />
-        <input required type="text" placeholder="Cognome" style={inputStyle} />
+        <input required name="name" type="text" placeholder="Nome" style={inputStyle} />
+        <input required name="surname" type="text" placeholder="Cognome" style={inputStyle} />
       </div>
       <div className="pan-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <input required type="email" placeholder="Email" style={inputStyle} />
-        <input required type="tel" placeholder="Telefono" style={inputStyle} />
+        <input name="email" type="email" placeholder="Email (opzionale)" style={inputStyle} />
+        <input required name="phone" type="tel" placeholder="Telefono" style={inputStyle} />
       </div>
       <div className="pan-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2rem' }}>
-        <input required type="date" style={inputStyle} />
-        <input required type="time" value={pickedSlot || ''} onChange={e => setPickedSlot(e.target.value)} style={inputStyle} />
-        <input required type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
+        <input required type="date" min={todayISO} value={date} onChange={e => pickDate(e.target.value)} style={inputStyle} />
+        <select required value={time} onChange={e => setTime(e.target.value)} disabled={!date || closed} style={inputStyle}>
+          <option value="" disabled style={{ color: '#1a1a1a', background: '#fff' }}>{!date ? 'Prima la data' : closed ? 'Chiuso' : 'Orario'}</option>
+          {slots.map(s => <option key={s} value={s} style={{ color: '#1a1a1a', background: '#fff' }}>{s}</option>)}
+        </select>
+        <input required name="people" type="number" min={1} max={20} placeholder="Persone" style={inputStyle} />
       </div>
-      <textarea placeholder="Note (allergie, occasione speciale...)" rows={3} style={{ ...inputStyle, resize: 'none', paddingTop: '0.9rem' }} />
+      {closed && <p style={{ color: accent, fontSize: '0.9rem', margin: 0 }}>Il ristorante è chiuso in questa data. Scegli un altro giorno.</p>}
+      <textarea name="notes" placeholder="Note (allergie, occasione speciale...)" rows={3} style={{ ...inputStyle, resize: 'none', paddingTop: '0.9rem' }} />
       <GdprConsent accent={accent} color={muted} />
-      <button type="submit" style={{
+      {error && <p style={{ color: '#c0392b', fontSize: '0.9rem', margin: 0 }}>{error}</p>}
+      <button type="submit" disabled={submitting} style={{
         marginTop: '1rem',
         padding: '1.1rem 2.5rem',
         background: ink,
         color: paper,
         border: 'none',
-        cursor: 'pointer',
+        cursor: submitting ? 'default' : 'pointer',
+        opacity: submitting ? 0.6 : 1,
         fontSize: '0.85rem',
         fontWeight: 500,
         letterSpacing: '0.25em',
@@ -164,10 +158,10 @@ function ReservationForm({ accent, ink, paper, muted, timeSlots }: { accent: str
         alignSelf: 'flex-start',
         transition: 'background 0.3s, transform 0.3s',
       }}
-        onMouseEnter={e => { e.currentTarget.style.background = accent }}
+        onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = accent }}
         onMouseLeave={e => { e.currentTarget.style.background = ink }}
       >
-        Conferma prenotazione
+        {submitting ? 'Invio…' : 'Conferma prenotazione'}
       </button>
     </form>
   )
@@ -1048,63 +1042,6 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
           font-size: 1rem;
         }
 
-        /* ── NEWSLETTER ── */
-        .pan-newsletter {
-          padding: 5rem 2rem;
-          background: ${ink};
-          color: ${paper};
-          text-align: center;
-        }
-        .pan-newsletter h2 {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: clamp(2rem, 4vw, 3rem);
-          font-weight: 400;
-          font-style: italic;
-          margin-bottom: 1rem;
-          letter-spacing: -0.02em;
-        }
-        .pan-newsletter p {
-          color: ${paper}aa;
-          margin-bottom: 2rem;
-          font-size: 1.05rem;
-          max-width: 500px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .pan-newsletter-form {
-          display: flex;
-          gap: 8px;
-          max-width: 500px;
-          margin: 0 auto;
-        }
-        .pan-newsletter input {
-          flex: 1;
-          padding: 1rem 1.25rem;
-          background: transparent;
-          border: 1px solid ${paper}50;
-          color: ${paper};
-          font-family: inherit;
-          font-size: 0.95rem;
-          outline: none;
-          transition: border-color 0.3s;
-        }
-        .pan-newsletter input:focus { border-color: ${accent}; }
-        .pan-newsletter input::placeholder { color: ${paper}80; }
-        .pan-newsletter button {
-          padding: 1rem 2rem;
-          background: ${accent};
-          color: ${ink};
-          border: none;
-          font-family: inherit;
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: opacity 0.3s;
-        }
-        .pan-newsletter button:hover { opacity: 0.85; }
-
         /* ── Time slots ── */
         .pan-slots { margin: 0 0 1.5rem; }
         .pan-slots-title {
@@ -1137,7 +1074,6 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
           .pan-chef { grid-template-columns: 1fr; gap: 3rem; padding: 5rem 1.5rem; }
           .pan-press-inner { gap: 1.5rem; }
           .pan-press-pipe { display: none; }
-          .pan-newsletter-form { flex-direction: column; }
         }
 
         /* TIMELINE EVENTS */
@@ -1560,6 +1496,10 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
             <div ref={menuStripRef} className="pan-menu-scroll">
               {menuCategories[activeCategory]?.items.map((item, i) => (
                 <div key={`${activeCategory}-${i}`} className="pan-menu-item">
+                  {item.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.image_url} alt={item.name} style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 10, marginBottom: '0.9rem', display: 'block' }} />
+                  )}
                   <div className="pan-menu-item-head">
                     <h3 className="pan-menu-item-name">{item.name}<AllergenBadges allergens={item.allergens} variant="minimal" /></h3>
                     <span className="pan-menu-item-price">€{item.price}</span>
@@ -1682,7 +1622,7 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <ReservationForm accent={accent} ink={ink} paper={paper} muted={muted} timeSlots={timeSlots} />
+            <ReservationForm accent={accent} ink={ink} paper={paper} muted={muted} timeSlots={timeSlots} slug={slug} hours={hours} />
           </Reveal>
         </section>
       )}
@@ -1800,19 +1740,6 @@ export function PanoramicoTemplate(props: PanoramicoProps) {
           </Reveal>
         </section>
       )}
-
-      </>)}
-      {sectionVisible(page, 'newsletter') && (<>
-      {/* NEWSLETTER */}
-      <section className="pan-newsletter">
-        <h2>Restate in <em style={{ color: accent, fontStyle: 'italic' }}>contatto</em>.</h2>
-        <p>Iscrivetevi per scoprire piatti stagionali, eventi e serate speciali. Una mail al mese, niente più.</p>
-        <form className="pan-newsletter-form" style={{ flexWrap: 'wrap' }} onSubmit={e => { e.preventDefault(); const b = e.currentTarget.querySelector('button')!; b.textContent = '✓ Iscritto'; }}>
-          <input type="email" required placeholder="il vostro indirizzo email" />
-          <button type="submit">Iscriviti</button>
-          <GdprConsent accent={accent} color={muted} />
-        </form>
-      </section>
 
       </>)}
       {sectionVisible(page, 'contact') && (<>
