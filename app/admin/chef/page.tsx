@@ -24,6 +24,7 @@ export default async function ChefPage() {
   const content = Array.isArray((site as any).content) ? (site as any).content[0] : (site as any).content
   return (
     <ChefEditor
+      embedded
       siteSlug={(site as any).slug}
       initial={{
         chef_active: !!content?.chef_active,

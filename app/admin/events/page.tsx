@@ -22,5 +22,5 @@ export default async function EventsPage() {
     )
   }
   const e = await getMyEvents()
-  return <EventsEditor initial={e.events || []} siteSlug={(site as any).slug} />
+  return <EventsEditor embedded initial={e.events || []} siteSlug={(site as any).slug} />
 }

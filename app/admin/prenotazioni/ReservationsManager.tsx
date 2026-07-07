@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { confirmReservation, cancelReservation, type ReservationRow } from '../actions/reservations'
+import { AdminSectionHead } from '../AdminSectionHead'
 
 export type { ReservationRow }
 
@@ -14,9 +15,10 @@ interface Props {
   backPath?: string
   confirmAction?: (id: string, note?: string) => Promise<{ ok: boolean; error?: string }>
   cancelAction?: (id: string, note?: string) => Promise<{ ok: boolean; error?: string }>
+  embedded?: boolean
 }
 
-export function ReservationsManager({ initial, siteSlug, backPath, confirmAction, cancelAction }: Props) {
+export function ReservationsManager({ initial, siteSlug, backPath, confirmAction, cancelAction, embedded }: Props) {
   const [items, setItems] = useState(initial)
   const [tab, setTab] = useState<Tab>('pending')
   const [pending, startTransition] = useTransition()
@@ -123,15 +125,18 @@ export function ReservationsManager({ initial, siteSlug, backPath, confirmAction
         }
       `}</style>
 
-      <nav className="re-top">
-        <div style={{ display:'flex', alignItems:'center' }}>
-          <Link href={backPath ?? '/admin'} className="re-back">← Pannello</Link>
-          <span className="re-bartitle">Prenotazioni</span>
-        </div>
-        <Link href={`/sites/${siteSlug}`} target="_blank" className="re-back">Vedi il sito ↗</Link>
-      </nav>
+      {!embedded && (
+        <nav className="re-top">
+          <div style={{ display:'flex', alignItems:'center' }}>
+            <Link href={backPath ?? '/admin'} className="re-back">← Pannello</Link>
+            <span className="re-bartitle">Prenotazioni</span>
+          </div>
+          <Link href={`/sites/${siteSlug}`} target="_blank" className="re-back">Vedi il sito ↗</Link>
+        </nav>
+      )}
 
       <div className="re-wrap">
+        {embedded && <AdminSectionHead title="Prenotazioni" sub="Le richieste di prenotazione dei clienti." siteSlug={siteSlug} />}
         <div className="re-tabs">
           {(['pending', 'confirmed', 'cancelled', 'all'] as Tab[]).map(t => (
             <button key={t} type="button" className={`re-tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>

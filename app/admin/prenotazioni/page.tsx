@@ -27,6 +27,7 @@ export default async function PrenotazioniPage() {
   const r = await listMyReservations('all')
   return (
     <ReservationsManager
+      embedded
       siteSlug={(site as any).slug}
       initial={r.reservations || []}
     />

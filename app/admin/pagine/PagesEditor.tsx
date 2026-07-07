@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import Link from 'next/link'
 import { saveSitePages } from '../actions/site'
 import { PAGE_KEYS, PAGE_DEFAULT_LABELS, type PageKey, type SitePages } from '@/lib/sites/pages'
+import { AdminSectionHead } from '../AdminSectionHead'
 
 /**
  * Editor delle pagine del sito (Pro/Premium). Il ristoratore attiva/disattiva
@@ -112,15 +112,8 @@ export function PagesEditor({ initial, siteSlug }: Props) {
         .pg-fb-err { background: rgba(239,68,68,0.15); color: #f87171; }
       `}</style>
 
-      <nav className="pg-top">
-        <div>
-          <Link href="/admin" className="pg-back">← Pannello</Link>
-          <span className="pg-title-bar">Pagine del sito</span>
-        </div>
-        <Link href={`/sites/${siteSlug}`} target="_blank" className="pg-back">Vedi il sito ↗</Link>
-      </nav>
-
       <div className="pg-wrap">
+        <AdminSectionHead title="Pagine del sito" siteSlug={siteSlug} />
         <p className="pg-hint">Attiva le pagine che vuoi mostrare e dai a ognuna il nome che preferisci: sarà quello a comparire nel menu di navigazione del sito. La Home è sempre attiva.</p>
 
         {PAGE_KEYS.map(k => {

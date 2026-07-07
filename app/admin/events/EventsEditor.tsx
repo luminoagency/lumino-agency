@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyEvents, type EventDTO } from '../actions/site'
+import { AdminSectionHead } from '../AdminSectionHead'
 
 export type { EventDTO }
 
@@ -11,9 +12,10 @@ interface Props {
   siteSlug: string
   backPath?: string
   saveAction?: (events: EventDTO[]) => Promise<{ ok: boolean; error?: string }>
+  embedded?: boolean
 }
 
-export function EventsEditor({ initial, siteSlug, backPath, saveAction }: Props) {
+export function EventsEditor({ initial, siteSlug, backPath, saveAction, embedded }: Props) {
   const [events, setEvents] = useState<EventDTO[]>(initial.length > 0 ? initial : [emptyEvent()])
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -72,15 +74,18 @@ export function EventsEditor({ initial, siteSlug, backPath, saveAction }: Props)
         @media (max-width: 600px) { .ev-row { grid-template-columns: 1fr 130px 32px; } }
       `}</style>
 
-      <nav className="ev-top">
-        <div>
-          <Link href={backPath ?? '/admin'} className="ev-back">← Pannello</Link>
-          <span className="ev-title-bar">Eventi</span>
-        </div>
-        <Link href={`/sites/${siteSlug}`} target="_blank" className="ev-back">Vedi il sito ↗</Link>
-      </nav>
+      {!embedded && (
+        <nav className="ev-top">
+          <div>
+            <Link href={backPath ?? '/admin'} className="ev-back">← Pannello</Link>
+            <span className="ev-title-bar">Eventi</span>
+          </div>
+          <Link href={`/sites/${siteSlug}`} target="_blank" className="ev-back">Vedi il sito ↗</Link>
+        </nav>
+      )}
 
       <div className="ev-wrap">
+        {embedded && <AdminSectionHead title="Eventi" siteSlug={siteSlug} />}
         <p className="ev-hint">Pubblica eventi come "Cena con i vini", "Live music venerdì", "Menù speciale di Natale". Vengono mostrati sul tuo sito in ordine cronologico.</p>
 
         {events.map((e, i) => (

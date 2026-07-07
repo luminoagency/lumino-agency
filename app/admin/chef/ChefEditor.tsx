@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyChef, type ChefDTO } from '../actions/site'
+import { AdminSectionHead } from '../AdminSectionHead'
 
 export type { ChefDTO }
 
@@ -11,9 +12,10 @@ interface Props {
   siteSlug: string
   backPath?: string
   saveAction?: (input: ChefDTO) => Promise<{ ok: boolean; error?: string }>
+  embedded?: boolean
 }
 
-export function ChefEditor({ initial, siteSlug, backPath, saveAction }: Props) {
+export function ChefEditor({ initial, siteSlug, backPath, saveAction, embedded }: Props) {
   const [d, setD] = useState<ChefDTO>(initial)
   const [pending, startTransition] = useTransition()
   const [fb, setFb] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -69,15 +71,18 @@ export function ChefEditor({ initial, siteSlug, backPath, saveAction }: Props) {
         .cf-fb-err { background:rgba(239,68,68,0.15); color:#f87171; }
       `}</style>
 
-      <nav className="cf-top">
-        <div>
-          <Link href={backPath ?? '/admin'} className="cf-back">← Pannello</Link>
-          <span className="cf-bartitle">Lo chef</span>
-        </div>
-        <Link href={`/sites/${siteSlug}`} target="_blank" className="cf-back">Vedi il sito ↗</Link>
-      </nav>
+      {!embedded && (
+        <nav className="cf-top">
+          <div>
+            <Link href={backPath ?? '/admin'} className="cf-back">← Pannello</Link>
+            <span className="cf-bartitle">Lo chef</span>
+          </div>
+          <Link href={`/sites/${siteSlug}`} target="_blank" className="cf-back">Vedi il sito ↗</Link>
+        </nav>
+      )}
 
       <div className="cf-wrap">
+        {embedded && <AdminSectionHead title="Lo chef" siteSlug={siteSlug} />}
         <p className="cf-hint">La sezione "Lo chef" mostra una foto, nome, ruolo e una breve frase. Compare nei template che la supportano (Cinematico, Aurora, Mercato).</p>
 
         <label className="cf-toggle">
