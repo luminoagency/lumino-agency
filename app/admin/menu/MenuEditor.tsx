@@ -3,8 +3,19 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { saveMyMenu, type MenuCategoryDTO, type MenuItemDTO } from '../actions/site'
+import { AdminSectionHead } from '../AdminSectionHead'
+import { ImageUploader } from '../ImageUploader'
+import { uploadSiteImage, deleteSiteImage } from '../actions/images'
 
 export type { MenuCategoryDTO, MenuItemDTO }
+
+/** Ricava il path Storage da un URL del nostro bucket (null se esterno). */
+function ourStoragePath(url?: string): string | null {
+  if (!url) return null
+  const marker = '/storage/v1/object/public/site-images/'
+  const i = url.indexOf(marker)
+  return i >= 0 ? url.slice(i + marker.length) : null
+}
 
 const ALLERGENS: Array<{ key: string; label: string; color: string }> = [
   { key: 'vegan', label: 'Vegano', color: '#5e8a3a' },
@@ -20,9 +31,13 @@ interface Props {
   siteSlug: string
   backPath?: string
   saveAction?: (cats: MenuCategoryDTO[]) => Promise<{ ok: boolean; error?: string }>
+  /** Reso dentro lo shell /admin (sidebar): nasconde la top-bar locale e usa l'header condiviso. */
+  embedded?: boolean
+  /** Abilita la foto opzionale per piatto (solo Pro/Premium sul pannello ristoratore). */
+  enablePhotos?: boolean
 }
 
-export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
+export function MenuEditor({ initial, siteSlug, backPath, saveAction, embedded, enablePhotos }: Props) {
   const [cats, setCats] = useState<MenuCategoryDTO[]>(initial.length > 0 ? initial : [emptyCategory()])
   const [pending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<{ ok?: boolean; msg?: string } | null>(null)
@@ -78,6 +93,16 @@ export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
     } : c))
   }
 
+  function setPhoto(ci: number, ii: number, url?: string) {
+    updateItem(ci, ii, { image_url: url })
+  }
+
+  function collectImageUrls(cs: MenuCategoryDTO[]): Set<string> {
+    const s = new Set<string>()
+    for (const c of cs) for (const it of c.items) if (it.image_url) s.add(it.image_url)
+    return s
+  }
+
   function save() {
     setFeedback(null)
     // pulizia: scarta categorie senza nome e piatti senza nome
@@ -91,9 +116,18 @@ export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
         })),
       }))
       .filter(c => c.items.length > 0)
+    const before = collectImageUrls(initial)
+    const after = collectImageUrls(cleaned)
     startTransition(async () => {
       const r = await (saveAction ? saveAction(cleaned) : saveMyMenu(cleaned))
       if (r.ok) {
+        // Cleanup orfane solo dopo il salvataggio (niente riferimenti rotti):
+        // foto nostre presenti prima e non più referenziate.
+        if (enablePhotos) {
+          for (const u of before) {
+            if (!after.has(u)) { const p = ourStoragePath(u); if (p) deleteSiteImage(p).catch(() => {}) }
+          }
+        }
         setFeedback({ ok: true, msg: '✓ Menu salvato' })
         setTimeout(() => setFeedback(null), 3000)
       } else {
@@ -160,15 +194,18 @@ export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
         }
       `}</style>
 
-      <nav className="me-top">
-        <div className="me-top-left">
-          <Link href={backPath ?? '/admin'} className="me-back">← Pannello</Link>
-          <span className="me-title-bar">Menu</span>
-        </div>
-        <Link href={`/sites/${siteSlug}`} target="_blank" className="me-back">Vedi il sito ↗</Link>
-      </nav>
+      {!embedded && (
+        <nav className="me-top">
+          <div className="me-top-left">
+            <Link href={backPath ?? '/admin'} className="me-back">← Pannello</Link>
+            <span className="me-title-bar">Menu</span>
+          </div>
+          <Link href={`/sites/${siteSlug}`} target="_blank" className="me-back">Vedi il sito ↗</Link>
+        </nav>
+      )}
 
       <div className="me-wrap">
+        {embedded && <AdminSectionHead title="Menu" siteSlug={siteSlug} />}
         <p className="me-hint">Organizza il tuo menu per categorie (es. <em>Antipasti</em>, <em>Primi</em>, <em>Cocktail</em>). Per ogni piatto puoi mettere il prezzo e gli allergeni. Niente foto qui — quelle le curiamo noi.</p>
 
         {cats.map((cat, ci) => (
@@ -233,6 +270,29 @@ export function MenuEditor({ initial, siteSlug, backPath, saveAction }: Props) {
                     )
                   })}
                 </div>
+
+                {enablePhotos && (
+                  <div style={{ marginTop: 12, display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                    <div style={{ width: 140 }}>
+                      <ImageUploader
+                        kind="menu"
+                        compact
+                        action={uploadSiteImage}
+                        initialUrl={item.image_url}
+                        onUploaded={r => setPhoto(ci, ii, r.url)}
+                        hint="Foto piatto (opzionale)"
+                      />
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', paddingTop: 4, flex: 1, minWidth: 160 }}>
+                      Clicca per caricare o sostituire. La ottimizziamo noi.
+                      {item.image_url && (
+                        <button type="button" className="me-tool me-tool-danger" style={{ display: 'block', marginTop: 8 }} onClick={() => setPhoto(ci, ii, undefined)}>
+                          Rimuovi foto
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             <div style={{ textAlign: 'center', marginTop: 8 }}>

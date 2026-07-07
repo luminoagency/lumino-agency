@@ -10,8 +10,11 @@ export default async function MenuPage() {
     redirect('/login?next=' + encodeURIComponent('/admin/menu') + '&error=' + encodeURIComponent('Accedi per gestire il menu.'))
   }
   const m = await getMyMenu()
+  const enablePhotos = (site as any).tier !== 'basic'
   return (
     <MenuEditor
+      embedded
+      enablePhotos={enablePhotos}
       initial={m.categories || []}
       siteSlug={(site as any).slug}
     />
