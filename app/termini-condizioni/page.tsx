@@ -48,7 +48,7 @@ export default function TerminiCondizioniPage() {
 
           <h2>4. Prezzi</h2>
           <p>
-            I prezzi dei piani partono da €190 (Basic), €390 (Pro) e €590 (Premium). Il prezzo
+            I prezzi dei piani partono da €400 (Basic), €700 (Pro) e €1.100 (Premium). Il prezzo
             finale può variare in funzione della zona e della tipologia dell’attività, come indicato
             durante l’ordine. Tutti i prezzi sono espressi in euro. {SALES_TERMS.publicNote}
           </p>

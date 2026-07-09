@@ -383,17 +383,17 @@ export function SuperAdminClient(props: Props) {
             <div className="la-plan">
               <p className="la-plan-name">Basic</p>
               <p className="la-plan-count">{stats.planCount.basic}</p>
-              <p className="la-plan-sub">€{stats.planCount.basic * (pricingMeta.plans[0]?.priceFrom || 190)} (min)</p>
+              <p className="la-plan-sub">€{stats.planCount.basic * (pricingMeta.plans[0]?.priceFrom || 400)} (min)</p>
             </div>
             <div className="la-plan" style={{ borderColor: 'rgba(167,139,250,0.3)' }}>
               <p className="la-plan-name" style={{ color: '#c4b5fd' }}>Pro</p>
               <p className="la-plan-count">{stats.planCount.pro}</p>
-              <p className="la-plan-sub">€{stats.planCount.pro * (pricingMeta.plans[1]?.priceFrom || 390)} (min)</p>
+              <p className="la-plan-sub">€{stats.planCount.pro * (pricingMeta.plans[1]?.priceFrom || 700)} (min)</p>
             </div>
             <div className="la-plan" style={{ borderColor: 'rgba(229,45,29,0.3)' }}>
               <p className="la-plan-name" style={{ color: '#fda4a1' }}>Premium</p>
               <p className="la-plan-count">{stats.planCount.premium}</p>
-              <p className="la-plan-sub">€{stats.planCount.premium * (pricingMeta.plans[2]?.priceFrom || 590)} (min)</p>
+              <p className="la-plan-sub">€{stats.planCount.premium * (pricingMeta.plans[2]?.priceFrom || 1100)} (min)</p>
             </div>
           </div>
         </div>

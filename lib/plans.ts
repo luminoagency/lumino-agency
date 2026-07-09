@@ -28,8 +28,8 @@ export const PLANS: Plan[] = [
     tagline: 'il sito che funziona',
     description: 'Per chi vuole essere online in modo semplice e curato.',
     accent: '#888',
-    priceFrom: 190,
-    priceMax: 280,
+    priceFrom: 400,
+    priceMax: 600,
     features: [
       'Sito completo pubblicato in pochi giorni',
       'Menu con foto e allergeni',
@@ -58,8 +58,8 @@ export const PLANS: Plan[] = [
     tagline: 'il sito che prende prenotazioni',
     description: 'Per chi vuole far entrare più clienti dal sito.',
     accent: '#a78bfa',
-    priceFrom: 390,
-    priceMax: 590,
+    priceFrom: 700,
+    priceMax: 1050,
     features: [
       'Tutto del piano Basic',
       'Sezione "Lo chef"',
@@ -86,8 +86,8 @@ export const PLANS: Plan[] = [
     tagline: 'il sito che controlli tu',
     description: 'Per chi vuole gestire e cambiare tutto in autonomia.',
     accent: '#e52d1d',
-    priceFrom: 590,
-    priceMax: 850,
+    priceFrom: 1100,
+    priceMax: 1600,
     features: [
       'Tutto del piano Pro',
       'Logo personalizzato disegnato dal nostro studio',

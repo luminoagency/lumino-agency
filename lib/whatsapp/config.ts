@@ -16,7 +16,7 @@ export function pickBotPersona(): BotPersona {
 
 export const FAQ = {
   pricing:
-    'I prezzi partono da €190 per il piano base, €390 per quello principale, €590 per quello completo. ' +
+    'I prezzi partono da €400 per il piano base, €700 per quello principale, €1.100 per quello completo. ' +
     'Il prezzo esatto dipende da cosa ti serve.',
   delivery: 'Di solito siamo online in pochi giorni dalla conferma.',
   included: 'Sito professionale, dominio incluso per il primo anno, mobile-friendly e pronto da subito.',

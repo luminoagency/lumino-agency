@@ -76,7 +76,7 @@ const GROUPS: FaqGroup[] = [
         q: 'Quanto costa?',
         a: (
           <>
-            Si parte da €190 (Basic), €390 (Pro) e €590 (Premium). È un{' '}
+            Si parte da €400 (Basic), €700 (Pro) e €1.100 (Premium). È un{' '}
             <strong>pagamento unico</strong>, senza abbonamenti. Il confronto completo è nella pagina{' '}
             <Link href="/pricing">Piani e prezzi</Link>.
           </>

@@ -97,7 +97,7 @@ Lumino
 #### TIPO 2 — Domanda specifica
 
 Rispondi diretto e breve:
-- "Quanto costa?" → "Partono da €190, €390 o €590 a seconda del piano."
+- "Quanto costa?" → "Partono da €400, €700 o €1.100 a seconda del piano."
 - "Quanto ci mettete?" → "In pochi giorni dalla conferma."
 - "Il dominio?" → "Incluso il primo anno sui piani Pro e Premium."
 - "Fate il logo?" → "Sì, nel font del template. Logo disegnato a mano solo nel Premium."
