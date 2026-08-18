@@ -6,16 +6,55 @@ import { useEffect, useRef } from 'react'
  * I tre demo della sezione "Il design": finti mini-siti animati, costruiti in
  * codice, zero asset esterni.
  *
- * Il movimento è tutto in CSS (@keyframes + animation-play-state): sono
- * animazioni cicliche e indipendenti, e lasciarle al compositore costa meno di
- * qualsiasi loop JS, oltre a fermarsi da sole quando si mette in pausa. L'unica
- * cosa che gira su requestAnimationFrame è il contatore del terzo demo, perché
- * è testo che cambia e il CSS non sa scriverlo: è UN solo loop, condiviso, e
- * parte solo quando quel demo è davvero in scena.
+ * Il movimento è tutto in @keyframes CSS, ma NON gira a tempo: la sezione è
+ * pinnata e lo scroll pilota il fotogramma. Il trucco è quello classico —
+ * animazione in pausa più `animation-delay` negativo: un'animazione ferma
+ * viene comunque valutata al tempo `-delay`, quindi spostando il ritardo si
+ * scorre l'animazione fotogramma per fotogramma. Zero lavoro JS per frame, e
+ * i keyframe restano quelli scritti in CSS.
  *
- * In pausa quando la sezione è fuori dal viewport. Con prefers-reduced-motion
- * tutto resta sul fotogramma finale — mai un riquadro vuoto.
+ * Il ritardo arriva da una sola variabile `--seek` sul contenitore; i singoli
+ * elementi che avevano già un ritardo proprio lo sommano con calc(). Così
+ * l'intera scena si scorre toccando una variabile.
+ *
+ * Tre modalità:
+ *   scrub  → il fotogramma lo decide lo scroll (desktop, sezione pinnata)
+ *   auto   → ciclo continuo a tempo (mobile: niente pin, parte in viewport)
+ *   still  → fermo sul fotogramma finale (prefers-reduced-motion)
  */
+
+export type DemoMode = 'scrub' | 'auto' | 'still'
+
+/** Durata di un giro completo, per demo. Serve a mappare progresso → tempo. */
+export const DEMO_DURATIONS = [6, 7, 6]
+
+/** Valore finale del contatore del terzo demo, in secondi. */
+const D3_TARGET = 1.4
+/** Frazione del ciclo in cui il contatore arriva a destinazione. */
+const D3_COUNT_SHARE = 0.37
+
+function countAt(progress: number) {
+  const t = Math.min(1, Math.max(0, progress / D3_COUNT_SHARE))
+  const eased = 1 - Math.pow(1 - t, 3)
+  return (D3_TARGET * eased).toFixed(1)
+}
+
+/**
+ * Porta un demo al fotogramma corrispondente al progresso (0→1).
+ *
+ * Chiamata dal driver dello scroll a ogni aggiornamento: scrive una variabile
+ * CSS e, per il terzo demo, il testo del contatore — che è l'unica cosa che il
+ * CSS non sa disegnare da solo.
+ */
+export function seekDemo(stage: HTMLElement, index: number, progress: number) {
+  const duration = DEMO_DURATIONS[index] ?? 6
+  stage.style.setProperty('--seek', `${(-progress * duration).toFixed(3)}s`)
+
+  if (index === 2) {
+    const value = stage.querySelector<HTMLElement>('[data-count]')
+    if (value) value.textContent = countAt(progress)
+  }
+}
 
 /* ── 01 — Hero che ferma il pollice ─────────────────────────────────────── */
 
@@ -29,7 +68,10 @@ function DemoHero() {
         <span className="lm-d1-eyebrow" />
         <span className="lm-d1-title">
           {D1_LETTERS.map((char, i) => (
-            <i key={i} style={{ animationDelay: `${0.5 + i * 0.09}s` }}>
+            <i
+              key={i}
+              style={{ animationDelay: `calc(var(--seek, 0s) + ${(0.5 + i * 0.09).toFixed(2)}s)` }}
+            >
               {char}
             </i>
           ))}
@@ -66,38 +108,31 @@ function DemoMotion() {
 
 /* ── 03 — Prima il telefono ─────────────────────────────────────────────── */
 
-/** Valore finale del contatore, in secondi. */
-const D3_TARGET = 1.4
-const D3_CYCLE_MS = 6000
-const D3_COUNT_MS = 2200
+const D3_CYCLE_MS = DEMO_DURATIONS[2] * 1000
 
-function DemoMobile({ playing }: { playing: boolean }) {
+function DemoMobile({ mode }: { mode: DemoMode }) {
   const valueRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const el = valueRef.current
     if (!el) return
 
-    if (!playing) {
-      el.textContent = D3_TARGET.toFixed(1)
+    // In scrub il contatore lo scrive seekDemo, in still è già arrivato.
+    if (mode !== 'auto') {
+      if (mode === 'still') el.textContent = D3_TARGET.toFixed(1)
       return
     }
 
     let raf = 0
     const started = performance.now()
-
     const tick = (now: number) => {
-      // Il conteggio riparte a ogni giro del ciclo, in fase con il CSS.
-      const phase = (now - started) % D3_CYCLE_MS
-      const t = Math.min(1, phase / D3_COUNT_MS)
-      const eased = 1 - Math.pow(1 - t, 3)
-      el.textContent = (D3_TARGET * eased).toFixed(1)
+      const phase = ((now - started) % D3_CYCLE_MS) / D3_CYCLE_MS
+      el.textContent = countAt(phase)
       raf = requestAnimationFrame(tick)
     }
-
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing])
+  }, [mode])
 
   return (
     <div className="lm-demo lm-demo-3">
@@ -119,7 +154,10 @@ function DemoMobile({ playing }: { playing: boolean }) {
 
       <div className="lm-d3-meter">
         <span className="lm-d3-value">
-          <span ref={valueRef}>0.0</span>s
+          <span ref={valueRef} data-count>
+            0.0
+          </span>
+          s
         </span>
         <span className="lm-d3-label">caricamento</span>
       </div>
@@ -127,14 +165,9 @@ function DemoMobile({ playing }: { playing: boolean }) {
   )
 }
 
-/**
- * `playing` è vero solo per il demo attivo mentre la sezione è in viewport:
- * gli altri due restano montati (il crossfade è di sola opacità e ha bisogno
- * che ci siano) ma con le animazioni in pausa.
- */
-export default function ProcessDemo({ index, playing }: { index: number; playing: boolean }) {
+export default function ProcessDemo({ index, mode }: { index: number; mode: DemoMode }) {
   const content =
-    index === 0 ? <DemoHero /> : index === 1 ? <DemoMotion /> : <DemoMobile playing={playing} />
+    index === 0 ? <DemoHero /> : index === 1 ? <DemoMotion /> : <DemoMobile mode={mode} />
 
-  return <div className={`lm-demo-stage${playing ? ' is-playing' : ''}`}>{content}</div>
+  return <div className={`lm-demo-stage is-${mode}`}>{content}</div>
 }
