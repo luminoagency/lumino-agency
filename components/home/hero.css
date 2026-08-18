@@ -1,12 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LUMINO — HOME: hero
-   Blob liquidi, finestre fluttuanti, parola rotante, striscia dei progetti.
-   Il movimento lo mette heroMotion.ts: qui c'è solo come sono fatti e dove
-   stanno, più tutto ciò che va spento sotto 821px o con motion ridotto.
+   Titolo a tutto campo, tipografia di fondo, blob liquidi, gruppo rotante,
+   striscia dei progetti. Il movimento lo mettono i driver in heroMotion.ts:
+   qui c'è come sono fatti, dove stanno, e cosa va spento sotto 821px o con
+   motion ridotto.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Il fondo dell'hero è un piano a sé: blob, finestre e scintille si impilano
-   qui dentro, e il titolo resta sopra a tutti perché sta fuori. */
 .lm-hero-bg {
   position: absolute;
   inset: 0;
@@ -15,9 +14,49 @@
   pointer-events: none;
 }
 
-/* Spazio in fondo per la striscia dei progetti. */
+/* Il titolo prende quasi tutta l'altezza: margini stretti sopra, spazio sotto
+   solo per il piede e la striscia. */
 .lm-hero {
+  padding-top: clamp(5rem, 11vh, 7.5rem);
   padding-bottom: clamp(5.5rem, 11vh, 7.5rem);
+}
+.lm-hero-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  gap: clamp(2rem, 5vh, 3.5rem);
+}
+
+/* ─── Titolo ─────────────────────────────────────────────────────────────── */
+.lm-hero-title {
+  /* Massimo che tiene il gruppo più lungo ("il tuo ristorante merita.") dentro
+     la colonna: misurato, non a occhio. Oltre, quella riga verrebbe tagliata. */
+  font-size: clamp(2.1rem, 8.1vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  max-width: none;
+  margin: 0;
+  /* Le lettere si afferrano: il testo non deve selezionarsi mentre si trascina. */
+  user-select: none;
+  touch-action: pan-y;
+}
+.lm-char {
+  cursor: grab;
+}
+.lm-hero-title.is-grabbing .lm-char {
+  cursor: grabbing;
+}
+
+/* Ogni riga resta su una riga sola: se il gruppo rotante più lungo andasse a
+   capo, la struttura a tre righe salterebbe a ogni giro. Sotto 821px il titolo
+   può andare a capo: lì lo spazio non basta comunque. */
+@media (min-width: 821px) {
+  .lm-hline > span {
+    white-space: nowrap;
+  }
 }
 
 .lm-hero-actions {
@@ -25,6 +64,44 @@
   align-items: center;
   gap: 1.75rem;
   flex-wrap: wrap;
+}
+
+/* ─── Tipografia di fondo ────────────────────────────────────────────────── */
+.lm-backtype {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1vh;
+  overflow: hidden;
+}
+.lm-backtype-row {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.lm-backtype-track {
+  display: inline-flex;
+  will-change: transform;
+}
+.lm-backtype-half {
+  display: inline-flex;
+}
+/* Solo contorno, nessun riempimento: profondità senza peso. */
+.lm-backtype-word {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(5rem, 17vw, 19rem);
+  font-weight: 600;
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  padding-right: 0.14em;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--cream);
+  opacity: 0.09;
+}
+.lm-backtype-b .lm-backtype-word {
+  opacity: 0.06;
 }
 
 /* ─── Blob liquidi ───────────────────────────────────────────────────────── */
@@ -40,14 +117,14 @@
   overflow: hidden;
 }
 /* Il filtro sta sul palco, non sui singoli cerchi: è la fusione fra cerchi
-   vicini che deve essere calcolata, e serve che stiano tutti nella stessa
-   passata. L'opacità è qui e non sui cerchi: se fossero trasparenti loro,
-   l'alpha in ingresso al feColorMatrix sarebbe troppo bassa per fondersi. */
+   vicini che va calcolata, e serve che stiano tutti nella stessa passata.
+   L'opacità è qui e non sui cerchi: se fossero trasparenti loro, l'alpha in
+   ingresso al feColorMatrix sarebbe troppo bassa per fondersi. */
 .lm-blobs-stage {
   position: absolute;
   inset: -8%;
   filter: url(#lm-goo);
-  opacity: 0.34;
+  opacity: 0.3;
 }
 .lm-blob {
   position: absolute;
@@ -58,58 +135,20 @@
   will-change: transform;
 }
 
-/* ─── Finestre fluttuanti ────────────────────────────────────────────────── */
-.lm-hwins {
-  position: absolute;
-  inset: 0;
+/* Le scintille stanno sopra blob e tipografia, sotto al titolo. */
+.lm-hero-canvas {
   z-index: 2;
 }
-.lm-hwin {
-  position: absolute;
-  border-radius: 0.6rem;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  opacity: 0.6;
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45);
-  will-change: transform;
-}
-.lm-hwin-bar {
-  height: 22px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 9px;
-  background: rgba(20, 15, 13, 0.9);
-  border-bottom: 1px solid var(--line);
-}
-.lm-hwin-bar i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(244, 238, 228, 0.25);
-}
-.lm-hwin-shot {
-  height: 152px;
-  overflow: hidden;
-}
-.lm-hwin-shot img,
-.lm-hwin-shot video,
-.lm-hwin-shot .lm-card-placeholder {
-  width: 100%;
-  height: auto;
-  display: block;
-}
 
-/* ─── Parola rotante ─────────────────────────────────────────────────────── */
+/* ─── Gruppo rotante ─────────────────────────────────────────────────────── */
 .lm-rot {
   position: relative;
   display: inline-block;
   vertical-align: bottom;
   transition: width 0.55s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* La maschera serve SOLO durante lo scambio. Tenerla sempre taglierebbe le
-   lettere quando si sollevano verso il cursore. */
+/* La maschera serve SOLO durante lo scambio: tenerla sempre taglierebbe le
+   lettere quando si sollevano verso il cursore o vengono trascinate. */
 .lm-rot.is-rolling {
   overflow: hidden;
 }
@@ -189,21 +228,28 @@
 }
 
 /* ─── Sotto 821px ────────────────────────────────────────────────────────── */
-/* Blob e finestre chiedono spazio: su uno schermo stretto finirebbero sotto
-   il titolo invece che dietro. E il filtro SVG è la cosa più cara della
-   pagina, non ha senso pagarlo su un telefono. */
+/* Il filtro SVG è la cosa più cara della pagina: su un telefono non ha senso
+   pagarlo. La tipografia di fondo resta: è statica e costa un contorno. */
 @media (max-width: 820px) {
-  .lm-blobs,
-  .lm-hwins {
+  .lm-blobs {
     display: none;
+  }
+  .lm-char {
+    cursor: auto;
+  }
+  /* Su schermo stretto tenere il gruppo più lungo su una riga vorrebbe dire un
+     titolo da 34px: un hero che non apre niente. Meglio lasciarlo andare a capo
+     e ingrandirlo, riservando l'altezza di quattro righe — così il gruppo che
+     rientra su una riga sola non fa saltare su e giù tutto il resto. */
+  .lm-hero-title {
+    font-size: clamp(2.75rem, 11vw, 4rem);
+    min-height: 3.8em;
   }
 }
 
 /* ─── Motion ridotto ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .lm-hticker-track {
-    animation: none;
-  }
+  .lm-hticker-track,
   .lm-rot-word.is-in,
   .lm-rot-word.is-out {
     animation: none;
@@ -214,9 +260,8 @@
   .lm-rot {
     transition: none;
   }
-  /* I blob restano, ma fermi e senza deformazione: sono luce di fondo,
-     non un'animazione. */
-  .lm-blob {
+  .lm-blob,
+  .lm-backtype-track {
     transform: none !important;
   }
 }
