@@ -23,8 +23,11 @@ export default function Sectors() {
         </p>
 
         <div className="lm-sectors">
-          {SECTORS.map((sector) => (
-            <div className="lm-sector lm-reveal" key={sector.name}>
+          {SECTORS.map((sector, i) => (
+            <div className="lm-sector lm-reveal" key={sector.name} data-cursor="grow">
+              <span className="lm-sector-num" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
               <h3 className="lm-sector-name">{sector.name}</h3>
               <span className="lm-sector-meta">{sector.meta}</span>
             </div>
