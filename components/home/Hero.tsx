@@ -3,31 +3,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chars, Line } from './splitText'
 import HeroBlobs from './HeroBlobs'
-import HeroWindows from './HeroWindows'
+import HeroBackdrop from './HeroBackdrop'
 import HeroTicker from './HeroTicker'
 import RotatingWord from './RotatingWord'
 import {
+  WAVE_LIFE,
+  createBackdropDriver,
   createBlobsDriver,
   createLettersDriver,
   createSparksDriver,
-  createWindowsDriver,
   type Driver,
+  type Wave,
 } from './heroMotion'
 import { onMouseEffectsChange, pointer, trackPointer } from './useMotion'
 
 /**
  * Sezione 1 — Hero.
  *
- * Layout volutamente NON a due colonne e senza media incolonnato a destra: il
- * titolo occupa la larghezza, ancorato in basso, e tutto il resto — blob
- * liquidi, finestre, scintille — sta sparso dietro di lui.
- * (Vincolo permanente di progetto.)
+ * Il titolo occupa la larghezza piena e quasi tutta l'altezza della prima
+ * schermata; dietro non ci sono immagini ma tipografia. Nessuna colonna media a
+ * destra: quel layout è vietato in modo permanente su questi progetti.
  *
- * UN SOLO requestAnimationFrame per tutto. I quattro effetti sono driver
- * (vedi heroMotion.ts) che ricevono lo stesso stato del frame: quattro loop
- * separati si contenderebbero lo stesso budget senza mai vedere lo stesso
- * istante. Il loop non parte affatto sotto 821px o con motion ridotto, e si
- * ferma quando l'hero esce dal viewport.
+ * UN SOLO requestAnimationFrame per tutto. I quattro effetti sono driver (vedi
+ * heroMotion.ts) che ricevono lo stesso stato del frame — puntatore, velocità
+ * di scroll, tempo e onde attive — così reagiscono tutti alla stessa
+ * perturbazione nello stesso istante. Il loop non parte sotto 821px o con
+ * motion ridotto, e si ferma quando l'hero esce dal viewport.
  */
 
 export const HERO_TITLE = 'Diamo forma al sito che il tuo brand merita.'
@@ -37,13 +38,13 @@ export default function Hero() {
   const titleRef = useRef<HTMLHeadingElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const blobsRef = useRef<HTMLDivElement>(null)
-  const winsRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
   const lettersRef = useRef<Driver | null>(null)
 
   const [active, setActive] = useState(true)
 
-  // Dopo ogni cambio della parola rotante il titolo ha lettere nuove:
-  // il driver deve riprenderle, altrimenti smettono di reagire al cursore.
+  // Dopo ogni cambio del gruppo rotante il titolo ha lettere nuove: il driver
+  // deve riprenderle e rimisurarne le posizioni di riposo.
   const handleWordChange = useCallback(() => {
     lettersRef.current?.refresh?.()
   }, [])
@@ -53,17 +54,18 @@ export default function Hero() {
     const title = titleRef.current
     const canvas = canvasRef.current
     const blobs = blobsRef.current
-    const wins = winsRef.current
-    if (!hero || !title || !canvas || !blobs || !wins) return
+    const backdrop = backdropRef.current
+    if (!hero || !title || !canvas || !blobs || !backdrop) return
 
     let drivers: Driver[] = []
+    let sparks: Driver | null = null
     let raf = 0
     let live = false
     let visible = true
     let stopPointer: (() => void) | null = null
     let started = 0
+    let waves: Wave[] = []
 
-    // Velocità di scroll: accumulata dal listener, smorzata nel loop.
     let scrollVel = 0
     let lastScroll = window.scrollY
     const onScroll = () => {
@@ -71,18 +73,24 @@ export default function Hero() {
       lastScroll = window.scrollY
     }
 
+    // Il click non disegna un cerchio sopra: genera una perturbazione che
+    // lettere, blob e scintille leggono dallo stato del frame.
+    const onDown = (event: PointerEvent) => {
+      const now = performance.now() - started
+      waves.push({ x: event.clientX, y: event.clientY, born: now })
+      sparks?.burst?.(event.clientX, event.clientY)
+    }
+
     const tick = (now: number) => {
+      const time = now - started
+      // Le onde esaurite escono dalla lista: nessuno deve continuare a
+      // interrogare un fronte che non esiste più.
+      if (waves.length) waves = waves.filter((w) => time - w.born <= WAVE_LIFE)
+
       if (visible) {
-        const state = {
-          pointerX: pointer.x,
-          pointerY: pointer.y,
-          scrollVel,
-          time: now - started,
-        }
+        const state = { pointerX: pointer.x, pointerY: pointer.y, scrollVel, time, waves }
         for (const driver of drivers) driver.update(state)
       }
-      // Smorzamento fuori dal blocco: da fermi i blob devono tornare a fondersi
-      // anche mentre l'hero è appena uscito dal viewport.
       scrollVel *= 0.9
       raf = requestAnimationFrame(tick)
     }
@@ -95,16 +103,18 @@ export default function Hero() {
 
       const letters = createLettersDriver(title)
       lettersRef.current = letters
+      sparks = createSparksDriver(canvas)
 
       drivers = [
         letters,
-        createSparksDriver(canvas, hero),
+        sparks,
         createBlobsDriver(blobs, Array.from(blobs.querySelectorAll<HTMLElement>('.lm-blob'))),
-        createWindowsDriver(wins, Array.from(wins.querySelectorAll<HTMLElement>('.lm-hwin'))),
+        createBackdropDriver(Array.from(backdrop.querySelectorAll<HTMLElement>('.lm-backtype-track'))),
       ]
 
       lastScroll = window.scrollY
       window.addEventListener('scroll', onScroll, { passive: true })
+      hero.addEventListener('pointerdown', onDown)
       hero.classList.add('is-live')
       raf = requestAnimationFrame(tick)
     }
@@ -114,13 +124,16 @@ export default function Hero() {
       live = false
       cancelAnimationFrame(raf)
       window.removeEventListener('scroll', onScroll)
+      hero.removeEventListener('pointerdown', onDown)
       hero.classList.remove('is-live')
       drivers.forEach((driver) => {
         driver.reset()
         driver.destroy?.()
       })
       drivers = []
+      sparks = null
       lettersRef.current = null
+      waves = []
       stopPointer?.()
       stopPointer = null
     }
@@ -150,18 +163,17 @@ export default function Hero() {
         <div ref={blobsRef}>
           <HeroBlobs />
         </div>
-        <div ref={winsRef}>
-          <HeroWindows />
+        <div ref={backdropRef}>
+          <HeroBackdrop />
         </div>
         <canvas className="lm-hero-canvas" ref={canvasRef} />
       </div>
 
-      <div className="lm-wrap">
-        <h1 className="lm-display lm-d1 lm-hero-title" ref={titleRef} aria-label={HERO_TITLE}>
+      <div className="lm-wrap lm-hero-inner">
+        <h1 className="lm-display lm-hero-title" ref={titleRef} aria-label={HERO_TITLE}>
           <Line segments={[{ text: 'Diamo forma', variant: 'thin' }]} />
-          <Line segments={[{ text: 'al sito che il' }]} />
+          <Line segments={[{ text: 'al sito che' }]} />
           <Line>
-            <Chars text="tuo " />
             <RotatingWord active={active} onChange={handleWordChange} />
             <Chars text=" " />
             <Chars text="merita." variant="grad" />
@@ -179,7 +191,7 @@ export default function Hero() {
               Guarda i lavori
               <span className="lm-hero-scroll-line" aria-hidden="true" />
             </a>
-            <span className="lm-playhint">passa sopra il titolo — reagisce</span>
+            <span className="lm-playhint">trascina le lettere — clicca ovunque</span>
           </div>
         </div>
       </div>
