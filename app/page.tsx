@@ -1,5 +1,6 @@
 import '@/components/home/home.css'
 import '@/components/home/motion.css'
+import '@/components/home/hero.css'
 
 import Preloader from '@/components/home/Preloader'
 import Cursor from '@/components/home/Cursor'
