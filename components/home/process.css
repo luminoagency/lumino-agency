@@ -9,6 +9,8 @@
 .lm-demo-stage {
   position: absolute;
   inset: 0;
+  /* Il fotogramma da mostrare, come ritardo negativo. Lo scrive seekDemo(). */
+  --seek: 0s;
 }
 .lm-demo {
   position: absolute;
@@ -16,12 +18,27 @@
   overflow: hidden;
   background: var(--void-2);
 }
-/* Di riposo tutto è fermo: si anima solo il demo in scena. */
+
+/* Tutto ciò che si muove parte fermo e legge --seek: un'animazione in pausa
+   viene comunque valutata al tempo `-animation-delay`, quindi spostando il
+   ritardo si scorre l'animazione fotogramma per fotogramma. È così che lo
+   scroll pilota i demo senza un solo calcolo JS per frame. */
 .lm-demo * {
   animation-play-state: paused;
+  animation-delay: var(--seek, 0s);
 }
-.lm-demo-stage.is-playing .lm-demo * {
+
+/* scrub — il fotogramma lo decide lo scroll: resta in pausa. */
+
+/* auto — nessun pin (mobile): ciclo continuo, ma solo mentre è in viewport.
+   Qui --seek resta 0s, quindi i ritardi tornano a essere quelli scritti. */
+.lm-demo-stage.is-auto.is-live .lm-demo * {
   animation-play-state: running;
+}
+
+/* still — motion ridotto: nessuna animazione, fotogramma finale. */
+.lm-demo-stage.is-still .lm-demo * {
+  animation: none !important;
 }
 
 /* ─── 01 — Hero che ferma il pollice ─────────────────────────────────────── */
@@ -31,7 +48,12 @@
   background:
     radial-gradient(80% 60% at 30% 20%, rgba(255, 205, 150, 0.35), transparent 70%),
     linear-gradient(160deg, var(--bordeaux), var(--violet) 72%, var(--blue));
-  animation: lm-d1-media 6s ease-in-out infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d1-media;
+  animation-duration: 6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
 @keyframes lm-d1-media {
   0% { transform: translateY(7%); opacity: 0; }
@@ -53,7 +75,12 @@
   display: block;
   border-radius: 999px;
   background: rgba(244, 238, 228, 0.75);
-  animation: lm-d1-fade 6s ease-in-out infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d1-fade;
+  animation-duration: 6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
 .lm-d1-eyebrow {
   width: 74px;
@@ -63,7 +90,10 @@
   width: 116px;
   height: 30px;
   background: var(--cream);
-  animation-delay: 1.5s;
+  /* Il ritardo proprio si SOMMA a --seek: senza il calc, questa regola
+     vincerebbe sullo scrub e il bottone resterebbe fermo mentre il resto
+     della scena scorre. */
+  animation-delay: calc(var(--seek, 0s) + 1.5s);
 }
 @keyframes lm-d1-fade {
   0%, 8% { opacity: 0; transform: translateY(14px); }
@@ -83,7 +113,12 @@
   font-size: clamp(1.6rem, 4vw, 2.6rem);
   line-height: 1.05;
   color: var(--cream);
-  animation: lm-d1-letter 6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d1-letter;
+  animation-duration: 6s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-iteration-count: infinite;
 }
 @keyframes lm-d1-letter {
   0% { transform: translateY(115%); opacity: 0; }
@@ -133,7 +168,12 @@
 }
 /* La card centrale è quella che il cursore visita: si alza e si illumina. */
 .lm-d2-card-b {
-  animation: lm-d2-lift 7s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d2-lift;
+  animation-duration: 7s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-iteration-count: infinite;
 }
 @keyframes lm-d2-lift {
   0%, 22% { transform: none; box-shadow: none; border-color: var(--line); }
@@ -157,7 +197,12 @@
   align-content: start;
   box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.5);
   transform: translateY(105%);
-  animation: lm-d2-panel 7s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d2-panel;
+  animation-duration: 7s;
+  animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+  animation-iteration-count: infinite;
 }
 .lm-d2-panel i {
   height: 8px;
@@ -188,7 +233,12 @@
   border-radius: 50%;
   background: var(--cream);
   box-shadow: 0 0 0 6px rgba(244, 238, 228, 0.14);
-  animation: lm-d2-cursor 7s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d2-cursor;
+  animation-duration: 7s;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  animation-iteration-count: infinite;
 }
 @keyframes lm-d2-cursor {
   0% { transform: translate(12%, 78%) scale(1); }
@@ -236,7 +286,13 @@
   display: grid;
   gap: 8px;
   padding: 10px;
-  animation: lm-d3-scroll 6s ease-in-out infinite alternate;
+  /* longhand, non shorthand: la shorthand azzererebbe delay e play-state,
+     e sono proprio quei due a reggere lo scrub. */
+  animation-name: lm-d3-scroll;
+  animation-duration: 6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 @keyframes lm-d3-scroll {
   from { transform: translateY(0); }
@@ -288,10 +344,102 @@
   color: var(--cream-dim);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sezione pinnata
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Pinnata, la sezione sta in una schermata: il testo non scorre più, quindi
+   gli spazi pensati per lo scroll vanno compattati o i tre step non ci stanno. */
+/* Pinnata, la sezione deve stare ESATTA in una schermata: se sborda, alla fine
+   del pin la pagina la fa scorrere per mostrarne il fondo, e si vede uno
+   strappo. Tutte le misure qui sotto servono a farla entrare — sono state
+   ricavate misurando la colonna più alta (i tre testi), non a occhio. */
+.lm-process.is-pinned {
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  padding-block: clamp(2.5rem, 6vh, 4rem);
+}
+.lm-process.is-pinned .lm-wrap {
+  width: 100%;
+}
+.lm-process.is-pinned .lm-process-media {
+  position: relative;
+  top: auto;
+  height: min(64vh, 560px);
+}
+.lm-process.is-pinned .lm-process-steps {
+  gap: clamp(1rem, 2.4vh, 1.75rem);
+  padding-block: 0;
+}
+.lm-process.is-pinned .lm-process-step {
+  gap: 0.55rem;
+}
+.lm-process.is-pinned .lm-process-step p {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 40ch;
+}
+
+/* Durante lo scrub l'opacità la scrive il driver a ogni frame: una transizione
+   qui vorrebbe dire inseguire lo scroll con un ritardo. */
+.lm-process-media.is-scrubbed .lm-process-layer {
+  transition: none;
+}
+
+/* Indicatore a tre segmenti: si riempie in continuo, non a scatti. */
+.lm-process-bars {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  padding: 10px 12px 0;
+  pointer-events: none;
+}
+.lm-process-bars i {
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(244, 238, 228, 0.18);
+  overflow: hidden;
+}
+.lm-process-bars span {
+  display: block;
+  height: 100%;
+  background: var(--grad);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
 /* ─── Motion ridotto: fermi sul fotogramma finale, mai vuoti ─────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .lm-demo *,
-  .lm-demo-stage.is-playing .lm-demo * {
+  /* Niente pin e niente sovrapposizioni: i tre demo si impilano, ciascuno sul
+     proprio fotogramma finale, accanto ai tre testi tutti leggibili. */
+  .lm-process-media {
+    position: relative;
+    top: auto;
+    height: auto;
+    display: grid;
+    gap: 1rem;
+  }
+  .lm-process-layer {
+    position: relative;
+    inset: auto;
+    opacity: 1 !important;
+    aspect-ratio: 4 / 3;
+    border-radius: 0.9rem;
+    overflow: hidden;
+  }
+  .lm-process-bars {
+    display: none;
+  }
+  .lm-process-step {
+    opacity: 1 !important;
+  }
+
+  .lm-demo * {
     animation: none !important;
   }
   .lm-d1-media,
