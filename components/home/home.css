@@ -1,0 +1,725 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUMINO — HOME (vetrina studio)
+   Foglio di stile della sola route "/". Importato da app/page.tsx: Next lo
+   inserisce nel chunk CSS di questa route e lo rimuove navigando altrove,
+   quindi le regole su body qui sotto non toccano le altre pagine.
+   Nessun colore hard-coded: solo i token di app/globals.css.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body {
+  background: var(--void);
+  color: var(--cream);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.lm {
+  --pad-x: clamp(1.25rem, 5vw, 5.5rem);
+  --maxw: 1440px;
+  position: relative;
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--cream);
+  overflow-x: hidden;
+}
+
+.lm ::selection {
+  background: rgba(229, 52, 42, 0.32);
+  color: var(--cream);
+}
+
+.lm-wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--pad-x);
+}
+
+.lm-section {
+  position: relative;
+  padding-block: clamp(6rem, 13vh, 11rem);
+}
+
+/* Sezioni a fondo chiaro — servono a spezzare il buio (Lavori, Servizi). */
+.lm-light {
+  background: var(--paper);
+  color: var(--ink);
+}
+.lm-light .lm-kicker,
+.lm-light .lm-lead {
+  color: var(--ink-dim);
+}
+
+/* ─── Tipografia ─────────────────────────────────────────────────────────── */
+.lm-display {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lm-d1 { font-size: clamp(2.75rem, 8.2vw, 8rem); }
+.lm-d2 { font-size: clamp(2.25rem, 5.6vw, 4.75rem); }
+.lm-d3 { font-size: clamp(1.6rem, 2.9vw, 2.5rem); }
+
+.lm-kicker {
+  font-size: clamp(0.68rem, 0.78vw, 0.76rem);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin: 0 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.lm-kicker::before {
+  content: "";
+  width: 1.75rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+  flex: none;
+}
+
+.lm-lead {
+  font-size: clamp(1rem, 1.22vw, 1.18rem);
+  line-height: 1.62;
+  color: var(--cream-dim);
+  margin: 0;
+  max-width: 46ch;
+}
+
+.lm-grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ─── Nav ────────────────────────────────────────────────────────────────── */
+.lm-nav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1.1rem, 2.2vh, 1.75rem) var(--pad-x);
+  mix-blend-mode: difference;
+}
+
+.lm-wordmark {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.25rem, 1.7vw, 1.6rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--cream);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  position: relative;
+}
+/* La "ı" del wordmark è senza puntino: il puntino è questa luce calda. */
+.lm-wordmark-spark {
+  position: absolute;
+  width: 0.3em;
+  height: 0.3em;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0.85em var(--red);
+  pointer-events: none;
+}
+
+.lm-menu-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0.55rem;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.32rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-content: center;
+}
+.lm-menu-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--cream);
+}
+
+/* ─── 1. Hero ────────────────────────────────────────────────────────────── */
+.lm-hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-block: clamp(7rem, 14vh, 10rem) clamp(2.5rem, 6vh, 4rem);
+  overflow: hidden;
+}
+.lm-hero-title {
+  position: relative;
+  z-index: 2;
+  max-width: 15ch;
+}
+.lm-hero-foot {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(2.5rem, 6vh, 4.5rem);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.lm-hero-sub {
+  font-size: clamp(1rem, 1.28vw, 1.22rem);
+  line-height: 1.6;
+  color: var(--cream-dim);
+  margin: 0;
+  max-width: 38ch;
+}
+.lm-hero-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.lm-hero-scroll-line {
+  width: 3.5rem;
+  height: 1px;
+  background: var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.lm-hero-scroll-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grad);
+  transform: translateX(-100%);
+  animation: lm-scroll-hint 2.6s ease-in-out infinite;
+}
+@keyframes lm-scroll-hint {
+  0% { transform: translateX(-100%); }
+  55%, 100% { transform: translateX(100%); }
+}
+
+/* Canvas delle scintille — dietro al titolo, mai sopra. */
+.lm-hero-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ─── 2. Marquee ─────────────────────────────────────────────────────────── */
+.lm-marquee {
+  position: relative;
+  padding-block: clamp(2.5rem, 6vh, 5rem);
+  border-block: 1px solid var(--line);
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+}
+.lm-marquee.is-dragging { cursor: grabbing; }
+.lm-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 3.5rem;
+  width: max-content;
+  will-change: transform;
+}
+.lm-marquee-item {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(3rem, 11vw, 10rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.lm-marquee-item[data-ghost="true"] {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line);
+}
+.lm-marquee-star {
+  flex: none;
+  width: clamp(1.5rem, 3vw, 2.75rem);
+  height: auto;
+  color: var(--red);
+}
+
+/* ─── 3. Chi siamo ───────────────────────────────────────────────────────── */
+.lm-about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: start;
+}
+.lm-about-copy {
+  display: grid;
+  gap: 1.6rem;
+  padding-top: 0.6rem;
+}
+.lm-about-copy p {
+  margin: 0;
+  font-size: clamp(1rem, 1.16vw, 1.12rem);
+  line-height: 1.72;
+  color: var(--cream-dim);
+}
+.lm-about-copy strong {
+  color: var(--cream);
+  font-weight: 500;
+}
+
+/* ─── 4. Lavori (fondo chiaro) ───────────────────────────────────────────── */
+.lm-works-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: clamp(2.5rem, 6vh, 4.5rem);
+}
+.lm-works-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+/* Card progetto — deve leggersi come un browser che scorre il sito */
+.lm-card {
+  --accent: var(--red);
+  display: grid;
+  gap: 0;
+  transform-style: preserve-3d;
+}
+
+.lm-card-browser {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--paper-2);
+  border: 1px solid var(--line-ink);
+  border-bottom: 0;
+  border-radius: 0.7rem 0.7rem 0 0;
+}
+.lm-card-dots {
+  display: inline-flex;
+  gap: 0.32rem;
+  flex: none;
+}
+.lm-card-dots i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--line-ink);
+}
+.lm-card-dots i:first-child {
+  background: var(--accent);
+  opacity: 0.65;
+}
+.lm-card-url {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lm-card-viewport {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--paper-2);
+  border: 1px solid var(--line-ink);
+  border-radius: 0 0 0.7rem 0.7rem;
+}
+/* Il nastro che scorre: solo translate3d, mai scale. */
+.lm-card-scroll {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  will-change: transform;
+}
+.lm-card-media {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.lm-card-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(160deg, var(--paper-2), var(--paper));
+  color: var(--ink-dim);
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  letter-spacing: -0.02em;
+}
+.lm-card-placeholder span {
+  opacity: 0.5;
+}
+
+.lm-card-progress {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--line-ink);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.lm-card-progress span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--grad);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.lm-card:hover .lm-card-progress {
+  opacity: 1;
+}
+
+/* Riflesso di luce che segue il cursore */
+.lm-card-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    38rem circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.5),
+    transparent 45%
+  );
+  mix-blend-mode: overlay;
+}
+.lm-card:hover .lm-card-sheen {
+  opacity: 1;
+}
+
+.lm-card-meta {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 1.25rem;
+}
+.lm-card-client {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.3rem, 2.1vw, 1.8rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.lm-card-tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.lm-card-blurb {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  max-width: 42ch;
+}
+
+/* ─── 5. Statement ───────────────────────────────────────────────────────── */
+.lm-statement {
+  min-height: 88svh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.lm-statement .lm-display {
+  max-width: 18ch;
+}
+
+/* ─── 6. Il design (sticky) ──────────────────────────────────────────────── */
+.lm-process-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: start;
+}
+.lm-process-media {
+  position: sticky;
+  top: calc((100vh - 72vh) / 2);
+  height: 72vh;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+/* REGOLA CRITICA: nessun transform: scale() su ciò che avvolge un <video>.
+   Il crossfade fra i livelli usa SOLO opacity. */
+.lm-process-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+.lm-process-layer.is-active { opacity: 1; }
+.lm-process-layer video,
+.lm-process-layer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-process-steps {
+  display: grid;
+  gap: clamp(3rem, 12vh, 8rem);
+  padding-block: clamp(2rem, 8vh, 6rem);
+}
+.lm-process-step {
+  display: grid;
+  gap: 1.1rem;
+  opacity: 0.34;
+  transition: opacity 0.5s ease;
+}
+.lm-process-step.is-active { opacity: 1; }
+.lm-process-num {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 0.95rem;
+  color: var(--red);
+  letter-spacing: 0.06em;
+}
+
+/* ─── 7. Cosa facciamo ───────────────────────────────────────────────────── */
+.lm-sectors {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+.lm-sector {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-block: clamp(1.1rem, 2.6vh, 1.9rem);
+  border-bottom: 1px solid var(--line);
+}
+.lm-sector-name {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.9rem, 5.4vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.lm-sector-meta {
+  font-size: 0.76rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  white-space: nowrap;
+}
+
+/* ─── 8. Servizi (fondo chiaro) ──────────────────────────────────────────── */
+.lm-services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line-ink);
+  border: 1px solid var(--line-ink);
+}
+.lm-service {
+  background: var(--paper);
+  padding: clamp(1.75rem, 3.4vw, 3rem);
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+  min-height: clamp(15rem, 26vh, 20rem);
+}
+.lm-service-idx {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+}
+.lm-service h3 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.lm-service p {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--ink-dim);
+}
+
+/* ─── 9. Statistiche ─────────────────────────────────────────────────────── */
+.lm-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+}
+.lm-stat {
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 1.6rem;
+  border-top: 1px solid var(--line);
+}
+.lm-stat-num {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2.75rem, 7vw, 5.75rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.lm-stat-label {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--cream-dim);
+  max-width: 22ch;
+}
+
+/* ─── 10. Contatti ───────────────────────────────────────────────────────── */
+.lm-contact {
+  min-height: 92svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(2.5rem, 7vh, 4.5rem);
+}
+.lm-contact-mail {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.35rem, 4.4vw, 3.5rem);
+  letter-spacing: -0.025em;
+  color: var(--cream);
+  text-decoration: none;
+  display: inline-block;
+  word-break: break-word;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.2em;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.lm-footer {
+  border-top: 1px solid var(--line);
+  padding-block: clamp(2.5rem, 5vh, 3.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 2.5rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--cream-dim);
+}
+.lm-footer-links {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.lm-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+.lm-footer a:hover {
+  color: var(--cream);
+}
+
+/* ─── Reveal allo scroll ─────────────────────────────────────────────────── */
+/* Stato di partenza applicato SOLO quando il JS ha confermato di essere vivo
+   (.lm-js-ready sul contenitore). Senza JS il contenuto resta visibile. */
+.lm-js-ready .lm-reveal {
+  opacity: 0;
+  transform: translate3d(0, 1.75rem, 0);
+  will-change: opacity, transform;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .lm-about-grid,
+  .lm-process-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lm-process-media {
+    position: relative;
+    top: auto;
+    height: clamp(18rem, 48vh, 26rem);
+  }
+  .lm-process-steps {
+    gap: 2.5rem;
+    padding-block: 2.5rem 0;
+  }
+  .lm-process-step {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .lm-works-grid,
+  .lm-services-grid,
+  .lm-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lm-hero-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.75rem;
+  }
+  .lm-statement {
+    min-height: 70svh;
+    text-align: left;
+    place-items: center start;
+  }
+  .lm-statement .lm-display {
+    max-width: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .lm-marquee-item {
+    font-size: clamp(2.5rem, 15vw, 4rem);
+  }
+  .lm-sector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+}
+
+/* ─── Motion ridotto ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lm-js-ready .lm-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lm-hero-scroll-line::after {
+    animation: none;
+    transform: none;
+    opacity: 0.6;
+  }
+  .lm-process-step {
+    opacity: 1 !important;
+  }
+  .lm *,
+  .lm *::before,
+  .lm *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
