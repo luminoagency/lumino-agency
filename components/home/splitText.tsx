@@ -21,7 +21,7 @@ export interface Segment {
   variant?: 'thin' | 'grad'
 }
 
-function Chars({ text, variant }: Segment): ReactNode {
+export function Chars({ text, variant }: Segment): ReactNode {
   return (
     <span className={variant ? `lm-seg lm-seg-${variant}` : 'lm-seg'}>
       {Array.from(text).map((char, i) =>
@@ -37,14 +37,26 @@ function Chars({ text, variant }: Segment): ReactNode {
   )
 }
 
-/** Una riga del titolo: il wrapper esterno taglia, quello interno sale. */
-export function Line({ segments }: { segments: Segment[] }): ReactNode {
+/**
+ * Una riga del titolo: il wrapper esterno taglia, quello interno sale.
+ *
+ * Accetta anche nodi già pronti (`children`) invece dei soli segmenti di testo:
+ * serve alla riga che contiene la parola rotante, che non è testo semplice.
+ */
+export function Line({
+  segments,
+  children,
+}: {
+  segments?: Segment[]
+  children?: ReactNode
+}): ReactNode {
   return (
     <span className="lm-hline" aria-hidden="true">
       <span>
-        {segments.map((segment, i) => (
+        {segments?.map((segment, i) => (
           <Chars key={i} text={segment.text} variant={segment.variant} />
         ))}
+        {children}
       </span>
     </span>
   )
