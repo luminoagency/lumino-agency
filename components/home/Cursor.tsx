@@ -58,12 +58,28 @@ export default function Cursor() {
       ring.classList.toggle('is-label', mode === 'label')
     }
 
+    // Quando il puntatore esce dalla finestra, punto e anello restano fermi
+    // dov'erano: in uno screenshot sembrano un pulsante appiccicato al bordo,
+    // e stando sopra a tutto (z-index 9999) si vedono anche sopra il menu.
+    // Fuori dalla finestra il cursore custom non deve esistere.
+    const onLeaveWindow = (event: PointerEvent) => {
+      if (event.relatedTarget === null) document.body.classList.add("lm-cursor-away")
+    }
+    const onEnterWindow = () => document.body.classList.remove("lm-cursor-away")
+
     const enable = () => {
       if (live) return
       live = true
       stopPointer = trackPointer()
       document.body.classList.add('lm-cursor-on')
+      // Nasconde punto e anello finché il puntatore non si muove davvero: al
+      // caricamento la posizione è un'ipotesi (il centro), e un cerchio fermo
+      // in mezzo allo schermo si legge come un elemento dell'interfaccia.
+      document.body.classList.add('lm-cursor-away')
+      window.addEventListener('pointermove', onEnterWindow, { once: false })
       document.addEventListener('pointerover', onOver)
+      document.addEventListener('pointerout', onLeaveWindow)
+      document.addEventListener('pointerover', onEnterWindow)
       raf = requestAnimationFrame(tick)
     }
 
@@ -72,7 +88,11 @@ export default function Cursor() {
       live = false
       cancelAnimationFrame(raf)
       document.removeEventListener('pointerover', onOver)
-      document.body.classList.remove('lm-cursor-on')
+      document.removeEventListener('pointerout', onLeaveWindow)
+      document.removeEventListener('pointerover', onEnterWindow)
+      window.removeEventListener('pointermove', onEnterWindow)
+      document.body.classList.remove('lm-cursor-on', 'lm-cursor-away')
+      
       stopPointer?.()
       stopPointer = null
       dot.classList.remove('is-hidden')
