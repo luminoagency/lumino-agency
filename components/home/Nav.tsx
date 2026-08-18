@@ -3,72 +3,54 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Wordmark from './Wordmark'
-import { bindScramble } from './scramble'
-import { lerp, onMouseEffectsChange, pointer, trackPointer } from './useMotion'
+import { prefersReducedMotion } from './useMotion'
 
 /**
  * Nav fissa + menu overlay.
  *
- * Comportamenti replicati dal riferimento:
- *   · 4 punti che ruotano di 45°, si allargano e prendono i colori della palette
- *   · overlay che si apre dall'alto (clip-path), voci a scaglioni
- *   · all'hover di una voce le altre sbiadiscono e il fondo si tinge
- *   · anteprima che insegue il cursore con lerp
- *   · "Chiudi" che ruota di 180° e diventa rosso
- *   · scramble su "Esplora", "Chiudi" e sulle voci
+ * Al passaggio su una voce, la stessa parola compare gigante sul fondo in solo
+ * contorno e le altre voci sbiadiscono. (Prima c'era un riquadro di anteprima:
+ * senza immagini era un rettangolo scuro, e senza immagini nostre resterebbe
+ * tale — la tipografia dice la stessa cosa senza chiedere asset.)
+ *
+ * Al click la navigazione diventa una transizione: un pannello di colore sale a
+ * coprire lo schermo, la pagina si sposta dietro il pannello, poi il pannello
+ * scopre verso l'alto. Non si vede mai il salto.
  */
 
 interface MenuItem {
   href: string
   label: string
-  /* Immagine dell'anteprima. Assente → riquadro in gradiente (nessuna
-     dipendenza da immagini esterne finché non abbiamo le nostre).
-     TODO ASSET: 4 anteprime 580×400 in /public/menu/. */
-  preview?: string
-  tint: string
 }
 
 const MENU: MenuItem[] = [
-  { href: '#studio', label: 'Chi siamo', tint: 'var(--bordeaux)' },
-  { href: '#lavori', label: 'Lavori', tint: 'var(--red)' },
-  { href: '#settori', label: 'Cosa facciamo', tint: 'var(--blue)' },
-  { href: '#contatti', label: 'Contatti', tint: 'var(--violet)' },
+  { href: '#studio', label: 'Chi siamo' },
+  { href: '#lavori', label: 'Lavori' },
+  { href: '#settori', label: 'Cosa facciamo' },
+  { href: '#contatti', label: 'Contatti' },
 ]
+
+/** Durata del pannello, allineata a @keyframes lm-swipe in motion.css. */
+const SWIPE_MS = 1100
+/** A metà corsa il pannello copre tutto: è lì che si salta. */
+const SWIPE_MID_MS = 520
 
 export default function Nav() {
   const [open, setOpen] = useState(false)
   const [hot, setHot] = useState<number | null>(null)
-
-  const menuWordRef = useRef<HTMLSpanElement>(null)
-  const closeWordRef = useRef<HTMLSpanElement>(null)
-  const previewRef = useRef<HTMLDivElement>(null)
-  const closeBtnRef = useRef<HTMLButtonElement>(null)
-  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([])
-
   const [scrolled, setScrolled] = useState(false)
+  const [swiping, setSwiping] = useState(false)
+
+  const closeBtnRef = useRef<HTMLButtonElement>(null)
+  const timers = useRef<number[]>([])
 
   const close = useCallback(() => setOpen(false), [])
 
-  /* Nav compatta appena si scrolla. */
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  /* Scramble su tutte le etichette del menu. */
-  useEffect(() => {
-    const unbinds: (() => void)[] = []
-
-    if (menuWordRef.current) unbinds.push(bindScramble(menuWordRef.current, 'Esplora'))
-    if (closeWordRef.current) unbinds.push(bindScramble(closeWordRef.current, 'Chiudi'))
-    linkRefs.current.forEach((el, i) => {
-      const label = el?.querySelector<HTMLElement>('.lm-ov-label')
-      if (label) unbinds.push(bindScramble(label, MENU[i].label))
-    })
-
-    return () => unbinds.forEach((fn) => fn())
   }, [])
 
   /* Blocco dello scroll + chiusura con Esc mentre l'overlay è aperto. */
@@ -89,45 +71,30 @@ export default function Nav() {
     }
   }, [open, close])
 
-  /* L'anteprima insegue il cursore. Solo da 821px in su e fuori da
-     motion ridotto, e solo mentre l'overlay è davvero aperto. */
-  useEffect(() => {
-    const preview = previewRef.current
-    if (!preview || !open) return
+  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), [])
 
-    let stopPointer: (() => void) | null = null
-    let raf = 0
-    let live = false
-    const pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+  const goTo = (href: string) => {
+    const target = document.querySelector(href)
+    target?.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }
 
-    const tick = () => {
-      pos.x = lerp(pos.x, pointer.x, 0.12)
-      pos.y = lerp(pos.y, pointer.y, 0.12)
-      preview.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`
-      raf = requestAnimationFrame(tick)
+  const navigate = (event: React.MouseEvent, href: string) => {
+    event.preventDefault()
+    setOpen(false)
+    setHot(null)
+
+    if (prefersReducedMotion()) {
+      goTo(href)
+      return
     }
 
-    const unsubscribe = onMouseEffectsChange((enabled) => {
-      if (enabled && !live) {
-        live = true
-        stopPointer = trackPointer()
-        raf = requestAnimationFrame(tick)
-      } else if (!enabled && live) {
-        live = false
-        cancelAnimationFrame(raf)
-        stopPointer?.()
-        stopPointer = null
-      }
-    })
+    setSwiping(true)
+    // A pannello alzato la pagina si sposta: il salto avviene dietro il colore.
+    timers.current.push(window.setTimeout(() => goTo(href), SWIPE_MID_MS))
+    timers.current.push(window.setTimeout(() => setSwiping(false), SWIPE_MS))
+  }
 
-    return () => {
-      unsubscribe()
-      cancelAnimationFrame(raf)
-      stopPointer?.()
-    }
-  }, [open])
-
-  const active = hot === null ? null : MENU[hot]
+  const activeLabel = hot === null ? null : MENU[hot].label
 
   return (
     <>
@@ -144,9 +111,7 @@ export default function Nav() {
           aria-expanded={open}
           data-cursor="grow"
         >
-          <span className="lm-menu-word" ref={menuWordRef}>
-            Esplora
-          </span>
+          <span className="lm-menu-word">Esplora</span>
           <span className="lm-halo" aria-hidden="true" />
           <span className="lm-cluster" aria-hidden="true">
             <i />
@@ -164,6 +129,11 @@ export default function Nav() {
       >
         <div className="lm-ov-wash" aria-hidden="true" />
 
+        {/* La voce puntata, gigante e in solo contorno, sul fondo del menu. */}
+        <span className={`lm-ov-ghost${activeLabel ? ' is-on' : ''}`} aria-hidden="true">
+          {activeLabel ?? ''}
+        </span>
+
         <div className="lm-ov-top">
           <span className="lm-wordmark" aria-hidden="true">
             <Wordmark />
@@ -176,7 +146,7 @@ export default function Nav() {
             ref={closeBtnRef}
             data-cursor="grow"
           >
-            <span ref={closeWordRef}>Chiudi</span>
+            <span>Chiudi</span>
             <span className="lm-close-ring" aria-hidden="true">
               <i />
               <i />
@@ -189,15 +159,12 @@ export default function Nav() {
             <a
               href={item.href}
               key={item.href}
-              onClick={close}
+              onClick={(event) => navigate(event, item.href)}
               onPointerEnter={() => setHot(i)}
               onPointerLeave={() => setHot(null)}
               onFocus={() => setHot(i)}
               onBlur={() => setHot(null)}
               data-cursor="grow"
-              ref={(el) => {
-                linkRefs.current[i] = el
-              }}
             >
               <span className="lm-ix">{String(i + 1).padStart(2, '0')}</span>
               <span className="lm-ov-label">{item.label}</span>
@@ -213,22 +180,7 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Anteprima che insegue il cursore: fuori dall'overlay per non essere
-          tagliata dal clip-path che lo apre. */}
-      <div
-        className={`lm-ovprev${open && active ? ' is-on' : ''}`}
-        ref={previewRef}
-        aria-hidden="true"
-      >
-        <div
-          className="lm-ovprev-inner"
-          style={{
-            background: active
-              ? `linear-gradient(150deg, var(--surface), ${active.tint})`
-              : undefined,
-          }}
-        />
-      </div>
+      {swiping ? <div className="lm-swipe is-on" aria-hidden="true" /> : null}
     </>
   )
 }
