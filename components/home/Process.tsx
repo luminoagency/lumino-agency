@@ -28,11 +28,11 @@ interface Step {
 }
 
 /*  TODO ASSET — clip da produrre, 6–8 secondi, mute, loop senza stacco,
-    verticali 4:5, WebM + MP4 di fallback, da mettere in /public/motion/:
+    verticali 4:5, da mettere in /public/motion/:
 
-      design-hero.webm     design-hero.mp4     design-hero.jpg    (poster)
-      design-motion.webm   design-motion.mp4   design-motion.jpg
-      design-mobile.webm   design-mobile.mp4   design-mobile.jpg
+      01-hero.webm     01-hero.mp4     01-hero.jpg    (poster)
+      02-motion.webm   02-motion.mp4   02-motion.jpg
+      03-mobile.webm   03-mobile.mp4   03-mobile.jpg
 
     Il movimento va esportato DENTRO la clip: qui non si scala nulla.
     Quando arrivano: ready: true e il markup <video> qui sotto entra in
@@ -41,35 +41,35 @@ interface Step {
 export const PROCESS_STEPS: Step[] = [
   {
     num: '01',
-    title: 'Hero immersivo',
-    body: 'La prima schermata deve dire dove sei e perché restare. Nessuna promessa generica: una scena, una frase, un motivo per scendere.',
+    title: 'Hero che ferma il pollice',
+    body: 'La prima schermata decide se restano o se ne vanno. Costruiamo aperture che non somigliano a nessun’altra: tipografia che reagisce, media che respira, nessun template.',
     ready: false,
-    poster: '/motion/design-hero.jpg',
+    poster: '/motion/01-hero.jpg',
     sources: [
-      { src: '/motion/design-hero.webm', type: 'video/webm' },
-      { src: '/motion/design-hero.mp4', type: 'video/mp4' },
+      { src: '/motion/01-hero.webm', type: 'video/webm' },
+      { src: '/motion/01-hero.mp4', type: 'video/mp4' },
     ],
   },
   {
     num: '02',
-    title: 'Motion su misura',
-    body: 'Il movimento è al servizio della lettura. Accompagna lo sguardo dove serve, e sparisce quando ha finito il suo lavoro.',
+    title: 'Movimento su misura',
+    body: 'Ogni animazione ha un motivo. Il movimento guida l’occhio dove serve, racconta il prodotto e resta sotto i 60 millisecondi di risposta.',
     ready: false,
-    poster: '/motion/design-motion.jpg',
+    poster: '/motion/02-motion.jpg',
     sources: [
-      { src: '/motion/design-motion.webm', type: 'video/webm' },
-      { src: '/motion/design-motion.mp4', type: 'video/mp4' },
+      { src: '/motion/02-motion.webm', type: 'video/webm' },
+      { src: '/motion/02-motion.mp4', type: 'video/mp4' },
     ],
   },
   {
     num: '03',
-    title: 'Mobile first',
-    body: 'La maggior parte di chi ti cerca ha una mano sola libera. Il telefono non è una riduzione del sito: è il sito.',
+    title: 'Prima il telefono',
+    body: 'L’80% dei tuoi clienti arriva da mobile. Progettiamo lì per primo, poi allarghiamo. Caricamento sotto i due secondi, sempre.',
     ready: false,
-    poster: '/motion/design-mobile.jpg',
+    poster: '/motion/03-mobile.jpg',
     sources: [
-      { src: '/motion/design-mobile.webm', type: 'video/webm' },
-      { src: '/motion/design-mobile.mp4', type: 'video/mp4' },
+      { src: '/motion/03-mobile.webm', type: 'video/webm' },
+      { src: '/motion/03-mobile.mp4', type: 'video/mp4' },
     ],
   },
 ]
