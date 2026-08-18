@@ -1,5 +1,9 @@
 import '@/components/home/home.css'
+import '@/components/home/motion.css'
 
+import Preloader from '@/components/home/Preloader'
+import Cursor from '@/components/home/Cursor'
+import Reveal from '@/components/home/Reveal'
 import Nav from '@/components/home/Nav'
 import Hero from '@/components/home/Hero'
 import Marquee from '@/components/home/Marquee'
@@ -21,14 +25,21 @@ import Footer from '@/components/home/Footer'
  *
  * Nessun CTA di vendita, nessun riferimento a piani o prezzi: la home racconta
  * chi siamo e mostra i lavori. Il percorso commerciale resta su /pricing e
- * /inizia, raggiungibili dal menu, e l'area cliente non è toccata.
+ * /inizia, che non sono più linkati da qui, e l'area cliente non è toccata.
  *
  * Le due sezioni a fondo chiaro (Lavori, Servizi) sono volutamente tali:
- * servono a spezzare il buio: non renderle scure.
+ * servono a spezzare il buio, non renderle scure.
+ *
+ * Preloader, Cursor e Reveal sono trasversali e stanno fuori dal <main>:
+ * non sono contenuto, sono lo strato che lo fa muovere.
  */
 export default function HomePage() {
   return (
     <div className="lm">
+      <Preloader />
+      <Cursor />
+      <Reveal />
+
       <Nav />
 
       <main>
