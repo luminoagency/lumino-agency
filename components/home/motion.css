@@ -1,0 +1,767 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUMINO — HOME: strato interazioni (Blocco 4)
+   Comportamenti replicati da design-ref/lumino-v2d.html, adattati a React.
+   Tenuto separato da home.css: lì c'è la struttura, qui solo ciò che si muove.
+
+   Due regole valgono ovunque in questo file:
+     · tutto sparisce sotto prefers-reduced-motion
+     · cursore ed effetti mouse esistono solo da 821px in su
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Lo stato "JS vivo": senza di esso nulla viene nascosto, così una pagina
+   senza JS resta interamente leggibile. */
+body.lm-js .lm-hline > span {
+  transform: translateY(110%);
+  opacity: 0;
+}
+body.lm-loaded .lm-hline > span {
+  transform: none;
+  opacity: 1;
+  transition:
+    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 1s;
+}
+body.lm-loaded .lm-hline:nth-of-type(2) > span {
+  transition-delay: 0.08s;
+}
+body.lm-loaded .lm-hline:nth-of-type(3) > span {
+  transition-delay: 0.16s;
+}
+body.lm-js .lm-hero-sub,
+body.lm-js .lm-hero-foot {
+  opacity: 0;
+}
+body.lm-loaded .lm-hero-sub {
+  opacity: 1;
+  transition: opacity 1s 0.5s;
+}
+body.lm-loaded .lm-hero-foot {
+  opacity: 1;
+  transition: opacity 1s 0.65s;
+}
+
+/* Nav: appena si scrolla si compatta e si appoggia su un vetro scuro. */
+.lm-nav.is-scrolled {
+  padding-top: clamp(0.7rem, 1.5vh, 0.95rem);
+  padding-bottom: clamp(0.7rem, 1.5vh, 0.95rem);
+  background: rgba(23, 18, 16, 0.78);
+  backdrop-filter: blur(14px);
+  border-bottom-color: var(--line);
+}
+
+/* ─── Cursore custom ─────────────────────────────────────────────────────── */
+/* Punto secco che segue senza ritardo + anello che insegue con lerp. */
+.lm-cur,
+.lm-cur-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+.lm-cur {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  background: var(--cream);
+  z-index: 10000;
+  mix-blend-mode: difference;
+  transition:
+    width 0.25s,
+    height 0.25s,
+    margin 0.25s;
+}
+.lm-cur-ring {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border: 1px solid rgba(244, 238, 228, 0.45);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    width 0.3s,
+    height 0.3s,
+    margin 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+}
+.lm-cur-ring span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: 0.3s;
+  white-space: nowrap;
+}
+.lm-cur.is-hidden {
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+.lm-cur-ring.is-grown {
+  width: 82px;
+  height: 82px;
+  margin: -41px 0 0 -41px;
+  background: rgba(139, 92, 246, 0.16);
+  border-color: transparent;
+}
+/* Sopra le card l'anello diventa la pastiglia rossa con scritto "Vedi". */
+.lm-cur-ring.is-label {
+  width: 96px;
+  height: 96px;
+  margin: -48px 0 0 -48px;
+  background: var(--red);
+  border-color: transparent;
+}
+.lm-cur-ring.is-label span {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Il cursore di sistema si nasconde SOLO dove esiste quello custom.
+   La condizione sta nel CSS e non solo nel JS di proposito: se la classe
+   restasse appesa dopo un ridimensionamento, sotto 821px ci si ritroverebbe
+   senza alcun cursore. Qui non può succedere. */
+@media (min-width: 821px) and (pointer: fine) {
+  body.lm-cursor-on,
+  body.lm-cursor-on .lm a,
+  body.lm-cursor-on .lm button,
+  body.lm-cursor-on .lm [data-cursor] {
+    cursor: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.lm-cursor-on,
+  body.lm-cursor-on .lm a,
+  body.lm-cursor-on .lm button,
+  body.lm-cursor-on .lm [data-cursor] {
+    cursor: auto;
+  }
+}
+
+/* ─── Aurora + aloni di fondo ────────────────────────────────────────────── */
+.lm-dawn,
+.lm-glow,
+.lm-aurora {
+  position: fixed;
+  pointer-events: none;
+}
+.lm-dawn {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62vh;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(233, 150, 110, 0.1),
+    rgba(139, 92, 246, 0.05) 45%,
+    transparent
+  );
+}
+.lm-glow {
+  border-radius: 50%;
+  filter: blur(95px);
+  z-index: 0;
+  opacity: 0.72;
+}
+.lm-glow-a {
+  width: 600px;
+  height: 600px;
+  top: -160px;
+  left: -220px;
+  background: radial-gradient(circle, var(--bordeaux), transparent 68%);
+}
+.lm-glow-b {
+  width: 700px;
+  height: 700px;
+  top: 4%;
+  right: -300px;
+  background: radial-gradient(
+    circle,
+    rgba(59, 79, 196, 0.9),
+    rgba(139, 92, 246, 0.4) 55%,
+    transparent 72%
+  );
+}
+/* L'alone caldo che insegue il cursore e schiarisce il fondo. */
+.lm-aurora {
+  top: 0;
+  left: 0;
+  width: 720px;
+  height: 720px;
+  margin: -360px 0 0 -360px;
+  border-radius: 50%;
+  z-index: 1;
+  filter: blur(120px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  will-change: transform;
+  background: radial-gradient(
+    circle,
+    rgba(255, 198, 140, 0.55),
+    rgba(229, 52, 42, 0.22) 38%,
+    rgba(139, 92, 246, 0.12) 60%,
+    transparent 74%
+  );
+}
+
+/* Il contenuto sta sopra gli aloni. */
+.lm-nav,
+.lm main,
+.lm footer {
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── Wordmark: la "ı" senza puntino, il puntino è una luce ──────────────── */
+.lm-wm {
+  display: inline-flex;
+}
+.lm-wm b {
+  font-weight: 500;
+  display: inline-block;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lm-wordmark:hover .lm-wm b:nth-child(2) {
+  transform: translateY(-2px);
+}
+.lm-wordmark:hover .lm-wm b:nth-child(4) {
+  transform: translateY(-1px);
+}
+.lm-il {
+  position: relative;
+  display: inline-block;
+}
+.lm-il::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0.04em;
+  width: 0.2em;
+  height: 0.2em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe2b0, var(--red) 70%);
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px 1px rgba(255, 180, 110, 0.85);
+  transition: 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* All'hover la luce si stacca e sale. */
+.lm-wordmark:hover .lm-il::after {
+  transform: translateX(-50%) translateY(-6px) scale(1.35);
+  box-shadow: 0 0 22px 4px rgba(255, 180, 110, 0.9);
+}
+
+/* ─── Pulsante menu: 4 punti che ruotano e prendono i colori ─────────────── */
+.lm-menu-btn {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.lm-cluster {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lm-cluster i {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cream);
+  transition: 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lm-cluster i:nth-child(1) { top: 0; left: 0; }
+.lm-cluster i:nth-child(2) { top: 0; right: 0; }
+.lm-cluster i:nth-child(3) { bottom: 0; left: 0; }
+.lm-cluster i:nth-child(4) { bottom: 0; right: 0; }
+.lm-menu-btn:hover .lm-cluster,
+.lm-menu-btn:focus-visible .lm-cluster {
+  transform: rotate(45deg);
+}
+.lm-menu-btn:hover .lm-cluster i:nth-child(1),
+.lm-menu-btn:focus-visible .lm-cluster i:nth-child(1) {
+  background: var(--red);
+  transform: translate(-4px, -4px);
+}
+.lm-menu-btn:hover .lm-cluster i:nth-child(2),
+.lm-menu-btn:focus-visible .lm-cluster i:nth-child(2) {
+  background: var(--pink);
+  transform: translate(4px, -4px);
+}
+.lm-menu-btn:hover .lm-cluster i:nth-child(3),
+.lm-menu-btn:focus-visible .lm-cluster i:nth-child(3) {
+  background: var(--violet);
+  transform: translate(-4px, 4px);
+}
+.lm-menu-btn:hover .lm-cluster i:nth-child(4),
+.lm-menu-btn:focus-visible .lm-cluster i:nth-child(4) {
+  background: var(--blue);
+  transform: translate(4px, 4px);
+}
+.lm-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  transform: scale(0.6);
+  opacity: 0;
+  transition: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lm-menu-btn:hover .lm-halo,
+.lm-menu-btn:focus-visible .lm-halo {
+  transform: scale(1);
+  opacity: 1;
+}
+.lm-menu-word {
+  position: absolute;
+  right: 70px;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  opacity: 0;
+  transform: translateX(10px);
+  transition: 0.4s;
+  white-space: nowrap;
+}
+.lm-menu-btn:hover .lm-menu-word,
+.lm-menu-btn:focus-visible .lm-menu-word {
+  opacity: 1;
+  transform: none;
+}
+@media (max-width: 820px) {
+  .lm-menu-word { display: none; }
+}
+
+/* ─── Menu overlay: si apre dall'alto, fondo chiaro ──────────────────────── */
+.lm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--paper);
+  color: var(--ink);
+  clip-path: inset(0 0 100% 0);
+  /* visibility, non solo clip-path: altrimenti i link dell'overlay chiuso
+     restano raggiungibili col tab. Cambia a fine transizione in chiusura,
+     subito in apertura. */
+  visibility: hidden;
+  transition:
+    clip-path 0.8s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s 0.8s;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.35rem, 3vw, 2.75rem);
+}
+.lm-overlay.is-open {
+  clip-path: inset(0 0 0 0);
+  visibility: visible;
+  transition:
+    clip-path 0.8s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s;
+}
+.lm-overlay > *:not(.lm-ov-wash) {
+  position: relative;
+  z-index: 1;
+}
+.lm-ov-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lm-ov-top .lm-wordmark {
+  color: var(--ink);
+}
+.lm-ov-top .lm-il::after {
+  background: radial-gradient(circle at 35% 30%, var(--red), var(--bordeaux) 70%);
+  box-shadow: none;
+}
+.lm-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.lm-close-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 17, 14, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lm-close-ring i {
+  position: absolute;
+  width: 19px;
+  height: 1.5px;
+  background: var(--ink);
+  transition: 0.55s;
+}
+.lm-close-ring i:first-child { transform: rotate(45deg); }
+.lm-close-ring i:last-child { transform: rotate(-45deg); }
+.lm-close:hover .lm-close-ring,
+.lm-close:focus-visible .lm-close-ring {
+  transform: rotate(180deg);
+  background: var(--red);
+  border-color: var(--red);
+}
+.lm-close:hover .lm-close-ring i,
+.lm-close:focus-visible .lm-close-ring i {
+  background: #fff;
+}
+
+.lm-ov-links {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+.lm-ov-links a {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(2.4rem, 8vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  width: max-content;
+  max-width: 100%;
+  position: relative;
+  text-decoration: none;
+  transition:
+    opacity 0.45s,
+    transform 0.45s,
+    padding 0.45s,
+    font-style 0.3s;
+}
+.lm-ov-links a .lm-ix {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0;
+  vertical-align: super;
+  color: var(--red);
+  margin-right: 16px;
+}
+.lm-overlay.is-open .lm-ov-links a {
+  animation: lm-linkup 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lm-overlay.is-open .lm-ov-links a:nth-child(1) { animation-delay: 0.25s; }
+.lm-overlay.is-open .lm-ov-links a:nth-child(2) { animation-delay: 0.32s; }
+.lm-overlay.is-open .lm-ov-links a:nth-child(3) { animation-delay: 0.39s; }
+.lm-overlay.is-open .lm-ov-links a:nth-child(4) { animation-delay: 0.46s; }
+.lm-overlay.is-open .lm-ov-links a:nth-child(5) { animation-delay: 0.53s; }
+@keyframes lm-linkup {
+  from { opacity: 0; transform: translateY(60px); }
+  to { opacity: 1; transform: none; }
+}
+.lm-ov-links a:hover {
+  font-style: italic;
+  padding-left: 34px;
+}
+/* Le voci non puntate sbiadiscono. */
+.lm-ov-links.is-hot a:not(:hover) {
+  opacity: 0.3;
+  transform: scale(0.97);
+}
+
+/* Anteprima che insegue il cursore. */
+.lm-ovprev {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 290px;
+  height: 200px;
+  margin: -100px 0 0 -145px;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 600;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  transition: opacity 0.4s;
+}
+.lm-ovprev.is-on {
+  opacity: 1;
+}
+.lm-ovprev-inner {
+  width: 100%;
+  height: 100%;
+  transform: scale(0.9) rotate(-4deg);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-ovprev.is-on .lm-ovprev-inner {
+  transform: scale(1) rotate(-2deg);
+}
+
+/* Il fondo del menu si tinge quando una voce è puntata. */
+.lm-ov-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s;
+  background:
+    radial-gradient(circle at 78% 30%, rgba(139, 92, 246, 0.2), transparent 60%),
+    radial-gradient(circle at 20% 80%, rgba(229, 52, 42, 0.16), transparent 62%);
+}
+.lm-overlay.is-hot .lm-ov-wash {
+  opacity: 1;
+}
+
+.lm-ov-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+  border-top: 1px solid var(--line-ink);
+  padding-top: 1.1rem;
+}
+
+/* ─── Hero: righe e lettere ──────────────────────────────────────────────── */
+.lm-hline {
+  display: block;
+  overflow: hidden;
+}
+.lm-hline > span {
+  display: inline-block;
+}
+.lm-char {
+  display: inline-block;
+  will-change: transform;
+  transition:
+    color 0.35s,
+    text-shadow 0.35s;
+}
+.lm-seg-thin {
+  font-weight: 300;
+  font-style: italic;
+  color: var(--cream-dim);
+}
+.lm-seg-grad {
+  font-style: italic;
+  font-weight: 500;
+}
+.lm-playhint {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  opacity: 0.65;
+}
+@media (max-width: 820px) {
+  .lm-playhint { display: none; }
+}
+
+/* ─── Marquee ────────────────────────────────────────────────────────────── */
+.lm-grabhint {
+  position: absolute;
+  top: 9px;
+  left: var(--pad-x);
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ─── Settori: lista cinetica ────────────────────────────────────────────── */
+.lm-sector {
+  position: relative;
+  overflow: hidden;
+  transition: padding 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* La luce sale da sotto quando la riga è puntata. */
+.lm-sector::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grad);
+  opacity: 0;
+  transform: translateY(101%);
+  transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 0;
+}
+.lm-sector:hover::before {
+  transform: translateY(0);
+  opacity: 0.16;
+}
+.lm-sector > * {
+  position: relative;
+  z-index: 1;
+}
+.lm-sector-num {
+  flex: none;
+  width: 3ch;
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+  transition: opacity 0.45s;
+}
+.lm-sector-name {
+  margin-right: auto;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-sector:hover {
+  padding-left: 26px;
+}
+.lm-sector:hover .lm-sector-num {
+  opacity: 0;
+}
+.lm-sector:hover .lm-sector-meta {
+  color: var(--cream);
+}
+
+/* ─── Servizi: la card si solleva e si scalda ────────────────────────────── */
+.lm-service {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s;
+}
+.lm-service::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--grad);
+  opacity: 0;
+  transition: opacity 0.45s;
+  z-index: 0;
+}
+.lm-service:hover::before {
+  opacity: 0.08;
+}
+.lm-service > * {
+  position: relative;
+  z-index: 1;
+}
+.lm-service:hover {
+  transform: translateY(-6px);
+}
+
+/* ─── Preloader ──────────────────────────────────────────────────────────── */
+.lm-pre {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  background: var(--void-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+}
+.lm-pre-word {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(48px, 10vw, 120px);
+  font-weight: 400;
+  overflow: hidden;
+  height: 1.1em;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+}
+.lm-pre-word .lm-wm {
+  transform: translateY(105%);
+  animation: lm-preup 0.9s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes lm-preup {
+  to { transform: none; }
+}
+.lm-pre-count {
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  color: var(--cream-dim);
+  font-variant-numeric: tabular-nums;
+}
+.lm-pre.is-done {
+  transform: translateY(-100%);
+  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+}
+body.lm-lock {
+  overflow: hidden;
+}
+
+/* ─── Reveal ─────────────────────────────────────────────────────────────── */
+.lm-js-ready .lm-reveal {
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-js-ready .lm-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ─── Niente di tutto questo sotto 821px o con motion ridotto ────────────── */
+@media (max-width: 820px) {
+  .lm-cur,
+  .lm-cur-ring,
+  .lm-aurora,
+  .lm-ovprev {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-cur,
+  .lm-cur-ring,
+  .lm-aurora,
+  .lm-ovprev,
+  .lm-pre {
+    display: none !important;
+  }
+  body.lm-js .lm-hline > span,
+  body.lm-js .lm-hero-sub,
+  body.lm-js .lm-hero-foot {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lm-overlay {
+    transition: visibility 0s;
+  }
+  .lm-overlay.is-open .lm-ov-links a {
+    animation: none;
+  }
+  .lm-sector,
+  .lm-sector::before,
+  .lm-service,
+  .lm-service::before {
+    transition: none;
+  }
+  .lm-sector:hover,
+  .lm-service:hover {
+    padding-left: 0;
+    transform: none;
+  }
+}
