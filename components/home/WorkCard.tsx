@@ -154,9 +154,11 @@ export default function WorkCard({ work, index }: { work: Work; index: number })
       ref={cardRef}
       className="lm-card lm-reveal"
       data-work={work.id}
+      data-cursor="label"
       style={{ ['--accent' as string]: work.accent }}
     >
-      {/* Barra finta del browser */}
+      {/* Barra finta del browser. La pillola dell'URL resta anche vuota:
+          i domini non sono confermati e non vanno inventati (vedi worksData). */}
       <div className="lm-card-browser">
         <span className="lm-card-dots" aria-hidden="true">
           <i />
