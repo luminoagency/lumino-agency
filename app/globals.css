@@ -20,10 +20,13 @@
   --cream-dim: #b9aea1;
 
   /* Sezioni a fondo chiaro (Lavori, Servizi) */
-  --paper: #f3ecdd;
-  --paper-2: #eae0cd;
+  --paper: #ffffff;
+  --paper-2: #f4f4f5;
   --ink: #16110e;
-  --ink-dim: #6b5f54;
+  /* Su crema il bruno #6B5F54 funzionava; su bianco puro vira allo sporco.
+     Questo è più scuro e meno olivastro: 7.0:1 su bianco, sopra AA anche
+     ai corpi piccoli, e resta chiaramente secondario rispetto a --ink. */
+  --ink-dim: #57524c;
 
   /* Accenti */
   --red: #e5342a;
@@ -34,7 +37,14 @@
 
   /* Separatori */
   --line: rgba(244, 238, 228, 0.16);
-  --line-ink: rgba(22, 17, 14, 0.14);
+  /* Su bianco un bordo al 14% quasi sparisce: il crema aiutava a staccare,
+     il bianco no. Alzato, e resta comunque un filo, non una gabbia. */
+  --line-ink: rgba(22, 17, 14, 0.18);
+
+  /* Su bianco puro le card non si staccano più dal fondo per contrasto:
+     serve un'ombra vera. Calda, non grigia, per non raffreddare la sezione. */
+  --shadow-ink: 0 1px 2px rgba(22, 17, 14, 0.05), 0 12px 32px rgba(22, 17, 14, 0.07);
+  --shadow-ink-lift: 0 2px 4px rgba(22, 17, 14, 0.06), 0 22px 48px rgba(22, 17, 14, 0.1);
 
   /* Gradiente firma */
   --grad: linear-gradient(100deg, #e5342a, #ec6a9c 46%, #8b5cf6);
