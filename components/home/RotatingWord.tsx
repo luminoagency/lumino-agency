@@ -5,26 +5,35 @@ import { Chars } from './splitText'
 import { prefersReducedMotion } from './useMotion'
 
 /**
- * La parola che ruota dentro il titolo: brand → ristorante → hotel → azienda →
- * negozio. La vecchia esce dall'alto, la nuova entra dal basso dietro una
- * maschera verticale.
+ * Il gruppo che ruota dentro il titolo: "il tuo brand" → "il tuo ristorante" →
+ * "la tua azienda" → …
  *
- * Due dettagli che fanno la differenza:
+ * Ruota l'INTERO gruppo articolo + nome, non il solo nome: "azienda" è
+ * femminile e con l'articolo fisso la riga leggeva "il tuo azienda".
  *
- *  · La larghezza è misurata e animata. Senza, il resto della riga salterebbe
- *    a ogni cambio, perché "hotel" e "ristorante" non sono larghe uguali.
- *  · Vengono montate solo la parola corrente e quella che sta uscendo. Le
- *    lettere sono osservate a ogni frame dal driver del titolo: tenerne in
- *    pagina cinque parole significherebbe cinquanta misurazioni per frame
- *    invece di venti, per quattro parole invisibili.
+ * La larghezza è misurata e animata, altrimenti il resto della riga salterebbe
+ * a ogni cambio. La misura arriva da un ResizeObserver sul fantasma in flusso,
+ * non da una lettura una tantum: così resta giusta anche quando i font
+ * finiscono di caricare o la finestra cambia dimensione, senza dover indovinare
+ * il momento buono per rimisurare.
  *
- * Con prefers-reduced-motion resta ferma su "brand" e non parte nessun timer.
+ * In pagina stanno solo il gruppo corrente e quello che sta uscendo: le lettere
+ * vengono misurate a ogni frame dal driver del titolo, e tenerne sei significa
+ * pagare sei volte per cinque gruppi invisibili.
  */
 
-const WORDS = ['brand', 'ristorante', 'hotel', 'azienda', 'negozio']
-const INTERVAL_MS = 2200
+const GROUPS = [
+  'il tuo brand',
+  'il tuo ristorante',
+  'il tuo hotel',
+  'la tua azienda',
+  'il tuo negozio',
+  'il tuo studio',
+]
+
+const INTERVAL_MS = 2600
 /** Durata dello scambio: oltre, la maschera va tolta. */
-const ROLL_MS = 680
+const ROLL_MS = 700
 
 export default function RotatingWord({
   active = true,
@@ -48,16 +57,29 @@ export default function RotatingWord({
       setIndex((i) => {
         setPrevious(i)
         setRolling(true)
-        return (i + 1) % WORDS.length
+        return (i + 1) % GROUPS.length
       })
     }, INTERVAL_MS)
 
     return () => window.clearInterval(id)
   }, [active])
 
+  // La larghezza segue il fantasma, qualunque cosa la faccia cambiare.
+  useLayoutEffect(() => {
+    const el = measureRef.current
+    if (!el) return
+
+    const read = () => setWidth(el.getBoundingClientRect().width)
+    read()
+
+    const observer = new ResizeObserver(read)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   // Finito lo scambio: via la maschera (altrimenti taglierebbe le lettere che
-  // si sollevano verso il cursore) e via la parola uscita, che altrimenti
-  // resterebbe in pagina a farsi misurare a ogni frame pur essendo invisibile.
+  // si sollevano o vengono trascinate) e via il gruppo uscito, che resterebbe
+  // in pagina a farsi misurare a ogni frame pur essendo invisibile.
   useEffect(() => {
     if (!rolling) return
     const id = window.setTimeout(() => {
@@ -67,43 +89,28 @@ export default function RotatingWord({
     return () => window.clearTimeout(id)
   }, [rolling, index])
 
-  // Misura prima del paint: la larghezza non deve mai essere vista sbagliata.
-  useLayoutEffect(() => {
-    const el = measureRef.current
-    if (el) setWidth(el.offsetWidth)
-  }, [index])
-
-  // Rimisura quando i font sono pronti e a ogni resize: la scala del titolo
-  // è fluida, quindi la larghezza giusta cambia con la finestra.
-  useEffect(() => {
-    const remeasure = () => {
-      const el = measureRef.current
-      if (el) setWidth(el.offsetWidth)
-    }
-    window.addEventListener('resize', remeasure)
-    document.fonts?.ready.then(remeasure).catch(() => {})
-    return () => window.removeEventListener('resize', remeasure)
-  }, [])
-
   useEffect(() => {
     onChange?.()
   }, [index, previous, onChange])
 
   return (
-    <span className={`lm-rot${rolling ? ' is-rolling' : ''}`} style={width ? { width } : undefined}>
-      {/* Fantasma che dà l'altezza alla riga e la larghezza da animare. */}
+    <span
+      className={`lm-rot${rolling ? ' is-rolling' : ''}`}
+      style={width ? { width: `${width}px` } : undefined}
+    >
+      {/* Fantasma in flusso: dà l'altezza alla riga e la larghezza da animare. */}
       <span className="lm-rot-measure" ref={measureRef} aria-hidden="true">
-        {WORDS[index]}
+        {GROUPS[index]}
       </span>
 
       {previous !== null && previous !== index ? (
         <span className="lm-rot-word is-out" key={`out-${previous}`}>
-          <Chars text={WORDS[previous]} />
+          <Chars text={GROUPS[previous]} />
         </span>
       ) : null}
 
       <span className="lm-rot-word is-in" key={`in-${index}`}>
-        <Chars text={WORDS[index]} />
+        <Chars text={GROUPS[index]} />
       </span>
     </span>
   )
