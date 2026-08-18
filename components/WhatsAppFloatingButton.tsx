@@ -14,8 +14,9 @@ import { COMPANY } from '@/lib/company'
  */
 
 // Pagine pubbliche dove il pulsante DEVE apparire (match esatto sul pathname).
+// La home '/' è volutamente ESCLUSA: è la vetrina dello studio, non un funnel,
+// e chiude già con la propria sezione Contatti.
 const SHOW_ON = new Set<string>([
-  '/',
   '/chi-siamo',
   '/pricing',
   '/faq',
