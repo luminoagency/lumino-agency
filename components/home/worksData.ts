@@ -30,11 +30,19 @@ export interface Work {
   client: string
   sector: string
   year: string
-  /** Testo mostrato nella barra finta del browser. Vuoto = pillola vuota.
-      TODO: da confermare, NON inventare domini. */
-  url: string
-  /** Link reale al sito online. Se assente, la card non è cliccabile. */
-  href?: string
+  /**
+   * Testo mostrato nella barra finta del browser.
+   *
+   * Oggi è il NOME del progetto, non l'indirizzo: scrivere
+   * "hosteria-moderna.vercel.app" su una vetrina fa amatoriale.
+   * Quando i domini ufficiali saranno attivi, qui si scrive il dominio.
+   */
+  barLabel: string
+  /**
+   * Indirizzo realmente caricato nell'iframe dell'overlay.
+   * Vuoto = la card non è apribile e resta una sola immagine.
+   */
+  siteUrl: string
   blurb: string
   /** Token colore usato per l'accento della card. */
   accent: string
@@ -51,22 +59,28 @@ export interface Work {
       hotel-aurora.webp
       miss-poppy.webp
 
-    Finché non ci sono, WorkCard mostra un placeholder generato in CSS
-    (nessuna immagine rotta, nessun layout shift: le dimensioni sono già
-    dichiarate qui sotto).
+    Servono a due cose: la card in griglia, e il fallback dentro l'overlay
+    quando un sito rifiuta di farsi incorporare.
 
-    TODO DATI — il campo `url` di ogni voce è VUOTO di proposito: nessun
-    dominio va inventato. Quando li confermi, la barra del browser li mostra.  */
+    TODO DOMINI — `barLabel` mostra il nome del progetto finché non ci sono i
+    domini ufficiali. `siteUrl` punta al deploy Vercel di produzione: tutti e
+    quattro verificati 200, senza X-Frame-Options né CSP frame-ancestors,
+    quindi incorporabili.
+
+    NOTA — rossi-restaurant NON è qui: il suo deploy Vercel è protetto da SSO
+    (302 verso vercel.com/sso-api) e risponde X-Frame-Options: DENY. Non è
+    pubblico e non è incorporabile.  */
 
 export const WORKS: Work[] = [
   {
     id: 'hosteria-moderna',
     client: 'Hosteria Moderna',
-    sector: 'Ristorazione',
+    sector: 'Osteria · Padova',
     year: '2026',
-    url: '',
+    barLabel: 'Hosteria Moderna',
+    siteUrl: 'https://hosteria-moderna.vercel.app/it',
     blurb:
-      'Cucina di ricerca raccontata senza fronzoli. Menu che si aggiorna da solo, prenotazioni gestite dalla sala.',
+      'Osteria e burger gourmet raccontati senza fronzoli. Menu che si aggiorna da solo, prenotazioni gestite dalla sala.',
     accent: 'var(--red)',
     ready: false,
     media: { kind: 'shot', src: '/works/hosteria-moderna.webp', width: 900, height: 5400 },
@@ -74,9 +88,10 @@ export const WORKS: Work[] = [
   {
     id: 'trattoria-dall-oste',
     client: "Trattoria Dall'Oste",
-    sector: 'Steakhouse',
+    sector: 'Steakhouse · Jesolo',
     year: '2026',
-    url: '',
+    barLabel: "Trattoria Dall'Oste",
+    siteUrl: 'https://trattoria-oste.vercel.app/it',
     blurb:
       'Carne, brace e un sipario che si apre sulla sala. Tipografia grossa, contrasto netto, zero decorazione inutile.',
     accent: 'var(--bordeaux)',
@@ -86,11 +101,12 @@ export const WORKS: Work[] = [
   {
     id: 'hotel-aurora',
     client: 'Hotel Aurora',
-    sector: 'Ospitalità',
+    sector: 'Hotel 4★S · Jesolo',
     year: '2026',
-    url: '',
+    barLabel: 'Hotel Aurora',
+    siteUrl: 'https://aurora-preview-blush.vercel.app/',
     blurb:
-      "Quattro stelle superior sul mare. L'ora dorata come chiave visiva, prenotazione diretta senza intermediari.",
+      "Quattro stelle superior fronte mare. L'ora dorata come chiave visiva, prenotazione diretta senza intermediari.",
     accent: 'var(--violet)',
     ready: false,
     media: { kind: 'shot', src: '/works/hotel-aurora.webp', width: 900, height: 5800 },
@@ -98,11 +114,12 @@ export const WORKS: Work[] = [
   {
     id: 'miss-poppy',
     client: 'Miss Poppy',
-    sector: 'Retail',
+    sector: 'Plant-based · Padova',
     year: '2025',
-    url: '',
+    barLabel: 'Miss Poppy',
+    siteUrl: 'https://misspoppy.vercel.app/it',
     blurb:
-      'Un negozio che online doveva restare sé stesso: colore pieno, ritmo veloce, catalogo che si sfoglia col pollice.',
+      'Fast food 100% vegetale che online doveva restare sé stesso: colore pieno, ritmo veloce, menu che si sfoglia col pollice.',
     accent: 'var(--pink)',
     ready: false,
     media: { kind: 'shot', src: '/works/miss-poppy.webp', width: 900, height: 5000 },
