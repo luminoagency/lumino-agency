@@ -312,41 +312,62 @@ body {
   transform-style: preserve-3d;
 }
 
-.lm-card-browser {
+/* La cornice tiene insieme barra e finestra: è l'elemento che cresce fino a
+   diventare la finestra a tutto schermo, quindi l'ombra va qui, non sui due
+   pezzi separati (altrimenti si vede la cucitura). */
+.lm-card-frame {
+  border-radius: 0.7rem;
+  overflow: hidden;
+  border: 1px solid var(--line-ink);
+  box-shadow: var(--shadow-ink);
+  transition: box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-card:hover .lm-card-frame {
+  box-shadow: var(--shadow-ink-lift);
+}
+
+/* Barra finta del browser — condivisa fra card e finestra grande. */
+.lm-chrome {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 0.9rem;
   background: var(--paper-2);
-  border: 1px solid var(--line-ink);
-  border-bottom: 0;
-  border-radius: 0.7rem 0.7rem 0 0;
+  border-bottom: 1px solid var(--line-ink);
 }
-.lm-card-dots {
+.lm-chrome-dots {
   display: inline-flex;
   gap: 0.32rem;
   flex: none;
 }
-.lm-card-dots i {
+.lm-chrome-dots i {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: var(--line-ink);
+  background: rgba(22, 17, 14, 0.16);
 }
-.lm-card-dots i:first-child {
-  background: var(--accent);
-  opacity: 0.65;
+.lm-chrome-dots i:first-child {
+  background: var(--accent, var(--red));
+  opacity: 0.7;
 }
-.lm-card-url {
+.lm-chrome-label {
   font-size: 0.72rem;
   letter-spacing: 0.02em;
   color: var(--ink-dim);
   background: var(--paper);
+  border: 1px solid var(--line-ink);
   border-radius: 999px;
-  padding: 0.2rem 0.7rem;
+  padding: 0.2rem 0.8rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.lm-chrome-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex: none;
 }
 
 .lm-card-viewport {
@@ -354,8 +375,35 @@ body {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: var(--paper-2);
-  border: 1px solid var(--line-ink);
-  border-radius: 0 0 0.7rem 0.7rem;
+}
+
+/* Superficie cliccabile: un <button> vero, non un onClick sulla card, così
+   la tastiera ci arriva e lo screen reader sa che cosa fa. */
+.lm-card-open {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.lm-card-open:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: -3px;
+}
+
+.lm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 /* Il nastro che scorre: solo translate3d, mai scale. */
 .lm-card-scroll {
