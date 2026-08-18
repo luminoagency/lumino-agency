@@ -1,27 +1,30 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Work } from './worksData'
 import BrowserChrome from './BrowserChrome'
 import WorkMediaView from './WorkMediaView'
-import { POINTER_BREAKPOINT, gsap, lerp, mouseEffectsEnabled } from './useMotion'
+import { POINTER_BREAKPOINT, gsap, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
 
 /**
  * Card progetto: deve leggersi come un browser che scorre il sito del cliente.
  *
- * All'hover lo screenshot full-page scorre dall'alto in basso in ~5 secondi con
- * easing, la barra in gradiente segue l'avanzamento, la card si inclina verso il
- * mouse e un riflesso di luce insegue il cursore. All'uscita torna su.
+ * Lo scorrimento parte DA SOLO quando la card entra in viewport e va in loop
+ * lento e continuo — una card ferma sembra un'immagine, e nessuno scopre che
+ * si muove se prima non ci passa sopra. L'hover non avvia niente: accelera
+ * quello che sta già andando.
  *
- * Al click apre il sito vero dentro la vetrina (vedi WorkViewer): passa al
- * chiamante il rettangolo della propria cornice, così la finestra grande può
- * partire esattamente da qui e crescere, invece di comparire per dissolvenza.
+ * Le velocità sono sfalsate fra le card: quattro nastri sincronizzati si
+ * leggono come un'unica animazione, quattro sfasati come quattro siti.
  *
- * Tutto l'apparato mouse è attivo solo da 821px in su, con puntatore fine e
- * fuori da prefers-reduced-motion.
+ * Tilt e riflesso restano legati al mouse, quindi solo da 821px in su con
+ * puntatore fine. Lo scorrimento no: quello serve anche su mobile.
  */
 
-const SCROLL_SECONDS = 5
+/** Durata base di una passata, allungata di card in card. */
+const SCROLL_BASE_S = 15
+const SCROLL_STEP_S = 2.6
+const HOVER_BOOST = 2.4
 const TILT_MAX = 6
 
 export default function WorkCard({
@@ -38,9 +41,11 @@ export default function WorkCard({
   const viewportRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
+  const [near, setNear] = useState(index < 2)
 
   const openable = work.siteUrl !== ''
 
+  /* ── Scorrimento automatico in loop ────────────────────────────────────── */
   useEffect(() => {
     const card = cardRef.current
     const viewport = viewportRef.current
@@ -49,6 +54,81 @@ export default function WorkCard({
     if (!card || !viewport || !scroller || !bar) return
 
     const video = scroller.querySelector('video')
+    let tl: gsap.core.Timeline | null = null
+
+    const build = () => {
+      const distance = scroller.scrollHeight - viewport.clientHeight
+      if (distance <= 1) return null
+
+      const duration = SCROLL_BASE_S + index * SCROLL_STEP_S
+      const timeline = gsap.timeline({ repeat: -1, yoyo: true, paused: true })
+      timeline
+        .fromTo(
+          scroller,
+          { y: 0 },
+          { y: -distance, duration, ease: 'none' },
+          0,
+        )
+        .fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration, ease: 'none' }, 0)
+      return timeline
+    }
+
+    // rootMargin generoso: il nastro è già in moto quando la card arriva
+    // davvero sotto gli occhi, e l'immagine ha iniziato a scaricarsi prima.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setNear(entry.isIntersecting)
+        if (prefersReducedMotion()) return
+
+        if (entry.isIntersecting) {
+          if (!tl) tl = build()
+          tl?.play()
+          if (video) void video.play().catch(() => {})
+        } else {
+          tl?.pause()
+          if (video) video.pause()
+        }
+      },
+      { rootMargin: '400px 0px', threshold: 0 },
+    )
+    observer.observe(card)
+
+    // Se il contenuto cambia altezza (immagine arrivata, resize) la corsa va
+    // ricalcolata, altrimenti si ferma prima o sfonda.
+    const resize = new ResizeObserver(() => {
+      if (!tl) return
+      const progress = tl.progress()
+      tl.kill()
+      gsap.set(scroller, { y: 0 })
+      tl = build()
+      if (tl) {
+        tl.progress(progress)
+        tl.play()
+      }
+    })
+    resize.observe(scroller)
+
+    const onEnter = () => tl?.timeScale(HOVER_BOOST)
+    const onLeave = () => tl?.timeScale(1)
+    card.addEventListener('pointerenter', onEnter)
+    card.addEventListener('pointerleave', onLeave)
+
+    return () => {
+      observer.disconnect()
+      resize.disconnect()
+      card.removeEventListener('pointerenter', onEnter)
+      card.removeEventListener('pointerleave', onLeave)
+      tl?.kill()
+      gsap.set(scroller, { y: 0 })
+      gsap.set(bar, { scaleX: 0 })
+    }
+  }, [index])
+
+  /* ── Tilt e riflesso: legati al mouse, quindi solo da 821px in su ──────── */
+  useEffect(() => {
+    const card = cardRef.current
+    const viewport = viewportRef.current
+    if (!card || !viewport) return
 
     const target = { x: 0, y: 0 }
     const current = { x: 0, y: 0 }
@@ -79,58 +159,33 @@ export default function WorkCard({
       const rect = card.getBoundingClientRect()
       const px = (event.clientX - rect.left) / rect.width
       const py = (event.clientY - rect.top) / rect.height
-
       target.x = (px - 0.5) * 2 * TILT_MAX
       target.y = -(py - 0.5) * 2 * TILT_MAX
-
       viewport.style.setProperty('--mx', `${px * 100}%`)
       viewport.style.setProperty('--my', `${py * 100}%`)
       start()
     }
 
-    const onEnter = () => {
-      const distance = scroller.scrollHeight - viewport.clientHeight
-      if (distance > 1) {
-        gsap.to(scroller, { y: -distance, duration: SCROLL_SECONDS, ease: 'power1.inOut', overwrite: true })
-        gsap.fromTo(
-          bar,
-          { scaleX: 0 },
-          { scaleX: 1, duration: SCROLL_SECONDS, ease: 'power1.inOut', overwrite: true },
-        )
-      }
-      if (video) void video.play().catch(() => {})
-    }
-
     const onLeave = () => {
-      gsap.to(scroller, { y: 0, duration: 0.85, ease: 'power3.out', overwrite: true })
-      gsap.to(bar, { scaleX: 0, duration: 0.35, ease: 'power2.out', overwrite: true })
       target.x = 0
       target.y = 0
       start()
-      if (video) video.pause()
     }
 
     let attached = false
-
     const attach = () => {
       if (attached) return
-      card.addEventListener('pointerenter', onEnter)
-      card.addEventListener('pointerleave', onLeave)
       card.addEventListener('pointermove', onMove)
+      card.addEventListener('pointerleave', onLeave)
       attached = true
     }
-
     const detach = () => {
       if (!attached) return
-      card.removeEventListener('pointerenter', onEnter)
-      card.removeEventListener('pointerleave', onLeave)
       card.removeEventListener('pointermove', onMove)
+      card.removeEventListener('pointerleave', onLeave)
       attached = false
       cancelAnimationFrame(raf)
       running = false
-      gsap.killTweensOf([scroller, bar])
-      gsap.set(scroller, { y: 0 })
-      gsap.set(bar, { scaleX: 0 })
       card.style.transform = ''
       current.x = 0
       current.y = 0
@@ -139,16 +194,15 @@ export default function WorkCard({
     }
 
     const sync = () => (mouseEffectsEnabled() ? attach() : detach())
-
     const queries = [
       window.matchMedia(`(min-width: ${POINTER_BREAKPOINT}px) and (pointer: fine)`),
       window.matchMedia('(prefers-reduced-motion: reduce)'),
     ]
-    queries.forEach((query) => query.addEventListener('change', sync))
+    queries.forEach((q) => q.addEventListener('change', sync))
     sync()
 
     return () => {
-      queries.forEach((query) => query.removeEventListener('change', sync))
+      queries.forEach((q) => q.removeEventListener('change', sync))
       detach()
     }
   }, [])
@@ -172,7 +226,7 @@ export default function WorkCard({
 
         <div className="lm-card-viewport" ref={viewportRef}>
           <div className="lm-card-scroll" ref={scrollRef}>
-            <WorkMediaView work={work} eager={index < 2} />
+            <WorkMediaView work={work} eager={near} />
           </div>
 
           <div className="lm-card-progress" aria-hidden="true">
