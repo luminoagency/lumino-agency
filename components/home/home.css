@@ -107,7 +107,12 @@ body {
   justify-content: space-between;
   gap: 1rem;
   padding: clamp(1.1rem, 2.2vh, 1.75rem) var(--pad-x);
-  mix-blend-mode: difference;
+  background: linear-gradient(to bottom, rgba(23, 18, 16, 0.8), transparent);
+  transition:
+    padding 0.4s,
+    background 0.4s,
+    border-color 0.4s;
+  border-bottom: 1px solid transparent;
 }
 
 .lm-wordmark {
