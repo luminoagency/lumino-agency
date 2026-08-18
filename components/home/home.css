@@ -417,41 +417,159 @@ body {
   width: 100%;
   height: auto;
 }
-/* Placeholder finché lo screenshot vero non è in /public/works/.
-   Volutamente ALTO come una pagina reale: così lo scorrimento all'hover si
-   vede già adesso, e sostituendolo con il .webp non cambia nulla d'altro. */
-.lm-card-placeholder {
-  display: grid;
-  align-content: start;
-  justify-items: center;
-  gap: 0;
+/* Finto layout di sito, finché lo screenshot vero non è in /public/works/.
+   Non è un riempitivo: ha nav, hero, blocchi immagine nei colori del progetto,
+   colonne e listino. Serve a far capire cosa sarà quella card e a dare al
+   nastro un'altezza vera da scorrere — un rettangolo bianco non si vede
+   scorrere. Sostituendolo con il .webp non cambia nient'altro. */
+.lm-fake {
+  --accent: var(--red);
   width: 100%;
-  aspect-ratio: 900 / 2600;
-  padding-top: 14%;
-  color: var(--ink-dim);
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1.1rem, 2vw, 1.6rem);
-  letter-spacing: -0.02em;
-  background-color: var(--paper-2);
-  background-image:
-    linear-gradient(180deg, var(--paper) 0%, transparent 22%),
-    repeating-linear-gradient(
-      180deg,
-      transparent 0 7%,
-      var(--line-ink) 7% 7.25%,
-      transparent 7.25% 14%
-    );
+  display: grid;
+  gap: 5%;
+  padding-bottom: 6%;
+  background: var(--paper);
+  color: var(--ink);
 }
-.lm-card-placeholder span {
-  opacity: 0.45;
+.lm-fake-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5% 6% 0;
+}
+.lm-fake-logo {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(0.85rem, 2.4vw, 1.15rem);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.lm-fake-links {
+  display: inline-flex;
+  gap: 8px;
+}
+.lm-fake-links i {
+  width: 26px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line-ink);
+}
+.lm-fake-hero {
+  display: grid;
+  gap: 3.5%;
+  justify-items: start;
+  padding: 4% 6% 0;
+}
+.lm-fake-eyebrow {
+  width: 22%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent);
+  opacity: 0.75;
+}
+.lm-fake-h1 {
+  width: 88%;
+  height: 26px;
+  border-radius: 5px;
+  background: rgba(22, 17, 14, 0.82);
+}
+.lm-fake-h1.is-short {
+  width: 58%;
+}
+.lm-fake-h2 {
+  display: block;
+  width: 52%;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(22, 17, 14, 0.72);
+}
+.lm-fake-btn {
+  width: 34%;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.lm-fake-media {
+  height: 260px;
+  margin-inline: 6%;
+  border-radius: 10px;
+  background: linear-gradient(150deg, var(--accent), var(--violet) 85%);
+  opacity: 0.9;
+}
+.lm-fake-media.is-alt {
+  height: 200px;
+  background: linear-gradient(150deg, var(--blue), var(--accent) 90%);
+}
+.lm-fake-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4%;
+  padding-inline: 6%;
+}
+.lm-fake-col {
+  display: grid;
+  gap: 9px;
+}
+.lm-fake-thumb {
+  height: 74px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  border: 1px solid var(--line-ink);
+}
+.lm-fake-line {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--line-ink);
+}
+.lm-fake-line.is-short {
+  width: 62%;
+}
+.lm-fake-band {
+  display: grid;
+  gap: 11px;
+  padding: 0 6%;
+}
+.lm-fake-rows {
+  display: grid;
+  gap: 14px;
+  padding: 0 6%;
+}
+.lm-fake-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-ink);
+}
+.lm-fake-row .lm-fake-line {
+  flex: 1;
+}
+.lm-fake-price {
+  width: 42px;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.7;
+}
+.lm-fake-foot {
+  margin-top: 3%;
+  padding: 6%;
+  background: var(--ink);
+  display: flex;
+  justify-content: center;
+}
+.lm-fake-foot .lm-fake-logo {
+  color: var(--paper);
 }
 
+/* Il nastro scorre da solo, quindi la barra è un indicatore di posizione e sta
+   sempre accesa: comparire solo all'hover la faceva sembrare un effetto. */
 .lm-card-progress {
   position: absolute;
   inset: auto 0 0;
   height: 2px;
   background: var(--line-ink);
-  opacity: 0;
+  opacity: 0.9;
   transition: opacity 0.3s ease;
 }
 .lm-card-progress span {
