@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { COMPANY } from '@/lib/company'
+import Wordmark from './Wordmark'
 
 /**
  * Footer della home.
@@ -23,6 +24,10 @@ export default function Footer() {
   return (
     <footer className="lm-wrap">
       <div className="lm-footer">
+        <span className="lm-wordmark" style={{ fontSize: '1.2rem' }} aria-hidden="true">
+          <Wordmark />
+        </span>
+
         <span>
           © {year} {COMPANY.legalName} — {COMPANY.brand}. Company no. {COMPANY.companyNumber}.
         </span>
