@@ -2,9 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────────
+   LUMINO — DESIGN TOKENS
+   Base scura calda (mai nero puro) + due fondali chiari che spezzano il buio.
+   Questi token sono l'unica fonte di verità del colore: nei componenti si
+   scrive var(--…) o la utility Tailwind corrispondente, mai un hex.
+   Mapping Tailwind in tailwind.config.ts (prefisso `lm-`).
+   ───────────────────────────────────────────────────────────────────────── */
 :root {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
+  /* Fondali scuri */
+  --void: #171210;
+  --void-2: #1e1715;
+  --surface: #241c18;
+
+  /* Testo su fondo scuro */
+  --cream: #f4eee4;
+  --cream-dim: #b9aea1;
+
+  /* Sezioni a fondo chiaro (Lavori, Servizi) */
+  --paper: #f3ecdd;
+  --paper-2: #eae0cd;
+  --ink: #16110e;
+  --ink-dim: #6b5f54;
+
+  /* Accenti */
+  --red: #e5342a;
+  --bordeaux: #6b1f2a;
+  --blue: #3b4fc4;
+  --violet: #8b5cf6;
+  --pink: #ec6a9c;
+
+  /* Separatori */
+  --line: rgba(244, 238, 228, 0.16);
+  --line-ink: rgba(22, 17, 14, 0.14);
+
+  /* Gradiente firma */
+  --grad: linear-gradient(100deg, #e5342a, #ec6a9c 46%, #8b5cf6);
+
+  /* I token --font-sans / --font-serif sono valorizzati da next/font
+     in app/layout.tsx (Inter + Fraunces). Non ridefinirli qui: la
+     dichiarazione di next/font vive sull'elemento <html>. */
 }
 
 html,
