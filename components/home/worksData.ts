@@ -30,7 +30,8 @@ export interface Work {
   client: string
   sector: string
   year: string
-  /** Testo mostrato nella barra finta del browser. */
+  /** Testo mostrato nella barra finta del browser. Vuoto = pillola vuota.
+      TODO: da confermare, NON inventare domini. */
   url: string
   /** Link reale al sito online. Se assente, la card non è cliccabile. */
   href?: string
@@ -54,8 +55,8 @@ export interface Work {
     (nessuna immagine rotta, nessun layout shift: le dimensioni sono già
     dichiarate qui sotto).
 
-    TODO DATI — confermare gli URL reali dei siti online: quelli qui sotto
-    sono quelli attesi, non verificati.  */
+    TODO DATI — il campo `url` di ogni voce è VUOTO di proposito: nessun
+    dominio va inventato. Quando li confermi, la barra del browser li mostra.  */
 
 export const WORKS: Work[] = [
   {
@@ -63,7 +64,7 @@ export const WORKS: Work[] = [
     client: 'Hosteria Moderna',
     sector: 'Ristorazione',
     year: '2026',
-    url: 'hosteriamoderna.it',
+    url: '',
     blurb:
       'Cucina di ricerca raccontata senza fronzoli. Menu che si aggiorna da solo, prenotazioni gestite dalla sala.',
     accent: 'var(--red)',
@@ -75,7 +76,7 @@ export const WORKS: Work[] = [
     client: "Trattoria Dall'Oste",
     sector: 'Steakhouse',
     year: '2026',
-    url: 'trattoriadalloste.it',
+    url: '',
     blurb:
       'Carne, brace e un sipario che si apre sulla sala. Tipografia grossa, contrasto netto, zero decorazione inutile.',
     accent: 'var(--bordeaux)',
@@ -87,7 +88,7 @@ export const WORKS: Work[] = [
     client: 'Hotel Aurora',
     sector: 'Ospitalità',
     year: '2026',
-    url: 'hotelaurorajesolo.it',
+    url: '',
     blurb:
       "Quattro stelle superior sul mare. L'ora dorata come chiave visiva, prenotazione diretta senza intermediari.",
     accent: 'var(--violet)',
@@ -99,7 +100,7 @@ export const WORKS: Work[] = [
     client: 'Miss Poppy',
     sector: 'Retail',
     year: '2025',
-    url: 'misspoppy.it',
+    url: '',
     blurb:
       'Un negozio che online doveva restare sé stesso: colore pieno, ritmo veloce, catalogo che si sfoglia col pollice.',
     accent: 'var(--pink)',
