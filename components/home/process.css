@@ -1,0 +1,313 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUMINO — I tre demo della sezione "Il design"
+   Finti mini-siti animati, costruiti in codice. Nessun asset esterno.
+   Il movimento è in @keyframes: sono cicli indipendenti, e il compositore li
+   gestisce meglio di qualsiasi loop JS. In pausa quando la sezione esce dal
+   viewport (.is-playing), fermi sul fotogramma finale con motion ridotto.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-demo-stage {
+  position: absolute;
+  inset: 0;
+}
+.lm-demo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--void-2);
+}
+/* Di riposo tutto è fermo: si anima solo il demo in scena. */
+.lm-demo * {
+  animation-play-state: paused;
+}
+.lm-demo-stage.is-playing .lm-demo * {
+  animation-play-state: running;
+}
+
+/* ─── 01 — Hero che ferma il pollice ─────────────────────────────────────── */
+.lm-d1-media {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 60% at 30% 20%, rgba(255, 205, 150, 0.35), transparent 70%),
+    linear-gradient(160deg, var(--bordeaux), var(--violet) 72%, var(--blue));
+  animation: lm-d1-media 6s ease-in-out infinite;
+}
+@keyframes lm-d1-media {
+  0% { transform: translateY(7%); opacity: 0; }
+  14% { opacity: 1; }
+  84% { opacity: 1; }
+  96%, 100% { transform: translateY(-5%); opacity: 0; }
+}
+
+.lm-d1-copy {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 9%;
+  display: grid;
+  gap: 0.7rem;
+  justify-items: start;
+}
+.lm-d1-eyebrow,
+.lm-d1-btn {
+  display: block;
+  border-radius: 999px;
+  background: rgba(244, 238, 228, 0.75);
+  animation: lm-d1-fade 6s ease-in-out infinite;
+}
+.lm-d1-eyebrow {
+  width: 74px;
+  height: 6px;
+}
+.lm-d1-btn {
+  width: 116px;
+  height: 30px;
+  background: var(--cream);
+  animation-delay: 1.5s;
+}
+@keyframes lm-d1-fade {
+  0%, 8% { opacity: 0; transform: translateY(14px); }
+  20%, 84% { opacity: 1; transform: none; }
+  96%, 100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.lm-d1-title {
+  display: flex;
+  overflow: hidden;
+  padding-block: 0.08em;
+}
+.lm-d1-title i {
+  display: inline-block;
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: normal;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  line-height: 1.05;
+  color: var(--cream);
+  animation: lm-d1-letter 6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes lm-d1-letter {
+  0% { transform: translateY(115%); opacity: 0; }
+  16%, 82% { transform: none; opacity: 1; }
+  94%, 100% { transform: translateY(-60%); opacity: 0; }
+}
+
+/* ─── 02 — Movimento su misura ───────────────────────────────────────────── */
+/* Il demo vive dentro una sezione già scura: se resta sul fondo del sito non
+   si stacca e sembra un riquadro vuoto. Serve un piano più chiaro. */
+.lm-demo-2 {
+  background: linear-gradient(165deg, #2c2320, #1c1613);
+}
+.lm-d2-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 9%;
+  border-bottom: 1px solid var(--line);
+}
+.lm-d2-bar i {
+  height: 7px;
+  width: 34px;
+  border-radius: 4px;
+  background: rgba(244, 238, 228, 0.4);
+}
+.lm-d2-bar i.is-wide {
+  width: 62px;
+  background: rgba(244, 238, 228, 0.18);
+}
+.lm-d2-grid {
+  position: absolute;
+  inset: 18% 9% auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.lm-d2-card {
+  display: block;
+  height: 104px;
+  border-radius: 10px;
+  border: 1px solid rgba(244, 238, 228, 0.16);
+  background: linear-gradient(160deg, rgba(244, 238, 228, 0.2), rgba(244, 238, 228, 0.07));
+}
+/* La card centrale è quella che il cursore visita: si alza e si illumina. */
+.lm-d2-card-b {
+  animation: lm-d2-lift 7s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes lm-d2-lift {
+  0%, 22% { transform: none; box-shadow: none; border-color: var(--line); }
+  30%, 44% {
+    transform: translateY(-10px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    border-color: rgba(236, 106, 156, 0.5);
+  }
+  52%, 100% { transform: none; box-shadow: none; border-color: var(--line); }
+}
+
+.lm-d2-panel {
+  position: absolute;
+  inset: auto 9% 0;
+  height: 46%;
+  border-radius: 14px 14px 0 0;
+  background: var(--paper);
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.5);
+  transform: translateY(105%);
+  animation: lm-d2-panel 7s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+.lm-d2-panel i {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line-ink);
+}
+.lm-d2-panel i:first-child {
+  width: 44%;
+  height: 12px;
+  background: var(--ink);
+}
+.lm-d2-panel i.is-short {
+  width: 52%;
+}
+@keyframes lm-d2-panel {
+  0%, 44% { transform: translateY(105%); }
+  56%, 84% { transform: translateY(0); }
+  96%, 100% { transform: translateY(105%); }
+}
+
+/* Il cursore finto: attraversa, si posa sulla card, clicca. */
+.lm-d2-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 0 6px rgba(244, 238, 228, 0.14);
+  animation: lm-d2-cursor 7s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+@keyframes lm-d2-cursor {
+  0% { transform: translate(12%, 78%) scale(1); }
+  26% { transform: translate(46%, 30%) scale(1); }
+  30% { transform: translate(46%, 30%) scale(0.62); }
+  34% { transform: translate(46%, 30%) scale(1); }
+  60% { transform: translate(52%, 62%) scale(1); }
+  100% { transform: translate(12%, 78%) scale(1); }
+}
+
+/* ─── 03 — Prima il telefono ─────────────────────────────────────────────── */
+.lm-demo-3 {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(70% 60% at 50% 30%, var(--surface), var(--void-2));
+}
+.lm-d3-phone {
+  position: relative;
+  width: 42%;
+  min-width: 150px;
+  aspect-ratio: 9 / 18;
+  border-radius: 26px;
+  border: 2px solid rgba(244, 238, 228, 0.25);
+  background: var(--void);
+  padding: 8px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+.lm-d3-notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  translate: -50% 0;
+  width: 34%;
+  height: 8px;
+  border-radius: 0 0 8px 8px;
+  background: rgba(244, 238, 228, 0.25);
+}
+.lm-d3-screen {
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--void-2);
+}
+.lm-d3-scroll {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  animation: lm-d3-scroll 6s ease-in-out infinite alternate;
+}
+@keyframes lm-d3-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-52%); }
+}
+.lm-d3-block {
+  display: block;
+  height: 58px;
+  border-radius: 8px;
+  background: linear-gradient(150deg, var(--bordeaux), var(--violet));
+  opacity: 0.75;
+}
+.lm-d3-block.is-hero {
+  height: 96px;
+}
+.lm-d3-block.is-alt {
+  background: linear-gradient(150deg, var(--blue), var(--pink));
+}
+.lm-d3-line {
+  display: block;
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(244, 238, 228, 0.2);
+}
+.lm-d3-line.is-short {
+  width: 58%;
+}
+
+.lm-d3-meter {
+  position: absolute;
+  right: 8%;
+  bottom: 12%;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  text-align: right;
+}
+.lm-d3-value {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+  line-height: 1;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+.lm-d3-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+}
+
+/* ─── Motion ridotto: fermi sul fotogramma finale, mai vuoti ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .lm-demo *,
+  .lm-demo-stage.is-playing .lm-demo * {
+    animation: none !important;
+  }
+  .lm-d1-media,
+  .lm-d1-eyebrow,
+  .lm-d1-btn,
+  .lm-d1-title i {
+    opacity: 1;
+    transform: none;
+  }
+  .lm-d2-panel {
+    transform: translateY(0);
+  }
+  .lm-d2-cursor {
+    transform: translate(46%, 30%);
+  }
+  .lm-d3-scroll {
+    transform: none;
+  }
+}
