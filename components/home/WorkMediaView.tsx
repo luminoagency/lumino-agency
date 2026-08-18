@@ -1,23 +1,75 @@
 import type { Work } from './worksData'
 
 /**
- * Il contenuto della finestra: screenshot full-page, video in loop, o
- * placeholder finché l'asset non esiste.
+ * Il contenuto della finestra: screenshot full-page, video in loop, o — finché
+ * gli screenshot non esistono — un finto layout di sito costruito in CSS.
  *
- * Estratto dalla card perché serve identico in due posti — la card in griglia
- * e il fallback dentro la finestra a tutto schermo quando un sito rifiuta di
- * farsi incorporare.
+ * Il finto layout non è un riempitivo grigio: ha una nav, un hero con titolo e
+ * bottone, blocchi immagine nei colori del progetto e paragrafi. Serve a far
+ * capire cosa sarà quella card, e soprattutto a dare al nastro un'altezza vera
+ * da scorrere: un rettangolo bianco non si vede scorrere.
  */
+
+function FakeSite({ work }: { work: Work }) {
+  return (
+    <div className="lm-fake" style={{ ['--accent' as string]: work.accent }} aria-hidden="true">
+      <div className="lm-fake-nav">
+        <span className="lm-fake-logo">{work.client}</span>
+        <span className="lm-fake-links">
+          <i />
+          <i />
+          <i />
+        </span>
+      </div>
+
+      <div className="lm-fake-hero">
+        <span className="lm-fake-eyebrow" />
+        <span className="lm-fake-h1" />
+        <span className="lm-fake-h1 is-short" />
+        <span className="lm-fake-btn" />
+      </div>
+
+      <div className="lm-fake-media" />
+
+      <div className="lm-fake-cols">
+        {[0, 1, 2].map((i) => (
+          <span className="lm-fake-col" key={i}>
+            <i className="lm-fake-thumb" />
+            <i className="lm-fake-line" />
+            <i className="lm-fake-line is-short" />
+          </span>
+        ))}
+      </div>
+
+      <div className="lm-fake-band">
+        <span className="lm-fake-h2" />
+        <i className="lm-fake-line" />
+        <i className="lm-fake-line" />
+        <i className="lm-fake-line is-short" />
+      </div>
+
+      <div className="lm-fake-media is-alt" />
+
+      <div className="lm-fake-rows">
+        {[0, 1, 2, 3].map((i) => (
+          <span className="lm-fake-row" key={i}>
+            <i className="lm-fake-line" />
+            <i className="lm-fake-price" />
+          </span>
+        ))}
+      </div>
+
+      <div className="lm-fake-foot">
+        <span className="lm-fake-logo">{work.client}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function WorkMediaView({ work, eager = false }: { work: Work; eager?: boolean }) {
   const { media } = work
 
-  if (!work.ready) {
-    return (
-      <div className="lm-card-placeholder" aria-hidden="true">
-        <span>{work.client}</span>
-      </div>
-    )
-  }
+  if (!work.ready) return <FakeSite work={work} />
 
   if (media.kind === 'video') {
     return (
