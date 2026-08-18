@@ -602,7 +602,6 @@ body.lm-loaded .lm-hero-foot {
 .lm-sector {
   position: relative;
   overflow: hidden;
-  transition: padding 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* La luce sale da sotto quando la riga è puntata. */
 .lm-sector::before {
@@ -623,19 +622,27 @@ body.lm-loaded .lm-hero-foot {
   position: relative;
   z-index: 1;
 }
+/* Lo scorrimento a destra della riga puntata si ottiene traslando i figli di
+   sinistra, non allargando il padding della riga: `padding` è una proprietà di
+   layout, e rimpaginare a ogni frame una riga che contiene tipografia da
+   4.25rem costa parecchio. Il risultato a schermo è lo stesso — la voce di
+   destra resta ancorata al suo bordo, come faceva il padding. */
 .lm-sector-num {
   flex: none;
   width: 3ch;
   font-size: 0.78rem;
   color: var(--cream-dim);
-  transition: opacity 0.45s;
+  transition:
+    opacity 0.45s,
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lm-sector-name {
   margin-right: auto;
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.lm-sector:hover {
-  padding-left: 26px;
+.lm-sector:hover .lm-sector-num,
+.lm-sector:hover .lm-sector-name {
+  transform: translateX(26px);
 }
 .lm-sector:hover .lm-sector-num {
   opacity: 0;
@@ -699,7 +706,9 @@ body.lm-loaded .lm-hero-foot {
   border: 1px solid var(--line-ink);
   background: var(--paper);
   box-shadow: 0 40px 120px rgba(0, 0, 0, 0.5);
-  will-change: top, left, width, height;
+  /* Niente will-change qui: è un suggerimento utile solo alle proprietà che il
+     compositore sa gestire da solo. Su top/left/width/height non fa nulla,
+     e in cambio promuove un layer che nessuno usa. */
 }
 .lm-viewer-body {
   position: relative;
@@ -895,9 +904,9 @@ body.lm-lock {
   .lm-service::before {
     transition: none;
   }
-  .lm-sector:hover,
+  .lm-sector:hover .lm-sector-num,
+  .lm-sector:hover .lm-sector-name,
   .lm-service:hover {
-    padding-left: 0;
     transform: none;
   }
 }
