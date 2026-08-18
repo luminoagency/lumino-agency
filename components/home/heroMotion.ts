@@ -5,93 +5,272 @@ import { gradientAt } from './useMotion'
 /**
  * I motori di animazione dell'hero.
  *
- * Sono quattro effetti che girano di continuo — lettere reattive, scintille,
- * blob liquidi, finestre in parallasse — e quattro loop rAF separati vorrebbe
- * dire quattro code di lavoro che si contendono lo stesso frame. Qui ognuno è
- * un driver con un solo metodo `update(state)`, e l'hero li chiama tutti dentro
- * un unico requestAnimationFrame.
+ * Sono quattro effetti che girano di continuo — lettere, scintille, blob
+ * liquidi, tipografia di fondo — e quattro loop rAF separati vorrebbe dire
+ * quattro code che si contendono lo stesso frame. Qui ognuno è un driver con un
+ * solo metodo `update(state)`, e l'hero li chiama tutti dentro un unico
+ * requestAnimationFrame.
  *
- * Nessun driver legge il tempo o la posizione del mouse per conto proprio: li
- * riceve nello stato del frame, così vedono tutti lo stesso istante.
+ * Nessun driver legge il tempo, il puntatore o le onde per conto proprio: li
+ * riceve nello stato del frame, così vedono tutti lo stesso istante e la stessa
+ * perturbazione.
  */
 
+/** Onda circolare generata da un click: la sentono lettere, blob e scintille. */
+export interface Wave {
+  x: number
+  y: number
+  born: number
+}
+
 export interface FrameState {
-  /** Puntatore in coordinate viewport. */
   pointerX: number
   pointerY: number
   /** Velocità di scroll smorzata, in px per frame. Positiva = si scende. */
   scrollVel: number
   /** Millisecondi dall'avvio del loop. */
   time: number
+  waves: Wave[]
 }
 
 export interface Driver {
   update(state: FrameState): void
-  /** Riporta gli elementi al loro stato di riposo. */
   reset(): void
-  /** Ricostruisce la lista di elementi osservati (il DOM è cambiato). */
   refresh?(): void
-  /** Stacca listener propri. */
   destroy?(): void
+  /** Scoppio nel punto del click, in coordinate viewport. */
+  burst?(x: number, y: number): void
 }
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
 
+/* Fisica dell'onda: quanto corre, quanto vive, quanto è spesso il fronte. */
+export const WAVE_SPEED = 1.15 // px per ms
+export const WAVE_LIFE = 1200 // ms
+const WAVE_BAND = 150 // px: spessore del fronte che "spinge"
+
+/** Intensità dell'onda a una certa distanza dal centro, 0 se fuori dal fronte. */
+function waveForce(wave: Wave, time: number, dist: number) {
+  const age = time - wave.born
+  if (age < 0 || age > WAVE_LIFE) return 0
+
+  const radius = age * WAVE_SPEED
+  const offset = Math.abs(dist - radius)
+  if (offset > WAVE_BAND) return 0
+
+  const front = 1 - offset / WAVE_BAND // 1 sul fronte, 0 ai bordi
+  const fade = 1 - age / WAVE_LIFE // si spegne invecchiando
+  return front * fade
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
-   Lettere del titolo
+   Lettere del titolo: prossimità, trascinamento con molla, onda
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const LETTER_RADIUS = 180
+/** Molla di ritorno: la lettera rilasciata torna a casa oscillando appena. */
+const SPRING = 0.12
+const DAMPING = 0.75
+/** Quante lettere intorno a quella afferrata si spostano per simpatia. */
+const SYMPATHY_REACH = 4
+
+interface CharState {
+  el: HTMLElement
+  /** Posizione di riposo, relativa al riquadro del titolo. */
+  homeX: number
+  homeY: number
+  w: number
+  h: number
+  /** Scostamento corrente dalla posizione di riposo. */
+  x: number
+  y: number
+  vx: number
+  vy: number
+  grabbed: boolean
+}
 
 export function createLettersDriver(root: HTMLElement): Driver {
-  let chars: HTMLElement[] = []
+  let chars: CharState[] = []
+  let grabbedIndex = -1
+  let grabOffsetX = 0
+  let grabOffsetY = 0
 
   const collect = () => {
-    chars = Array.from(root.querySelectorAll<HTMLElement>('.lm-char'))
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('.lm-char'))
 
     // Le lettere del segmento in gradiente vanno dipinte una per una: con
     // background-clip il gradiente resta ancorato al riquadro del testo, così
     // appena una lettera si sposta il colore le rimane indietro.
-    const grad = chars.filter((el) => el.dataset.grad === 'true')
+    const grad = nodes.filter((el) => el.dataset.grad === 'true')
     grad.forEach((el, i) => {
       const color = gradientAt(grad.length < 2 ? 0 : i / (grad.length - 1))
       el.style.color = color
       el.dataset.base = color
     })
+
+    // Le posizioni di riposo si misurano a trasformazioni azzerate, una volta
+    // sola: leggerle a ogni frame da un elemento già spostato significherebbe
+    // inseguire la propria coda.
+    nodes.forEach((el) => {
+      el.style.transform = ''
+    })
+    const rootRect = root.getBoundingClientRect()
+
+    chars = nodes.map((el) => {
+      const rect = el.getBoundingClientRect()
+      return {
+        el,
+        homeX: rect.left - rootRect.left + rect.width / 2,
+        homeY: rect.top - rootRect.top + rect.height / 2,
+        w: rect.width,
+        h: rect.height,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        grabbed: false,
+      }
+    })
+    grabbedIndex = -1
   }
 
-  const clear = (el: HTMLElement) => {
-    el.style.transform = ''
-    el.style.textShadow = ''
-    if (!el.dataset.base) el.style.color = ''
+  /* ── Trascinamento ─────────────────────────────────────────────────────── */
+
+  const onDown = (event: PointerEvent) => {
+    const el = (event.target as Element | null)?.closest?.('.lm-char') as HTMLElement | null
+    if (!el) return
+
+    const i = chars.findIndex((c) => c.el === el)
+    if (i < 0) return
+
+    const rootRect = root.getBoundingClientRect()
+    grabbedIndex = i
+    chars[i].grabbed = true
+    // Si afferra dal punto in cui si è cliccato, non dal centro: altrimenti la
+    // lettera scatta sotto il dito appena la si tocca.
+    grabOffsetX = event.clientX - rootRect.left - (chars[i].homeX + chars[i].x)
+    grabOffsetY = event.clientY - rootRect.top - (chars[i].homeY + chars[i].y)
+
+    root.setPointerCapture(event.pointerId)
+    root.classList.add('is-grabbing')
+    event.preventDefault()
   }
+
+  const release = () => {
+    if (grabbedIndex >= 0) chars[grabbedIndex].grabbed = false
+    grabbedIndex = -1
+    root.classList.remove('is-grabbing')
+  }
+
+  root.addEventListener('pointerdown', onDown)
+  root.addEventListener('pointerup', release)
+  root.addEventListener('pointercancel', release)
 
   collect()
 
   return {
-    update({ pointerX, pointerY }) {
-      for (const el of chars) {
-        const rect = el.getBoundingClientRect()
-        const dx = pointerX - (rect.left + rect.width / 2)
-        const dy = pointerY - (rect.top + rect.height / 2)
-        const distance = Math.hypot(dx, dy)
+    update({ pointerX, pointerY, time, waves }) {
+      const rootRect = root.getBoundingClientRect()
+      const px = pointerX - rootRect.left
+      const py = pointerY - rootRect.top
 
-        if (distance < LETTER_RADIUS) {
-          const f = 1 - distance / LETTER_RADIUS
-          el.style.transform = `translate(${-dx * f * 0.16}px, ${-dy * f * 0.3 - f * 10}px) scale(${1 + f * 0.09})`
-          el.style.textShadow = `0 0 ${26 * f}px rgba(255, 205, 150, ${0.55 * f})`
-          if (!el.dataset.base) {
-            el.style.color = `rgb(244, ${238 - Math.round(20 * f)}, ${228 - Math.round(60 * f)})`
-          }
+      for (let i = 0; i < chars.length; i += 1) {
+        const c = chars[i]
+
+        if (c.grabbed) {
+          // Segue il dito senza molla: la molla è per il ritorno.
+          c.x = px - grabOffsetX - c.homeX
+          c.y = py - grabOffsetY - c.homeY
+          c.vx = 0
+          c.vy = 0
         } else {
-          clear(el)
+          // Simpatia: le vicine della lettera afferrata si spostano un po'.
+          if (grabbedIndex >= 0) {
+            const distance = Math.abs(i - grabbedIndex)
+            if (distance <= SYMPATHY_REACH) {
+              const share = (1 - distance / (SYMPATHY_REACH + 1)) * 0.35
+              const g = chars[grabbedIndex]
+              c.vx += (g.x * share - c.x) * 0.08
+              c.vy += (g.y * share - c.y) * 0.08
+            }
+          }
+
+          // Onda: una spinta radiale quando il fronte la attraversa.
+          for (const wave of waves) {
+            const dx = c.homeX + rootRect.left - wave.x
+            const dy = c.homeY + rootRect.top - wave.y
+            const dist = Math.hypot(dx, dy)
+            const force = waveForce(wave, time, dist)
+            if (force > 0 && dist > 0) {
+              c.vx += (dx / dist) * force * 5.5
+              c.vy += (dy / dist) * force * 5.5 - force * 3
+            }
+          }
+
+          // Molla di ritorno.
+          c.vx += (0 - c.x) * SPRING
+          c.vy += (0 - c.y) * SPRING
+          c.vx *= DAMPING
+          c.vy *= DAMPING
+          c.x += c.vx
+          c.y += c.vy
+        }
+
+        // Prossimità del cursore: si somma allo scostamento, non lo sostituisce.
+        let proxX = 0
+        let proxY = 0
+        let scale = 1
+        let shadow = ''
+
+        if (grabbedIndex < 0) {
+          const dx = px - (c.homeX + c.x)
+          const dy = py - (c.homeY + c.y)
+          const distance = Math.hypot(dx, dy)
+
+          if (distance < LETTER_RADIUS) {
+            const f = 1 - distance / LETTER_RADIUS
+            proxX = -dx * f * 0.16
+            proxY = -dy * f * 0.3 - f * 10
+            scale = 1 + f * 0.09
+            shadow = `0 0 ${26 * f}px rgba(255, 205, 150, ${0.55 * f})`
+            if (!c.el.dataset.base) {
+              c.el.style.color = `rgb(244, ${238 - Math.round(20 * f)}, ${228 - Math.round(60 * f)})`
+            }
+          } else if (!c.el.dataset.base) {
+            c.el.style.color = ''
+          }
+        }
+
+        const tx = c.x + proxX
+        const ty = c.y + proxY
+
+        if (tx === 0 && ty === 0 && scale === 1) {
+          c.el.style.transform = ''
+          c.el.style.textShadow = ''
+        } else {
+          c.el.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${scale.toFixed(3)})`
+          c.el.style.textShadow = shadow
         }
       }
     },
     reset() {
-      chars.forEach(clear)
+      release()
+      chars.forEach((c) => {
+        c.x = 0
+        c.y = 0
+        c.vx = 0
+        c.vy = 0
+        c.el.style.transform = ''
+        c.el.style.textShadow = ''
+        if (!c.el.dataset.base) c.el.style.color = ''
+      })
     },
     refresh: collect,
+    destroy() {
+      root.removeEventListener('pointerdown', onDown)
+      root.removeEventListener('pointerup', release)
+      root.removeEventListener('pointercancel', release)
+    },
   }
 }
 
@@ -114,7 +293,7 @@ interface Spark {
   burst: boolean
 }
 
-export function createSparksDriver(canvas: HTMLCanvasElement, burstZone: HTMLElement): Driver {
+export function createSparksDriver(canvas: HTMLCanvasElement): Driver {
   const ctx = canvas.getContext('2d')
   let width = 0
   let height = 0
@@ -145,18 +324,12 @@ export function createSparksDriver(canvas: HTMLCanvasElement, burstZone: HTMLEle
     }
   }
 
-  const onBurst = (event: PointerEvent) => {
-    const rect = canvas.getBoundingClientRect()
-    spawn(18, event.clientX - rect.left, event.clientY - rect.top, true)
-  }
-
   resize()
   spawn(SPARK_COUNT)
   window.addEventListener('resize', resize)
-  burstZone.addEventListener('pointerdown', onBurst)
 
   return {
-    update({ pointerX, pointerY }) {
+    update({ pointerX, pointerY, time, waves }) {
       if (!ctx) return
       ctx.clearRect(0, 0, width, height)
 
@@ -173,6 +346,18 @@ export function createSparksDriver(canvas: HTMLCanvasElement, burstZone: HTMLEle
           const push = (1 - d / SPARK_DODGE) * 0.42
           p.vx += (dx / d) * push
           p.vy += (dy / d) * push
+        }
+
+        // L'onda le spinge via davvero, non è un effetto grafico sopra.
+        for (const wave of waves) {
+          const wx = p.x - (wave.x - rect.left)
+          const wy = p.y - (wave.y - rect.top)
+          const wd = Math.hypot(wx, wy)
+          const force = waveForce(wave, time, wd)
+          if (force > 0 && wd > 0) {
+            p.vx += (wx / wd) * force * 3.4
+            p.vy += (wy / wd) * force * 3.4
+          }
         }
 
         p.vx *= 0.965
@@ -199,13 +384,16 @@ export function createSparksDriver(canvas: HTMLCanvasElement, burstZone: HTMLEle
 
       if (sparks.filter((p) => !p.burst).length < SPARK_COUNT) spawn(1)
     },
+    burst(x: number, y: number) {
+      const rect = canvas.getBoundingClientRect()
+      spawn(18, x - rect.left, y - rect.top, true)
+    },
     reset() {
       ctx?.clearRect(0, 0, width, height)
       sparks = []
     },
     destroy() {
       window.removeEventListener('resize', resize)
-      burstZone.removeEventListener('pointerdown', onBurst)
     },
   }
 }
@@ -214,19 +402,7 @@ export function createSparksDriver(canvas: HTMLCanvasElement, burstZone: HTMLEle
    Blob liquidi
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/**
- * Cinque cerchi sotto un filtro SVG "gooey": si fondono quando si avvicinano e
- * si staccano quando si allontanano, come gocce di mercurio.
- *
- * Lo scroll è la forza principale: più si scorre veloce, più si stirano in
- * verticale e più si separano (quindi si smettono di fondere). Da fermi
- * tornano vicini e ridiventano una massa sola. Il cursore li tira appena.
- *
- * Cinque e non sei: il filtro SVG è la parte cara: ogni cerchio in più costa
- * un'altra area da sfocare e ricomporre.
- */
 interface BlobConfig {
-  /** Posizione di riposo, in percentuale del contenitore. */
   x: number
   y: number
   size: number
@@ -235,7 +411,6 @@ interface BlobConfig {
   freqX: number
   freqY: number
   phase: number
-  /** Quanto segue il cursore (negativo = lo evita). */
   pull: number
 }
 
@@ -249,16 +424,12 @@ export const BLOBS: BlobConfig[] = [
 
 export function createBlobsDriver(container: HTMLElement, nodes: HTMLElement[]): Driver {
   return {
-    update({ pointerX, pointerY, scrollVel, time }) {
+    update({ pointerX, pointerY, scrollVel, time, waves }) {
       const rect = container.getBoundingClientRect()
       if (rect.width === 0) return
 
-      // Da fermi 0, in scroll pieno 1. Il tetto evita che una rotellina
-      // impazzita mandi i blob fuori schermo.
       const energy = clamp(Math.abs(scrollVel) / 45, 0, 1)
       const t = time / 1000
-
-      // Cursore in percentuale del contenitore.
       const cx = ((pointerX - rect.left) / rect.width) * 100
       const cy = ((pointerY - rect.top) / rect.height) * 100
 
@@ -273,17 +444,32 @@ export function createBlobsDriver(container: HTMLElement, nodes: HTMLElement[]):
         x += ((b.x - 45) / 45) * energy * 16
         y += ((b.y - 48) / 48) * energy * 22
 
-        // Il cursore li tira (o li respinge) appena.
         if (Number.isFinite(cx)) {
           x += clamp(cx - b.x, -30, 30) * 0.05 * b.pull
           y += clamp(cy - b.y, -30, 30) * 0.05 * b.pull
         }
 
-        // Stiramento verticale proporzionale alla velocità di scroll.
-        const sy = 1 + energy * 0.55
-        const sx = 1 - energy * 0.16
+        let sy = 1 + energy * 0.55
+        let sx = 1 - energy * 0.16
 
-        el.style.transform = `translate3d(${x - b.x}%, ${y - b.y}%, 0) scale(${sx}, ${sy})`
+        // L'onda deforma i blob che attraversa: li allarga sul fronte e li
+        // spinge via dal punto del click.
+        for (const wave of waves) {
+          const bx = rect.left + (x / 100) * rect.width
+          const by = rect.top + (y / 100) * rect.height
+          const dx = bx - wave.x
+          const dy = by - wave.y
+          const dist = Math.hypot(dx, dy)
+          const force = waveForce(wave, time, dist)
+          if (force > 0 && dist > 0) {
+            x += ((dx / dist) * force * 9 * 100) / rect.width
+            y += ((dy / dist) * force * 9 * 100) / rect.height
+            sx += force * 0.4
+            sy -= force * 0.22
+          }
+        }
+
+        el.style.transform = `translate3d(${x - b.x}%, ${y - b.y}%, 0) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`
       })
     },
     reset() {
@@ -295,63 +481,33 @@ export function createBlobsDriver(container: HTMLElement, nodes: HTMLElement[]):
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Finestre fluttuanti
+   Tipografia di fondo
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * Mini finestre browser sparse nell'hero, a profondità diverse: le "vicine" si
- * muovono di più col mouse, le lontane quasi niente. Passano DIETRO il titolo.
- *
- * Solo translate e rotate, mai scale: queste finestre possono contenere un
- * <video> e scalare un wrapper di video è vietato su tutti i progetti.
+ * "LUMINO" ripetuto, gigantesco, in solo contorno: dà profondità all'hero senza
+ * una sola immagine. Due nastri a velocità diverse, e il mouse li muove meno
+ * del titolo — è la differenza di velocità a creare la profondità, non l'ombra.
  */
-export interface WindowConfig {
-  /** Posizione, in percentuale del contenitore. Sparse e sfalsate: mai in colonna. */
-  x: number
-  y: number
-  width: number
-  rotate: number
-  /** 0 = lontana e quasi ferma, 1 = vicina e reattiva. */
-  depth: number
-  driftAmp: number
-  driftFreq: number
-  phase: number
-}
+export function createBackdropDriver(rows: HTMLElement[]): Driver {
+  const config = [
+    { speed: -0.014, parallax: 26, offset: 0 },
+    { speed: 0.009, parallax: 14, offset: 0 },
+  ]
 
-export const HERO_WINDOWS: WindowConfig[] = [
-  { x: 4, y: 16, width: 232, rotate: -6, depth: 0.45, driftAmp: 9, driftFreq: 0.07, phase: 0.4 },
-  { x: 68, y: 8, width: 268, rotate: 4, depth: 1, driftAmp: 13, driftFreq: 0.05, phase: 2.1 },
-  { x: 78, y: 54, width: 208, rotate: -3, depth: 0.7, driftAmp: 11, driftFreq: 0.09, phase: 4.4 },
-]
-
-export function createWindowsDriver(container: HTMLElement, nodes: HTMLElement[]): Driver {
   return {
-    update({ pointerX, pointerY, scrollVel, time }) {
-      const rect = container.getBoundingClientRect()
-      if (rect.width === 0) return
-
-      const px = (pointerX - rect.left) / rect.width - 0.5
-      const py = (pointerY - rect.top) / rect.height - 0.5
-      const t = time / 1000
-      const drag = clamp(scrollVel / 45, -1, 1)
-
-      nodes.forEach((el, i) => {
-        const w = HERO_WINDOWS[i]
-        if (!w) return
-
-        const driftY = Math.sin(t * w.driftFreq * 6.28 + w.phase) * w.driftAmp
-        const driftX = Math.cos(t * w.driftFreq * 4.4 + w.phase) * (w.driftAmp * 0.6)
-
-        const x = driftX - px * w.depth * 30
-        const y = driftY - py * w.depth * 22 + drag * w.depth * 26
-
-        el.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${w.rotate}deg)`
+    update({ pointerX, time }) {
+      rows.forEach((el, i) => {
+        const c = config[i] ?? config[0]
+        // Metà larghezza: il nastro è duplicato, quindi a -50% ricomincia uguale.
+        const drift = ((time * c.speed) % 50) - (c.speed < 0 ? 0 : 50)
+        const px = (pointerX / window.innerWidth - 0.5) * c.parallax
+        el.style.transform = `translate3d(calc(${drift.toFixed(3)}% + ${px.toFixed(1)}px), 0, 0)`
       })
     },
     reset() {
-      nodes.forEach((el, i) => {
-        const w = HERO_WINDOWS[i]
-        el.style.transform = w ? `rotate(${w.rotate}deg)` : ''
+      rows.forEach((el) => {
+        el.style.transform = ''
       })
     },
   }
