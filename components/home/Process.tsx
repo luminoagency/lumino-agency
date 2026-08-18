@@ -1,21 +1,28 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { registerScrollTrigger, ScrollTrigger } from './useMotion'
-import ProcessDemo from './ProcessDemos'
+import { POINTER_BREAKPOINT, ScrollTrigger, prefersReducedMotion, registerScrollTrigger } from './useMotion'
+import ProcessDemo, { seekDemo, type DemoMode } from './ProcessDemos'
 
 /**
- * Sezione 6 — Il design: colonna media sticky a sinistra (72vh), tre blocchi di
- * testo che scorrono a destra. Il media cambia in sincrono col blocco attivo.
+ * Sezione 6 — Il design.
  *
- * REGOLA CRITICA (vale su tutti i progetti):
- * nessun transform: scale() su un elemento che avvolge un <video>.
- * Il passaggio fra i tre livelli è SOLO un crossfade di opacity — vedi
- * .lm-process-layer in home.css. Se serve movimento, va messo dentro la clip
- * in fase di export, non in CSS.
+ * La sezione si PINNA e lo scroll pilota il fotogramma dei demo, invece di
+ * limitarsi a cambiare step. Prima i demo scorrevano via prima di essersi
+ * conclusi: chi scrollava a velocità normale non ne vedeva uno intero.
+ * Ora fermandosi si ferma anche l'animazione, scrollando piano la si vede al
+ * rallentatore, e risalendo va all'indietro.
  *
- * La sincronizzazione non è un'animazione: resta attiva anche con
- * prefers-reduced-motion, dove il crossfade diventa uno scambio istantaneo.
+ * L'aggiornamento scrive DIRETTAMENTE nel DOM e non passa da uno stato React:
+ * gira a ogni frame di scroll, e un re-render per frame sarebbe sprecato.
+ *
+ * REGOLA CRITICA: il passaggio fra i tre livelli è solo un crossfade di
+ * opacity. Mai transform: scale() su un wrapper che può contenere un <video>.
+ *
+ * Sotto 821px niente pin: un blocco da 300vh su un telefono sembra scroll
+ * rotto. Lì le sezioni si impilano e ogni demo parte da solo in viewport.
+ * Con prefers-reduced-motion niente pin e nessuna animazione: i tre step uno
+ * sotto l'altro, ciascuno sul proprio fotogramma finale.
  */
 
 interface Step {
@@ -75,51 +82,144 @@ export const PROCESS_STEPS: Step[] = [
   },
 ]
 
+/** Quanto dura la dissolvenza fra due step, in frazione di step. */
+const FADE = 0.15
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+
 export default function Process() {
-  const [active, setActive] = useState(0)
-  const [visible, setVisible] = useState(false)
-  const stepsRef = useRef<(HTMLDivElement | null)[]>([])
+  const [mode, setMode] = useState<DemoMode>('auto')
   const sectionRef = useRef<HTMLElement>(null)
+  const mediaRef = useRef<HTMLDivElement>(null)
+  const stepsRef = useRef<(HTMLDivElement | null)[]>([])
+  const barsRef = useRef<(HTMLSpanElement | null)[]>([])
 
+  /* Che modalità: dipende dalla larghezza e dalle preferenze di movimento,
+     e può cambiare a pagina aperta. */
   useEffect(() => {
-    registerScrollTrigger()
-
-    const triggers = stepsRef.current
-      .filter((el): el is HTMLDivElement => el !== null)
-      .map((el, i) =>
-        ScrollTrigger.create({
-          trigger: el,
-          start: 'top 62%',
-          end: 'bottom 38%',
-          onEnter: () => setActive(i),
-          onEnterBack: () => setActive(i),
-        }),
-      )
-
-    // Fuori dalla sezione i demo si fermano: sono animazioni cicliche, e
-    // lasciarle girare a vuoto per tutta la pagina non serve a nessuno.
-    const section = sectionRef.current
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
-      threshold: 0,
-    })
-    if (section) observer.observe(section)
-
-    return () => {
-      triggers.forEach((trigger) => trigger.kill())
-      observer.disconnect()
+    const queries = [
+      window.matchMedia(`(min-width: ${POINTER_BREAKPOINT}px)`),
+      window.matchMedia('(prefers-reduced-motion: reduce)'),
+    ]
+    const sync = () => {
+      if (prefersReducedMotion()) setMode('still')
+      else setMode(queries[0].matches ? 'scrub' : 'auto')
     }
+    queries.forEach((q) => q.addEventListener('change', sync))
+    sync()
+    return () => queries.forEach((q) => q.removeEventListener('change', sync))
   }, [])
 
+  /* Il pin e lo scrub. */
+  useEffect(() => {
+    const section = sectionRef.current
+    const media = mediaRef.current
+    if (!section || !media || mode !== 'scrub') return
+
+    registerScrollTrigger()
+
+    const layers = Array.from(media.querySelectorAll<HTMLElement>('.lm-process-layer'))
+    const stages = Array.from(media.querySelectorAll<HTMLElement>('.lm-demo-stage'))
+    const steps = stepsRef.current.filter((el): el is HTMLDivElement => el !== null)
+    const bars = barsRef.current.filter((el): el is HTMLSpanElement => el !== null)
+
+    const apply = (progress: number) => {
+      const raw = clamp01(progress) * 3
+      const index = Math.min(2, Math.floor(raw))
+      const local = clamp01(raw - index)
+
+      layers.forEach((layer, i) => {
+        // Crossfade di sola opacità, e solo nella coda di ogni step: fuori da
+        // lì il livello attivo è pieno e gli altri sono spenti.
+        let o = 0
+        if (i === index) o = index < 2 && local > 1 - FADE ? (1 - local) / FADE : 1
+        else if (i === index + 1 && local > 1 - FADE) o = (local - (1 - FADE)) / FADE
+        layer.style.opacity = o.toFixed(3)
+      })
+
+      steps.forEach((step, i) => step.classList.toggle('is-active', i === index))
+
+      // L'indicatore si riempie in continuo col progresso, non a scatti.
+      bars.forEach((bar, i) => {
+        bar.style.transform = `scaleX(${clamp01(raw - i).toFixed(3)})`
+      })
+
+      // Ogni demo al proprio fotogramma: quello attivo segue il progresso
+      // locale, i precedenti restano a fine corsa, i successivi all'inizio.
+      stages.forEach((stage, i) => {
+        seekDemo(stage, i, i === index ? local : i < index ? 1 : 0)
+      })
+    }
+
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      // ~100vh per ciascuno dei tre step.
+      end: '+=300%',
+      pin: true,
+      pinSpacing: true,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      scrub: true,
+      onUpdate: (self) => apply(self.progress),
+      onRefresh: (self) => apply(self.progress),
+    })
+
+    section.classList.add('is-pinned')
+    media.classList.add('is-scrubbed')
+    apply(0)
+
+    return () => {
+      trigger.kill()
+      section.classList.remove('is-pinned')
+      media.classList.remove('is-scrubbed')
+      layers.forEach((layer) => {
+        layer.style.opacity = ''
+      })
+      bars.forEach((bar) => {
+        bar.style.transform = ''
+      })
+      stages.forEach((stage) => stage.style.removeProperty('--seek'))
+    }
+  }, [mode])
+
+  /* Senza pin (mobile): ogni demo parte da solo quando entra in viewport. */
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section || mode !== 'auto') return
+
+    const stages = Array.from(section.querySelectorAll<HTMLElement>('.lm-demo-stage'))
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle('is-live', entry.isIntersecting))
+      },
+      { threshold: 0.25 },
+    )
+    stages.forEach((stage) => observer.observe(stage))
+    return () => observer.disconnect()
+  }, [mode])
+
   return (
-    <section className="lm-section" id="design" ref={sectionRef}>
+    <section className="lm-section lm-process" id="design" ref={sectionRef}>
       <div className="lm-wrap">
         <p className="lm-kicker lm-reveal">Il design</p>
 
         <div className="lm-process-grid">
-          <div className="lm-process-media" aria-hidden="true">
+          <div className="lm-process-media" ref={mediaRef} aria-hidden="true">
+            <div className="lm-process-bars">
+              {PROCESS_STEPS.map((step, i) => (
+                <i key={step.num}>
+                  <span
+                    ref={(el) => {
+                      barsRef.current[i] = el
+                    }}
+                  />
+                </i>
+              ))}
+            </div>
+
             {PROCESS_STEPS.map((step, i) => (
               <div
-                className={`lm-process-layer${i === active ? ' is-active' : ''}`}
+                className={`lm-process-layer${i === 0 ? ' is-active' : ''}`}
                 key={step.num}
               >
                 {step.ready && step.sources ? (
@@ -129,7 +229,7 @@ export default function Process() {
                     ))}
                   </video>
                 ) : (
-                  <ProcessDemo index={i} playing={visible && i === active} />
+                  <ProcessDemo index={i} mode={mode} />
                 )}
               </div>
             ))}
@@ -138,7 +238,7 @@ export default function Process() {
           <div className="lm-process-steps">
             {PROCESS_STEPS.map((step, i) => (
               <div
-                className={`lm-process-step${i === active ? ' is-active' : ''}`}
+                className={`lm-process-step${i === 0 ? ' is-active' : ''}`}
                 key={step.num}
                 ref={(el) => {
                   stepsRef.current[i] = el
