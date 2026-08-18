@@ -3,6 +3,7 @@ import '@/components/home/motion.css'
 import '@/components/home/hero.css'
 import '@/components/home/process.css'
 
+import SmoothScroll from '@/components/home/SmoothScroll'
 import Preloader from '@/components/home/Preloader'
 import Cursor from '@/components/home/Cursor'
 import Reveal from '@/components/home/Reveal'
@@ -38,6 +39,7 @@ import Footer from '@/components/home/Footer'
 export default function HomePage() {
   return (
     <div className="lm">
+      <SmoothScroll />
       <Preloader />
       <Cursor />
       <Reveal />
