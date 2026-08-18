@@ -364,19 +364,33 @@ body {
   width: 100%;
   height: auto;
 }
+/* Placeholder finché lo screenshot vero non è in /public/works/.
+   Volutamente ALTO come una pagina reale: così lo scorrimento all'hover si
+   vede già adesso, e sostituendolo con il .webp non cambia nulla d'altro. */
 .lm-card-placeholder {
   display: grid;
-  place-items: center;
+  align-content: start;
+  justify-items: center;
+  gap: 0;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  background: linear-gradient(160deg, var(--paper-2), var(--paper));
+  aspect-ratio: 900 / 2600;
+  padding-top: 14%;
   color: var(--ink-dim);
   font-family: var(--font-serif), Georgia, serif;
   font-size: clamp(1.1rem, 2vw, 1.6rem);
   letter-spacing: -0.02em;
+  background-color: var(--paper-2);
+  background-image:
+    linear-gradient(180deg, var(--paper) 0%, transparent 22%),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 7%,
+      var(--line-ink) 7% 7.25%,
+      transparent 7.25% 14%
+    );
 }
 .lm-card-placeholder span {
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .lm-card-progress {
