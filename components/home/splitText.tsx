@@ -1,55 +1,51 @@
 import type { ReactNode } from 'react'
 
 /**
- * Spezza una frase in parole e lettere renderizzate come <span>.
+ * Spezza il titolo dell'hero in righe, segmenti e lettere.
  *
- * Serve al titolo dell'hero: ogni lettera deve poter essere spostata,
- * sollevata e illuminata singolarmente dal cursore, e le lettere della
- * parola in gradiente vanno colorate una per una via JS (interpolando fra
- * i tre colori della firma) — non con background-clip, che su un testo
- * animato per lettera non regge.
+ * Ogni lettera è uno <span class="lm-char"> perché deve poter essere spostata,
+ * sollevata e illuminata singolarmente dal cursore.
  *
- * L'accessibilità è preservata: la frase intera resta leggibile agli screen
- * reader tramite aria-label sul contenitore, e gli span sono aria-hidden.
+ * Le lettere del segmento in gradiente portano data-grad: il colore glielo
+ * assegna il JS una per una, interpolando fra i tre colori della firma.
+ * Con background-clip non funzionerebbe — il gradiente resta ancorato al
+ * riquadro del testo, quindi appena una lettera si muove il colore le rimane
+ * indietro.
+ *
+ * L'accessibilità è preservata: il titolo intero sta nell'aria-label dell'h1 e
+ * le righe sono aria-hidden.
  */
 
-export interface SplitTextProps {
+export interface Segment {
   text: string
-  /** Parola (case-insensitive) da marcare con data-grad per la colorazione JS. */
-  gradientWord?: string
-  className?: string
+  variant?: 'thin' | 'grad'
 }
 
-export function SplitText({ text, gradientWord, className }: SplitTextProps): ReactNode {
-  const words = text.split(' ')
-  const target = gradientWord?.toLowerCase()
-  let charIndex = 0
-
+function Chars({ text, variant }: Segment): ReactNode {
   return (
-    <span className={className} aria-label={text}>
-      {words.map((word, wi) => {
-        const stripped = word.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase()
-        const isGradient = target !== undefined && stripped === target
-
-        return (
-          <span className="lm-word" key={`${word}-${wi}`} aria-hidden="true">
-            {Array.from(word).map((char, ci) => {
-              const i = charIndex++
-              return (
-                <span
-                  className="lm-char"
-                  key={`${char}-${ci}`}
-                  data-i={i}
-                  data-grad={isGradient ? 'true' : undefined}
-                >
-                  {char}
-                </span>
-              )
-            })}
-            {wi < words.length - 1 ? <span className="lm-space"> </span> : null}
+    <span className={variant ? `lm-seg lm-seg-${variant}` : 'lm-seg'}>
+      {Array.from(text).map((char, i) =>
+        char === ' ' ? (
+          <span key={`s-${i}`}> </span>
+        ) : (
+          <span className="lm-char" key={`${char}-${i}`} data-grad={variant === 'grad' ? 'true' : undefined}>
+            {char}
           </span>
-        )
-      })}
+        ),
+      )}
+    </span>
+  )
+}
+
+/** Una riga del titolo: il wrapper esterno taglia, quello interno sale. */
+export function Line({ segments }: { segments: Segment[] }): ReactNode {
+  return (
+    <span className="lm-hline" aria-hidden="true">
+      <span>
+        {segments.map((segment, i) => (
+          <Chars key={i} text={segment.text} variant={segment.variant} />
+        ))}
+      </span>
     </span>
   )
 }
