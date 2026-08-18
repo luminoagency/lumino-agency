@@ -35,7 +35,7 @@ export default function Services() {
 
         <div className="lm-services-grid">
           {SERVICES.map((service, i) => (
-            <article className="lm-service lm-reveal" key={service.title}>
+            <article className="lm-service lm-reveal" key={service.title} data-cursor="grow">
               <span className="lm-service-idx">{String(i + 1).padStart(2, '0')}</span>
               <h3>{service.title}</h3>
               <p>{service.body}</p>
