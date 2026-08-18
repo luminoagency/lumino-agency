@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import type { Work } from './worksData'
+import BrowserChrome from './BrowserChrome'
+import WorkMediaView from './WorkMediaView'
 import { POINTER_BREAKPOINT, gsap, lerp, mouseEffectsEnabled } from './useMotion'
 
 /**
@@ -11,24 +13,33 @@ import { POINTER_BREAKPOINT, gsap, lerp, mouseEffectsEnabled } from './useMotion
  * easing, la barra in gradiente segue l'avanzamento, la card si inclina verso il
  * mouse e un riflesso di luce insegue il cursore. All'uscita torna su.
  *
- * Il markup accetta indifferentemente uno screenshot full-page o un <video> in
- * loop (vedi WorkMedia in worksData.ts): si cambia sorgente lì senza toccare
- * questo componente.
+ * Al click apre il sito vero dentro la vetrina (vedi WorkViewer): passa al
+ * chiamante il rettangolo della propria cornice, così la finestra grande può
+ * partire esattamente da qui e crescere, invece di comparire per dissolvenza.
  *
  * Tutto l'apparato mouse è attivo solo da 821px in su, con puntatore fine e
- * fuori da prefers-reduced-motion. Sotto quella soglia la card resta una
- * card: si vede la testa dello screenshot, e va benissimo così.
+ * fuori da prefers-reduced-motion.
  */
 
 const SCROLL_SECONDS = 5
 const TILT_MAX = 6
 
-export default function WorkCard({ work, index }: { work: Work; index: number }) {
-  const { media } = work
+export default function WorkCard({
+  work,
+  index,
+  onOpen,
+}: {
+  work: Work
+  index: number
+  onOpen: (work: Work, origin: DOMRect) => void
+}) {
   const cardRef = useRef<HTMLElement>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
+
+  const openable = work.siteUrl !== ''
 
   useEffect(() => {
     const card = cardRef.current
@@ -39,7 +50,6 @@ export default function WorkCard({ work, index }: { work: Work; index: number })
 
     const video = scroller.querySelector('video')
 
-    // Tilt: target aggiornato dal mousemove, applicato dal loop rAF con lerp.
     const target = { x: 0, y: 0 }
     const current = { x: 0, y: 0 }
     let raf = 0
@@ -73,15 +83,12 @@ export default function WorkCard({ work, index }: { work: Work; index: number })
       target.x = (px - 0.5) * 2 * TILT_MAX
       target.y = -(py - 0.5) * 2 * TILT_MAX
 
-      // Riflesso di luce: coordinate in percentuale per il radial-gradient.
       viewport.style.setProperty('--mx', `${px * 100}%`)
       viewport.style.setProperty('--my', `${py * 100}%`)
       start()
     }
 
     const onEnter = () => {
-      // Distanza reale calcolata a ogni ingresso: l'immagine può essere
-      // arrivata dopo (loading="lazy") e il viewport è responsive.
       const distance = scroller.scrollHeight - viewport.clientHeight
       if (distance > 1) {
         gsap.to(scroller, { y: -distance, duration: SCROLL_SECONDS, ease: 'power1.inOut', overwrite: true })
@@ -103,9 +110,6 @@ export default function WorkCard({ work, index }: { work: Work; index: number })
       if (video) video.pause()
     }
 
-    // I listener si agganciano e si sganciano seguendo la media query: chi
-    // apre stretto e poi allarga la finestra (o attiva il motion ridotto a
-    // pagina aperta) ottiene comunque il comportamento giusto, senza ricaricare.
     let attached = false
 
     const attach = () => {
@@ -149,67 +153,39 @@ export default function WorkCard({ work, index }: { work: Work; index: number })
     }
   }, [])
 
+  const open = () => {
+    const frame = frameRef.current
+    if (!frame || !openable) return
+    onOpen(work, frame.getBoundingClientRect())
+  }
+
   return (
     <article
       ref={cardRef}
       className="lm-card lm-reveal"
       data-work={work.id}
-      data-cursor="label"
+      data-cursor={openable ? 'label' : undefined}
       style={{ ['--accent' as string]: work.accent }}
     >
-      {/* Barra finta del browser. La pillola dell'URL resta anche vuota:
-          i domini non sono confermati e non vanno inventati (vedi worksData). */}
-      <div className="lm-card-browser">
-        <span className="lm-card-dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
-        <span className="lm-card-url">{work.url}</span>
-      </div>
+      <div className="lm-card-frame" ref={frameRef}>
+        <BrowserChrome label={work.barLabel} />
 
-      {/* Finestra: il media scorre qui dentro */}
-      <div className="lm-card-viewport" ref={viewportRef}>
-        <div className="lm-card-scroll" ref={scrollRef}>
-          {!work.ready ? (
-            <div className="lm-card-placeholder" aria-hidden="true">
-              <span>{work.client}</span>
-            </div>
-          ) : media.kind === 'video' ? (
-            <video
-              className="lm-card-media"
-              width={media.width}
-              height={media.height}
-              poster={media.poster}
-              muted
-              loop
-              playsInline
-              preload="none"
-            >
-              {media.sources.map((source) => (
-                <source key={source.src} src={source.src} type={source.type} />
-              ))}
-            </video>
-          ) : (
-            /* eslint-disable-next-line @next/next/no-img-element -- screenshot
-               full-page altissimo: next/image lo ridimensionerebbe sul lato
-               sbagliato. Dimensioni esplicite → nessun layout shift. */
-            <img
-              className="lm-card-media"
-              src={media.src}
-              width={media.width}
-              height={media.height}
-              alt={`Il sito di ${work.client}`}
-              loading={index < 2 ? 'eager' : 'lazy'}
-              decoding="async"
-            />
-          )}
-        </div>
+        <div className="lm-card-viewport" ref={viewportRef}>
+          <div className="lm-card-scroll" ref={scrollRef}>
+            <WorkMediaView work={work} eager={index < 2} />
+          </div>
 
-        <div className="lm-card-progress" aria-hidden="true">
-          <span ref={barRef} />
+          <div className="lm-card-progress" aria-hidden="true">
+            <span ref={barRef} />
+          </div>
+          <div className="lm-card-sheen" aria-hidden="true" />
+
+          {openable ? (
+            <button type="button" className="lm-card-open" onClick={open}>
+              <span className="lm-sr">Apri il sito di {work.client} nella vetrina</span>
+            </button>
+          ) : null}
         </div>
-        <div className="lm-card-sheen" aria-hidden="true" />
       </div>
 
       <div className="lm-card-meta">
