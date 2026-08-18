@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { registerScrollTrigger, ScrollTrigger } from './useMotion'
+import ProcessDemo from './ProcessDemos'
 
 /**
  * Sezione 6 — Il design: colonna media sticky a sinistra (72vh), tre blocchi di
@@ -74,11 +75,11 @@ export const PROCESS_STEPS: Step[] = [
   },
 ]
 
-const FALLBACK_TINT = ['var(--bordeaux)', 'var(--blue)', 'var(--violet)']
-
 export default function Process() {
   const [active, setActive] = useState(0)
+  const [visible, setVisible] = useState(false)
   const stepsRef = useRef<(HTMLDivElement | null)[]>([])
+  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     registerScrollTrigger()
@@ -95,11 +96,22 @@ export default function Process() {
         }),
       )
 
-    return () => triggers.forEach((trigger) => trigger.kill())
+    // Fuori dalla sezione i demo si fermano: sono animazioni cicliche, e
+    // lasciarle girare a vuoto per tutta la pagina non serve a nessuno.
+    const section = sectionRef.current
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
+      threshold: 0,
+    })
+    if (section) observer.observe(section)
+
+    return () => {
+      triggers.forEach((trigger) => trigger.kill())
+      observer.disconnect()
+    }
   }, [])
 
   return (
-    <section className="lm-section" id="design">
+    <section className="lm-section" id="design" ref={sectionRef}>
       <div className="lm-wrap">
         <p className="lm-kicker lm-reveal">Il design</p>
 
@@ -117,14 +129,7 @@ export default function Process() {
                     ))}
                   </video>
                 ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      background: `linear-gradient(150deg, var(--surface), ${FALLBACK_TINT[i]})`,
-                      opacity: 0.55,
-                    }}
-                  />
+                  <ProcessDemo index={i} playing={visible && i === active} />
                 )}
               </div>
             ))}
