@@ -72,56 +72,122 @@ body.lm-loaded .lm-hero-foot {
     height 0.25s,
     margin 0.25s;
 }
+/* L'ancora: il JS le scrive solo la posizione, niente altro. Il disco dentro
+   è libero di animarsi senza che le due cose si contendano `transform`. */
 .lm-cur-ring {
+  width: 0;
+  height: 0;
+  z-index: 9999;
+}
+.lm-cur-disc {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
   width: 40px;
   height: 40px;
-  margin: -20px 0 0 -20px;
+  border-radius: 50%;
   border: 1px solid rgba(244, 238, 228, 0.45);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  /* Elastica, non lineare: il disco deve arrivare con un po' di slancio.
+     Richiesta esplicita del progetto. */
   transition:
-    width 0.3s,
-    height 0.3s,
-    margin 0.3s,
-    border-color 0.3s,
-    background 0.3s;
+    width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.35s,
+    border-color 0.35s,
+    backdrop-filter 0.35s;
 }
-.lm-cur-ring span {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+/* La parola entra crescendo, non con una dissolvenza secca. */
+.lm-cur-disc span {
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 17px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cream);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: 0.3s;
   white-space: nowrap;
+  opacity: 0;
+  transform: rotate(-8deg) scale(0.55);
+  transition:
+    opacity 0.25s,
+    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.lm-cur-disc.has-label span {
+  opacity: 1;
+  transform: rotate(-8deg) scale(1);
+}
+
 .lm-cur.is-hidden {
   width: 0;
   height: 0;
   margin: 0;
 }
-.lm-cur-ring.is-grown {
+
+/* Solo ingrandimento, nessuna parola: link del menu. */
+.lm-cur-disc.is-grown {
   width: 82px;
   height: 82px;
-  margin: -41px 0 0 -41px;
   background: rgba(139, 92, 246, 0.16);
   border-color: transparent;
 }
-/* Sopra le card l'anello diventa la pastiglia rossa con scritto "Vedi". */
-.lm-cur-ring.is-label {
-  width: 96px;
-  height: 96px;
-  margin: -48px 0 0 -48px;
-  background: var(--red);
+
+/* Dischi pieni translucidi: si vede attraverso quello che c'è sotto. Il blur
+   li stacca dal fondo senza coprirlo. */
+.lm-cur-disc.is-view,
+.lm-cur-disc.is-open,
+.lm-cur-disc.is-whatsapp,
+.lm-cur-disc.is-copy {
   border-color: transparent;
+  backdrop-filter: blur(2px);
 }
-.lm-cur-ring.is-label span {
-  opacity: 1;
-  transform: scale(1);
+.lm-cur-disc.is-view {
+  width: 130px;
+  height: 130px;
+  background: rgba(139, 92, 246, 0.65);
+}
+.lm-cur-disc.is-open {
+  width: 90px;
+  height: 90px;
+  background: rgba(139, 92, 246, 0.62);
+}
+.lm-cur-disc.is-copy {
+  width: 104px;
+  height: 104px;
+  background: rgba(139, 92, 246, 0.6);
+}
+.lm-cur-disc.is-whatsapp {
+  width: 118px;
+  height: 118px;
+  background: rgba(37, 185, 107, 0.6);
+}
+
+/* Sulle sezioni a fondo chiaro il viola al 65% su bianco schiarisce troppo e
+   la parola sopra diventa illeggibile: lì il disco si fa più coperto e più
+   profondo. Si intravede ancora l'immagine, ma il testo si legge. */
+.lm-cur-disc.on-light.is-view,
+.lm-cur-disc.on-light.is-open,
+.lm-cur-disc.on-light.is-copy {
+  background: rgba(88, 46, 196, 0.82);
+}
+/* Il verde va scurito più del viola: su bianco arrivava a 3.05 di contrasto
+   con la parola sopra, sotto la soglia leggibile. Così sta a 4.85. */
+.lm-cur-disc.on-light.is-whatsapp {
+  background: rgba(12, 98, 56, 0.88);
+}
+.lm-cur-disc.on-light.is-grown {
+  background: rgba(88, 46, 196, 0.22);
+}
+
+/* Contrazione e rimbalzo alla pressione. */
+.lm-cur-disc.is-press {
+  animation: lm-cur-press 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes lm-cur-press {
+  0% { transform: scale(1); }
+  35% { transform: scale(0.82); }
+  100% { transform: scale(1); }
 }
 
 /* Il cursore di sistema si nasconde SOLO dove esiste quello custom.
