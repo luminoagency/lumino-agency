@@ -35,8 +35,6 @@ export default function WorkCard({
   const viewportRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
 
-  const openable = work.siteUrl !== ''
-
   useEffect(() => {
     const card = cardRef.current
     const viewport = viewportRef.current
@@ -129,7 +127,7 @@ export default function WorkCard({
    */
   const open = () => {
     const frame = frameRef.current
-    if (!frame || !openable) return
+    if (!frame) return
 
     const rect = frame.getBoundingClientRect()
     if (prefersReducedMotion()) {
@@ -144,7 +142,7 @@ export default function WorkCard({
       ref={cardRef}
       className="lm-card lm-reveal"
       data-work={work.id}
-      data-cursor={openable ? 'view' : undefined}
+      data-cursor="view"
       style={{ ['--accent' as string]: work.accent }}
     >
       <div className="lm-card-frame" ref={frameRef}>
@@ -158,11 +156,15 @@ export default function WorkCard({
           </div>
           <div className="lm-card-sheen" aria-hidden="true" />
 
-          {openable ? (
-            <button type="button" className="lm-card-open" onClick={open}>
-              <span className="lm-sr">Apri il sito di {work.client} nella vetrina</span>
-            </button>
-          ) : null}
+          {/* Su desktop l'informazione "si apre" la dà il cursore che diventa un
+              disco con scritto Vedi. Un dito non passa sopra le cose senza
+              toccarle, quindi lì quell'informazione va detta senza chiedere
+              nulla: questo distintivo esiste solo sotto 821px. */}
+          <span className="lm-card-badge" aria-hidden="true">Apri</span>
+
+          <button type="button" className="lm-card-open" onClick={open}>
+            <span className="lm-sr">Apri il sito di {work.client} nella vetrina</span>
+          </button>
         </div>
       </div>
 
