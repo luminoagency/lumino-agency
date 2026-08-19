@@ -15,10 +15,12 @@
 }
 
 /* Il titolo prende quasi tutta l'altezza: margini stretti sopra, spazio sotto
-   solo per il piede e la striscia. */
+   per il piede e la striscia. Il fondo è più generoso della cima perché lì
+   sotto c'è la striscia dei progetti: senza, "Guarda i lavori" le finisce
+   appiccicato addosso e le due cose si leggono come una sola riga. */
 .lm-hero {
   padding-top: clamp(5rem, 11vh, 7.5rem);
-  padding-bottom: clamp(5.5rem, 11vh, 7.5rem);
+  padding-bottom: clamp(7.5rem, 15vh, 10.5rem);
 }
 .lm-hero-inner {
   position: relative;
@@ -64,6 +66,46 @@
   align-items: center;
   gap: 1.75rem;
   flex-wrap: wrap;
+}
+
+/* ─── Puntino d'invito ───────────────────────────────────────────────────── */
+/* Non spiega niente: sta lì e pulsa. Chi lo nota tocca, e scopre da sé che le
+   lettere si trascinano. Il componente lo monta solo quando c'è un puntatore,
+   quindi su telefono e con motion ridotto non esiste proprio. */
+.lm-hint {
+  width: 9px;
+  height: 9px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: var(--red);
+  flex: none;
+  align-self: flex-start;
+  animation-name: lm-hint-pulse;
+  animation-duration: 2.8s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes lm-hint-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(229, 52, 42, 0.5);
+  }
+  55% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 11px rgba(229, 52, 42, 0);
+  }
+}
+/* Una sola oscillazione più marcata dopo sei secondi di inattività. */
+.lm-hint.is-nudge {
+  animation-name: lm-hint-nudge;
+  animation-duration: 0.9s;
+  animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation-iteration-count: 1;
+}
+@keyframes lm-hint-nudge {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 52, 42, 0.6); }
+  40% { transform: scale(1.9); box-shadow: 0 0 0 16px rgba(229, 52, 42, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 52, 42, 0); }
 }
 
 /* ─── Blob liquidi ───────────────────────────────────────────────────────── */
