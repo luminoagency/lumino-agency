@@ -3,21 +3,20 @@
 import { useEffect, useRef } from 'react'
 import type { Work } from './worksData'
 import BrowserChrome from './BrowserChrome'
-import CardFrame from './CardFrame'
+import CardShot from './CardShot'
 import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled } from './useMotion'
 
 /**
- * Card progetto: dentro la finestra finta scorre il SITO VERO del cliente,
- * caricato in un iframe (vedi CardFrame).
+ * Card progetto: dentro la finestra finta c'è lo screenshot del sito.
  *
- * Qui restano solo la cornice e gli effetti legati al mouse: inclinazione verso
- * il puntatore e riflesso di luce, quindi solo da 821px in su con puntatore
- * fine. Lo scorrimento vive in CardFrame perché è legato al ciclo di vita
- * dell'iframe, non a quello della card.
+ * Nella griglia solo immagini — niente iframe, niente video: cinque documenti
+ * vivi in pagina costavano troppo. Il sito vero si apre al click, uno per
+ * volta (vedi WorkViewer).
  *
- * L'inclinazione sta sulla CARD, non sulla finestra: un transform su un
- * genitore dell'iframe lo renderebbe sfocato. Per questo la cornice interna
- * resta piatta e a inclinarsi è il contenitore esterno.
+ * Qui restano la cornice e gli effetti legati al mouse: inclinazione verso il
+ * puntatore e riflesso di luce, quindi solo da 821px in su con puntatore fine.
+ * Il movimento dello screenshot vive in CardShot, che lo decide dalle
+ * proporzioni dell'immagine.
  */
 
 const TILT_MAX = 6
@@ -138,7 +137,7 @@ export default function WorkCard({
         <BrowserChrome label={work.barLabel} />
 
         <div className="lm-card-viewport" ref={viewportRef}>
-          <CardFrame work={work} index={index} viewportRef={viewportRef} barRef={barRef} />
+          <CardShot work={work} index={index} viewportRef={viewportRef} barRef={barRef} />
 
           <div className="lm-card-progress" aria-hidden="true">
             <span ref={barRef} />
