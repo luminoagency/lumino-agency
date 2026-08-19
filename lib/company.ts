@@ -36,12 +36,17 @@ export const COMPANY = {
   supportEmail: PUBLIC_CONTACT_EMAIL,
   privacyEmail: PUBLIC_CONTACT_EMAIL,
 
-  /** WhatsApp pubblico — link wa.me PULITO, senza testo precompilato. */
+  /**
+   * WhatsApp pubblico. FONTE UNICA: il numero sta scritto qui e da nessun'altra
+   * parte, così non può divergere fra il pulsante flottante e la home.
+   */
   whatsapp: {
-    /** Numero in formato wa.me (prefisso internazionale, niente + né spazi). */
-    number: '447454751562',
-    /** Link pronto all'uso. NESSUN ?text= (lo studio è fatto di persone reali). */
-    waLink: 'https://wa.me/447454751562',
+    /** Formato wa.me: prefisso internazionale, niente + né spazi. */
+    number: '393509953354',
+    /** Come va mostrato a schermo. */
+    display: '+39 350 995 3354',
+    /** Link pulito, senza testo precompilato. */
+    waLink: 'https://wa.me/393509953354',
   },
 
   /** Web. */
