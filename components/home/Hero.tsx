@@ -13,7 +13,13 @@ import {
   type Driver,
   type Wave,
 } from './heroMotion'
-import { onMouseEffectsChange, pointer, trackPointer } from './useMotion'
+import {
+  isCompactViewport,
+  onAmbientMotionChange,
+  onMouseEffectsChange,
+  pointer,
+  trackPointer,
+} from './useMotion'
 
 /**
  * Sezione 1 — Hero.
@@ -25,8 +31,9 @@ import { onMouseEffectsChange, pointer, trackPointer } from './useMotion'
  * UN SOLO requestAnimationFrame per tutto. I tre effetti sono driver (vedi
  * heroMotion.ts) che ricevono lo stesso stato del frame — puntatore, velocità
  * di scroll, tempo e onde attive — così reagiscono tutti alla stessa
- * perturbazione nello stesso istante. Il loop non parte sotto 821px o con
- * motion ridotto, e si ferma quando l'hero esce dal viewport.
+ * perturbazione nello stesso istante. Il loop gira con qualunque puntatore —
+ * un dito trascina le lettere e fa partire l'onda come un mouse: l'unico veto
+ * è prefers-reduced-motion. Si ferma quando l'hero esce dal viewport.
  */
 
 export const HERO_TITLE = 'Diamo forma al sito che il tuo brand merita.'
@@ -126,7 +133,8 @@ export default function Hero() {
 
       const letters = createLettersDriver(title)
       lettersRef.current = letters
-      sparks = createSparksDriver(canvas)
+      // Metà scintille su schermo stretto: stessa scena, metà costo.
+      sparks = createSparksDriver(canvas, isCompactViewport() ? 24 : 46)
 
       drivers = [
         letters,
@@ -160,10 +168,13 @@ export default function Hero() {
       stopPointer = null
     }
 
-    const unsubscribe = onMouseEffectsChange((enabled) => {
-      setEffects(enabled)
-      return enabled ? enable() : disable()
-    })
+    // Il loop vive finché si può animare — dito o mouse non fa differenza:
+    // blob, scintille, trascinamento e onda funzionano con entrambi.
+    const unsubscribe = onAmbientMotionChange((enabled) => (enabled ? enable() : disable()))
+
+    // Il puntino d'invito invece è roba da mouse: senza puntatore non c'è
+    // niente da invitare a scoprire, e su touch il gesto lo si prova e basta.
+    const unsubscribePointer = onMouseEffectsChange(setEffects)
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -177,6 +188,7 @@ export default function Hero() {
 
     return () => {
       unsubscribe()
+      unsubscribePointer()
       observer.disconnect()
       disable()
     }
