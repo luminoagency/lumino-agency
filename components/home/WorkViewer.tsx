@@ -30,6 +30,8 @@ const OPEN_MS = 0.55
 const CLOSE_MS = 0.4
 /* Oltre questo tempo senza `load` diamo l'incorporamento per rifiutato. */
 const EMBED_TIMEOUT_MS = 6000
+/** Durata della visita guidata prima che l utente prenda il controllo. */
+const TOUR_S = 26
 
 function targetRect() {
   const width = Math.min(1240, window.innerWidth * 0.94)
@@ -57,7 +59,26 @@ export default function WorkViewer({
   const [showEmbed, setShowEmbed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  /** false = sta scorrendo da solo · true = comanda l'utente. */
+  const [taken, setTaken] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const tourRef = useRef<gsap.core.Tween | null>(null)
   const closingRef = useRef(false)
+
+  /**
+   * Il primo gesto dell'utente ferma la visita guidata e gli lascia il sito.
+   * L'iframe torna a filo del riquadro e riprende la sua altezza naturale:
+   * da lì in poi si scorre col suo scroll, come un sito qualsiasi.
+   */
+  const takeOver = useCallback(() => {
+    if (taken) return
+    setTaken(true)
+    tourRef.current?.kill()
+    tourRef.current = null
+    if (iframeRef.current) {
+      gsap.to(iframeRef.current, { y: 0, duration: 0.35, ease: 'power2.out' })
+    }
+  }, [taken])
 
   /* Chiusura: la finestra torna esattamente dov'era la card. */
   const close = useCallback(() => {
@@ -144,6 +165,29 @@ export default function WorkViewer({
     return () => window.clearTimeout(id)
   }, [showEmbed, loaded])
 
+  /* Visita guidata: appena il sito ha caricato scorre da solo dall'alto in
+     basso. Non è lo scroll del documento — è cross-origin, irraggiungibile —
+     ma l'iframe stesso, reso più alto del riquadro e traslato. */
+  useEffect(() => {
+    const frame = iframeRef.current
+    if (!frame || !loaded || blocked || taken || prefersReducedMotion()) return
+
+    const travel = frame.offsetHeight - (frame.parentElement?.clientHeight ?? 0)
+    if (travel <= 8) return
+
+    tourRef.current = gsap.to(frame, {
+      y: -travel,
+      duration: TOUR_S,
+      ease: 'none',
+      delay: 0.8,
+    })
+
+    return () => {
+      tourRef.current?.kill()
+      tourRef.current = null
+    }
+  }, [loaded, blocked, taken])
+
   return (
     <div className="lm-viewer" role="dialog" aria-modal="true" aria-label={`Il sito di ${work.client}`}>
       <div className="lm-viewer-backdrop" ref={backdropRef} onClick={close} />
@@ -180,13 +224,31 @@ export default function WorkViewer({
         <div className="lm-viewer-body">
           {showEmbed && !blocked ? (
             <iframe
-              className="lm-viewer-iframe"
+              ref={iframeRef}
+              className={`lm-viewer-iframe${taken ? ' is-taken' : ''}`}
               src={work.siteUrl}
               title={`Il sito di ${work.client}`}
               loading="lazy"
               onLoad={() => setLoaded(true)}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
+          ) : null}
+
+          {/* Mentre scorre da solo, l'iframe è inerte e sopra c'è questo velo
+              trasparente: un iframe di un'altra origine si mangia gli eventi,
+              quindi senza velo non ci sarebbe modo di accorgersi che l'utente
+              vuole prendere il controllo. Al primo gesto il velo sparisce e il
+              sito diventa navigabile. */}
+          {showEmbed && !blocked && !taken ? (
+            <div
+              className="lm-viewer-grab"
+              onPointerDown={takeOver}
+              onWheel={takeOver}
+              onTouchStart={takeOver}
+              role="presentation"
+            >
+              <span className="lm-viewer-grab-hint">tocca per navigare</span>
+            </div>
           ) : null}
 
           {/* Sotto l'iframe finché non ha caricato, e unica cosa visibile se
