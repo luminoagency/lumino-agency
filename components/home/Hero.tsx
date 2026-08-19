@@ -3,12 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chars, Line } from './splitText'
 import HeroBlobs from './HeroBlobs'
-import HeroBackdrop from './HeroBackdrop'
 import HeroTicker from './HeroTicker'
 import RotatingWord from './RotatingWord'
 import {
   WAVE_LIFE,
-  createBackdropDriver,
   createBlobsDriver,
   createLettersDriver,
   createSparksDriver,
@@ -21,10 +19,10 @@ import { onMouseEffectsChange, pointer, trackPointer } from './useMotion'
  * Sezione 1 — Hero.
  *
  * Il titolo occupa la larghezza piena e quasi tutta l'altezza della prima
- * schermata; dietro non ci sono immagini ma tipografia. Nessuna colonna media a
- * destra: quel layout è vietato in modo permanente su questi progetti.
+ * schermata; dietro non ci sono immagini, solo blob liquidi e scintille.
+ * Nessuna colonna media a destra: quel layout è vietato in modo permanente.
  *
- * UN SOLO requestAnimationFrame per tutto. I quattro effetti sono driver (vedi
+ * UN SOLO requestAnimationFrame per tutto. I tre effetti sono driver (vedi
  * heroMotion.ts) che ricevono lo stesso stato del frame — puntatore, velocità
  * di scroll, tempo e onde attive — così reagiscono tutti alla stessa
  * perturbazione nello stesso istante. Il loop non parte sotto 821px o con
@@ -38,7 +36,6 @@ export default function Hero() {
   const titleRef = useRef<HTMLHeadingElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const blobsRef = useRef<HTMLDivElement>(null)
-  const backdropRef = useRef<HTMLDivElement>(null)
   const lettersRef = useRef<Driver | null>(null)
 
   const [active, setActive] = useState(true)
@@ -54,8 +51,7 @@ export default function Hero() {
     const title = titleRef.current
     const canvas = canvasRef.current
     const blobs = blobsRef.current
-    const backdrop = backdropRef.current
-    if (!hero || !title || !canvas || !blobs || !backdrop) return
+    if (!hero || !title || !canvas || !blobs) return
 
     let drivers: Driver[] = []
     let sparks: Driver | null = null
@@ -109,7 +105,6 @@ export default function Hero() {
         letters,
         sparks,
         createBlobsDriver(blobs, Array.from(blobs.querySelectorAll<HTMLElement>('.lm-blob'))),
-        createBackdropDriver(Array.from(backdrop.querySelectorAll<HTMLElement>('.lm-backtype-track'))),
       ]
 
       lastScroll = window.scrollY
@@ -162,9 +157,6 @@ export default function Hero() {
       <div className="lm-hero-bg" aria-hidden="true">
         <div ref={blobsRef}>
           <HeroBlobs />
-        </div>
-        <div ref={backdropRef}>
-          <HeroBackdrop />
         </div>
         <canvas className="lm-hero-canvas" ref={canvasRef} />
       </div>
