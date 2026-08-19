@@ -1,13 +1,12 @@
 import type { Work } from './worksData'
 
 /**
- * Il contenuto della finestra: screenshot full-page, video in loop, o — finché
- * gli screenshot non esistono — un finto layout di sito costruito in CSS.
+ * Il contenuto della finestra della card: lo screenshot del sito, o — finché
+ * un asset non esiste — un finto layout di sito costruito in CSS.
  *
- * Il finto layout non è un riempitivo grigio: ha una nav, un hero con titolo e
- * bottone, blocchi immagine nei colori del progetto e paragrafi. Serve a far
- * capire cosa sarà quella card, e soprattutto a dare al nastro un'altezza vera
- * da scorrere: un rettangolo bianco non si vede scorrere.
+ * Il finto layout non è un riempitivo grigio: ha nav, hero, blocchi immagine
+ * nei colori del progetto, colonne e listino. Serve a far capire cosa sarà
+ * quella card. Nessuna card resta mai bianca.
  */
 
 function FakeSite({ work }: { work: Work }) {
@@ -50,15 +49,6 @@ function FakeSite({ work }: { work: Work }) {
 
       <div className="lm-fake-media is-alt" />
 
-      <div className="lm-fake-rows">
-        {[0, 1, 2, 3].map((i) => (
-          <span className="lm-fake-row" key={i}>
-            <i className="lm-fake-line" />
-            <i className="lm-fake-price" />
-          </span>
-        ))}
-      </div>
-
       <div className="lm-fake-foot">
         <span className="lm-fake-logo">{work.client}</span>
       </div>
@@ -91,17 +81,21 @@ export default function WorkMediaView({ work, eager = false }: { work: Work; eag
   }
 
   return (
-    /* eslint-disable-next-line @next/next/no-img-element -- screenshot full-page
-       altissimo: next/image lo ridimensionerebbe sul lato sbagliato.
-       Dimensioni esplicite → nessun layout shift. */
-    <img
-      className="lm-card-media"
-      src={media.src}
-      width={media.width}
-      height={media.height}
-      alt={`Il sito di ${work.client}`}
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-    />
+    <picture>
+      <source srcSet={media.webp} type="image/webp" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- lo screenshot è
+          servito a dimensione fissa e già ottimizzato: next/image aggiungerebbe
+          un secondo passaggio di ridimensionamento senza guadagno.
+          Dimensioni esplicite → nessun layout shift. */}
+      <img
+        className="lm-card-media"
+        src={media.png}
+        width={media.width}
+        height={media.height}
+        alt={`Il sito di ${work.client}`}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </picture>
   )
 }
