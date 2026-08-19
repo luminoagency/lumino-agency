@@ -6,41 +6,72 @@ import { lerp, onMouseEffectsChange, pointer, trackPointer } from './useMotion'
 /**
  * Cursore custom + aurora + aloni di fondo.
  *
- * Punto secco che segue senza ritardo, anello che insegue con lerp .18, alone
- * caldo che insegue molto più lento (lerp .045) e schiarisce il fondo in
- * mix-blend-mode: screen.
+ * Il cursore ha due parti: un punto che segue senza ritardo e un anello che
+ * insegue. Sopra certi elementi l'anello diventa un DISCO pieno translucido con
+ * dentro una parola — si vede attraverso quello che c'è sotto, e il disco
+ * insegue con più lentezza per dare l'idea di massa.
  *
- * Un solo loop rAF per tutti e tre: sono gli unici effetti che girano di
- * continuo, e tenerli separati significherebbe tre loop concorrenti.
+ * Il markup è diviso in due apposta: l'ancora (.lm-cur-ring) la trasla il JS,
+ * il disco (.lm-cur-disc) porta stati e animazioni. Tenerli sullo stesso
+ * elemento significherebbe che il rimbalzo al click sovrascrive la posizione.
  *
- * Gli stati dell'anello arrivano per delega dal documento, non da un listener
- * per elemento: qualunque nodo con data-cursor="grow" lo fa crescere,
- * data-cursor="label" lo trasforma nella pastiglia rossa con scritto "Vedi".
+ * Lo stato lo dichiara l'elemento sorvolato con data-cursor: nessun listener
+ * per elemento, una sola delega sul documento.
  */
+
+interface Mode {
+  cls: string
+  label: string
+  /** Disco pieno: nasconde il punto e rallenta l'inseguimento. */
+  disc: boolean
+}
+
+const MODES: Record<string, Mode> = {
+  /* Solo l'anello che cresce, senza parola: link del menu e affini. */
+  grow: { cls: 'is-grown', label: '', disc: false },
+  /* Card dei lavori. */
+  view: { cls: 'is-view', label: 'Vedi', disc: true },
+  /* Righe "Cosa facciamo". */
+  open: { cls: 'is-open', label: 'Apri', disc: true },
+  /* Blocchi di contatto diretto. */
+  whatsapp: { cls: 'is-whatsapp', label: 'Scrivici', disc: true },
+  copy: { cls: 'is-copy', label: 'Copia', disc: true },
+}
+
+const ALL_CLASSES = Object.values(MODES).map((m) => m.cls)
+
+/** Inseguimento normale, e quello più pesante quando è un disco. */
+const LAG = 0.18
+const LAG_DISC = 0.12
+
 export default function Cursor() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
+  const discRef = useRef<HTMLDivElement>(null)
+  const labelRef = useRef<HTMLSpanElement>(null)
   const auroraRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const dot = dotRef.current
     const ring = ringRef.current
+    const disc = discRef.current
+    const label = labelRef.current
     const aurora = auroraRef.current
-    if (!dot || !ring || !aurora) return
+    if (!dot || !ring || !disc || !label || !aurora) return
 
     let stopPointer: (() => void) | null = null
     let raf = 0
     let live = false
+    let lag = LAG
 
-    // Anello e aurora partono al centro, come nel riferimento.
     const ringPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
     const auroraPos = { x: window.innerWidth / 2, y: window.innerHeight * 0.45 }
 
     const tick = () => {
       dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`
 
-      ringPos.x = lerp(ringPos.x, pointer.x, 0.18)
-      ringPos.y = lerp(ringPos.y, pointer.y, 0.18)
+      ringPos.x = lerp(ringPos.x, pointer.x, lag)
+      ringPos.y = lerp(ringPos.y, pointer.y, lag)
       ring.style.transform = `translate3d(${ringPos.x}px, ${ringPos.y}px, 0)`
 
       auroraPos.x = lerp(auroraPos.x, pointer.x, 0.045)
@@ -52,34 +83,51 @@ export default function Cursor() {
 
     const onOver = (event: PointerEvent) => {
       const el = (event.target as Element | null)?.closest?.('[data-cursor]')
-      const mode = el?.getAttribute('data-cursor')
-      dot.classList.toggle('is-hidden', mode === 'grow' || mode === 'label')
-      ring.classList.toggle('is-grown', mode === 'grow')
-      ring.classList.toggle('is-label', mode === 'label')
+      const mode = el ? MODES[el.getAttribute('data-cursor') ?? ''] : undefined
+
+      disc.classList.remove(...ALL_CLASSES)
+      if (mode) disc.classList.add(mode.cls)
+
+      // La parola cambia solo quando ce n'è una: sostituirla con stringa vuota
+      // mentre il disco si richiude farebbe sparire il testo di scatto.
+      if (mode?.label) label.textContent = mode.label
+      disc.classList.toggle('has-label', Boolean(mode?.label))
+
+      dot.classList.toggle('is-hidden', Boolean(mode))
+      lag = mode?.disc ? LAG_DISC : LAG
+
+      // Sulle sezioni chiare il viola translucido su bianco non regge: la
+      // parola sopra diventa illeggibile. Lì il disco si fa più coperto.
+      disc.classList.toggle('on-light', Boolean(el?.closest('.lm-light')))
     }
 
-    // Quando il puntatore esce dalla finestra, punto e anello restano fermi
-    // dov'erano: in uno screenshot sembrano un pulsante appiccicato al bordo,
-    // e stando sopra a tutto (z-index 9999) si vedono anche sopra il menu.
-    // Fuori dalla finestra il cursore custom non deve esistere.
-    const onLeaveWindow = (event: PointerEvent) => {
-      if (event.relatedTarget === null) document.body.classList.add("lm-cursor-away")
+    // Contrazione e rimbalzo alla pressione: il riscontro parte subito, prima
+    // che qualsiasi cosa il click apra abbia cominciato a muoversi.
+    const onPress = () => {
+      disc.classList.remove('is-press')
+      // Forza il riavvio dell'animazione anche a pressioni ravvicinate.
+      void disc.offsetWidth
+      disc.classList.add('is-press')
     }
-    const onEnterWindow = () => document.body.classList.remove("lm-cursor-away")
+
+    const onLeaveWindow = (event: PointerEvent) => {
+      if (event.relatedTarget === null) document.body.classList.add('lm-cursor-away')
+    }
+    const onEnterWindow = () => document.body.classList.remove('lm-cursor-away')
 
     const enable = () => {
       if (live) return
       live = true
       stopPointer = trackPointer()
       document.body.classList.add('lm-cursor-on')
-      // Nasconde punto e anello finché il puntatore non si muove davvero: al
-      // caricamento la posizione è un'ipotesi (il centro), e un cerchio fermo
-      // in mezzo allo schermo si legge come un elemento dell'interfaccia.
+      // Nascosto finché il puntatore non si muove davvero: al caricamento la
+      // posizione è un'ipotesi, e un cerchio fermo al centro sembra un elemento
+      // dell'interfaccia.
       document.body.classList.add('lm-cursor-away')
-      window.addEventListener('pointermove', onEnterWindow, { once: false })
+      window.addEventListener('pointermove', onEnterWindow)
       document.addEventListener('pointerover', onOver)
       document.addEventListener('pointerout', onLeaveWindow)
-      document.addEventListener('pointerover', onEnterWindow)
+      document.addEventListener('pointerdown', onPress)
       raf = requestAnimationFrame(tick)
     }
 
@@ -87,16 +135,15 @@ export default function Cursor() {
       if (!live) return
       live = false
       cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onEnterWindow)
       document.removeEventListener('pointerover', onOver)
       document.removeEventListener('pointerout', onLeaveWindow)
-      document.removeEventListener('pointerover', onEnterWindow)
-      window.removeEventListener('pointermove', onEnterWindow)
+      document.removeEventListener('pointerdown', onPress)
       document.body.classList.remove('lm-cursor-on', 'lm-cursor-away')
-      
       stopPointer?.()
       stopPointer = null
       dot.classList.remove('is-hidden')
-      ring.classList.remove('is-grown', 'is-label')
+      disc.classList.remove(...ALL_CLASSES, 'has-label', 'on-light', 'is-press')
     }
 
     const unsubscribe = onMouseEffectsChange((enabled) => (enabled ? enable() : disable()))
@@ -115,7 +162,9 @@ export default function Cursor() {
       <div className="lm-aurora" ref={auroraRef} aria-hidden="true" />
       <div className="lm-cur" ref={dotRef} aria-hidden="true" />
       <div className="lm-cur-ring" ref={ringRef} aria-hidden="true">
-        <span>Vedi</span>
+        <div className="lm-cur-disc" ref={discRef}>
+          <span ref={labelRef} />
+        </div>
       </div>
     </>
   )
