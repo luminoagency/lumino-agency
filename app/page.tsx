@@ -2,6 +2,7 @@ import '@/components/home/home.css'
 import '@/components/home/motion.css'
 import '@/components/home/hero.css'
 import '@/components/home/process.css'
+import '@/components/home/whatsapp.css'
 
 import SmoothScroll from '@/components/home/SmoothScroll'
 import Preloader from '@/components/home/Preloader'
