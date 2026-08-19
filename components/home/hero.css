@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LUMINO — HOME: hero
-   Titolo a tutto campo, tipografia di fondo, blob liquidi, gruppo rotante,
+   Titolo a tutto campo, blob liquidi, gruppo rotante,
    striscia dei progetti. Il movimento lo mettono i driver in heroMotion.ts:
    qui c'è come sono fatti, dove stanno, e cosa va spento sotto 821px o con
    motion ridotto.
@@ -64,44 +64,6 @@
   align-items: center;
   gap: 1.75rem;
   flex-wrap: wrap;
-}
-
-/* ─── Tipografia di fondo ────────────────────────────────────────────────── */
-.lm-backtype {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1vh;
-  overflow: hidden;
-}
-.lm-backtype-row {
-  overflow: hidden;
-  white-space: nowrap;
-}
-.lm-backtype-track {
-  display: inline-flex;
-  will-change: transform;
-}
-.lm-backtype-half {
-  display: inline-flex;
-}
-/* Solo contorno, nessun riempimento: profondità senza peso. */
-.lm-backtype-word {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(5rem, 17vw, 19rem);
-  font-weight: 600;
-  line-height: 0.82;
-  letter-spacing: -0.045em;
-  padding-right: 0.14em;
-  color: transparent;
-  -webkit-text-stroke: 1px var(--cream);
-  opacity: 0.09;
-}
-.lm-backtype-b .lm-backtype-word {
-  opacity: 0.06;
 }
 
 /* ─── Blob liquidi ───────────────────────────────────────────────────────── */
@@ -228,8 +190,7 @@
 }
 
 /* ─── Sotto 821px ────────────────────────────────────────────────────────── */
-/* Il filtro SVG è la cosa più cara della pagina: su un telefono non ha senso
-   pagarlo. La tipografia di fondo resta: è statica e costa un contorno. */
+/* Il filtro SVG è la cosa più cara della pagina. */
 @media (max-width: 820px) {
   .lm-blobs {
     display: none;
@@ -260,8 +221,7 @@
   .lm-rot {
     transition: none;
   }
-  .lm-blob,
-  .lm-backtype-track {
+  .lm-blob {
     transform: none !important;
   }
 }
