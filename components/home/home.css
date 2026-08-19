@@ -405,12 +405,39 @@ body {
   white-space: nowrap;
   border: 0;
 }
-/* Il nastro che scorre: solo translate3d, mai scale. */
+/* Il nastro del fallback: solo translate, mai scale. */
 .lm-card-scroll {
   position: absolute;
   inset: 0 0 auto;
   width: 100%;
   will-change: transform;
+}
+
+/* Il sito vero del cliente. Reso a larghezza desktop e poi rimpicciolito da
+   GSAP con scale(): così si vede il layout desktop, non la versione mobile.
+   Scala e traslazione stanno entrambe QUI — un transform su un genitore
+   creerebbe un contesto di impilamento che rende sfocato l'incorporato. */
+.lm-card-frame-site {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* 1440 di layout + 22 di sbordo: la scrollbar del sito incorporato cade
+     nella striscia ritagliata dal contenitore invece che dentro la card. */
+  width: 1462px;
+  height: 2400px;
+  border: 0;
+  display: block;
+  background: var(--paper);
+  /* Finché la card non è aperta non si deve poter cliccare dentro per sbaglio:
+     è un'anteprima, non un sito da usare da un francobollo. */
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Mostrato mentre l'iframe carica e se l'incorporamento fallisce: la card non
+   resta mai bianca. */
+.lm-card-fallback {
+  z-index: 1;
 }
 .lm-card-media {
   display: block;
