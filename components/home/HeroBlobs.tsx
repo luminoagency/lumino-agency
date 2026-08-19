@@ -53,6 +53,24 @@ export default function HeroBlobs({
               {/* Una seconda sfocatura leggera toglie il bordo di plastica. */}
               <feGaussianBlur in="goo" stdDeviation="14" />
             </filter>
+
+            {/* Versione leggera per gli schermi stretti: le sfocature sono la
+                parte cara di questo filtro, e il raggio si paga sul numero di
+                pixel da campionare. Dimezzarlo dimezza il conto, e su un
+                riquadro piccolo la differenza non si vede. */}
+            <filter id="lm-goo-lite" colorInterpolationFilters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="13" result="blurred" />
+              <feColorMatrix
+                in="blurred"
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 22 -10"
+                result="goo"
+              />
+              <feGaussianBlur in="goo" stdDeviation="7" />
+            </filter>
           </defs>
         </svg>
       ) : null}
