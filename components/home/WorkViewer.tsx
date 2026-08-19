@@ -28,8 +28,10 @@ import { gsap, prefersReducedMotion } from './useMotion'
 
 const OPEN_MS = 0.55
 const CLOSE_MS = 0.4
-/* Oltre questo tempo senza `load` diamo l'incorporamento per rifiutato. */
-const EMBED_TIMEOUT_MS = 6000
+/* Oltre questo tempo senza un caricamento buono, l'incorporamento è da dare
+   per rifiutato: il sito blocca il framing, è offline, o la rete è andata
+   male. Da fuori non si distinguono, e la risposta è la stessa. */
+const EMBED_TIMEOUT_MS = 5000
 /** Durata della visita guidata prima che l utente prenda il controllo. */
 const TOUR_S = 26
 
@@ -158,12 +160,38 @@ export default function WorkViewer({
     }
   }, [close, origin])
 
-  /* Se il `load` non arriva, il sito ha rifiutato di farsi incorporare. */
+  /* Si chiede al server se il sito si lascia incorporare, PRIMA di mostrare
+     un riquadro che potrebbe restare vuoto. Dal browser non è deducibile: un
+     frame rifiutato emette gli stessi eventi di uno buono (vedi
+     app/api/embeddable). Il timeout resta come rete per i casi che nemmeno il
+     server prevede — sito che risponde ma non dipinge, rete che cade a metà. */
   useEffect(() => {
-    if (!showEmbed || loaded) return
+    if (!work.siteUrl) {
+      setBlocked(true)
+      return
+    }
+
+    let alive = true
+    fetch(`/api/embeddable?url=${encodeURIComponent(work.siteUrl)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (alive && !data.ok) setBlocked(true)
+      })
+      .catch(() => {
+        /* Se il controllo stesso fallisce non si conclude nulla: decide il
+           timeout, come prima. */
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [work.siteUrl])
+
+  useEffect(() => {
+    if (!showEmbed || loaded || blocked) return
     const id = window.setTimeout(() => setBlocked(true), EMBED_TIMEOUT_MS)
     return () => window.clearTimeout(id)
-  }, [showEmbed, loaded])
+  }, [showEmbed, loaded, blocked])
 
   /* Visita guidata: appena il sito ha caricato scorre da solo dall'alto in
      basso. Non è lo scroll del documento — è cross-origin, irraggiungibile —
@@ -252,25 +280,36 @@ export default function WorkViewer({
           ) : null}
 
           {/* Sotto l'iframe finché non ha caricato, e unica cosa visibile se
-              l'incorporamento è stato rifiutato. */}
+              l'incorporamento è stato rifiutato o non c'è un indirizzo.
+              REGOLA: un click non deve MAI produrre il nulla. Se il sito non
+              si può mostrare qui, si mostra comunque il progetto. */}
           {!loaded || blocked ? (
-            <div className="lm-viewer-fallback">
+            <div className={`lm-viewer-fallback${blocked ? ' is-blocked' : ''}`}>
               <div className="lm-viewer-shot">
                 <WorkMediaView work={work} eager />
               </div>
 
               {blocked ? (
                 <div className="lm-viewer-note">
-                  <p>Questo sito non si lascia incorporare in una finestra.</p>
-                  <a
-                    className="lm-viewer-cta"
-                    href={work.siteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-cursor="grow"
-                  >
-                    Aprilo in una scheda nuova →
-                  </a>
+                  <span className="lm-viewer-note-tag">
+                    {work.sector} · {work.year}
+                  </span>
+                  <h3 className="lm-viewer-note-title">{work.client}</h3>
+                  <p>{work.blurb}</p>
+
+                  {work.siteUrl ? (
+                    <a
+                      className="lm-viewer-cta"
+                      href={work.siteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-cursor="grow"
+                    >
+                      Apri il sito in una nuova scheda →
+                    </a>
+                  ) : (
+                    <span className="lm-viewer-cta is-quiet">Online a breve</span>
+                  )}
                 </div>
               ) : (
                 <span className="lm-viewer-loading">Carico il sito…</span>
