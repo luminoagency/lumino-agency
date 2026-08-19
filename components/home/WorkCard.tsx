@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import type { Work } from './worksData'
 import BrowserChrome from './BrowserChrome'
 import CardShot from './CardShot'
-import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled } from './useMotion'
+import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
 
 /**
  * Card progetto: dentro la finestra finta c'è lo screenshot del sito.
@@ -119,10 +119,24 @@ export default function WorkCard({
     }
   }, [])
 
+  /**
+   * L'apertura aspetta un attimo il rimbalzo del cursore.
+   *
+   * Alla pressione il disco si contrae e torna: partire subito con la finestra
+   * coprirebbe quel riscontro sul nascere. 170ms sono sotto la soglia in cui
+   * un'interfaccia comincia a sembrare lenta, e bastano a far leggere il gesto.
+   * Con motion ridotto non c'è nessun rimbalzo da aspettare.
+   */
   const open = () => {
     const frame = frameRef.current
     if (!frame || !openable) return
-    onOpen(work, frame.getBoundingClientRect())
+
+    const rect = frame.getBoundingClientRect()
+    if (prefersReducedMotion()) {
+      onOpen(work, rect)
+      return
+    }
+    window.setTimeout(() => onOpen(work, rect), 170)
   }
 
   return (
@@ -130,7 +144,7 @@ export default function WorkCard({
       ref={cardRef}
       className="lm-card lm-reveal"
       data-work={work.id}
-      data-cursor={openable ? 'label' : undefined}
+      data-cursor={openable ? 'view' : undefined}
       style={{ ['--accent' as string]: work.accent }}
     >
       <div className="lm-card-frame" ref={frameRef}>
