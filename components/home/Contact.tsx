@@ -47,7 +47,7 @@ export default function Contact() {
           style={{ marginTop: 'clamp(2.5rem, 6vh, 4rem)', display: 'grid', gap: '1.25rem' }}
         >
           <span className={`lm-mail-wrap${copied ? ' is-copied' : ''}`}>
-            <a className="lm-contact-mail" href={MAILTO} onClick={copy} data-cursor="grow">
+            <a className="lm-contact-mail" href={MAILTO} onClick={copy} data-cursor="copy">
               {COMPANY.email}
             </a>
             <span className="lm-mail-burst" aria-hidden="true" />
