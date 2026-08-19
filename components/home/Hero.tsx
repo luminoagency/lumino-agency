@@ -39,12 +39,37 @@ export default function Hero() {
   const lettersRef = useRef<Driver | null>(null)
 
   const [active, setActive] = useState(true)
+  /* Gli effetti mouse sono accesi? Governa anche il puntino d'invito: senza
+     puntatore non c'è niente da invitare a fare. */
+  const [effects, setEffects] = useState(false)
+  /* idle → pulsa piano · nudge → una singola oscillazione più marcata dopo
+     sei secondi di inattività · gone → l'utente ha interagito, sparisce e non
+     torna più. */
+  const [hint, setHint] = useState<'idle' | 'nudge' | 'gone'>('idle')
 
   // Dopo ogni cambio del gruppo rotante il titolo ha lettere nuove: il driver
   // deve riprenderle e rimisurarne le posizioni di riposo.
   const handleWordChange = useCallback(() => {
     lettersRef.current?.refresh?.()
   }, [])
+
+  /* Dopo sei secondi senza che nessuno abbia toccato, il puntino fa una
+     singola oscillazione più marcata e torna calmo. Non insiste oltre: se non
+     è bastata quella, insistere diventa fastidio. */
+  const nudgedRef = useRef(false)
+
+  useEffect(() => {
+    if (!effects || nudgedRef.current) return
+
+    const nudge = window.setTimeout(() => {
+      nudgedRef.current = true
+      setHint((current) => (current === 'idle' ? 'nudge' : current))
+      // Torna calmo da solo. Una sola volta: insistere oltre diventa fastidio.
+      window.setTimeout(() => setHint((current) => (current === 'nudge' ? 'idle' : current)), 900)
+    }, 6000)
+
+    return () => window.clearTimeout(nudge)
+  }, [effects])
 
   useEffect(() => {
     const hero = heroRef.current
@@ -75,6 +100,8 @@ export default function Hero() {
       const now = performance.now() - started
       waves.push({ x: event.clientX, y: event.clientY, born: now })
       sparks?.burst?.(event.clientX, event.clientY)
+      // Ha toccato: l'invito ha esaurito il suo compito e non torna più.
+      setHint('gone')
     }
 
     const tick = (now: number) => {
@@ -133,7 +160,10 @@ export default function Hero() {
       stopPointer = null
     }
 
-    const unsubscribe = onMouseEffectsChange((enabled) => (enabled ? enable() : disable()))
+    const unsubscribe = onMouseEffectsChange((enabled) => {
+      setEffects(enabled)
+      return enabled ? enable() : disable()
+    })
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -172,10 +202,19 @@ export default function Hero() {
           </Line>
         </h1>
 
+        {/* Invito senza istruzioni: un puntino che pulsa vicino al titolo.
+            Chi lo nota tocca, e scopre da sé che le lettere si trascinano.
+            Sparisce al primo tocco e non torna. */}
+        {effects && hint !== 'gone' ? (
+          <span
+            className={`lm-hint${hint === 'nudge' ? ' is-nudge' : ''}`}
+            aria-hidden="true"
+          />
+        ) : null}
+
         <div className="lm-hero-foot">
           <p className="lm-hero-sub">
-            Studio digitale. Progettiamo e costruiamo siti per chi ha qualcosa di
-            vero da mostrare: ristoranti, hotel, aziende, retail, immobiliare.
+            Progettiamo e costruiamo. Il resto lo stai già vedendo.
           </p>
 
           <div className="lm-hero-actions">
@@ -183,7 +222,6 @@ export default function Hero() {
               Guarda i lavori
               <span className="lm-hero-scroll-line" aria-hidden="true" />
             </a>
-            <span className="lm-playhint">trascina le lettere — clicca ovunque</span>
           </div>
         </div>
       </div>
