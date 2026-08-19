@@ -238,6 +238,10 @@ body {
   overflow: hidden;
   cursor: grab;
   user-select: none;
+  /* Il trascinamento orizzontale arriva a noi, lo scroll verticale al browser.
+     Col valore predefinito il browser si prendeva tutto il gesto e col dito il
+     nastro non si muoveva di un pixel. */
+  touch-action: pan-y;
 }
 .lm-marquee.is-dragging { cursor: grabbing; }
 .lm-marquee-track {
@@ -339,7 +343,8 @@ body {
   box-shadow: var(--shadow-ink);
   transition: box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.lm-card:hover .lm-card-frame {
+.lm-card:hover .lm-card-frame,
+.lm-card:active .lm-card-frame {
   box-shadow: var(--shadow-ink-lift);
 }
 
@@ -602,7 +607,8 @@ body {
   transform: scaleX(0);
   transform-origin: left center;
 }
-.lm-card:hover .lm-card-progress {
+.lm-card:hover .lm-card-progress,
+.lm-card:active .lm-card-progress {
   opacity: 1;
 }
 
@@ -620,8 +626,33 @@ body {
   );
   mix-blend-mode: overlay;
 }
-.lm-card:hover .lm-card-sheen {
+.lm-card:hover .lm-card-sheen,
+.lm-card:active .lm-card-sheen {
   opacity: 1;
+}
+
+/* Distintivo touch: dice che la card si apre, dove non c'è un cursore a
+   dirlo. Da 821px in su non esiste. */
+.lm-card-badge {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  z-index: 5;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(88, 46, 196, 0.9);
+  color: var(--cream);
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+@media (min-width: 821px) {
+  .lm-card-badge {
+    display: none;
+  }
 }
 
 .lm-card-meta {
@@ -842,7 +873,8 @@ body {
   color: inherit;
   text-decoration: none;
 }
-.lm-footer a:hover {
+.lm-footer a:hover,
+.lm-footer a:active {
   color: var(--cream);
 }
 
