@@ -39,7 +39,10 @@ export interface Work {
   barLabel: string
   /**
    * Indirizzo caricato nell'overlay al click.
-   * Vuoto = la card non è apribile e resta una sola immagine.
+   *
+   * Anche se vuoto o irraggiungibile la card si apre lo stesso: l'overlay
+   * ripiega sullo screenshot a schermo pieno. Un click che non produce nulla
+   * fa sembrare il sito rotto.
    */
   siteUrl: string
   blurb: string
@@ -57,10 +60,11 @@ export interface Work {
     nomi — lo scorrimento parte senza toccare il codice. Vedi README.txt.
 
     URL — quattro progetti su cinque rispondono 200 e si lasciano incorporare.
-    rossi-restaurant NO: il suo deploy è protetto da SSO Vercel e la richiesta
-    finisce sulla pagina di login (X-Frame-Options: DENY). La sua card resta
-    quindi la sola immagine, senza overlay, finché non viene tolta la
-    Deployment Protection dalle impostazioni del progetto.  */
+    rossi-restaurant no: il deploy è dietro SSO Vercel e la richiesta finisce
+    sulla pagina di login (X-Frame-Options: DENY, frame-ancestors none). La sua
+    card si apre comunque e mostra lo screenshot con il bottone per aprirlo in
+    una scheda nuova. Tolta la Deployment Protection, l'incorporamento parte
+    da solo senza modifiche.  */
 
 export const WORKS: Work[] = [
   {
@@ -145,9 +149,12 @@ export const WORKS: Work[] = [
     sector: 'Ristorante & Pizzeria · Jesolo Lido',
     year: '2026',
     barLabel: 'Rossi Restaurant & Pizza',
-    /* Vuoto di proposito: il deploy è dietro SSO Vercel, non è pubblico e non
-       si lascia incorporare. Card senza overlay finché non viene aperto. */
-    siteUrl: '',
+    /* Il deploy è dietro SSO Vercel: l'iframe riceve la pagina di login, non
+       il sito. L'URL resta qui comunque — l'overlay si apre lo stesso e
+       ripiega sullo screenshot con il bottone per aprirlo in una scheda
+       nuova, dove la sessione dell'utente vale. Tolta la protezione,
+       l'incorporamento parte da solo. */
+    siteUrl: 'https://rossi-restaurant-siwakyceos-projects.vercel.app/',
     blurb:
       'Wordmark che si apre attorno al video, palette petrolio e ottone. Recensioni Google in tempo reale, menù e prenotazioni.',
     accent: 'var(--blue)',
