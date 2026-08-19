@@ -898,13 +898,53 @@ body.lm-cursor-away .lm-cur-ring {
   min-height: 0;
   background: var(--paper-2);
 }
+/* Durante la visita guidata l'iframe è più alto del riquadro: è quel di più
+   che permette di traslarlo e far vedere la pagina scorrere. Al primo gesto
+   dell'utente torna all'altezza del riquadro e diventa un sito normale, con
+   il suo scroll. */
 .lm-viewer-iframe {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
   width: 100%;
-  height: 100%;
+  height: 190%;
   border: 0;
   display: block;
+  /* Inerte mentre scorre da solo: sopra c'è il velo che raccoglie il gesto. */
+  pointer-events: none;
+}
+.lm-viewer-iframe.is-taken {
+  height: 100%;
+  pointer-events: auto;
+}
+
+/* Il velo che intercetta il primo gesto. Serve perché un iframe di un'altra
+   origine si mangia gli eventi: senza, non ci sarebbe modo di accorgersi che
+   l'utente vuole prendere il controllo. */
+.lm-viewer-grab {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+.lm-viewer-grab-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1rem;
+  translate: -50% 0;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: rgba(9, 6, 5, 0.72);
+  backdrop-filter: blur(6px);
+  color: var(--cream);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  animation: lm-grab-hint 3.4s ease-in-out infinite;
+}
+@keyframes lm-grab-hint {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 .lm-viewer-out {
   font-size: 0.72rem;
