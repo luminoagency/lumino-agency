@@ -45,9 +45,49 @@ export function hasFinePointer(): boolean {
   return window.matchMedia(`(min-width: ${POINTER_BREAKPOINT}px) and (pointer: fine)`).matches
 }
 
-/** Scorciatoia: gli effetti mouse vanno accesi? */
+/**
+ * Serve un mouse? Vale SOLO per ciò che senza puntatore non ha senso: cursore
+ * custom, alone che lo insegue, inclinazioni verso il puntatore.
+ */
 export function mouseEffectsEnabled(): boolean {
   return hasFinePointer() && !prefersReducedMotion()
+}
+
+/**
+ * Si può animare?
+ *
+ * È una domanda DIVERSA dalla precedente, e per un pezzo le due sono state la
+ * stessa: il risultato era che sotto 821px si spegneva tutto — blob, scintille,
+ * trascinamento delle lettere, onda al tocco — e dal telefono il sito sembrava
+ * morto. Un dito non è un mouse, ma è comunque un puntatore: quello che non
+ * può fare è passare *sopra* le cose senza toccarle.
+ *
+ * Qui l'unico veto è la preferenza dell'utente.
+ */
+export function ambientMotionEnabled(): boolean {
+  return !prefersReducedMotion()
+}
+
+/** Chiama `handler` con lo stato corrente e a ogni cambio della preferenza. */
+export function onAmbientMotionChange(handler: (enabled: boolean) => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  const sync = () => handler(ambientMotionEnabled())
+  query.addEventListener('change', sync)
+  sync()
+
+  return () => query.removeEventListener('change', sync)
+}
+
+/**
+ * Schermo stretto: si riducono le QUANTITÀ, non le funzionalità. Meno
+ * particelle, meno cerchi, sfocature più corte — le stesse cose, che costano
+ * meno.
+ */
+export function isCompactViewport(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia(`(max-width: ${POINTER_BREAKPOINT - 1}px)`).matches
 }
 
 /**
