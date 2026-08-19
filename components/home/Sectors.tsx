@@ -60,7 +60,7 @@ export default function Sectors() {
                 <button
                   type="button"
                   className="lm-sector lm-reveal"
-                  data-cursor="grow"
+                  data-cursor="open"
                   aria-expanded={isOpen}
                   onClick={() => setOpen(isOpen ? null : i)}
                 >
