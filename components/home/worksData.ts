@@ -4,21 +4,22 @@
  * Dati PROPRI della vetrina: volutamente NON legge da templates/_shared/demoData.ts
  * (quelli sono ristoranti demo fittizi, condivisi con /portfolio e /demo/[slug]).
  *
- * Il campo `media` accetta due forme — screenshot full-page oppure video in loop —
- * così si può passare dall'una all'altra senza riscrivere WorkCard.
+ * Nella griglia ci sono SOLO immagini: niente iframe e niente video. Il sito
+ * vero si apre al click, in un solo iframe per volta (vedi WorkViewer).
  */
 
 export type WorkMedia =
   | {
       kind: 'shot'
-      /** Screenshot full-page verticale, larghezza 900px. */
-      src: string
+      /** WebP servito per primo, PNG come riserva. */
+      webp: string
+      png: string
+      /** Dimensioni reali del file: servono a capire se c'è da scorrere. */
       width: number
       height: number
     }
   | {
       kind: 'video'
-      /** Primo fotogramma: evita il buco bianco prima del play. */
       poster: string
       sources: { src: string; type: string }[]
       width: number
@@ -32,44 +33,34 @@ export interface Work {
   year: string
   /**
    * Testo mostrato nella barra finta del browser.
-   *
-   * Oggi è il NOME del progetto, non l'indirizzo: scrivere
-   * "hosteria-moderna.vercel.app" su una vetrina fa amatoriale.
-   * Quando i domini ufficiali saranno attivi, qui si scrive il dominio.
+   * Oggi è il NOME del progetto: scrivere "*.vercel.app" su una vetrina fa
+   * amatoriale. Quando i domini saranno attivi, qui si scrive il dominio.
    */
   barLabel: string
   /**
-   * Indirizzo realmente caricato nell'iframe dell'overlay.
+   * Indirizzo caricato nell'overlay al click.
    * Vuoto = la card non è apribile e resta una sola immagine.
    */
   siteUrl: string
   blurb: string
   /** Token colore usato per l'accento della card. */
   accent: string
-  /** false finché lo screenshot/video non è in /public: la card mostra un placeholder. */
   ready: boolean
   media: WorkMedia
 }
 
-/*  TODO ASSET — screenshot full-page da produrre, larghezza 900px,
-    altezza libera, formato WebP, da mettere in /public/works/:
+/*  STATO ASSET — gli screenshot in /public/works/ sono le PRIME SCHERMATE
+    (~1880×907 in origine, ridotte a 1600px di larghezza). Sono più larghe che
+    alte, quindi NON c'è pagina da scorrere: la card lo capisce da sola dalle
+    proporzioni e fa una deriva lenta invece di simulare uno scorrimento che
+    non esiste. Sostituendo questi file con le versioni full-page — stessi
+    nomi — lo scorrimento parte senza toccare il codice. Vedi README.txt.
 
-      hosteria-moderna.webp
-      trattoria-dall-oste.webp
-      hotel-aurora.webp
-      miss-poppy.webp
-
-    Servono a due cose: la card in griglia, e il fallback dentro l'overlay
-    quando un sito rifiuta di farsi incorporare.
-
-    TODO DOMINI — `barLabel` mostra il nome del progetto finché non ci sono i
-    domini ufficiali. `siteUrl` punta al deploy Vercel di produzione: tutti e
-    quattro verificati 200, senza X-Frame-Options né CSP frame-ancestors,
-    quindi incorporabili.
-
-    NOTA — rossi-restaurant NON è qui: il suo deploy Vercel è protetto da SSO
-    (302 verso vercel.com/sso-api) e risponde X-Frame-Options: DENY. Non è
-    pubblico e non è incorporabile.  */
+    URL — quattro progetti su cinque rispondono 200 e si lasciano incorporare.
+    rossi-restaurant NO: il suo deploy è protetto da SSO Vercel e la richiesta
+    finisce sulla pagina di login (X-Frame-Options: DENY). La sua card resta
+    quindi la sola immagine, senza overlay, finché non viene tolta la
+    Deployment Protection dalle impostazioni del progetto.  */
 
 export const WORKS: Work[] = [
   {
@@ -82,8 +73,14 @@ export const WORKS: Work[] = [
     blurb:
       'Osteria e burger gourmet raccontati senza fronzoli. Menu che si aggiorna da solo, prenotazioni gestite dalla sala.',
     accent: 'var(--red)',
-    ready: false,
-    media: { kind: 'shot', src: '/works/hosteria-moderna.webp', width: 900, height: 5400 },
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/hosteria-moderna.webp',
+      png: '/works/hosteria-moderna.png',
+      width: 1600,
+      height: 779,
+    },
   },
   {
     id: 'trattoria-dall-oste',
@@ -95,8 +92,14 @@ export const WORKS: Work[] = [
     blurb:
       'Carne, brace e un sipario che si apre sulla sala. Tipografia grossa, contrasto netto, zero decorazione inutile.',
     accent: 'var(--bordeaux)',
-    ready: false,
-    media: { kind: 'shot', src: '/works/trattoria-dall-oste.webp', width: 900, height: 5200 },
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/trattoria-dalloste.webp',
+      png: '/works/trattoria-dalloste.png',
+      width: 1600,
+      height: 778,
+    },
   },
   {
     id: 'hotel-aurora',
@@ -108,8 +111,14 @@ export const WORKS: Work[] = [
     blurb:
       "Quattro stelle superior fronte mare. L'ora dorata come chiave visiva, prenotazione diretta senza intermediari.",
     accent: 'var(--violet)',
-    ready: false,
-    media: { kind: 'shot', src: '/works/hotel-aurora.webp', width: 900, height: 5800 },
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/hotel-aurora.webp',
+      png: '/works/hotel-aurora.png',
+      width: 1600,
+      height: 774,
+    },
   },
   {
     id: 'miss-poppy',
@@ -121,7 +130,34 @@ export const WORKS: Work[] = [
     blurb:
       'Fast food 100% vegetale che online doveva restare sé stesso: colore pieno, ritmo veloce, menu che si sfoglia col pollice.',
     accent: 'var(--pink)',
-    ready: false,
-    media: { kind: 'shot', src: '/works/miss-poppy.webp', width: 900, height: 5000 },
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/miss-poppy.webp',
+      png: '/works/miss-poppy.png',
+      width: 1600,
+      height: 768,
+    },
+  },
+  {
+    id: 'rossi-restaurant',
+    client: 'Rossi Restaurant & Pizza',
+    sector: 'Ristorante & Pizzeria · Jesolo Lido',
+    year: '2026',
+    barLabel: 'Rossi Restaurant & Pizza',
+    /* Vuoto di proposito: il deploy è dietro SSO Vercel, non è pubblico e non
+       si lascia incorporare. Card senza overlay finché non viene aperto. */
+    siteUrl: '',
+    blurb:
+      'Wordmark che si apre attorno al video, palette petrolio e ottone. Recensioni Google in tempo reale, menù e prenotazioni.',
+    accent: 'var(--blue)',
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/rossi-restaurant.webp',
+      png: '/works/rossi-restaurant.png',
+      width: 1600,
+      height: 770,
+    },
   },
 ]
