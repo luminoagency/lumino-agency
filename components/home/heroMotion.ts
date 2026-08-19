@@ -479,36 +479,3 @@ export function createBlobsDriver(container: HTMLElement, nodes: HTMLElement[]):
     },
   }
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Tipografia di fondo
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/**
- * "LUMINO" ripetuto, gigantesco, in solo contorno: dà profondità all'hero senza
- * una sola immagine. Due nastri a velocità diverse, e il mouse li muove meno
- * del titolo — è la differenza di velocità a creare la profondità, non l'ombra.
- */
-export function createBackdropDriver(rows: HTMLElement[]): Driver {
-  const config = [
-    { speed: -0.014, parallax: 26, offset: 0 },
-    { speed: 0.009, parallax: 14, offset: 0 },
-  ]
-
-  return {
-    update({ pointerX, time }) {
-      rows.forEach((el, i) => {
-        const c = config[i] ?? config[0]
-        // Metà larghezza: il nastro è duplicato, quindi a -50% ricomincia uguale.
-        const drift = ((time * c.speed) % 50) - (c.speed < 0 ? 0 : 50)
-        const px = (pointerX / window.innerWidth - 0.5) * c.parallax
-        el.style.transform = `translate3d(calc(${drift.toFixed(3)}% + ${px.toFixed(1)}px), 0, 0)`
-      })
-    },
-    reset() {
-      rows.forEach((el) => {
-        el.style.transform = ''
-      })
-    },
-  }
-}
