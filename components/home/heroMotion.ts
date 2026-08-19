@@ -278,6 +278,8 @@ export function createLettersDriver(root: HTMLElement): Driver {
    Scintille
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Quante scintille tenere vive. Su schermo stretto si dimezzano: stessa
+   scena, metà del costo per frame. */
 const SPARK_COUNT = 46
 const SPARK_DODGE = 130
 const SPARK_COLORS = ['rgba(255,205,150,', 'rgba(236,106,156,', 'rgba(139,92,246,']
@@ -293,7 +295,7 @@ interface Spark {
   burst: boolean
 }
 
-export function createSparksDriver(canvas: HTMLCanvasElement): Driver {
+export function createSparksDriver(canvas: HTMLCanvasElement, count = SPARK_COUNT): Driver {
   const ctx = canvas.getContext('2d')
   let width = 0
   let height = 0
@@ -325,7 +327,7 @@ export function createSparksDriver(canvas: HTMLCanvasElement): Driver {
   }
 
   resize()
-  spawn(SPARK_COUNT)
+  spawn(count)
   window.addEventListener('resize', resize)
 
   return {
@@ -382,7 +384,7 @@ export function createSparksDriver(canvas: HTMLCanvasElement): Driver {
         return true
       })
 
-      if (sparks.filter((p) => !p.burst).length < SPARK_COUNT) spawn(1)
+      if (sparks.filter((p) => !p.burst).length < count) spawn(1)
     },
     burst(x: number, y: number) {
       const rect = canvas.getBoundingClientRect()
