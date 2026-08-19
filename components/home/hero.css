@@ -200,7 +200,8 @@
   display: inline-flex;
   animation: lm-tick 38s linear infinite;
 }
-.lm-hticker:hover .lm-hticker-track {
+.lm-hticker:hover .lm-hticker-track,
+.lm-hticker:active .lm-hticker-track {
   animation-play-state: paused;
 }
 .lm-hticker-half {
@@ -232,9 +233,15 @@
 }
 
 /* ─── Sotto 821px ────────────────────────────────────────────────────────── */
-/* Il filtro SVG è la cosa più cara della pagina. */
+/* Su schermo stretto NON si spegne niente: si riduce. Il filtro gooey è la
+   cosa più cara della pagina, quindi qui passa alla versione leggera (sfocatura
+   più corta) e restano tre cerchi su cinque. Stessa scena, meno lavoro. */
 @media (max-width: 820px) {
-  .lm-blobs {
+  .lm-blobs-stage {
+    filter: url(#lm-goo-lite);
+    opacity: 0.26;
+  }
+  .lm-blob:nth-child(n + 4) {
     display: none;
   }
   .lm-char {
