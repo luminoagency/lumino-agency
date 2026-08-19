@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY, MAILTO } from '@/lib/company'
+import WhatsAppBlock from './WhatsAppBlock'
 
 /**
  * Sezione 10 — Contatti.
@@ -57,6 +58,10 @@ export default function Contact() {
           </span>
 
           <p className="lm-lead">{COMPANY.responseTime}</p>
+        </div>
+
+        <div className="lm-reveal" style={{ marginTop: 'clamp(2.5rem, 6vh, 3.5rem)' }}>
+          <WhatsAppBlock />
         </div>
       </div>
     </section>
