@@ -106,11 +106,16 @@ export default function Hero() {
     )
     observer.observe(hero)
 
-    /* Su schermo stretto l'uscita allo scroll è spenta: la composizione mobile
-       è un'altra composizione, e farla sfaldare mentre si scorre su un pollice
-       di altezza è solo confusione. L'entrata invece resta. */
+    /* Due percorsi, non uno spento e uno acceso. Su schermo stretto l'uscita
+       c'è ma è alleggerita: stessa coreografia, niente sfocatura, corse più
+       corte (vedi PROFILES in heroMotion.ts). Con motion ridotto non c'è
+       affatto — e va deciso qui, perché il loop parte comunque per il
+       parallasse e senza questo veto scriverebbe l'uscita lo stesso. */
     const narrow = window.matchMedia(`(max-width: ${POINTER_BREAKPOINT - 1}px)`)
-    const syncExit = () => driver.setExit(!narrow.matches)
+    const syncExit = () => {
+      if (prefersReducedMotion()) driver.setExit('off')
+      else driver.setExit(narrow.matches ? 'light' : 'full')
+    }
     narrow.addEventListener('change', syncExit)
     syncExit()
 
@@ -129,6 +134,8 @@ export default function Hero() {
 
     const unsubscribeMotion = onAmbientMotionChange((enabled) => {
       motionOk = enabled
+      // La preferenza può cambiare a pagina aperta: il profilo va rideciso.
+      syncExit()
       if (enabled) {
         start()
       } else {
