@@ -5,6 +5,7 @@ import '@/components/home/process.css'
 import '@/components/home/whatsapp.css'
 import '@/components/home/bands.css'
 
+import { anton } from '@/components/home/fonts'
 import SmoothScroll from '@/components/home/SmoothScroll'
 import Preloader from '@/components/home/Preloader'
 import Cursor from '@/components/home/Cursor'
@@ -37,10 +38,13 @@ import Footer from '@/components/home/Footer'
  *
  * Preloader, Cursor e Reveal sono trasversali e stanno fuori dal <main>:
  * non sono contenuto, sono lo strato che lo fa muovere.
+ *
+ * Anton (--font-display) è agganciato qui e non ad app/layout.tsx: lo usa solo
+ * il wordmark dell'hero, e le altre pagine non devono pagarne il caricamento.
  */
 export default function HomePage() {
   return (
-    <div className="lm">
+    <div className={`lm ${anton.variable}`}>
       <SmoothScroll />
       <Preloader />
       <Cursor />
