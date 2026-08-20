@@ -382,3 +382,149 @@
     transition: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PULSANTE FLOTTANTE — la home, sempre raggiungibile
+   Non il verde WhatsApp: cerchio scuro, filo di gradiente, icona crema. Un
+   blocco verde su questa vetrina sarebbe un corpo estraneo, e questo pulsante
+   convive con la pagina per tutta la sua altezza.
+   Sta SOTTO il banner cookie (z-index 9999) e sotto il menu (500): quando c'è
+   un pannello aperto, non è il momento di scrivere.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-wadock {
+  position: fixed;
+  right: clamp(1rem, 2.5vw, 1.5rem);
+  bottom: max(clamp(1rem, 2.5vw, 1.5rem), env(safe-area-inset-bottom, 0px));
+  z-index: 55;
+  display: inline-flex;
+  align-items: center;
+  height: 3.25rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--cream);
+  /* Il filo in gradiente: il fondo scuro riempie il padding-box, il gradiente
+     vive nel border-box, e il bordo trasparente lascia vedere il secondo. */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--void-2), var(--void-2)) padding-box,
+    var(--grad) border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  /* Fuori scena finché non serve. */
+  opacity: 0;
+  transform: translateY(18px) scale(0.9);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity 0.28s ease,
+    transform 0.52s cubic-bezier(0.34, 1.42, 0.64, 1),
+    visibility 0s 0.52s;
+}
+.lm-wadock.is-in {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  visibility: visible;
+  transition:
+    opacity 0.3s ease,
+    transform 0.62s cubic-bezier(0.34, 1.42, 0.64, 1),
+    visibility 0s;
+}
+
+.lm-wadock-icon {
+  position: relative;
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+}
+.lm-wadock-icon svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: block;
+}
+
+/* L'anello che pulsa piano: dice "c'è qualcuno" senza agitarsi. */
+.lm-wadock-ring {
+  position: absolute;
+  inset: 0.35rem;
+  border-radius: 50%;
+  border: 1px solid var(--red);
+  opacity: 0;
+  pointer-events: none;
+}
+.lm-wadock.is-in .lm-wadock-ring {
+  animation: lm-wadock-pulse 3.6s ease-out infinite;
+}
+@keyframes lm-wadock-pulse {
+  0% { opacity: 0.5; scale: 1; }
+  55% { opacity: 0; scale: 1.55; }
+  100% { opacity: 0; scale: 1.55; }
+}
+
+/* All'hover si apre in pastiglia. Il testo entra da destra — da sotto l'icona
+   verso sinistra — perché il pulsante è ancorato al bordo destro: aprirsi
+   dall'altra parte lo manderebbe fuori schermo. */
+.lm-wadock-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  translate: 12px 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    padding-left 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.32s ease,
+    translate 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* L'apertura è roba da mouse. Su touch `:hover` scatta al tocco, cioè un
+   istante prima che si apra WhatsApp: la pastiglia lampeggerebbe e basta. */
+@media (hover: hover) and (pointer: fine) {
+  .lm-wadock:hover .lm-wadock-label {
+    max-width: 14rem;
+    padding-left: 1.15rem;
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+/* Da tastiera si apre comunque: lì il fuoco è una scelta, non un contatto. */
+.lm-wadock:focus-visible .lm-wadock-label {
+  max-width: 14rem;
+  padding-left: 1.15rem;
+  opacity: 1;
+  translate: 0 0;
+}
+.lm-wadock:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+
+/* Su telefono l'area di tocco resta sopra i 48px richiesti. */
+@media (max-width: 820px) {
+  .lm-wadock {
+    height: 3rem;
+  }
+  .lm-wadock-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-wadock,
+  .lm-wadock.is-in {
+    transition:
+      opacity 0.001ms,
+      visibility 0s;
+    transform: none;
+  }
+  .lm-wadock.is-in .lm-wadock-ring {
+    animation: none;
+  }
+  .lm-wadock-label {
+    transition: none;
+  }
+}
