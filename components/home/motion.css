@@ -937,40 +937,177 @@ body.lm-cursor-away .lm-cur-ring {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
 }
-.lm-viewer-out {
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.lm-viewer-out:hover,
-.lm-viewer-out:active {
-  color: var(--ink);
-}
-.lm-viewer-close {
+/* ═══ La via d'uscita ════════════════════════════════════════════════════════
+   Sta FUORI dalla cornice e sopra ogni cosa. Prima era un cerchietto chiaro
+   dentro la barra finta del browser: sopra un sito a fondo chiaro spariva, e
+   su telefono finiva stretto fra le altre voci. Chi non conosce Esc restava
+   dentro senza una via d'uscita visibile.
+
+   Il fondo scuro col vetro dietro serve a questo: sotto può esserci qualunque
+   sito, chiaro o scuro, e il pulsante deve restare leggibile sopra entrambi.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-viewer-exit {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  /* Sopra la cornice, sopra il velo, sopra l'iframe: da qui non lo copre più
+     niente, e non scorre via perché non è dentro nulla che scorra. */
+  z-index: 40;
   appearance: none;
-  border: 1px solid var(--line-ink);
-  background: var(--paper);
-  color: var(--ink);
-  width: 1.9rem;
-  height: 1.9rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  color: var(--cream);
+  font: inherit;
+}
+.lm-viewer-exit-word {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(9, 6, 5, 0.66);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244, 238, 228, 0.16);
+  transition: background 0.3s, border-color 0.3s;
+}
+.lm-viewer-exit-ring {
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 0.72rem;
-  cursor: pointer;
+  background: rgba(9, 6, 5, 0.66);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(244, 238, 228, 0.22);
   transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     background 0.3s,
-    color 0.3s,
     border-color 0.3s;
 }
-.lm-viewer-close:hover,
-.lm-viewer-close:active {
+.lm-viewer-exit-ring svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+  fill: none;
+}
+.lm-viewer-exit:hover .lm-viewer-exit-ring,
+.lm-viewer-exit:focus-visible .lm-viewer-exit-ring {
+  transform: rotate(90deg);
   background: var(--red);
   border-color: var(--red);
-  color: #fff;
+}
+.lm-viewer-exit:hover .lm-viewer-exit-word {
+  background: rgba(9, 6, 5, 0.86);
+  border-color: rgba(244, 238, 228, 0.3);
+}
+.lm-viewer-exit:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+/* ═══ Barra di piede ═════════════════════════════════════════════════════════
+   Dentro l'iframe non c'è modo di sapere di chi è il sito che si sta
+   guardando: la barra lo dice, e offre la via d'uscita in avanti.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-viewer-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem clamp(0.9rem, 2.5vw, 1.4rem);
+  border-top: 1px solid var(--line-ink);
+  background: var(--paper);
+  min-width: 0;
+}
+.lm-viewer-bar-who {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.lm-viewer-bar-who b {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-viewer-bar-who i {
+  font-style: normal;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-viewer-bar-out {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--line-ink);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  white-space: nowrap;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+.lm-viewer-bar-out:hover,
+.lm-viewer-bar-out:focus-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.lm-viewer-bar-out.is-quiet {
+  color: var(--ink-dim);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  /* Solo icona: la parola non ci sta senza rubare spazio al sito, e l'area di
+     tocco la fa comunque il cerchio, che resta sopra i 48px richiesti. */
+  .lm-viewer-exit-word {
+    display: none;
+  }
+  .lm-viewer-exit-ring {
+    width: 3rem;
+    height: 3rem;
+  }
+  .lm-viewer-bar {
+    padding-inline: 0.85rem;
+  }
+  .lm-viewer-bar-who i {
+    display: none;
+  }
+  .lm-viewer-bar-out {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.62rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-viewer-exit-ring {
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .lm-viewer-exit:hover .lm-viewer-exit-ring,
+  .lm-viewer-exit:focus-visible .lm-viewer-exit-ring {
+    transform: none;
+  }
 }
 
 /* Visibile durante la crescita, e unica cosa mostrata se il sito rifiuta
