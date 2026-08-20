@@ -712,3 +712,108 @@
     transform: scaleY(1);
   }
 }
+
+/* ─── Lo stesso stato di riposo, agganciato alla classe ──────────────────── */
+/* Le regole qui sopra vivono dentro la media query, e vanno tenute lì: senza
+   JavaScript la classe non arriva mai e il riquadro resterebbe comunque
+   leggibile. Ma la modalità `still` è una classe, e finché lo stato di riposo
+   dipendeva SOLO dalla media query bastava che le due si scollassero perché
+   l'atto 1 si presentasse vuoto — tutti i suoi pezzi partono da opacity 0 e
+   senza animazione non ci arrivano mai.
+   Scritto anche qui, la classe da sola basta a garantire un fotogramma. */
+.lm-demo-stage.is-still :is(
+    .lm-page-a1 .lm-p-nav,
+    .lm-page-a1 .lm-p-hero,
+    .lm-page-a1 .lm-p-media,
+    .lm-page-a1 .lm-p-cols,
+    .lm-page-a1 .lm-p-row,
+    .lm-page-a1 .lm-p-guide,
+    .lm-page-a1 .lm-p-measure,
+    .lm-page-a2 .lm-p-title b,
+    .lm-page-a2 .lm-p-media,
+    .lm-page-a2 .lm-p-thumb,
+    .lm-page-a3 .lm-p-cols
+  ) {
+  opacity: 1;
+  transform: none;
+  clip-path: none;
+}
+.lm-demo-stage.is-still .lm-act-cursor {
+  display: none;
+}
+.lm-demo-stage.is-still .lm-page-a2 .lm-p-row-light {
+  transform: translateY(0);
+  opacity: 0.22;
+}
+.lm-demo-stage.is-still .lm-p-btn-fill {
+  transform: translateY(0);
+}
+.lm-demo-stage.is-still .lm-act-bar {
+  transform: scaleY(1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE — i tre atti si impilano e partono da soli
+
+   Sotto 821px non c'è pin e non c'è scrub. Senza qualcosa che le faccia
+   avanzare, le tre scene restavano sovrapposte nello stesso riquadro e ferme
+   al primo fotogramma: si vedeva un rettangolo immobile, e gli atti 2 e 3 non
+   comparivano mai perché nessuno accendeva la loro opacità.
+
+   Qui la sezione diventa una colonna: testo, il suo atto, testo, il suo atto.
+   `display: contents` scioglie i due contenitori — la colonna dei media e
+   quella dei testi — dentro la stessa griglia, così i sei pezzi si alternano
+   con `order` senza toccare il markup, che sul desktop deve restare in due
+   colonne affiancate.
+
+   Il movimento lo accende Process.tsx aggiungendo `is-live` quando l'atto
+   entra in viewport: da lì in poi sono le @keyframes a girare, a tempo e in
+   loop. Nessun lavoro JS per fotogramma.
+
+   STA IN FONDO AL FILE DI PROPOSITO: deve avere l'ultima parola sul blocco del
+   motion ridotto qui sopra, che rimette i media in colonna a modo suo. Le
+   animazioni restano comunque spente da lì, che usa !important.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 820px) {
+  .lm-process-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 2.25rem);
+  }
+  .lm-process-media,
+  .lm-process-steps {
+    display: contents;
+  }
+
+  /* L'indicatore a tre segmenti misura il progresso dello scrub: senza scrub
+     non misura niente. */
+  .lm-process-bars {
+    display: none;
+  }
+
+  /* Il riquadro si porta addosso la cornice che prima era del contenitore. */
+  .lm-process-layer {
+    position: relative;
+    inset: auto;
+    opacity: 1;
+    transition: none;
+    aspect-ratio: 4 / 3;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    order: calc(var(--act, 0) * 2 + 2);
+  }
+  /* Il testo sopra il suo atto: prima si legge di cosa si tratta, poi lo si
+     vede succedere. */
+  .lm-process-step {
+    opacity: 1;
+    gap: 0.6rem;
+    order: calc(var(--act, 0) * 2 + 1);
+  }
+
+  /* Il righello dichiara «1440» sopra uno schermo che ne ha 390: su un
+     telefono è un dettaglio che mente. */
+  .lm-page-a1 .lm-p-measure {
+    display: none;
+  }
+}
