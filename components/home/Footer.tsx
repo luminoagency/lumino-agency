@@ -24,7 +24,7 @@ export default function Footer() {
   return (
     <footer className="lm-wrap">
       <div className="lm-footer">
-        <span className="lm-wordmark" style={{ fontSize: '1.2rem' }} aria-hidden="true">
+        <span className="lm-wordmark is-small" aria-hidden="true">
           <Wordmark />
         </span>
 
