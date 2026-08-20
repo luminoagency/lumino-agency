@@ -31,23 +31,49 @@ const EXIT_SPAN = 0.85
 const LETTER_STAGGER = 0.055
 /** Quanto dura la corsa della singola lettera. */
 const LETTER_SPAN = 0.55
-const LETTER_LIFT = 150
 const LETTER_TILT = 7
 const LETTER_SHRINK = 0.12
-const LETTER_BLUR = 7
 
 /* ─── Finestre ─── */
-const WIN_FLY_X = 340
-const WIN_FLY_Y = 220
 const WIN_FADE = 1.15
 const WIN_SHRINK = 0.18
 
 /* ─── Fondale e testi ─── */
 const BLOOM_OPACITY = 0.95
 const BLOOM_FADE = 1.1
-const BLOOM_SHRINK = 0.25
 const PAYOFF_FADE = 1.8
 const TICKER_FADE = 1.6
+
+/**
+ * Due profili di uscita, non uno spento e uno acceso.
+ *
+ * Su telefono la stessa uscita del desktop costa troppo: la sfocatura è la voce
+ * più cara di tutte — è l'unica cosa qui dentro che il compositore non sa fare
+ * gratis — e le corse lunghe muovono molti pixel su uno schermo piccolo, dove
+ * comunque non si leggono come "vola via", si leggono come "sbatte".
+ *
+ * Quindi su mobile: stessa coreografia, stesso ritardo progressivo, ma niente
+ * sfocatura, corse più corte e il bagliore che si spegne senza rimpicciolire.
+ * Restano solo transform e opacity, che il compositore gestisce senza toccare
+ * il layout.
+ */
+interface ExitProfile {
+  letterLift: number
+  /** 0 = niente sfocatura. Su mobile è 0, e non per prudenza: è LA voce cara. */
+  letterBlur: number
+  winFlyX: number
+  winFlyY: number
+  /** Il bagliore rimpicciolisce mentre si spegne? Su mobile no. */
+  bloomShrink: number
+}
+
+const PROFILES: Record<'full' | 'light', ExitProfile> = {
+  full: { letterLift: 150, letterBlur: 7, winFlyX: 340, winFlyY: 220, bloomShrink: 0.25 },
+  light: { letterLift: 92, letterBlur: 0, winFlyX: 150, winFlyY: 120, bloomShrink: 0 },
+}
+
+/** Quale uscita: piena (desktop), alleggerita (mobile), o nessuna. */
+export type ExitMode = 'full' | 'light' | 'off'
 
 /* ─── Parallasse ─── */
 /** Quanto insegue il puntatore a ogni fotogramma: basso = pesante. */
@@ -71,8 +97,8 @@ export interface HeroDriver {
   update(): void
   /** Riporta la scena com'era: toglie ogni stile scritto qui. */
   reset(): void
-  /** L'uscita allo scroll è attiva? Su schermo stretto no (vedi Hero.tsx). */
-  setExit(on: boolean): void
+  /** Quale uscita allo scroll: piena, alleggerita o nessuna (vedi Hero.tsx). */
+  setExit(mode: ExitMode): void
   /** Il parallasse è attivo? Serve un mouse: col dito non esiste il "sopra". */
   setParallax(on: boolean): void
 }
@@ -84,7 +110,8 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
   let chaseX = 0
   let chaseY = 0
 
-  let exitOn = true
+  let exitMode: ExitMode = 'full'
+  let profile = PROFILES.full
   let parallaxOn = false
 
   /* L'ultimo avanzamento scritto: se non cambia, le lettere non si riscrivono.
@@ -100,19 +127,22 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
     el.letters.forEach((letter, i) => {
       const own = clamp01((progress - i * LETTER_STAGGER) / LETTER_SPAN)
       letter.style.transform =
-        `translateY(${-own * LETTER_LIFT}px)` +
+        `translateY(${-own * profile.letterLift}px)` +
         ` rotate(${own * (i % 2 ? LETTER_TILT : -LETTER_TILT)}deg)` +
         ` scale(${1 - own * LETTER_SHRINK})`
       letter.style.opacity = String(1 - own)
-      letter.style.filter = own ? `blur(${own * LETTER_BLUR}px)` : ''
+      /* Sul profilo alleggerito la riga si scrive comunque, ma vuota: serve a
+         cancellare la sfocatura rimasta se si arriva qui da una finestra
+         larga rimpicciolita. */
+      letter.style.filter = own && profile.letterBlur ? `blur(${own * profile.letterBlur}px)` : ''
     })
   }
 
   function paintWindows(progress: number) {
     el.windows.forEach((win, i) => {
       const depth = depthOf(i)
-      const x = chaseX * depth + flyX(i) * progress * WIN_FLY_X
-      const y = chaseY * depth * DEPTH_Y + flyY(i) * progress * WIN_FLY_Y
+      const x = chaseX * depth + flyX(i) * progress * profile.winFlyX
+      const y = chaseY * depth * DEPTH_Y + flyY(i) * progress * profile.winFlyY
 
       win.style.translate = `${x}px ${y}px`
       win.style.scale = String(1 - progress * WIN_SHRINK)
@@ -123,7 +153,11 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
   function paintRest(progress: number) {
     if (el.bloom) {
       el.bloom.style.opacity = String(Math.max(0, BLOOM_OPACITY - progress * BLOOM_FADE))
-      el.bloom.style.scale = String(1 - progress * BLOOM_SHRINK)
+      /* Su mobile il bagliore si spegne e basta: rimpicciolirlo mentre svanisce
+         non si legge, e una scala su un elemento sfocato largo quanto lo
+         schermo è la cosa più cara della scena. */
+      if (profile.bloomShrink) el.bloom.style.scale = String(1 - progress * profile.bloomShrink)
+      else el.bloom.style.scale = ''
     }
     /* Payoff e striscia escono a velocità diverse: se sparissero insieme
        sembrerebbe che si spenga la luce, non che la scena si sciolga. */
@@ -152,9 +186,12 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
 
   return {
     update() {
-      const progress = exitOn
-        ? clamp01(window.scrollY / (window.innerHeight * EXIT_SPAN))
-        : 0
+      /* Nessun listener di scroll: la posizione si legge qui, una volta per
+         fotogramma, dentro il rAF che gira già. Un listener in più
+         significherebbe due sorgenti di verità sullo stesso numero, e su
+         mobile un evento che arriva a raffica durante lo slancio. */
+      const progress =
+        exitMode === 'off' ? 0 : clamp01(window.scrollY / (window.innerHeight * EXIT_SPAN))
 
       if (parallaxOn) {
         /* Normalizzato sul viewport e non sul riquadro dell'hero: l'hero
@@ -200,10 +237,17 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
       dirty = false
     },
 
-    setExit(on: boolean) {
-      if (exitOn === on) return
-      exitOn = on
+    setExit(mode: ExitMode) {
+      if (exitMode === mode) return
+      exitMode = mode
+      profile = PROFILES[mode === 'off' ? 'light' : mode]
+      /* Cambiare profilo a metà uscita lascerebbe addosso i valori del profilo
+         precedente — una sfocatura che nessuno toglierà più, una scala del
+         bagliore rimasta lì. Si ridipinge tutto da zero al prossimo
+         fotogramma, e se siamo in cima si pulisce e basta. */
       lastProgress = -1
+      clear()
+      dirty = false
     },
 
     setParallax(on: boolean) {
