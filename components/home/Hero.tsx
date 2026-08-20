@@ -9,7 +9,6 @@ import {
   HERO_LETTERS,
   HERO_PAYOFF_ACCENT,
   HERO_PAYOFF_LEAD,
-  HERO_TAGS,
   HERO_TITLE,
   HERO_WINDOWS,
 } from './heroScene'
@@ -59,7 +58,6 @@ export default function Hero() {
       letters: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-ch')),
       windows: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-win')),
       bloom: hero.querySelector<HTMLElement>('.lm-hero-bloom'),
-      tags: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-tag')),
       payoff: hero.querySelector<HTMLElement>('.lm-hero-foot'),
       ticker: hero.querySelector<HTMLElement>('.lm-hticker'),
     })
@@ -192,12 +190,6 @@ export default function Hero() {
             priority
           />
         </div>
-      ))}
-
-      {HERO_TAGS.map((tag) => (
-        <span className={`lm-hero-tag ${tag.slot}`} key={tag.slot}>
-          {tag.label}
-        </span>
       ))}
 
       <div className="lm-hero-foot">
