@@ -118,6 +118,39 @@ export function lerp(from: number, to: number, amount: number): number {
 }
 
 /**
+ * Lo scroll fluido, per chi deve muoverlo da codice.
+ *
+ * Con Lenis acceso la pagina non si sposta con `window.scrollTo`: Lenis tiene
+ * la propria posizione e a ogni fotogramma la riscrive, quindi un `scrollTo`
+ * nativo viene annullato entro il frame successivo. Bisogna chiederlo a lui.
+ *
+ * SmoothScroll.tsx deposita qui l'istanza; chi ha bisogno di muovere la pagina
+ * — per ora il marchio nella nav, che riporta in cima — passa da questa
+ * funzione e non deve sapere se Lenis esista o no.
+ */
+interface SmoothScroller {
+  scrollTo(target: number, options?: { duration?: number }): void
+}
+
+let scroller: SmoothScroller | null = null
+
+/** Chiamata da SmoothScroll: `null` quando si smonta. */
+export function registerScroller(instance: SmoothScroller | null): void {
+  scroller = instance
+}
+
+/** Porta la pagina a `top`. Fluido se si può, secco se non si deve. */
+export function scrollPageTo(top: number): void {
+  if (typeof window === 'undefined') return
+
+  if (scroller && !prefersReducedMotion()) {
+    scroller.scrollTo(top)
+    return
+  }
+  window.scrollTo({ top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+}
+
+/**
  * Posizione del puntatore condivisa da tutti gli effetti (cursore, aurora,
  * lettere dell'hero, scintille, anteprima del menu).
  *
