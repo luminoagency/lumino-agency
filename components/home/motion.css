@@ -1153,3 +1153,40 @@ body.lm-lock {
     transform: none;
   }
 }
+
+/* ─── Menu: scorciatoia WhatsApp ─────────────────────────────────────────── */
+/* Riga a parte sotto le quattro voci. Non compete con loro — corpo piccolo,
+   filo sopra — perché non è una sezione del sito: è un modo di raggiungerci.
+   Sta dentro .lm-ov-links per ereditare la salita sfalsata all'apertura
+   (nth-child(5), già dichiarato). */
+.lm-ov-links a.lm-ov-wa {
+  width: 100%;
+  max-width: 30rem;
+  margin-top: clamp(1.5rem, 4vh, 2.75rem);
+  padding-top: clamp(1rem, 2.5vh, 1.5rem);
+  border-top: 1px solid var(--line-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.lm-ov-links a.lm-ov-wa:hover,
+.lm-ov-links a.lm-ov-wa:active {
+  font-style: normal;
+  padding-left: 0;
+}
+.lm-ov-wa-num {
+  color: var(--ink-dim);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color 0.35s;
+}
+.lm-ov-links a.lm-ov-wa:hover .lm-ov-wa-num {
+  color: var(--red);
+}
