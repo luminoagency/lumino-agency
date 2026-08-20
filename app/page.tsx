@@ -3,7 +3,6 @@ import '@/components/home/motion.css'
 import '@/components/home/hero.css'
 import '@/components/home/process.css'
 import '@/components/home/whatsapp.css'
-import '@/components/home/bands.css'
 
 import { anton } from '@/components/home/fonts'
 import SmoothScroll from '@/components/home/SmoothScroll'
@@ -18,7 +17,6 @@ import Works from '@/components/home/Works'
 import Statement from '@/components/home/Statement'
 import Process from '@/components/home/Process'
 import Sectors from '@/components/home/Sectors'
-import Services from '@/components/home/Services'
 import Stats from '@/components/home/Stats'
 import Contact from '@/components/home/Contact'
 import Footer from '@/components/home/Footer'
@@ -34,8 +32,9 @@ import WhatsAppDock from '@/components/home/WhatsAppDock'
  * chi siamo e mostra i lavori. Il percorso commerciale resta su /pricing e
  * /inizia, che non sono più linkati da qui, e l'area cliente non è toccata.
  *
- * Le due sezioni a fondo chiaro (Lavori, Servizi) sono volutamente tali:
- * servono a spezzare il buio, non renderle scure.
+ * La sezione a fondo chiaro (Lavori) è volutamente tale: serve a spezzare il
+ * buio, non va resa scura. I servizi non sono più una sezione a sé: sono
+ * raccontati dentro "Cosa facciamo", settore per settore.
  *
  * Preloader, Cursor e Reveal sono trasversali e stanno fuori dal <main>:
  * non sono contenuto, sono lo strato che lo fa muovere.
@@ -61,7 +60,6 @@ export default function HomePage() {
         <Statement />
         <Process />
         <Sectors />
-        <Services />
         <Stats />
         <Contact />
       </main>
