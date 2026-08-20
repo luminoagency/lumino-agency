@@ -22,6 +22,7 @@ import Services from '@/components/home/Services'
 import Stats from '@/components/home/Stats'
 import Contact from '@/components/home/Contact'
 import Footer from '@/components/home/Footer'
+import WhatsAppDock from '@/components/home/WhatsAppDock'
 
 /**
  * Home — vetrina dello studio.
@@ -66,6 +67,11 @@ export default function HomePage() {
       </main>
 
       <Footer />
+
+      {/* Fuori dal <main> come Preloader e Cursor: non è contenuto della
+          pagina, è un modo di raggiungerci che la accompagna. Il FAB globale
+          di app/layout.tsx resta escluso dalla home: questo lo sostituisce. */}
+      <WhatsAppDock />
     </div>
   )
 }
