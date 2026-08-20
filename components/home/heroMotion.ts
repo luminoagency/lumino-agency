@@ -46,7 +46,6 @@ const WIN_SHRINK = 0.18
 const BLOOM_OPACITY = 0.95
 const BLOOM_FADE = 1.1
 const BLOOM_SHRINK = 0.25
-const TAGS_FADE = 2.2
 const PAYOFF_FADE = 1.8
 const TICKER_FADE = 1.6
 
@@ -63,7 +62,6 @@ export interface HeroElements {
   letters: HTMLElement[]
   windows: HTMLElement[]
   bloom: HTMLElement | null
-  tags: HTMLElement[]
   payoff: HTMLElement | null
   ticker: HTMLElement | null
 }
@@ -127,10 +125,8 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
       el.bloom.style.opacity = String(Math.max(0, BLOOM_OPACITY - progress * BLOOM_FADE))
       el.bloom.style.scale = String(1 - progress * BLOOM_SHRINK)
     }
-    /* Etichette, payoff e striscia escono a velocità diverse: se sparissero
-       insieme sembrerebbe che si spenga la luce, non che la scena si sciolga. */
-    const tagsOpacity = String(Math.max(0, 1 - progress * TAGS_FADE))
-    el.tags.forEach((tag) => (tag.style.opacity = tagsOpacity))
+    /* Payoff e striscia escono a velocità diverse: se sparissero insieme
+       sembrerebbe che si spenga la luce, non che la scena si sciolga. */
     if (el.payoff) el.payoff.style.opacity = String(Math.max(0, 1 - progress * PAYOFF_FADE))
     if (el.ticker) el.ticker.style.opacity = String(Math.max(0, 1 - progress * TICKER_FADE))
   }
@@ -150,7 +146,6 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
       el.bloom.style.opacity = ''
       el.bloom.style.scale = ''
     }
-    el.tags.forEach((tag) => (tag.style.opacity = ''))
     if (el.payoff) el.payoff.style.opacity = ''
     if (el.ticker) el.ticker.style.opacity = ''
   }
