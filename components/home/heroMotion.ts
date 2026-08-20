@@ -91,20 +91,25 @@ const PROFILES: Record<'full' | 'light', ExitProfile> = {
     bloomShrink: 0.25,
   },
   light: {
-    span: 0.35,
-    /* Sei lettere per 0.004 fanno 0.02 di scarto fra la prima e l'ultima:
-       abbastanza da non sembrare un blocco unico, troppo poco perché si veda
-       una in ritardo sulle altre. */
-    letterStagger: 0.004,
+    /* Due terzi di schermata. A 0.35 spariva tutto in un centinaio di pixel:
+       il movimento non faceva in tempo a leggersi, era un interruttore. */
+    span: 0.68,
+    /* Uno scalino, non una cascata: sei lettere per 0.018 fanno 0.09 di scarto
+       fra la prima e l'ultima — un terzo del desktop. Si vede che partono in
+       ordine, non che una è rimasta indietro. */
+    letterStagger: 0.018,
     letterSpan: 0.55,
     letterLift: 92,
     letterBlur: 0,
     winFlyX: 150,
     winFlyY: 120,
-    fade: 1.8,
-    /* A 4 le finestre sono a zero attorno a un quarto della corsa, prima delle
-       lettere, che ci arrivano attorno a tre decimi. */
-    winFade: 4,
+    /* Poco sopra 1: la dissolvenza sta un passo avanti al movimento, così
+       niente arriva in fondo alla corsa ancora visibile, ma si dissolve LUNGO
+       la corsa invece di sparire a metà. */
+    fade: 1.15,
+    /* Le finestre restano le prime ad andarsene, ma di poco: sono a zero
+       attorno a 0.45 di corsa, le lettere fra 0.48 e 0.57. */
+    winFade: 2.2,
     bloomShrink: 0,
   },
 }
