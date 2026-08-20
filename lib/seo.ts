@@ -12,15 +12,25 @@ export const SITE_URL = 'https://www.bylumino.com'
 
 export const SITE_NAME = 'Lumino'
 
-/** Massimo 155 caratteri: oltre, Google taglia. */
+/**
+ * Massimo 155 caratteri: oltre, Google taglia.
+ *
+ * L'ordine delle parole non è casuale. Quello che si legge per primo è quello
+ * che il lettore ricorda, e per un pezzo la frase apriva con «siti per
+ * ristoranti»: chi la leggeva concludeva che facciamo solo quello. Prima cosa
+ * siamo e cosa facciamo, i settori vengono dopo, come esempi.
+ */
 export const SITE_DESCRIPTION =
-  'Studio digitale: progettiamo e costruiamo siti su misura per ristoranti, hotel, aziende e retail. Identità, interfacce e movimento.'
+  'Studio digitale: progettiamo e costruiamo siti su misura. Identità, interfacce e movimento per ristoranti, hotel, aziende e retail.'
 
 export const OG_IMAGE = {
   url: `${SITE_URL}/og-image.jpg`,
   width: 1200,
   height: 630,
-  alt: 'Lumino — Diamo forma al sito che il tuo brand merita',
+  /* L'immagine si rigenera con `node scripts/og-image.mjs`. Se cambia il payoff
+     lì, cambia anche qui: questo testo è ciò che leggono i lettori di schermo
+     e chi ha le immagini disattivate. */
+  alt: 'Lumino — Progettiamo e costruiamo siti che si ricordano',
 }
 
 /** URL assoluto di una pagina, per canonical e Open Graph. */
