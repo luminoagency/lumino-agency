@@ -6,16 +6,16 @@ export const metadata: Metadata = {
   alternates: { canonical: '/chi-siamo' },
   title: 'Lo studio',
   description:
-    'Lumino è uno studio specializzato in siti web per la ristorazione. Lavoriamo solo con chi gestisce un locale.',
+    'Lumino è uno studio digitale: progettiamo e costruiamo siti su misura per ristoranti, hotel, aziende e retail.',
 }
 
 const CURIAMO: Array<{ b: string; rest: string }> = [
   { b: 'Testi scritti su misura', rest: ', non frasi vuote o slogan generici' },
-  { b: 'Foto organizzate con cura', rest: ' — l’ambiente, i piatti, la cucina' },
-  { b: 'Menu sempre accessibile', rest: ' dal telefono, in due click' },
-  { b: 'Prenotazioni che funzionano', rest: ' davvero' },
+  { b: 'Foto scelte e ordinate', rest: ' — gli spazi, le persone, il lavoro' },
+  { b: 'Le informazioni che servono', rest: ' raggiungibili dal telefono, in due click' },
+  { b: 'Contatti e prenotazioni', rest: ' che funzionano davvero' },
   { b: 'Caricamento veloce', rest: ' anche su connessione lenta' },
-  { b: 'Coerenza visiva', rest: ' con l’identità del tuo locale' },
+  { b: 'Coerenza visiva', rest: ' con la tua identità' },
 ]
 
 export default function ChiSiamoPage() {
@@ -24,7 +24,7 @@ export default function ChiSiamoPage() {
       header={{
         kicker: '✦ lo studio',
         title: <>Lo studio</>,
-        intro: 'Siamo uno studio specializzato in siti web per la ristorazione.',
+        intro: 'Siamo uno studio digitale. Progettiamo e costruiamo siti su misura.',
       }}
     >
       <div className="ls-container">
@@ -32,10 +32,11 @@ export default function ChiSiamoPage() {
         <section className="ls-section">
           <div className="ls-prose">
             <p>
-              Lavoriamo solo con chi gestisce un locale — ristoranti, pizzerie, bar, bistrot,
-              trattorie, fast food. Non ci occupiamo d’altro. Conosciamo il settore, sappiamo cosa
-              cerca un cliente quando apre il sito di un ristorante, e sappiamo cosa fa la differenza
-              tra un sito che porta prenotazioni e uno che resta una vetrina vuota.
+              Lavoriamo con chi ha qualcosa di vero da mostrare — ristoranti, hotel, aziende,
+              negozi. Quello che cambia da un settore all’altro sono le domande a cui il sito deve
+              rispondere; quello che non cambia è che un visitatore decide in pochi secondi se
+              fidarsi. Sappiamo cosa fa la differenza tra un sito che porta contatti e uno che resta
+              una vetrina vuota.
             </p>
           </div>
         </section>
@@ -47,13 +48,13 @@ export default function ChiSiamoPage() {
           </h2>
           <div className="ls-prose" style={{ paddingBottom: '1rem' }}>
             <p>
-              Prima di tutto guardiamo. Studiamo il locale, la cucina, la presenza online, cosa
-              funziona e cosa no. Poi pensiamo a tutto noi — testi, foto, menu, layout. Niente
-              template generici, niente moduli da compilare. Ogni sito nasce per il locale specifico
-              che lo userà.
+              Prima di tutto guardiamo. Studiamo l’attività, com’è fatta, la presenza online, cosa
+              funziona e cosa no. Poi pensiamo a tutto noi — testi, foto, struttura, layout. Niente
+              template generici, niente moduli da compilare. Ogni sito nasce per l’attività
+              specifica che lo userà.
             </p>
             <p>
-              In pochi giorni il sito è online. Tu pensi alla cucina, al sito pensiamo noi.
+              In pochi giorni il sito è online. Tu pensi al tuo lavoro, al sito pensiamo noi.
             </p>
           </div>
         </section>
@@ -81,8 +82,8 @@ export default function ChiSiamoPage() {
           </h2>
           <div className="ls-prose">
             <p>
-              Non siamo uno studio generalista. Non lavoriamo con e-commerce, app, software
-              gestionali, social media management. Solo siti per la ristorazione, fatti bene.
+              Non facciamo di tutto. Non lavoriamo con e-commerce, app, software gestionali, social
+              media management. Solo siti, fatti bene.
             </p>
           </div>
         </section>
