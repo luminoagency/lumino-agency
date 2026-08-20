@@ -1,483 +1,218 @@
-'use client'
-
-import { gradientAt } from './useMotion'
+import { lerp, pointer } from './useMotion'
 
 /**
- * I motori di animazione dell'hero.
+ * Il movimento dell'hero: uscita legata allo scroll + parallasse del puntatore.
  *
- * Sono quattro effetti che girano di continuo — lettere, scintille, blob
- * liquidi, tipografia di fondo — e quattro loop rAF separati vorrebbe dire
- * quattro code che si contendono lo stesso frame. Qui ognuno è un driver con un
- * solo metodo `update(state)`, e l'hero li chiama tutti dentro un unico
- * requestAnimationFrame.
+ * UN SOLO driver, chiamato da UN SOLO requestAnimationFrame (vedi Hero.tsx).
+ * Le due cose stanno insieme perché agiscono sulle stesse quattro finestre nello
+ * stesso istante: tenerle separate significherebbe due loop che si sovrascrivono
+ * a vicenda lo spostamento, ed era esattamente il bug del riferimento.
  *
- * Nessun driver legge il tempo, il puntatore o le onde per conto proprio: li
- * riceve nello stato del frame, così vedono tutti lo stesso istante e la stessa
- * perturbazione.
+ * COME FANNO A CONVIVERE — le finestre usano le proprietà di trasformazione
+ * SEPARATE (`translate`, `rotate`, `scale`) invece della singola `transform`:
+ *   · `rotate`     → l'inclinazione fissa, decisa in hero.css
+ *   · `translate`  → parallasse + fuga verso l'angolo, SOMMATE qui
+ *   · `scale`      → il rimpicciolimento dell'uscita
+ * Scrivendo tutto dentro `transform` ogni effetto cancellerebbe gli altri.
+ *
+ * Le lettere invece non hanno trasformazioni fisse a riposo, quindi per loro
+ * `transform` va benissimo.
+ *
+ * L'uscita è funzione della POSIZIONE, non del tempo: nessun timer, nessuno
+ * stato da ricordare. Scorrendo all'indietro l'animazione si riavvolge da sé
+ * perché ogni fotogramma ricalcola tutto da `scrollY`.
  */
 
-/** Onda circolare generata da un click: la sentono lettere, blob e scintille. */
-export interface Wave {
-  x: number
-  y: number
-  born: number
+/** In quanta parte di schermata si consuma l'uscita. */
+const EXIT_SPAN = 0.85
+
+/* ─── Lettere ─── */
+/** Ritardo di ogni lettera rispetto alla precedente, in unità di avanzamento. */
+const LETTER_STAGGER = 0.055
+/** Quanto dura la corsa della singola lettera. */
+const LETTER_SPAN = 0.55
+const LETTER_LIFT = 150
+const LETTER_TILT = 7
+const LETTER_SHRINK = 0.12
+const LETTER_BLUR = 7
+
+/* ─── Finestre ─── */
+const WIN_FLY_X = 340
+const WIN_FLY_Y = 220
+const WIN_FADE = 1.15
+const WIN_SHRINK = 0.18
+
+/* ─── Fondale e testi ─── */
+const BLOOM_OPACITY = 0.95
+const BLOOM_FADE = 1.1
+const BLOOM_SHRINK = 0.25
+const TAGS_FADE = 2.2
+const PAYOFF_FADE = 1.8
+const TICKER_FADE = 1.6
+
+/* ─── Parallasse ─── */
+/** Quanto insegue il puntatore a ogni fotogramma: basso = pesante. */
+const CHASE = 0.06
+/** Profondità: la corsa in px della finestra i-esima. Alternata, così le
+    quattro non si muovono come un blocco solo. */
+const depthOf = (i: number) => (i % 2 ? 1 : -1) * (10 + i * 5)
+/** In verticale ci si muove meno: sopra e sotto lo spazio è poco. */
+const DEPTH_Y = 0.6
+
+export interface HeroElements {
+  letters: HTMLElement[]
+  windows: HTMLElement[]
+  bloom: HTMLElement | null
+  tags: HTMLElement[]
+  payoff: HTMLElement | null
+  ticker: HTMLElement | null
 }
 
-export interface FrameState {
-  pointerX: number
-  pointerY: number
-  /** Velocità di scroll smorzata, in px per frame. Positiva = si scende. */
-  scrollVel: number
-  /** Millisecondi dall'avvio del loop. */
-  time: number
-  waves: Wave[]
-}
-
-export interface Driver {
-  update(state: FrameState): void
+export interface HeroDriver {
+  /** Un fotogramma. Chiamata dal loop unico dell'hero. */
+  update(): void
+  /** Riporta la scena com'era: toglie ogni stile scritto qui. */
   reset(): void
-  refresh?(): void
-  destroy?(): void
-  /** Scoppio nel punto del click, in coordinate viewport. */
-  burst?(x: number, y: number): void
+  /** L'uscita allo scroll è attiva? Su schermo stretto no (vedi Hero.tsx). */
+  setExit(on: boolean): void
+  /** Il parallasse è attivo? Serve un mouse: col dito non esiste il "sopra". */
+  setParallax(on: boolean): void
 }
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v))
+const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value)
 
-/* Fisica dell'onda: quanto corre, quanto vive, quanto è spesso il fronte. */
-export const WAVE_SPEED = 1.15 // px per ms
-export const WAVE_LIFE = 1200 // ms
-const WAVE_BAND = 150 // px: spessore del fronte che "spinge"
+export function createHeroDriver(el: HeroElements): HeroDriver {
+  /* Posizione inseguita del puntatore, normalizzata −0.5…0.5. */
+  let chaseX = 0
+  let chaseY = 0
 
-/** Intensità dell'onda a una certa distanza dal centro, 0 se fuori dal fronte. */
-function waveForce(wave: Wave, time: number, dist: number) {
-  const age = time - wave.born
-  if (age < 0 || age > WAVE_LIFE) return 0
+  let exitOn = true
+  let parallaxOn = false
 
-  const radius = age * WAVE_SPEED
-  const offset = Math.abs(dist - radius)
-  if (offset > WAVE_BAND) return 0
+  /* L'ultimo avanzamento scritto: se non cambia, le lettere non si riscrivono.
+     Le finestre sì, perché il parallasse le muove comunque. */
+  let lastProgress = -1
+  /* Vero finché resta qualcosa di scritto da pulire quando si torna in cima. */
+  let dirty = false
 
-  const front = 1 - offset / WAVE_BAND // 1 sul fronte, 0 ai bordi
-  const fade = 1 - age / WAVE_LIFE // si spegne invecchiando
-  return front * fade
-}
+  const flyX = (i: number) => (i === 0 || i === 2 ? -1 : 1)
+  const flyY = (i: number) => (i < 2 ? -1 : 1)
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Lettere del titolo: prossimità, trascinamento con molla, onda
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-const LETTER_RADIUS = 180
-/** Molla di ritorno: la lettera rilasciata torna a casa oscillando appena. */
-const SPRING = 0.12
-const DAMPING = 0.75
-/** Quante lettere intorno a quella afferrata si spostano per simpatia. */
-const SYMPATHY_REACH = 4
-
-interface CharState {
-  el: HTMLElement
-  /** Posizione di riposo, relativa al riquadro del titolo. */
-  homeX: number
-  homeY: number
-  w: number
-  h: number
-  /** Scostamento corrente dalla posizione di riposo. */
-  x: number
-  y: number
-  vx: number
-  vy: number
-  grabbed: boolean
-}
-
-export function createLettersDriver(root: HTMLElement): Driver {
-  let chars: CharState[] = []
-  let grabbedIndex = -1
-  let grabOffsetX = 0
-  let grabOffsetY = 0
-
-  const collect = () => {
-    const nodes = Array.from(root.querySelectorAll<HTMLElement>('.lm-char'))
-
-    // Le lettere del segmento in gradiente vanno dipinte una per una: con
-    // background-clip il gradiente resta ancorato al riquadro del testo, così
-    // appena una lettera si sposta il colore le rimane indietro.
-    const grad = nodes.filter((el) => el.dataset.grad === 'true')
-    grad.forEach((el, i) => {
-      const color = gradientAt(grad.length < 2 ? 0 : i / (grad.length - 1))
-      el.style.color = color
-      el.dataset.base = color
+  function paintLetters(progress: number) {
+    el.letters.forEach((letter, i) => {
+      const own = clamp01((progress - i * LETTER_STAGGER) / LETTER_SPAN)
+      letter.style.transform =
+        `translateY(${-own * LETTER_LIFT}px)` +
+        ` rotate(${own * (i % 2 ? LETTER_TILT : -LETTER_TILT)}deg)` +
+        ` scale(${1 - own * LETTER_SHRINK})`
+      letter.style.opacity = String(1 - own)
+      letter.style.filter = own ? `blur(${own * LETTER_BLUR}px)` : ''
     })
+  }
 
-    // Le posizioni di riposo si misurano a trasformazioni azzerate, una volta
-    // sola: leggerle a ogni frame da un elemento già spostato significherebbe
-    // inseguire la propria coda.
-    nodes.forEach((el) => {
-      el.style.transform = ''
+  function paintWindows(progress: number) {
+    el.windows.forEach((win, i) => {
+      const depth = depthOf(i)
+      const x = chaseX * depth + flyX(i) * progress * WIN_FLY_X
+      const y = chaseY * depth * DEPTH_Y + flyY(i) * progress * WIN_FLY_Y
+
+      win.style.translate = `${x}px ${y}px`
+      win.style.scale = String(1 - progress * WIN_SHRINK)
+      win.style.opacity = String(Math.max(0, 1 - progress * WIN_FADE))
     })
-    const rootRect = root.getBoundingClientRect()
-
-    chars = nodes.map((el) => {
-      const rect = el.getBoundingClientRect()
-      return {
-        el,
-        homeX: rect.left - rootRect.left + rect.width / 2,
-        homeY: rect.top - rootRect.top + rect.height / 2,
-        w: rect.width,
-        h: rect.height,
-        x: 0,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        grabbed: false,
-      }
-    })
-    grabbedIndex = -1
   }
 
-  /* ── Trascinamento ─────────────────────────────────────────────────────── */
-
-  const onDown = (event: PointerEvent) => {
-    const el = (event.target as Element | null)?.closest?.('.lm-char') as HTMLElement | null
-    if (!el) return
-
-    const i = chars.findIndex((c) => c.el === el)
-    if (i < 0) return
-
-    const rootRect = root.getBoundingClientRect()
-    grabbedIndex = i
-    chars[i].grabbed = true
-    // Si afferra dal punto in cui si è cliccato, non dal centro: altrimenti la
-    // lettera scatta sotto il dito appena la si tocca.
-    grabOffsetX = event.clientX - rootRect.left - (chars[i].homeX + chars[i].x)
-    grabOffsetY = event.clientY - rootRect.top - (chars[i].homeY + chars[i].y)
-
-    root.setPointerCapture(event.pointerId)
-    root.classList.add('is-grabbing')
-    event.preventDefault()
-  }
-
-  const release = () => {
-    if (grabbedIndex >= 0) chars[grabbedIndex].grabbed = false
-    grabbedIndex = -1
-    root.classList.remove('is-grabbing')
-  }
-
-  root.addEventListener('pointerdown', onDown)
-  root.addEventListener('pointerup', release)
-  root.addEventListener('pointercancel', release)
-
-  collect()
-
-  return {
-    update({ pointerX, pointerY, time, waves }) {
-      const rootRect = root.getBoundingClientRect()
-      const px = pointerX - rootRect.left
-      const py = pointerY - rootRect.top
-
-      for (let i = 0; i < chars.length; i += 1) {
-        const c = chars[i]
-
-        if (c.grabbed) {
-          // Segue il dito senza molla: la molla è per il ritorno.
-          c.x = px - grabOffsetX - c.homeX
-          c.y = py - grabOffsetY - c.homeY
-          c.vx = 0
-          c.vy = 0
-        } else {
-          // Simpatia: le vicine della lettera afferrata si spostano un po'.
-          if (grabbedIndex >= 0) {
-            const distance = Math.abs(i - grabbedIndex)
-            if (distance <= SYMPATHY_REACH) {
-              const share = (1 - distance / (SYMPATHY_REACH + 1)) * 0.35
-              const g = chars[grabbedIndex]
-              c.vx += (g.x * share - c.x) * 0.08
-              c.vy += (g.y * share - c.y) * 0.08
-            }
-          }
-
-          // Onda: una spinta radiale quando il fronte la attraversa.
-          for (const wave of waves) {
-            const dx = c.homeX + rootRect.left - wave.x
-            const dy = c.homeY + rootRect.top - wave.y
-            const dist = Math.hypot(dx, dy)
-            const force = waveForce(wave, time, dist)
-            if (force > 0 && dist > 0) {
-              c.vx += (dx / dist) * force * 5.5
-              c.vy += (dy / dist) * force * 5.5 - force * 3
-            }
-          }
-
-          // Molla di ritorno.
-          c.vx += (0 - c.x) * SPRING
-          c.vy += (0 - c.y) * SPRING
-          c.vx *= DAMPING
-          c.vy *= DAMPING
-          c.x += c.vx
-          c.y += c.vy
-        }
-
-        // Prossimità del cursore: si somma allo scostamento, non lo sostituisce.
-        let proxX = 0
-        let proxY = 0
-        let scale = 1
-        let shadow = ''
-
-        if (grabbedIndex < 0) {
-          const dx = px - (c.homeX + c.x)
-          const dy = py - (c.homeY + c.y)
-          const distance = Math.hypot(dx, dy)
-
-          if (distance < LETTER_RADIUS) {
-            const f = 1 - distance / LETTER_RADIUS
-            proxX = -dx * f * 0.16
-            proxY = -dy * f * 0.3 - f * 10
-            scale = 1 + f * 0.09
-            shadow = `0 0 ${26 * f}px rgba(255, 205, 150, ${0.55 * f})`
-            if (!c.el.dataset.base) {
-              c.el.style.color = `rgb(244, ${238 - Math.round(20 * f)}, ${228 - Math.round(60 * f)})`
-            }
-          } else if (!c.el.dataset.base) {
-            c.el.style.color = ''
-          }
-        }
-
-        const tx = c.x + proxX
-        const ty = c.y + proxY
-
-        if (tx === 0 && ty === 0 && scale === 1) {
-          c.el.style.transform = ''
-          c.el.style.textShadow = ''
-        } else {
-          c.el.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${scale.toFixed(3)})`
-          c.el.style.textShadow = shadow
-        }
-      }
-    },
-    reset() {
-      release()
-      chars.forEach((c) => {
-        c.x = 0
-        c.y = 0
-        c.vx = 0
-        c.vy = 0
-        c.el.style.transform = ''
-        c.el.style.textShadow = ''
-        if (!c.el.dataset.base) c.el.style.color = ''
-      })
-    },
-    refresh: collect,
-    destroy() {
-      root.removeEventListener('pointerdown', onDown)
-      root.removeEventListener('pointerup', release)
-      root.removeEventListener('pointercancel', release)
-    },
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Scintille
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Quante scintille tenere vive. Su schermo stretto si dimezzano: stessa
-   scena, metà del costo per frame. */
-const SPARK_COUNT = 46
-const SPARK_DODGE = 130
-const SPARK_COLORS = ['rgba(255,205,150,', 'rgba(236,106,156,', 'rgba(139,92,246,']
-
-interface Spark {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  r: number
-  life: number
-  color: string
-  burst: boolean
-}
-
-export function createSparksDriver(canvas: HTMLCanvasElement, count = SPARK_COUNT): Driver {
-  const ctx = canvas.getContext('2d')
-  let width = 0
-  let height = 0
-  let sparks: Spark[] = []
-
-  const resize = () => {
-    const rect = canvas.getBoundingClientRect()
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    width = rect.width
-    height = rect.height
-    canvas.width = Math.round(width * dpr)
-    canvas.height = Math.round(height * dpr)
-    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
-  }
-
-  const spawn = (n: number, x?: number, y?: number, burst = false) => {
-    for (let i = 0; i < n; i += 1) {
-      sparks.push({
-        x: x ?? Math.random() * width,
-        y: y ?? Math.random() * height,
-        vx: burst ? (Math.random() - 0.5) * 5 : (Math.random() - 0.5) * 0.22,
-        vy: burst ? (Math.random() - 0.5) * 5 : -Math.random() * 0.35 - 0.08,
-        r: Math.random() * 1.9 + 0.5,
-        life: burst ? 1 : Math.random() * 0.6 + 0.4,
-        color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)],
-        burst,
-      })
+  function paintRest(progress: number) {
+    if (el.bloom) {
+      el.bloom.style.opacity = String(Math.max(0, BLOOM_OPACITY - progress * BLOOM_FADE))
+      el.bloom.style.scale = String(1 - progress * BLOOM_SHRINK)
     }
+    /* Etichette, payoff e striscia escono a velocità diverse: se sparissero
+       insieme sembrerebbe che si spenga la luce, non che la scena si sciolga. */
+    const tagsOpacity = String(Math.max(0, 1 - progress * TAGS_FADE))
+    el.tags.forEach((tag) => (tag.style.opacity = tagsOpacity))
+    if (el.payoff) el.payoff.style.opacity = String(Math.max(0, 1 - progress * PAYOFF_FADE))
+    if (el.ticker) el.ticker.style.opacity = String(Math.max(0, 1 - progress * TICKER_FADE))
   }
 
-  resize()
-  spawn(count)
-  window.addEventListener('resize', resize)
-
-  return {
-    update({ pointerX, pointerY, time, waves }) {
-      if (!ctx) return
-      ctx.clearRect(0, 0, width, height)
-
-      const rect = canvas.getBoundingClientRect()
-      const lx = pointerX - rect.left
-      const ly = pointerY - rect.top
-
-      sparks = sparks.filter((p) => {
-        const dx = p.x - lx
-        const dy = p.y - ly
-        const d = Math.hypot(dx, dy)
-
-        if (d < SPARK_DODGE && d > 0) {
-          const push = (1 - d / SPARK_DODGE) * 0.42
-          p.vx += (dx / d) * push
-          p.vy += (dy / d) * push
-        }
-
-        // L'onda le spinge via davvero, non è un effetto grafico sopra.
-        for (const wave of waves) {
-          const wx = p.x - (wave.x - rect.left)
-          const wy = p.y - (wave.y - rect.top)
-          const wd = Math.hypot(wx, wy)
-          const force = waveForce(wave, time, wd)
-          if (force > 0 && wd > 0) {
-            p.vx += (wx / wd) * force * 3.4
-            p.vy += (wy / wd) * force * 3.4
-          }
-        }
-
-        p.vx *= 0.965
-        p.vy *= 0.965
-        p.x += p.vx
-        p.y += p.vy
-
-        if (p.burst) {
-          p.life -= 0.016
-          if (p.life <= 0) return false
-        } else {
-          if (p.y < -10) p.y = height + 10
-          if (p.y > height + 10) p.y = -10
-          if (p.x < -10) p.x = width + 10
-          if (p.x > width + 10) p.x = -10
-        }
-
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
-        ctx.fillStyle = `${p.color}${p.burst ? p.life * 0.9 : p.life * 0.55})`
-        ctx.fill()
-        return true
-      })
-
-      if (sparks.filter((p) => !p.burst).length < count) spawn(1)
-    },
-    burst(x: number, y: number) {
-      const rect = canvas.getBoundingClientRect()
-      spawn(18, x - rect.left, y - rect.top, true)
-    },
-    reset() {
-      ctx?.clearRect(0, 0, width, height)
-      sparks = []
-    },
-    destroy() {
-      window.removeEventListener('resize', resize)
-    },
+  function clear() {
+    el.letters.forEach((letter) => {
+      letter.style.transform = ''
+      letter.style.opacity = ''
+      letter.style.filter = ''
+    })
+    el.windows.forEach((win) => {
+      win.style.translate = ''
+      win.style.scale = ''
+      win.style.opacity = ''
+    })
+    if (el.bloom) {
+      el.bloom.style.opacity = ''
+      el.bloom.style.scale = ''
+    }
+    el.tags.forEach((tag) => (tag.style.opacity = ''))
+    if (el.payoff) el.payoff.style.opacity = ''
+    if (el.ticker) el.ticker.style.opacity = ''
   }
-}
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Blob liquidi
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-interface BlobConfig {
-  x: number
-  y: number
-  size: number
-  ampX: number
-  ampY: number
-  freqX: number
-  freqY: number
-  phase: number
-  pull: number
-}
-
-export const BLOBS: BlobConfig[] = [
-  { x: 26, y: 42, size: 30, ampX: 5.5, ampY: 4.0, freqX: 0.11, freqY: 0.14, phase: 0.0, pull: 0.5 },
-  { x: 38, y: 58, size: 24, ampX: 4.0, ampY: 6.0, freqX: 0.16, freqY: 0.09, phase: 1.3, pull: 0.8 },
-  { x: 52, y: 36, size: 27, ampX: 6.5, ampY: 3.5, freqX: 0.08, freqY: 0.17, phase: 2.6, pull: 0.35 },
-  { x: 63, y: 60, size: 21, ampX: 5.0, ampY: 5.0, freqX: 0.13, freqY: 0.12, phase: 3.9, pull: -0.4 },
-  { x: 45, y: 48, size: 34, ampX: 3.0, ampY: 3.0, freqX: 0.06, freqY: 0.07, phase: 5.2, pull: 0.2 },
-]
-
-export function createBlobsDriver(container: HTMLElement, nodes: HTMLElement[]): Driver {
   return {
-    update({ pointerX, pointerY, scrollVel, time, waves }) {
-      const rect = container.getBoundingClientRect()
-      if (rect.width === 0) return
+    update() {
+      const progress = exitOn
+        ? clamp01(window.scrollY / (window.innerHeight * EXIT_SPAN))
+        : 0
 
-      const energy = clamp(Math.abs(scrollVel) / 45, 0, 1)
-      const t = time / 1000
-      const cx = ((pointerX - rect.left) / rect.width) * 100
-      const cy = ((pointerY - rect.top) / rect.height) * 100
+      if (parallaxOn) {
+        /* Normalizzato sul viewport e non sul riquadro dell'hero: l'hero
+           riempie la prima schermata, quindi è la stessa misura — e non
+           costringe a leggere la geometria a ogni fotogramma. */
+        chaseX = lerp(chaseX, pointer.x / window.innerWidth - 0.5, CHASE)
+        chaseY = lerp(chaseY, pointer.y / window.innerHeight - 0.5, CHASE)
+      } else {
+        chaseX = lerp(chaseX, 0, CHASE)
+        chaseY = lerp(chaseY, 0, CHASE)
+      }
 
-      nodes.forEach((el, i) => {
-        const b = BLOBS[i]
-        if (!b) return
-
-        let x = b.x + Math.sin(t * b.freqX * 6.28 + b.phase) * b.ampX
-        let y = b.y + Math.cos(t * b.freqY * 6.28 + b.phase) * b.ampY
-
-        // Lo scroll li spinge via dal centro: si separano e smettono di fondersi.
-        x += ((b.x - 45) / 45) * energy * 16
-        y += ((b.y - 48) / 48) * energy * 22
-
-        if (Number.isFinite(cx)) {
-          x += clamp(cx - b.x, -30, 30) * 0.05 * b.pull
-          y += clamp(cy - b.y, -30, 30) * 0.05 * b.pull
+      /* In cima alla pagina e senza puntatore da inseguire non c'è niente da
+         dire: si toglie di mezzo ciò che è rimasto e si smette di scrivere.
+         Senza questo, il driver ridipingerebbe la scena identica sessanta
+         volte al secondo per tutta la durata della prima schermata. */
+      const still = Math.abs(chaseX) < 0.0005 && Math.abs(chaseY) < 0.0005
+      if (progress === 0 && still) {
+        if (dirty) {
+          clear()
+          dirty = false
+          lastProgress = -1
         }
+        return
+      }
 
-        let sy = 1 + energy * 0.55
-        let sx = 1 - energy * 0.16
-
-        // L'onda deforma i blob che attraversa: li allarga sul fronte e li
-        // spinge via dal punto del click.
-        for (const wave of waves) {
-          const bx = rect.left + (x / 100) * rect.width
-          const by = rect.top + (y / 100) * rect.height
-          const dx = bx - wave.x
-          const dy = by - wave.y
-          const dist = Math.hypot(dx, dy)
-          const force = waveForce(wave, time, dist)
-          if (force > 0 && dist > 0) {
-            x += ((dx / dist) * force * 9 * 100) / rect.width
-            y += ((dy / dist) * force * 9 * 100) / rect.height
-            sx += force * 0.4
-            sy -= force * 0.22
-          }
-        }
-
-        el.style.transform = `translate3d(${x - b.x}%, ${y - b.y}%, 0) scale(${sx.toFixed(3)}, ${sy.toFixed(3)})`
-      })
+      dirty = true
+      if (progress !== lastProgress) {
+        paintLetters(progress)
+        paintRest(progress)
+        lastProgress = progress
+      }
+      /* Le finestre si ridipingono comunque: anche a scroll fermo il
+         parallasse le sta ancora muovendo. */
+      paintWindows(progress)
     },
+
     reset() {
-      nodes.forEach((el) => {
-        el.style.transform = ''
-      })
+      clear()
+      chaseX = 0
+      chaseY = 0
+      lastProgress = -1
+      dirty = false
+    },
+
+    setExit(on: boolean) {
+      if (exitOn === on) return
+      exitOn = on
+      lastProgress = -1
+    },
+
+    setParallax(on: boolean) {
+      parallaxOn = on
     },
   }
 }
