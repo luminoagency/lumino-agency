@@ -23,19 +23,8 @@ import { lerp, pointer } from './useMotion'
  * perché ogni fotogramma ricalcola tutto da `scrollY`.
  */
 
-/** In quanta parte di schermata si consuma l'uscita. */
-const EXIT_SPAN = 0.85
-
-/* ─── Lettere ─── */
-/** Ritardo di ogni lettera rispetto alla precedente, in unità di avanzamento. */
-const LETTER_STAGGER = 0.055
-/** Quanto dura la corsa della singola lettera. */
-const LETTER_SPAN = 0.55
 const LETTER_TILT = 7
 const LETTER_SHRINK = 0.12
-
-/* ─── Finestre ─── */
-const WIN_FADE = 1.15
 const WIN_SHRINK = 0.18
 
 /* ─── Fondale e testi ─── */
@@ -47,29 +36,77 @@ const TICKER_FADE = 1.6
 /**
  * Due profili di uscita, non uno spento e uno acceso.
  *
- * Su telefono la stessa uscita del desktop costa troppo: la sfocatura è la voce
- * più cara di tutte — è l'unica cosa qui dentro che il compositore non sa fare
- * gratis — e le corse lunghe muovono molti pixel su uno schermo piccolo, dove
- * comunque non si leggono come "vola via", si leggono come "sbatte".
+ * Su telefono la stessa uscita del desktop costa troppo e dura troppo. Costa
+ * perché la sfocatura è l'unica cosa qui dentro che il compositore non sa fare
+ * gratis. Dura troppo perché su desktop l'uscita è una scena da guardare — le
+ * lettere che se ne vanno una dopo l'altra — mentre su un telefono si scorre
+ * per arrivare al contenuto, e ciò che indugia non si legge come coreografia:
+ * si legge come roba rimasta attaccata allo schermo.
  *
- * Quindi su mobile: stessa coreografia, stesso ritardo progressivo, ma niente
- * sfocatura, corse più corte e il bagliore che si spegne senza rimpicciolire.
- * Restano solo transform e opacity, che il compositore gestisce senza toccare
- * il layout.
+ * Quindi su mobile l'uscita si consuma in un terzo di schermata invece che in
+ * quasi una intera, le lettere se ne vanno praticamente insieme, e l'opacità
+ * corre più veloce del movimento: si svanisce a metà corsa, non alla fine.
+ * Restano solo transform e opacity.
  */
 interface ExitProfile {
+  /** In quanta parte di schermata si consuma l'uscita. */
+  span: number
+  /** Sfasamento fra una lettera e la successiva, in unità di avanzamento. */
+  letterStagger: number
+  /** Quanto dura la corsa della singola lettera. */
+  letterSpan: number
   letterLift: number
   /** 0 = niente sfocatura. Su mobile è 0, e non per prudenza: è LA voce cara. */
   letterBlur: number
   winFlyX: number
   winFlyY: number
+  /**
+   * Quanto l'opacità corre più veloce del movimento. A 1 svaniscono insieme
+   * (desktop); sopra 1 l'opacità arriva a zero mentre la corsa è ancora in
+   * atto, ed è ciò che fa sembrare la scena "già sparita" invece che "ancora lì
+   * che si muove". Vale per lettere, bagliore, payoff e striscia.
+   */
+  fade: number
+  /**
+   * Le finestre hanno il proprio, e più alto di tutti: sono l'elemento che
+   * disturba di più mentre si scorre — occupano superficie e hanno dentro
+   * un'immagine — quindi devono essere le prime ad andarsene.
+   */
+  winFade: number
   /** Il bagliore rimpicciolisce mentre si spegne? Su mobile no. */
   bloomShrink: number
 }
 
 const PROFILES: Record<'full' | 'light', ExitProfile> = {
-  full: { letterLift: 150, letterBlur: 7, winFlyX: 340, winFlyY: 220, bloomShrink: 0.25 },
-  light: { letterLift: 92, letterBlur: 0, winFlyX: 150, winFlyY: 120, bloomShrink: 0 },
+  full: {
+    span: 0.85,
+    letterStagger: 0.055,
+    letterSpan: 0.55,
+    letterLift: 150,
+    letterBlur: 7,
+    winFlyX: 340,
+    winFlyY: 220,
+    fade: 1,
+    winFade: 1.15,
+    bloomShrink: 0.25,
+  },
+  light: {
+    span: 0.35,
+    /* Sei lettere per 0.004 fanno 0.02 di scarto fra la prima e l'ultima:
+       abbastanza da non sembrare un blocco unico, troppo poco perché si veda
+       una in ritardo sulle altre. */
+    letterStagger: 0.004,
+    letterSpan: 0.55,
+    letterLift: 92,
+    letterBlur: 0,
+    winFlyX: 150,
+    winFlyY: 120,
+    fade: 1.8,
+    /* A 4 le finestre sono a zero attorno a un quarto della corsa, prima delle
+       lettere, che ci arrivano attorno a tre decimi. */
+    winFade: 4,
+    bloomShrink: 0,
+  },
 }
 
 /** Quale uscita: piena (desktop), alleggerita (mobile), o nessuna. */
@@ -125,12 +162,15 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
 
   function paintLetters(progress: number) {
     el.letters.forEach((letter, i) => {
-      const own = clamp01((progress - i * LETTER_STAGGER) / LETTER_SPAN)
+      const own = clamp01((progress - i * profile.letterStagger) / profile.letterSpan)
       letter.style.transform =
         `translateY(${-own * profile.letterLift}px)` +
         ` rotate(${own * (i % 2 ? LETTER_TILT : -LETTER_TILT)}deg)` +
         ` scale(${1 - own * LETTER_SHRINK})`
-      letter.style.opacity = String(1 - own)
+      /* L'opacità ha la sua corsa, più corta di quella del movimento: la
+         lettera è già sparita mentre sta ancora salendo. Su desktop `fade` è 1
+         e le due coincidono, come prima. */
+      letter.style.opacity = String(1 - clamp01(own * profile.fade))
       /* Sul profilo alleggerito la riga si scrive comunque, ma vuota: serve a
          cancellare la sfocatura rimasta se si arriva qui da una finestra
          larga rimpicciolita. */
@@ -146,13 +186,17 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
 
       win.style.translate = `${x}px ${y}px`
       win.style.scale = String(1 - progress * WIN_SHRINK)
-      win.style.opacity = String(Math.max(0, 1 - progress * WIN_FADE))
+      win.style.opacity = String(Math.max(0, 1 - progress * profile.winFade))
     })
   }
 
   function paintRest(progress: number) {
+    /* Tutto ciò che qui sotto svanisce corre alla velocità del profilo: su
+       desktop `fade` è 1 e i numeri restano quelli di sempre. */
+    const gone = progress * profile.fade
+
     if (el.bloom) {
-      el.bloom.style.opacity = String(Math.max(0, BLOOM_OPACITY - progress * BLOOM_FADE))
+      el.bloom.style.opacity = String(Math.max(0, BLOOM_OPACITY - gone * BLOOM_FADE))
       /* Su mobile il bagliore si spegne e basta: rimpicciolirlo mentre svanisce
          non si legge, e una scala su un elemento sfocato largo quanto lo
          schermo è la cosa più cara della scena. */
@@ -161,8 +205,8 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
     }
     /* Payoff e striscia escono a velocità diverse: se sparissero insieme
        sembrerebbe che si spenga la luce, non che la scena si sciolga. */
-    if (el.payoff) el.payoff.style.opacity = String(Math.max(0, 1 - progress * PAYOFF_FADE))
-    if (el.ticker) el.ticker.style.opacity = String(Math.max(0, 1 - progress * TICKER_FADE))
+    if (el.payoff) el.payoff.style.opacity = String(Math.max(0, 1 - gone * PAYOFF_FADE))
+    if (el.ticker) el.ticker.style.opacity = String(Math.max(0, 1 - gone * TICKER_FADE))
   }
 
   function clear() {
@@ -191,7 +235,7 @@ export function createHeroDriver(el: HeroElements): HeroDriver {
          significherebbe due sorgenti di verità sullo stesso numero, e su
          mobile un evento che arriva a raffica durante lo slancio. */
       const progress =
-        exitMode === 'off' ? 0 : clamp01(window.scrollY / (window.innerHeight * EXIT_SPAN))
+        exitMode === 'off' ? 0 : clamp01(window.scrollY / (window.innerHeight * profile.span))
 
       if (parallaxOn) {
         /* Normalizzato sul viewport e non sul riquadro dell'hero: l'hero
