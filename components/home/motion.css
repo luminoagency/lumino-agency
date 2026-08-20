@@ -267,7 +267,7 @@ body.lm-cursor-away .lm-cur-ring {
     transition: none;
   }
   .lm-sector-panel,
-  .lm-sector-panel p {
+  .lm-sector-head {
     transition: none;
   }
 }
@@ -746,21 +746,20 @@ body.lm-cursor-away .lm-cur-ring {
    4.25rem costa parecchio. Il risultato a schermo è lo stesso — la voce di
    destra resta ancorata al suo bordo, come faceva il padding. */
 .lm-sector-num {
-  flex: none;
-  width: 3ch;
   font-size: 0.78rem;
   color: var(--cream-dim);
   transition:
     opacity 0.45s,
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.lm-sector-name {
-  margin-right: auto;
+/* Trasla la testa intera, non il solo nome: le parole chiave le stanno dentro,
+   e farle scorrere ognuna per conto suo si vedrebbe come uno scollamento. */
+.lm-sector-head {
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lm-sector:hover .lm-sector-num,
 .lm-sector:active .lm-sector-num,
-.lm-sector:hover .lm-sector-name {
+.lm-sector:hover .lm-sector-head {
   transform: translateX(26px);
 }
 .lm-sector:hover .lm-sector-num,
@@ -826,33 +825,16 @@ body.lm-cursor-away .lm-cur-ring {
 .lm-sector-panel-in {
   overflow: hidden;
 }
-.lm-sector-panel p {
-  margin: 0;
-  max-width: 62ch;
-  padding: 0 0 clamp(1.5rem, 3vh, 2.25rem) calc(3ch + 2rem);
-  font-size: 1rem;
-  line-height: 1.7;
-  color: var(--cream-dim);
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.45s 0.1s,
-    transform 0.45s 0.1s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lm-sector-item.is-open .lm-sector-panel p {
-  opacity: 1;
-  transform: none;
-}
+/* NIENTE dissolvenza sul testo, e non è una dimenticanza: prima le frasi
+   entravano sfumando e salendo di dieci pixel, e siccome la banda si apriva
+   nello stesso momento si finiva per rileggere dall'inizio una riga che si era
+   già cominciata. Si muove la banda; le parole sono ferme e leggibili dal
+   primo fotogramma. */
+
 /* La luce del gradiente resta accesa mentre la riga è aperta. */
 .lm-sector-item.is-open .lm-sector::before {
   transform: translateY(0);
   opacity: 0.12;
-}
-
-@media (max-width: 640px) {
-  .lm-sector-panel p {
-    padding-left: 0;
-  }
 }
 
 /* ─── Il sito del cliente aperto dentro la vetrina ───────────────────────── */
