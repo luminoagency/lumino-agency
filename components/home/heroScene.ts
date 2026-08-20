@@ -32,13 +32,6 @@ export const HERO_WINDOWS: HeroWindow[] = [
 /** Le sei lettere del wordmark. La I è quella nel gradiente. */
 export const HERO_LETTERS = ['L', 'U', 'M', 'I', 'N', 'O'] as const
 
-/** Etichette negli spazi vuoti. Stanno sopra e sotto le finestre, mai addosso. */
-export const HERO_TAGS = [
-  { slot: 't1', label: '5 progetti online' },
-  { slot: 't2', label: 'Padova → Mondo' },
-  { slot: 't3', label: 'Studio digitale' },
-] as const
-
 /** Il payoff sotto la composizione. Esportato: è anche il testo dell'h1. */
 export const HERO_PAYOFF_LEAD = 'Progettiamo e costruiamo siti che '
 export const HERO_PAYOFF_ACCENT = 'si ricordano.'
