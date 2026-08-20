@@ -8,38 +8,6 @@
      · cursore ed effetti mouse esistono solo da 821px in su
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Lo stato "JS vivo": senza di esso nulla viene nascosto, così una pagina
-   senza JS resta interamente leggibile. */
-body.lm-js .lm-hline > span {
-  transform: translateY(110%);
-  opacity: 0;
-}
-body.lm-loaded .lm-hline > span {
-  transform: none;
-  opacity: 1;
-  transition:
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 1s;
-}
-body.lm-loaded .lm-hline:nth-of-type(2) > span {
-  transition-delay: 0.08s;
-}
-body.lm-loaded .lm-hline:nth-of-type(3) > span {
-  transition-delay: 0.16s;
-}
-body.lm-js .lm-hero-sub,
-body.lm-js .lm-hero-foot {
-  opacity: 0;
-}
-body.lm-loaded .lm-hero-sub {
-  opacity: 1;
-  transition: opacity 1s 0.5s;
-}
-body.lm-loaded .lm-hero-foot {
-  opacity: 1;
-  transition: opacity 1s 0.65s;
-}
-
 /* Nav: appena si scrolla si compatta e si appoggia su un vetro scuro. */
 .lm-nav.is-scrolled {
   padding-top: clamp(0.7rem, 1.5vh, 0.95rem);
@@ -217,7 +185,7 @@ body.lm-loaded .lm-hero-foot {
    testo, con padding e un'altezza minima. */
 @media (max-width: 820px) {
   .lm-wordmark,
-  .lm-hero-scroll,
+  .lm-hero-cta,
   .lm-contact-mail,
   .lm-footer-links a,
   .lm-ov-links a,
@@ -734,31 +702,6 @@ body.lm-cursor-away .lm-cur-ring {
   padding-top: 1.1rem;
 }
 
-/* ─── Hero: righe e lettere ──────────────────────────────────────────────── */
-.lm-hline {
-  display: block;
-  overflow: hidden;
-}
-.lm-hline > span {
-  display: inline-block;
-}
-.lm-char {
-  display: inline-block;
-  will-change: transform;
-  transition:
-    color 0.35s,
-    text-shadow 0.35s;
-}
-.lm-seg-thin {
-  font-weight: 300;
-  font-style: italic;
-  color: var(--cream-dim);
-}
-.lm-seg-grad {
-  font-style: italic;
-  font-weight: 500;
-}
-
 /* ─── Marquee ────────────────────────────────────────────────────────────── */
 .lm-grabhint {
   position: absolute;
@@ -910,59 +853,6 @@ body.lm-cursor-away .lm-cur-ring {
   .lm-sector-panel p {
     padding-left: 0;
   }
-}
-
-/* ─── Servizi: la card si solleva e si scalda ────────────────────────────── */
-.lm-service {
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.45s;
-}
-.lm-service::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--grad);
-  opacity: 0;
-  transition: opacity 0.45s;
-  z-index: 0;
-}
-.lm-service:hover::before,
-.lm-service:active::before {
-  opacity: 0.08;
-}
-.lm-service > * {
-  position: relative;
-  z-index: 1;
-}
-.lm-service:hover,
-.lm-service:active {
-  transform: translateY(-6px);
-  /* Su bianco il solo spostamento non basta a far sembrare che si alzi:
-     senza ombra sembra che scivoli, non che si sollevi. */
-  box-shadow: var(--shadow-ink-lift);
-}
-/* Al click si solleva e ruota appena, poi torna. Queste card non portano da
-   nessuna parte: il riscontro dev'essere fisico, non una finta navigazione.
-
-   La curva è una decelerazione pulita, non una con sovraelongazione: la forma
-   del movimento sta già nei keyframe, e una curva che sfora verrebbe applicata
-   ANCHE fra il 38% e il 100%, spingendo la card sotto la propria posizione di
-   riposo. Incassata in una griglia bordata, quello si legge come un
-   affondamento nel piano — non come un oggetto che si posa. */
-.lm-service.is-popped {
-  animation: lm-service-pop 0.62s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes lm-service-pop {
-  0% { transform: translateY(-6px) rotate(0deg); }
-  30% {
-    transform: translateY(-17px) rotate(-1.2deg);
-    box-shadow: var(--shadow-ink-lift);
-  }
-  /* Il ritorno si posa: nessun rimbalzo sotto lo zero. */
-  100% { transform: translateY(0) rotate(0deg); }
 }
 
 /* ─── Il sito del cliente aperto dentro la vetrina ───────────────────────── */
@@ -1243,12 +1133,6 @@ body.lm-lock {
   .lm-pre {
     display: none !important;
   }
-  body.lm-js .lm-hline > span,
-  body.lm-js .lm-hero-sub,
-  body.lm-js .lm-hero-foot {
-    opacity: 1 !important;
-    transform: none !important;
-  }
   .lm-overlay {
     transition: visibility 0s;
   }
@@ -1268,4 +1152,41 @@ body.lm-lock {
 .lm-service:active {
     transform: none;
   }
+}
+
+/* ─── Menu: scorciatoia WhatsApp ─────────────────────────────────────────── */
+/* Riga a parte sotto le quattro voci. Non compete con loro — corpo piccolo,
+   filo sopra — perché non è una sezione del sito: è un modo di raggiungerci.
+   Sta dentro .lm-ov-links per ereditare la salita sfalsata all'apertura
+   (nth-child(5), già dichiarato). */
+.lm-ov-links a.lm-ov-wa {
+  width: 100%;
+  max-width: 30rem;
+  margin-top: clamp(1.5rem, 4vh, 2.75rem);
+  padding-top: clamp(1rem, 2.5vh, 1.5rem);
+  border-top: 1px solid var(--line-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.lm-ov-links a.lm-ov-wa:hover,
+.lm-ov-links a.lm-ov-wa:active {
+  font-style: normal;
+  padding-left: 0;
+}
+.lm-ov-wa-num {
+  color: var(--ink-dim);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color 0.35s;
+}
+.lm-ov-links a.lm-ov-wa:hover .lm-ov-wa-num {
+  color: var(--red);
 }

@@ -4,7 +4,8 @@ import SiteChrome from '@/components/site/SiteChrome'
 import { SALES_TERMS } from '@/lib/plans'
 
 export const metadata: Metadata = {
-  title: 'Come funziona · Lumino',
+  alternates: { canonical: '/come-funziona' },
+  title: 'Come funziona',
   description:
     'Scopri come lavoriamo: i passi, i tempi di consegna, il pagamento e cosa è incluso nel tuo sito.',
 }

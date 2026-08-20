@@ -4,7 +4,8 @@ import IniziaForm from './IniziaForm'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata: Metadata = {
-  title: 'Inizia ora · Lumino',
+  alternates: { canonical: '/inizia' },
+  title: 'Inizia ora',
   description:
     'Raccontaci del tuo locale e ti ricontattiamo noi. Lascia i tuoi dati: pensiamo noi al tuo nuovo sito.',
 }

@@ -157,79 +157,6 @@ body {
   background: var(--cream);
 }
 
-/* ─── 1. Hero ────────────────────────────────────────────────────────────── */
-.lm-hero {
-  position: relative;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding-block: clamp(7rem, 14vh, 10rem) clamp(2.5rem, 6vh, 4rem);
-  overflow: hidden;
-}
-.lm-hero-title {
-  position: relative;
-  z-index: 2;
-  max-width: 15ch;
-}
-.lm-hero-foot {
-  position: relative;
-  z-index: 2;
-  margin-top: clamp(2.5rem, 6vh, 4.5rem);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2.5rem;
-  flex-wrap: wrap;
-}
-.lm-hero-sub {
-  font-size: clamp(1rem, 1.28vw, 1.22rem);
-  line-height: 1.6;
-  color: var(--cream-dim);
-  margin: 0;
-  max-width: 38ch;
-}
-.lm-hero-scroll {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  font-size: 0.74rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.lm-hero-scroll-line {
-  width: 3.5rem;
-  height: 1px;
-  background: var(--line);
-  position: relative;
-  overflow: hidden;
-}
-.lm-hero-scroll-line::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--grad);
-  transform: translateX(-100%);
-  animation: lm-scroll-hint 2.6s ease-in-out infinite;
-}
-@keyframes lm-scroll-hint {
-  0% { transform: translateX(-100%); }
-  55%, 100% { transform: translateX(100%); }
-}
-
-/* Canvas delle scintille — dietro al titolo, mai sopra. */
-.lm-hero-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
 /* ─── 2. Marquee ─────────────────────────────────────────────────────────── */
 .lm-marquee {
   position: relative;
@@ -913,11 +840,6 @@ body {
   .lm-stats {
     grid-template-columns: minmax(0, 1fr);
   }
-  .lm-hero-foot {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.75rem;
-  }
   .lm-statement {
     min-height: 70svh;
     text-align: left;
@@ -944,11 +866,6 @@ body {
   .lm-js-ready .lm-reveal {
     opacity: 1 !important;
     transform: none !important;
-  }
-  .lm-hero-scroll-line::after {
-    animation: none;
-    transform: none;
-    opacity: 0.6;
   }
   .lm-process-step {
     opacity: 1 !important;

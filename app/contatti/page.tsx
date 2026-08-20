@@ -4,7 +4,8 @@ import { COMPANY } from '@/lib/company'
 import ContactForm from './ContactForm'
 
 export const metadata: Metadata = {
-  title: 'Contatti · Lumino',
+  alternates: { canonical: '/contatti' },
+  title: 'Contatti',
   description:
     'Hai bisogno di aiuto o vuoi informazioni sui nostri servizi? Contatta Lumino via email. Ti rispondiamo entro un giorno lavorativo.',
 }

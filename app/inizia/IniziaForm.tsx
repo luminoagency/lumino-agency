@@ -108,7 +108,7 @@ export default function IniziaForm({ leadId, known = false, prefill }: Props) {
       {known && (
         <div className="cf-known">
           <span aria-hidden>✓</span>
-          <span>Conosciamo già il tuo locale</span>
+          <span>Conosciamo già la tua attività</span>
         </div>
       )}
 

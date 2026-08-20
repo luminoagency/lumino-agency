@@ -3,7 +3,9 @@ import '@/components/home/motion.css'
 import '@/components/home/hero.css'
 import '@/components/home/process.css'
 import '@/components/home/whatsapp.css'
+import '@/components/home/bands.css'
 
+import { anton } from '@/components/home/fonts'
 import SmoothScroll from '@/components/home/SmoothScroll'
 import Preloader from '@/components/home/Preloader'
 import Cursor from '@/components/home/Cursor'
@@ -20,6 +22,7 @@ import Services from '@/components/home/Services'
 import Stats from '@/components/home/Stats'
 import Contact from '@/components/home/Contact'
 import Footer from '@/components/home/Footer'
+import WhatsAppDock from '@/components/home/WhatsAppDock'
 
 /**
  * Home — vetrina dello studio.
@@ -36,10 +39,13 @@ import Footer from '@/components/home/Footer'
  *
  * Preloader, Cursor e Reveal sono trasversali e stanno fuori dal <main>:
  * non sono contenuto, sono lo strato che lo fa muovere.
+ *
+ * Anton (--font-display) è agganciato qui e non ad app/layout.tsx: lo usa solo
+ * il wordmark dell'hero, e le altre pagine non devono pagarne il caricamento.
  */
 export default function HomePage() {
   return (
-    <div className="lm">
+    <div className={`lm ${anton.variable}`}>
       <SmoothScroll />
       <Preloader />
       <Cursor />
@@ -61,6 +67,11 @@ export default function HomePage() {
       </main>
 
       <Footer />
+
+      {/* Fuori dal <main> come Preloader e Cursor: non è contenuto della
+          pagina, è un modo di raggiungerci che la accompagna. Il FAB globale
+          di app/layout.tsx resta escluso dalla home: questo lo sostituisce. */}
+      <WhatsAppDock />
     </div>
   )
 }

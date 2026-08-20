@@ -5,7 +5,8 @@ import FaqAccordion, { type FaqGroup } from './FaqAccordion'
 import { SALES_TERMS } from '@/lib/plans'
 
 export const metadata: Metadata = {
-  title: 'Domande frequenti · Lumino',
+  alternates: { canonical: '/faq' },
+  title: 'Domande frequenti',
   description:
     'Risposte alle domande più comuni su Lumino: come funziona il servizio, tempi di consegna, pagamenti, rimborsi, dominio e gestione dei dati.',
 }
@@ -29,7 +30,7 @@ const GROUPS: FaqGroup[] = [
         q: 'Per chi è pensato?',
         a: (
           <>
-            Per ristoranti, pizzerie, bar, trattorie e in generale per le attività locali italiane
+            Per ristoranti, hotel, aziende, retail e in generale per le attività che hanno qualcosa di vero da mostrare
             che vogliono un sito professionale senza perdere tempo e senza costi mensili.
           </>
         ),

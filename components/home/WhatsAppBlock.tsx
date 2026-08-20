@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY } from '@/lib/company'
 import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
+import { WA_LINK } from './whatsappLink'
 
 /**
  * Blocco WhatsApp della sezione Contatti.
@@ -19,10 +20,10 @@ import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } f
  * Il verde di WhatsApp è solo un accento — pulsante di invio e spunte. Il resto
  * è la nostra palette: un blocco verde su una vetrina scura sarebbe un corpo
  * estraneo.
+ *
+ * Il link col messaggio precompilato viene da whatsappLink.ts: lo stesso che
+ * usano il pulsante flottante e la scorciatoia nel menu.
  */
-
-const MESSAGE = 'Ciao Lumino, ho visto il vostro sito e vorrei parlarvi di un progetto.'
-const WA_LINK = `${COMPANY.whatsapp.waLink}?text=${encodeURIComponent(MESSAGE)}`
 
 /* Il testo che si scrive da solo: la testa resta, la coda ruota. */
 const TYPED_HEAD = 'Ciao Lumino, vorrei un sito per'
@@ -38,6 +39,9 @@ export default function WhatsAppBlock() {
   const typedRef = useRef<HTMLSpanElement>(null)
   const [live, setLive] = useState(false)
   const [burst, setBurst] = useState(false)
+  /* Al tocco il testo scritto nel campo sale nella conversazione come
+     messaggio inviato: il gesto si conclude qui prima che si apra WhatsApp. */
+  const [sent, setSent] = useState<string | null>(null)
 
   /* La conversazione parte al primo ingresso in viewport e si ferma quando
      esce: è un ciclo, e farlo girare per tutta la pagina non serve a nessuno. */
@@ -194,20 +198,23 @@ export default function WhatsAppBlock() {
     <div className="lm-wa-wrap">
       <a
         ref={rootRef}
-        className={`lm-wa${live ? ' is-live' : ''}${burst ? ' is-burst' : ''}`}
+        className={`lm-wa${live ? ' is-live' : ''}${burst ? ' is-burst' : ''}${sent ? ' is-sent' : ''}`}
         href={WA_LINK}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Scrivici su WhatsApp"
         data-cursor="whatsapp"
-        onPointerDown={() => setBurst(true)}
+        onPointerDown={() => {
+          setBurst(true)
+          setSent(typedRef.current?.textContent || TYPED_HEAD + TYPED_TAILS[0])
+        }}
         onAnimationEnd={() => setBurst(false)}
       >
         <span className="lm-wa-flash" aria-hidden="true" />
 
         <span className="lm-wa-head">
           <span className="lm-wa-avatar" aria-hidden="true">
-            L
+            <i className="lm-wa-ring" />L
           </span>
           <span className="lm-wa-who">
             <b>Lumino</b>
@@ -224,10 +231,20 @@ export default function WhatsAppBlock() {
 
         <span className="lm-wa-bubble">
           Ciao 👋 Raccontaci del tuo progetto — rispondiamo di solito in giornata.
-          <span className="lm-wa-ticks" aria-hidden="true">
-            ✓✓
+          <span className="lm-wa-time" aria-hidden="true">
+            ora
           </span>
         </span>
+
+        {/* Il messaggio inviato: compare solo dopo il tocco. */}
+        {sent ? (
+          <span className="lm-wa-bubble is-out">
+            {sent}
+            <span className="lm-wa-time" aria-hidden="true">
+              ora <b className="lm-wa-ticks">✓✓</b>
+            </span>
+          </span>
+        ) : null}
 
         {/* Finto campo: un div, non un input — non deve aprire la tastiera. */}
         <span className="lm-wa-composer">

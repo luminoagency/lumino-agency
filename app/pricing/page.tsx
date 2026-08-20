@@ -222,7 +222,7 @@ export default function PricingPage() {
 
         <section className="pr-hero">
           <p className="pr-eyebrow">✦ i nostri piani</p>
-          <h1 className="pr-title">Scegli il piano <em>giusto</em><br />per il tuo locale.</h1>
+          <h1 className="pr-title">Scegli il piano <em>giusto</em><br />per la tua attività.</h1>
           <p className="pr-sub">Iniziamo con il sito già pronto. Tu scegli quanto vuoi avere il controllo.</p>
         </section>
 

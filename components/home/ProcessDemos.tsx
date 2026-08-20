@@ -1,42 +1,38 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import HeroBlobs from './HeroBlobs'
 
 /**
  * I tre demo della sezione "Il design".
  *
- * Ognuno mostra una TECNICA che usiamo davvero, riusando i pezzi del sito
- * invece di illustrarli: il primo è una miniatura viva del nostro hero (stessi
- * blob, stesso filtro gooey, stesso titolo che entra lettera per lettera), il
- * secondo mette in fila le micro-interazioni della pagina, il terzo il
- * comportamento mobile. Sono autodimostrativi: quello che il testo accanto
- * promette, il riquadro lo sta facendo.
+ * Non sono tre scene scollegate: sono TRE ATTI DELLA STESSA STORIA — un sito
+ * che nasce sotto gli occhi di chi guarda. La struttura in pagina è la stessa
+ * in tutti e tre (nav, hero, immagine, bottone, blocchi): cambia solo il suo
+ * stato.
  *
- * Il movimento è in @keyframes CSS, ma NON gira a tempo: la sezione è pinnata e
- * lo scroll pilota il fotogramma. Trucco: animazione in pausa più
+ *   01  wireframe: rettangoli vuoti che scattano in posizione, con linee guida
+ *       e misure, come in un file di progetto
+ *   02  gli stessi rettangoli prendono colore, la tipografia entra lettera per
+ *       lettera e un cursore attraversa facendo reagire le cose
+ *   03  la stessa pagina si restringe e si ricompone dentro un telefono
+ *
+ * Il movimento è in @keyframes ma NON gira a tempo: la sezione è pinnata e lo
+ * scroll decide il fotogramma. Trucco: animazione in pausa più
  * `animation-delay` negativo — un'animazione ferma viene comunque valutata al
  * tempo `-delay`, quindi spostando il ritardo si scorre fotogramma per
  * fotogramma. Zero lavoro JS per frame.
  *
- * I blob del primo demo riusano il componente dell'hero ma sono mossi da
- * keyframe, non dal driver rAF: il driver lavora a tempo reale e non saprebbe
- * farsi scrubbare.
- *
- * Tre modalità:
- *   scrub  → il fotogramma lo decide lo scroll (desktop, sezione pinnata)
- *   auto   → ciclo continuo a tempo (mobile: niente pin, parte in viewport)
- *   still  → fermo sul fotogramma finale (prefers-reduced-motion)
+ * REGOLA DI FILE (vale anche in process.css): mai la shorthand `animation:`.
+ * Azzera delay e play-state, che sono i due su cui poggia tutto lo scrub.
  */
 
 export type DemoMode = 'scrub' | 'auto' | 'still'
 
-/** Durata di un giro completo, per demo. Serve a mappare progresso → tempo. */
+/** Durata di un giro completo, per atto. */
 export const DEMO_DURATIONS = [6, 6, 6]
 
 const D3_TARGET = 1.4
 const D3_COUNT_SHARE = 0.34
-/** Punteggi Lighthouse mostrati dal terzo demo. */
 const D3_SCORES = [98, 100, 100]
 const D3_SCORE_START = 0.42
 const D3_SCORE_SHARE = 0.4
@@ -49,10 +45,9 @@ function countAt(progress: number) {
 }
 
 /**
- * Porta un demo al fotogramma corrispondente al progresso (0→1).
- *
- * Scrive una variabile CSS e, per il terzo demo, i numeri: sono l'unica cosa
- * che il CSS non sa disegnare da solo.
+ * Porta un atto al fotogramma corrispondente al progresso (0→1).
+ * Scrive una variabile CSS e, nel terzo, i numeri: sono l'unica cosa che il
+ * CSS non sa disegnare da solo.
  */
 export function seekDemo(stage: HTMLElement, index: number, progress: number) {
   const duration = DEMO_DURATIONS[index] ?? 6
@@ -69,99 +64,108 @@ export function seekDemo(stage: HTMLElement, index: number, progress: number) {
   })
 }
 
-/* ── 01 — Hero che ferma il pollice ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   La pagina finta, condivisa dai tre atti.
+   Stesso markup ovunque: è la CSS di ciascun atto a deciderne lo stato.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-const D1_LETTERS = Array.from('Benvenuti')
+const HERO_WORD = 'Benvenuti'
 
-/**
- * Miniatura del nostro hero, viva: blob che si fondono e si separano, titolo
- * serif che entra lettera per lettera, un cursore che attraversa e fa scostare
- * le lettere che incontra, scintille che salgono.
- */
-function DemoHero() {
+function FakePage({ act }: { act: 1 | 2 | 3 }) {
   return (
-    <div className="lm-demo lm-demo-1">
-      {/* Stesso componente dell'hero: tre cerchi invece di cinque, e senza
-          ripetere il <defs> — l'id del filtro è già in pagina. */}
-      <HeroBlobs count={3} defs={false} />
+    <div className={`lm-page lm-page-a${act}`}>
+      <div className="lm-p-nav">
+        <span className="lm-p-logo" />
+        <span className="lm-p-links">
+          <i />
+          <i />
+          <i />
+        </span>
+      </div>
 
-      <div className="lm-d1-sparks">
-        {Array.from({ length: 7 }, (_, i) => (
-          <i key={i} style={{ left: `${8 + i * 13}%`, animationDelay: `calc(var(--seek, 0s) + ${(i * 0.7).toFixed(2)}s)` }} />
+      <div className="lm-p-hero">
+        <span className="lm-p-eyebrow" />
+        <span className="lm-p-title">
+          {Array.from(HERO_WORD).map((char, i) => (
+            <b
+              key={i}
+              style={{ animationDelay: `calc(var(--seek, 0s) + ${(0.9 + i * 0.07).toFixed(2)}s)` }}
+            >
+              {char}
+            </b>
+          ))}
+        </span>
+        <span className="lm-p-btn">
+          <i className="lm-p-btn-fill" />
+        </span>
+      </div>
+
+      <div className="lm-p-media" />
+
+      <div className="lm-p-cols">
+        {[0, 1, 2].map((i) => (
+          <span className="lm-p-col" key={i} style={{ ['--i' as string]: i }}>
+            <i className="lm-p-thumb" />
+            <i className="lm-p-line" />
+            <i className="lm-p-line is-short" />
+          </span>
         ))}
       </div>
 
-      <div className="lm-d1-copy">
-        <span className="lm-d1-eyebrow" />
-        <span className="lm-d1-title">
-          {D1_LETTERS.map((char, i) => (
-            <i
-              key={i}
-              className="lm-d1-letter"
-              style={{ animationDelay: `calc(var(--seek, 0s) + ${(0.35 + i * 0.08).toFixed(2)}s)` }}
-            >
-              <b style={{ animationDelay: `calc(var(--seek, 0s) + ${(1.7 + i * 0.13).toFixed(2)}s)` }}>
-                {char}
-              </b>
-            </i>
-          ))}
-        </span>
-        <span className="lm-d1-btn" />
+      <div className="lm-p-row">
+        <i className="lm-p-row-light" />
+        <i className="lm-p-line" />
+        <i className="lm-p-price" />
       </div>
 
-      {/* Il cursore che passa: è al suo passaggio che le lettere si scostano. */}
-      <span className="lm-d1-cursor" />
+      {/* Linee guida e misure: si vedono solo nel primo atto. */}
+      <span className="lm-p-guide lm-p-guide-v" aria-hidden="true" />
+      <span className="lm-p-guide lm-p-guide-h" aria-hidden="true" />
+      <span className="lm-p-measure" aria-hidden="true">
+        <i />
+        <b>1440</b>
+        <i />
+      </span>
     </div>
   )
 }
 
-/* ── 02 — Movimento su misura ───────────────────────────────────────────── */
+/* ── Atto 01 — wireframe ─────────────────────────────────────────────────── */
+function ActWireframe() {
+  return (
+    <div className="lm-demo lm-demo-1">
+      <FakePage act={1} />
+      <span className="lm-act-tag" aria-hidden="true">
+        wireframe
+      </span>
+    </div>
+  )
+}
 
-/**
- * Le micro-interazioni della pagina messe in fila, ~1,5s ciascuna: card che si
- * inclina in 3D col riflesso che segue il cursore, click che genera un'onda
- * circolare, riga di lista in cui sale la luce del gradiente, bottone che si
- * riempie dal basso.
- */
-function DemoMotion() {
+/* ── Atto 02 — prende vita ───────────────────────────────────────────────── */
+function ActAlive() {
   return (
     <div className="lm-demo lm-demo-2">
-      <div className="lm-d2-card">
-        <span className="lm-d2-card-sheen" />
-        <span className="lm-d2-card-line" />
-        <span className="lm-d2-card-line is-short" />
-      </div>
-
-      <span className="lm-d2-wave" />
-
-      <div className="lm-d2-row">
-        <span className="lm-d2-row-light" />
-        <span className="lm-d2-row-label" />
-        <span className="lm-d2-row-meta" />
-      </div>
-
-      <div className="lm-d2-btn">
-        <span className="lm-d2-btn-fill" />
-        <span className="lm-d2-btn-label" />
-      </div>
-
-      <span className="lm-d2-cursor" />
+      <FakePage act={2} />
+      {/* Il cursore che attraversa e fa reagire le cose. */}
+      <span className="lm-act-cursor" aria-hidden="true" />
+      <span className="lm-act-tag" aria-hidden="true">
+        vivo
+      </span>
     </div>
   )
 }
 
-/* ── 03 — Prima il telefono ─────────────────────────────────────────────── */
-
+/* ── Atto 03 — dentro il telefono ────────────────────────────────────────── */
 const D3_CYCLE_MS = DEMO_DURATIONS[2] * 1000
 
-function DemoMobile({ mode }: { mode: DemoMode }) {
+function ActMobile({ mode }: { mode: DemoMode }) {
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
-    // In scrub i numeri li scrive seekDemo, in still sono già arrivati.
     if (mode !== 'auto') {
       if (mode === 'still') {
         const v = root.querySelector<HTMLElement>('[data-count]')
@@ -191,49 +195,46 @@ function DemoMobile({ mode }: { mode: DemoMode }) {
 
   return (
     <div className="lm-demo lm-demo-3" ref={rootRef}>
-      <div className="lm-d3-phone">
-        <span className="lm-d3-notch" />
-        <div className="lm-d3-screen">
-          <div className="lm-d3-scroll">
-            <span className="lm-d3-block is-hero" />
-            <span className="lm-d3-line" />
-            <span className="lm-d3-line is-short" />
-            <span className="lm-d3-block" />
-            <span className="lm-d3-line" />
-            <span className="lm-d3-block is-alt" />
-            <span className="lm-d3-line is-short" />
-            <span className="lm-d3-block" />
-          </div>
-          {/* Il dito che scorre: lo swipe che dà l'inerzia al contenuto. */}
-          <span className="lm-d3-thumb" />
+      {/* La stessa pagina: si restringe e si ricompone in colonna. */}
+      <div className="lm-phone">
+        <span className="lm-phone-notch" />
+        <div className="lm-phone-screen">
+          <FakePage act={3} />
         </div>
       </div>
 
-      <div className="lm-d3-side">
-        <div className="lm-d3-meter">
-          <span className="lm-d3-value">
+      <div className="lm-act-side">
+        <div className="lm-act-meter">
+          <span className="lm-act-value">
             <span data-count>0.0</span>s
           </span>
-          <span className="lm-d3-label">caricamento</span>
+          <span className="lm-act-label">caricamento</span>
         </div>
 
-        <div className="lm-d3-scores">
+        <div className="lm-act-scores">
           {['Performance', 'Accessibilità', 'SEO'].map((name, i) => (
-            <span className="lm-d3-score" key={name}>
-              <i className="lm-d3-bar" style={{ animationDelay: `calc(var(--seek, 0s) + ${(2.6 + i * 0.25).toFixed(2)}s)` }} />
+            <span className="lm-act-score" key={name}>
+              <i
+                className="lm-act-bar"
+                style={{ animationDelay: `calc(var(--seek, 0s) + ${(2.6 + i * 0.25).toFixed(2)}s)` }}
+              />
               <b data-score={D3_SCORES[i]}>0</b>
               <em>{name}</em>
             </span>
           ))}
         </div>
       </div>
+
+      <span className="lm-act-tag" aria-hidden="true">
+        mobile
+      </span>
     </div>
   )
 }
 
 export default function ProcessDemo({ index, mode }: { index: number; mode: DemoMode }) {
   const content =
-    index === 0 ? <DemoHero /> : index === 1 ? <DemoMotion /> : <DemoMobile mode={mode} />
+    index === 0 ? <ActWireframe /> : index === 1 ? <ActAlive /> : <ActMobile mode={mode} />
 
   return <div className={`lm-demo-stage is-${mode}`}>{content}</div>
 }

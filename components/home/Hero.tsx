@@ -1,244 +1,223 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Chars, Line } from './splitText'
-import HeroBlobs from './HeroBlobs'
+import Image from 'next/image'
+import { useEffect, useRef } from 'react'
 import HeroTicker from './HeroTicker'
-import RotatingWord from './RotatingWord'
+import { createHeroDriver } from './heroMotion'
 import {
-  WAVE_LIFE,
-  createBlobsDriver,
-  createLettersDriver,
-  createSparksDriver,
-  type Driver,
-  type Wave,
-} from './heroMotion'
+  HERO_ENTRANCE_MS,
+  HERO_LETTERS,
+  HERO_PAYOFF_ACCENT,
+  HERO_PAYOFF_LEAD,
+  HERO_TAGS,
+  HERO_TITLE,
+  HERO_WINDOWS,
+} from './heroScene'
 import {
-  isCompactViewport,
+  POINTER_BREAKPOINT,
   onAmbientMotionChange,
   onMouseEffectsChange,
-  pointer,
+  prefersReducedMotion,
   trackPointer,
 } from './useMotion'
 
 /**
  * Sezione 1 — Hero.
  *
- * Il titolo occupa la larghezza piena e quasi tutta l'altezza della prima
- * schermata; dietro non ci sono immagini, solo blob liquidi e scintille.
- * Nessuna colonna media a destra: quel layout è vietato in modo permanente.
+ * Il protagonista è il wordmark LUMINO gigante. Attorno, intrecciate con le
+ * lettere, quattro finestre con gli screenshot veri dei nostri siti: due in
+ * alto, più scure e più piccole, quindi lontane; due in basso, più luminose e
+ * più grandi, davanti alle lettere.
  *
- * UN SOLO requestAnimationFrame per tutto. I tre effetti sono driver (vedi
- * heroMotion.ts) che ricevono lo stesso stato del frame — puntatore, velocità
- * di scroll, tempo e onde attive — così reagiscono tutti alla stessa
- * perturbazione nello stesso istante. Il loop gira con qualunque puntatore —
- * un dito trascina le lettere e fa partire l'onda come un mouse: l'unico veto
- * è prefers-reduced-motion. Si ferma quando l'hero esce dal viewport.
+ * REGOLA COMPOSITIVA — il wordmark possiede la fascia centrale. Le finestre
+ * stanno sopra e sotto quella fascia e sfiorano solo le lettere esterne: LUMINO
+ * si deve leggere per intero, sempre. Per questo le quattro finestre sono figlie
+ * DIRETTE dell'hero e non del contenitore del wordmark: ancorarle a quello le
+ * faceva seguire una scatola che cambia misura col testo, ed era il motivo per
+ * cui su telefono finivano addosso alle lettere.
+ *
+ * Niente wrapper attorno alle finestre, per lo stesso motivo per cui non stanno
+ * dentro al wordmark: un contenitore posizionato creerebbe un contesto di
+ * impilamento, e le due finestre davanti alle lettere non potrebbero più stare
+ * davvero davanti.
+ *
+ * UN SOLO requestAnimationFrame: uscita allo scroll e parallasse sono lo stesso
+ * driver (heroMotion.ts), perché muovono gli stessi elementi nello stesso
+ * istante. Il loop parte a entrata finita, si ferma quando l'hero esce dal
+ * viewport e non esiste affatto con prefers-reduced-motion — lì il CSS mostra
+ * la composizione finale, ferma.
  */
-
-export const HERO_TITLE = 'Diamo forma al sito che il tuo brand merita.'
 
 export default function Hero() {
   const heroRef = useRef<HTMLElement>(null)
-  const titleRef = useRef<HTMLHeadingElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const blobsRef = useRef<HTMLDivElement>(null)
-  const lettersRef = useRef<Driver | null>(null)
-
-  const [active, setActive] = useState(true)
-  /* Gli effetti mouse sono accesi? Governa anche il puntino d'invito: senza
-     puntatore non c'è niente da invitare a fare. */
-  const [effects, setEffects] = useState(false)
-  /* idle → pulsa piano · nudge → una singola oscillazione più marcata dopo
-     sei secondi di inattività · gone → l'utente ha interagito, sparisce e non
-     torna più. */
-  const [hint, setHint] = useState<'idle' | 'nudge' | 'gone'>('idle')
-
-  // Dopo ogni cambio del gruppo rotante il titolo ha lettere nuove: il driver
-  // deve riprenderle e rimisurarne le posizioni di riposo.
-  const handleWordChange = useCallback(() => {
-    lettersRef.current?.refresh?.()
-  }, [])
-
-  /* Dopo sei secondi senza che nessuno abbia toccato, il puntino fa una
-     singola oscillazione più marcata e torna calmo. Non insiste oltre: se non
-     è bastata quella, insistere diventa fastidio. */
-  const nudgedRef = useRef(false)
-
-  useEffect(() => {
-    if (!effects || nudgedRef.current) return
-
-    const nudge = window.setTimeout(() => {
-      nudgedRef.current = true
-      setHint((current) => (current === 'idle' ? 'nudge' : current))
-      // Torna calmo da solo. Una sola volta: insistere oltre diventa fastidio.
-      window.setTimeout(() => setHint((current) => (current === 'nudge' ? 'idle' : current)), 900)
-    }, 6000)
-
-    return () => window.clearTimeout(nudge)
-  }, [effects])
 
   useEffect(() => {
     const hero = heroRef.current
-    const title = titleRef.current
-    const canvas = canvasRef.current
-    const blobs = blobsRef.current
-    if (!hero || !title || !canvas || !blobs) return
+    if (!hero) return
 
-    let drivers: Driver[] = []
-    let sparks: Driver | null = null
+    const driver = createHeroDriver({
+      letters: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-ch')),
+      windows: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-win')),
+      bloom: hero.querySelector<HTMLElement>('.lm-hero-bloom'),
+      tags: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-tag')),
+      payoff: hero.querySelector<HTMLElement>('.lm-hero-foot'),
+      ticker: hero.querySelector<HTMLElement>('.lm-hticker'),
+    })
+
     let raf = 0
-    let live = false
+    let running = false
+    /* Tre condizioni, tutte necessarie: l'entrata deve essere finita (prima
+       comanda il CSS), l'hero deve essere in vista, e il movimento deve essere
+       ammesso. Basta che una cada e il loop si ferma. */
+    let settled = false
     let visible = true
-    let stopPointer: (() => void) | null = null
-    let started = 0
-    let waves: Wave[] = []
+    let motionOk = !prefersReducedMotion()
 
-    let scrollVel = 0
-    let lastScroll = window.scrollY
-    const onScroll = () => {
-      scrollVel += window.scrollY - lastScroll
-      lastScroll = window.scrollY
+    const loop = () => {
+      driver.update()
+      raf = requestAnimationFrame(loop)
     }
-
-    // Il click non disegna un cerchio sopra: genera una perturbazione che
-    // lettere, blob e scintille leggono dallo stato del frame.
-    const onDown = (event: PointerEvent) => {
-      const now = performance.now() - started
-      waves.push({ x: event.clientX, y: event.clientY, born: now })
-      sparks?.burst?.(event.clientX, event.clientY)
-      // Ha toccato: l'invito ha esaurito il suo compito e non torna più.
-      setHint('gone')
+    const start = () => {
+      if (running || !settled || !visible || !motionOk) return
+      running = true
+      raf = requestAnimationFrame(loop)
     }
-
-    const tick = (now: number) => {
-      const time = now - started
-      // Le onde esaurite escono dalla lista: nessuno deve continuare a
-      // interrogare un fronte che non esiste più.
-      if (waves.length) waves = waves.filter((w) => time - w.born <= WAVE_LIFE)
-
-      if (visible) {
-        const state = { pointerX: pointer.x, pointerY: pointer.y, scrollVel, time, waves }
-        for (const driver of drivers) driver.update(state)
-      }
-      scrollVel *= 0.9
-      raf = requestAnimationFrame(tick)
-    }
-
-    const enable = () => {
-      if (live) return
-      live = true
-      started = performance.now()
-      stopPointer = trackPointer()
-
-      const letters = createLettersDriver(title)
-      lettersRef.current = letters
-      // Metà scintille su schermo stretto: stessa scena, metà costo.
-      sparks = createSparksDriver(canvas, isCompactViewport() ? 24 : 46)
-
-      drivers = [
-        letters,
-        sparks,
-        createBlobsDriver(blobs, Array.from(blobs.querySelectorAll<HTMLElement>('.lm-blob'))),
-      ]
-
-      lastScroll = window.scrollY
-      window.addEventListener('scroll', onScroll, { passive: true })
-      hero.addEventListener('pointerdown', onDown)
-      hero.classList.add('is-live')
-      raf = requestAnimationFrame(tick)
-    }
-
-    const disable = () => {
-      if (!live) return
-      live = false
+    const stop = () => {
+      if (!running) return
+      running = false
       cancelAnimationFrame(raf)
-      window.removeEventListener('scroll', onScroll)
-      hero.removeEventListener('pointerdown', onDown)
-      hero.classList.remove('is-live')
-      drivers.forEach((driver) => {
-        driver.reset()
-        driver.destroy?.()
-      })
-      drivers = []
-      sparks = null
-      lettersRef.current = null
-      waves = []
-      stopPointer?.()
-      stopPointer = null
     }
 
-    // Il loop vive finché si può animare — dito o mouse non fa differenza:
-    // blob, scintille, trascinamento e onda funzionano con entrambi.
-    const unsubscribe = onAmbientMotionChange((enabled) => (enabled ? enable() : disable()))
-
-    // Il puntino d'invito invece è roba da mouse: senza puntatore non c'è
-    // niente da invitare a scoprire, e su touch il gesto lo si prova e basta.
-    const unsubscribePointer = onMouseEffectsChange(setEffects)
+    /* Finché l'entrata è in corso comanda il CSS: un'animazione in corso ha la
+       precedenza sullo stile inline, quindi scrivere adesso non servirebbe a
+       nulla e al termine dell'animazione tornerebbe tutto indietro di scatto.
+       `is-settled` stacca le animazioni d'entrata e lascia il campo al driver. */
+    const settle = window.setTimeout(() => {
+      settled = true
+      hero.classList.add('is-settled')
+      start()
+    }, HERO_ENTRANCE_MS)
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         visible = entry.isIntersecting
-        setActive(entry.isIntersecting)
-        if (!visible) drivers.forEach((driver) => driver.reset())
+        if (visible) start()
+        else stop()
       },
       { threshold: 0 },
     )
     observer.observe(hero)
 
+    /* Su schermo stretto l'uscita allo scroll è spenta: la composizione mobile
+       è un'altra composizione, e farla sfaldare mentre si scorre su un pollice
+       di altezza è solo confusione. L'entrata invece resta. */
+    const narrow = window.matchMedia(`(max-width: ${POINTER_BREAKPOINT - 1}px)`)
+    const syncExit = () => driver.setExit(!narrow.matches)
+    narrow.addEventListener('change', syncExit)
+    syncExit()
+
+    /* Il parallasse è roba da mouse: col dito non esiste il passare sopra
+       senza toccare. Il puntatore condiviso si accende solo se serve. */
+    let stopPointer: (() => void) | null = null
+    const unsubscribePointer = onMouseEffectsChange((enabled) => {
+      driver.setParallax(enabled)
+      if (enabled && !stopPointer) {
+        stopPointer = trackPointer()
+      } else if (!enabled && stopPointer) {
+        stopPointer()
+        stopPointer = null
+      }
+    })
+
+    const unsubscribeMotion = onAmbientMotionChange((enabled) => {
+      motionOk = enabled
+      if (enabled) {
+        start()
+      } else {
+        stop()
+        driver.reset()
+      }
+    })
+
     return () => {
-      unsubscribe()
-      unsubscribePointer()
+      window.clearTimeout(settle)
       observer.disconnect()
-      disable()
+      narrow.removeEventListener('change', syncExit)
+      unsubscribePointer()
+      unsubscribeMotion()
+      stopPointer?.()
+      stop()
+      driver.reset()
     }
   }, [])
 
   return (
     <section className="lm-hero" id="hero" ref={heroRef}>
-      <div className="lm-hero-bg" aria-hidden="true">
-        <div ref={blobsRef}>
-          <HeroBlobs />
-        </div>
-        <canvas className="lm-hero-canvas" ref={canvasRef} />
+      {/* Il bagliore: due nuclei separati e saturi — rosso a sinistra, blu-viola
+          a destra — più un centro caldo. Il respiro sta sul nucleo interno e non
+          qui, perché su questo elemento scrive il driver dell'uscita: un
+          contenitore che si anima da solo non si lascia comandare da fuori. */}
+      <div className="lm-hero-bloom" aria-hidden="true">
+        <span className="lm-hero-bloom-core" />
       </div>
 
-      <div className="lm-wrap lm-hero-inner">
-        <h1 className="lm-display lm-hero-title" ref={titleRef} aria-label={HERO_TITLE}>
-          <Line segments={[{ text: 'Diamo forma', variant: 'thin' }]} />
-          <Line segments={[{ text: 'al sito che' }]} />
-          <Line>
-            <RotatingWord active={active} onChange={handleWordChange} />
-            <Chars text=" " />
-            <Chars text="merita." variant="grad" />
-          </Line>
-        </h1>
+      <h1 className="lm-hero-word">
+        <span className="lm-sr">{HERO_TITLE}</span>
+        <span className="lm-hero-letters" aria-hidden="true">
+          {HERO_LETTERS.map((letter) => (
+            <span className={`lm-hero-ch${letter === 'I' ? ' is-grad' : ''}`} key={letter}>
+              {letter}
+            </span>
+          ))}
+        </span>
+      </h1>
 
-        {/* Invito senza istruzioni: un puntino che pulsa vicino al titolo.
-            Chi lo nota tocca, e scopre da sé che le lettere si trascinano.
-            Sparisce al primo tocco e non torna. */}
-        {effects && hint !== 'gone' ? (
-          <span
-            className={`lm-hint${hint === 'nudge' ? ' is-nudge' : ''}`}
-            aria-hidden="true"
+      {HERO_WINDOWS.map((win) => (
+        <div className={`lm-hero-win ${win.slot}`} key={win.slot}>
+          <span className="lm-hero-win-bar" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <Image
+            src={win.src}
+            alt={`${win.client} — sito realizzato da Lumino`}
+            width={win.width}
+            height={win.height}
+            sizes={`(max-width: ${POINTER_BREAKPOINT - 1}px) 42vw, 18vw`}
+            /* Tutte e quattro sono in prima schermata: caricate pigramente
+               entrerebbero a composizione già finita, lasciando due buchi.
+               Il conto è basso comunque — `sizes` fa servire ritagli da
+               ~230px, non gli screenshot interi. */
+            priority
           />
-        ) : null}
-
-        <div className="lm-hero-foot">
-          <p className="lm-hero-sub">
-            Progettiamo e costruiamo. Il resto lo stai già vedendo.
-          </p>
-
-          <div className="lm-hero-actions">
-            <a className="lm-hero-scroll" href="#lavori" data-cursor="grow">
-              Guarda i lavori
-              <span className="lm-hero-scroll-line" aria-hidden="true" />
-            </a>
-          </div>
         </div>
+      ))}
+
+      {HERO_TAGS.map((tag) => (
+        <span className={`lm-hero-tag ${tag.slot}`} key={tag.slot}>
+          {tag.label}
+        </span>
+      ))}
+
+      <div className="lm-hero-foot">
+        <p className="lm-hero-payoff">
+          {HERO_PAYOFF_LEAD}
+          <em>{HERO_PAYOFF_ACCENT}</em>
+        </p>
+
+        <a className="lm-hero-cta" href="#lavori" data-cursor="grow">
+          <span className="lm-hero-cta-ring" aria-hidden="true">
+            ↓
+          </span>
+          Guarda i lavori
+        </a>
       </div>
 
       <HeroTicker />
+
+      <div className="lm-hero-vig" aria-hidden="true" />
+      <div className="lm-hero-grain" aria-hidden="true" />
     </section>
   )
 }

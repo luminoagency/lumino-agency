@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Wordmark from './Wordmark'
 import { prefersReducedMotion } from './useMotion'
+import { WA_LINK } from './whatsappLink'
+import { COMPANY } from '@/lib/company'
 
 /**
  * Nav fissa + menu overlay.
@@ -170,6 +172,21 @@ export default function Nav() {
               <span className="lm-ov-label">{item.label}</span>
             </a>
           ))}
+
+          {/* Riga a parte, sotto le quattro voci: non è una sezione del sito,
+              è un modo di raggiungerci. Il numero sta in chiaro perché a
+              qualcuno serve copiarlo, non aprire un'app. */}
+          <a
+            className="lm-ov-wa"
+            href={WA_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={close}
+            data-cursor="whatsapp"
+          >
+            <span className="lm-ov-wa-label">Scrivici su WhatsApp</span>
+            <span className="lm-ov-wa-num">{COMPANY.whatsapp.display}</span>
+          </a>
         </div>
 
         <div className="lm-ov-foot">
