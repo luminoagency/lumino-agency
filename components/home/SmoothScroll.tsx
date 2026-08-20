@@ -2,7 +2,13 @@
 
 import { useEffect } from 'react'
 import Lenis from 'lenis'
-import { ScrollTrigger, gsap, prefersReducedMotion, registerScrollTrigger } from './useMotion'
+import {
+  ScrollTrigger,
+  gsap,
+  prefersReducedMotion,
+  registerScroller,
+  registerScrollTrigger,
+} from './useMotion'
 
 /**
  * Smooth scroll (Lenis) collegato a ScrollTrigger.
@@ -30,6 +36,10 @@ export default function SmoothScroll() {
       // Poco più che lineare in coda: lo scroll deve sembrare pesante, non molle.
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     })
+
+    /* Chi deve muovere la pagina da codice deve passare da Lenis, non da
+       window.scrollTo: quello nativo viene annullato al fotogramma dopo. */
+    registerScroller(lenis)
 
     const onScroll = () => ScrollTrigger.update()
     lenis.on('scroll', onScroll)
@@ -93,6 +103,7 @@ export default function SmoothScroll() {
     watchHeight.observe(document.body)
 
     return () => {
+      registerScroller(null)
       window.clearTimeout(fallback)
       window.clearTimeout(settle)
       watchHeight.disconnect()
