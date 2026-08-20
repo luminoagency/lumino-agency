@@ -177,20 +177,52 @@ function ActMobile({ mode }: { mode: DemoMode }) {
       return
     }
 
-    let raf = 0
-    const started = performance.now()
-    const tick = (now: number) => {
-      const phase = ((now - started) % D3_CYCLE_MS) / D3_CYCLE_MS
+    /* I numeri sono l'unica cosa che il CSS non sa disegnare da solo, quindi
+       qui serve del JS. Ma non serve a 60 fps e non serve sempre:
+       · un contatore che sale non guadagna nulla oltre i dodici passi al
+         secondo, e su un telefono ogni fotogramma risparmiato è batteria
+       · e non deve girare affatto mentre l'atto è fuori dallo schermo
+       La fase riparte da zero a ogni ingresso in viewport, così i numeri
+       restano allineati alle animazioni CSS, che ripartono nello stesso
+       istante. */
+    const TICK_MS = 80
+
+    const paint = (phase: number) => {
       const v = root.querySelector<HTMLElement>('[data-count]')
       if (v) v.textContent = countAt(phase)
       const t = easeOut(clamp01((phase - D3_SCORE_START) / D3_SCORE_SHARE))
       root.querySelectorAll<HTMLElement>('[data-score]').forEach((el, i) => {
         el.textContent = String(Math.round((D3_SCORES[i] ?? 100) * t))
       })
-      raf = requestAnimationFrame(tick)
     }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+
+    let timer = 0
+    let started = 0
+
+    const start = () => {
+      if (timer) return
+      started = performance.now()
+      paint(0)
+      timer = window.setInterval(() => {
+        paint(((performance.now() - started) % D3_CYCLE_MS) / D3_CYCLE_MS)
+      }, TICK_MS)
+    }
+    const stop = () => {
+      if (!timer) return
+      window.clearInterval(timer)
+      timer = 0
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? start() : stop()),
+      { threshold: 0.4 },
+    )
+    observer.observe(root)
+
+    return () => {
+      observer.disconnect()
+      stop()
+    }
   }, [mode])
 
   return (
