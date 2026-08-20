@@ -912,59 +912,6 @@ body.lm-cursor-away .lm-cur-ring {
   }
 }
 
-/* ─── Servizi: la card si solleva e si scalda ────────────────────────────── */
-.lm-service {
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.45s;
-}
-.lm-service::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--grad);
-  opacity: 0;
-  transition: opacity 0.45s;
-  z-index: 0;
-}
-.lm-service:hover::before,
-.lm-service:active::before {
-  opacity: 0.08;
-}
-.lm-service > * {
-  position: relative;
-  z-index: 1;
-}
-.lm-service:hover,
-.lm-service:active {
-  transform: translateY(-6px);
-  /* Su bianco il solo spostamento non basta a far sembrare che si alzi:
-     senza ombra sembra che scivoli, non che si sollevi. */
-  box-shadow: var(--shadow-ink-lift);
-}
-/* Al click si solleva e ruota appena, poi torna. Queste card non portano da
-   nessuna parte: il riscontro dev'essere fisico, non una finta navigazione.
-
-   La curva è una decelerazione pulita, non una con sovraelongazione: la forma
-   del movimento sta già nei keyframe, e una curva che sfora verrebbe applicata
-   ANCHE fra il 38% e il 100%, spingendo la card sotto la propria posizione di
-   riposo. Incassata in una griglia bordata, quello si legge come un
-   affondamento nel piano — non come un oggetto che si posa. */
-.lm-service.is-popped {
-  animation: lm-service-pop 0.62s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes lm-service-pop {
-  0% { transform: translateY(-6px) rotate(0deg); }
-  30% {
-    transform: translateY(-17px) rotate(-1.2deg);
-    box-shadow: var(--shadow-ink-lift);
-  }
-  /* Il ritorno si posa: nessun rimbalzo sotto lo zero. */
-  100% { transform: translateY(0) rotate(0deg); }
-}
-
 /* ─── Il sito del cliente aperto dentro la vetrina ───────────────────────── */
 .lm-viewer {
   position: fixed;
