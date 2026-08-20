@@ -38,6 +38,9 @@ export default function WhatsAppBlock() {
   const typedRef = useRef<HTMLSpanElement>(null)
   const [live, setLive] = useState(false)
   const [burst, setBurst] = useState(false)
+  /* Al tocco il testo scritto nel campo sale nella conversazione come
+     messaggio inviato: il gesto si conclude qui prima che si apra WhatsApp. */
+  const [sent, setSent] = useState<string | null>(null)
 
   /* La conversazione parte al primo ingresso in viewport e si ferma quando
      esce: è un ciclo, e farlo girare per tutta la pagina non serve a nessuno. */
@@ -194,20 +197,23 @@ export default function WhatsAppBlock() {
     <div className="lm-wa-wrap">
       <a
         ref={rootRef}
-        className={`lm-wa${live ? ' is-live' : ''}${burst ? ' is-burst' : ''}`}
+        className={`lm-wa${live ? ' is-live' : ''}${burst ? ' is-burst' : ''}${sent ? ' is-sent' : ''}`}
         href={WA_LINK}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Scrivici su WhatsApp"
         data-cursor="whatsapp"
-        onPointerDown={() => setBurst(true)}
+        onPointerDown={() => {
+          setBurst(true)
+          setSent(typedRef.current?.textContent || TYPED_HEAD + TYPED_TAILS[0])
+        }}
         onAnimationEnd={() => setBurst(false)}
       >
         <span className="lm-wa-flash" aria-hidden="true" />
 
         <span className="lm-wa-head">
           <span className="lm-wa-avatar" aria-hidden="true">
-            L
+            <i className="lm-wa-ring" />L
           </span>
           <span className="lm-wa-who">
             <b>Lumino</b>
@@ -224,10 +230,20 @@ export default function WhatsAppBlock() {
 
         <span className="lm-wa-bubble">
           Ciao 👋 Raccontaci del tuo progetto — rispondiamo di solito in giornata.
-          <span className="lm-wa-ticks" aria-hidden="true">
-            ✓✓
+          <span className="lm-wa-time" aria-hidden="true">
+            ora
           </span>
         </span>
+
+        {/* Il messaggio inviato: compare solo dopo il tocco. */}
+        {sent ? (
+          <span className="lm-wa-bubble is-out">
+            {sent}
+            <span className="lm-wa-time" aria-hidden="true">
+              ora <b className="lm-wa-ticks">✓✓</b>
+            </span>
+          </span>
+        ) : null}
 
         {/* Finto campo: un div, non un input — non deve aprire la tastiera. */}
         <span className="lm-wa-composer">
