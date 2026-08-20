@@ -115,26 +115,20 @@ body {
   border-bottom: 1px solid transparent;
 }
 
+/* Il contenitore del marchio: decide colore e misura, il disegno lo fa .lm-wm
+   (vedi Wordmark.tsx). Allineato in verticale col pulsante menu, che è alto
+   2.6rem: `align-items: center` sulla nav ci pensa, qui serve solo che la
+   scatola sia alta quanto il testo e non di più. */
 .lm-wordmark {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1.25rem, 1.7vw, 1.6rem);
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  --wm-size: clamp(1.35rem, 1.9vw, 1.75rem);
   color: var(--cream);
   text-decoration: none;
   display: inline-flex;
-  align-items: baseline;
-  position: relative;
+  align-items: center;
+  line-height: 1;
 }
-/* La "ı" del wordmark è senza puntino: il puntino è questa luce calda. */
-.lm-wordmark-spark {
-  position: absolute;
-  width: 0.3em;
-  height: 0.3em;
-  border-radius: 50%;
-  background: var(--red);
-  box-shadow: 0 0 0.85em var(--red);
-  pointer-events: none;
+.lm-wordmark.is-small {
+  --wm-size: 1.15rem;
 }
 
 .lm-menu-btn {
