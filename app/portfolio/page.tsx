@@ -359,7 +359,7 @@ export default function PortfolioPage() {
             Esempi di siti<br />che <em>realizziamo</em>.
           </h1>
           <p className="lp-sub">
-            Esempi di siti che potremmo realizzare per il tuo locale. Clicca su uno per vederlo dal vivo.
+            Esempi di siti che potremmo realizzare per la tua attività. Clicca su uno per vederlo dal vivo.
           </p>
         </section>
 
