@@ -64,19 +64,53 @@ export default function Hero() {
 
     let raf = 0
     let running = false
-    /* Tre condizioni, tutte necessarie: l'entrata deve essere finita (prima
-       comanda il CSS), l'hero deve essere in vista, e il movimento deve essere
-       ammesso. Basta che una cada e il loop si ferma. */
+    /* L'entrata è finita (o è stata interrotta)? Finché non lo è, comanda il
+       CSS: un'animazione in corso ha la precedenza sullo stile inline, quindi
+       il driver può anche scrivere ma non si vede nulla. */
     let settled = false
     let visible = true
     let motionOk = !prefersReducedMotion()
 
+    /**
+     * Chiude l'entrata, subito.
+     *
+     * `is-settled` toglie le animazioni d'ingresso (`animation: none`) e mette
+     * gli elementi al loro stato d'arrivo. Da quel momento lo stile inline del
+     * driver ha via libera.
+     *
+     * Si chiama al primo pixel di scroll, non a fine entrata: erano due cose
+     * che si contendevano le stesse proprietà, e vinceva sempre l'animazione.
+     * Chi scrollava mentre l'hero stava ancora entrando non vedeva succedere
+     * niente finché l'entrata non finiva da sola — e non era una questione di
+     * durate, era la cascata.
+     *
+     * `driver.update()` alla fine e non al prossimo fotogramma: così la scena
+     * passa dallo stato d'arrivo alla posizione che le compete per lo scroll
+     * corrente dentro lo STESSO frame, e non si vede lampeggiare la
+     * composizione ferma prima che l'uscita la sposti.
+     */
+    const settleNow = () => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(settle)
+      hero.classList.add('is-settled')
+      start()
+      driver.update()
+    }
+
     const loop = () => {
+      /* Il primo pixel di scroll chiude l'entrata. La condizione sta qui e non
+         in un listener perché il loop gira già: un secondo ascoltatore dello
+         stesso numero è solo un'altra cosa che può disallinearsi. */
+      if (!settled && window.scrollY > 0) settleNow()
       driver.update()
       raf = requestAnimationFrame(loop)
     }
+    /* Il loop parte SENZA aspettare l'entrata: è lui che si accorge dello
+       scroll. Finché l'entrata è in corso non dipinge nulla di visibile — al
+       progresso zero esce subito — ma è vivo e pronto. */
     const start = () => {
-      if (running || !settled || !visible || !motionOk) return
+      if (running || !visible || !motionOk) return
       running = true
       raf = requestAnimationFrame(loop)
     }
@@ -86,15 +120,9 @@ export default function Hero() {
       cancelAnimationFrame(raf)
     }
 
-    /* Finché l'entrata è in corso comanda il CSS: un'animazione in corso ha la
-       precedenza sullo stile inline, quindi scrivere adesso non servirebbe a
-       nulla e al termine dell'animazione tornerebbe tutto indietro di scatto.
-       `is-settled` stacca le animazioni d'entrata e lascia il campo al driver. */
-    const settle = window.setTimeout(() => {
-      settled = true
-      hero.classList.add('is-settled')
-      start()
-    }, HERO_ENTRANCE_MS)
+    /* Se nessuno scrolla, l'entrata finisce per conto suo e a quel punto va
+       comunque staccata: da lì in poi il campo è del driver. */
+    const settle = window.setTimeout(settleNow, HERO_ENTRANCE_MS)
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -118,6 +146,12 @@ export default function Hero() {
     }
     narrow.addEventListener('change', syncExit)
     syncExit()
+
+    /* Chi ricarica a metà pagina non deve vedere un'entrata: è già oltre.
+       Si chiude qui, prima del primo fotogramma, così l'hero compare già nello
+       stato che gli compete per la posizione in cui si trova. Va dopo
+       syncExit(), altrimenti il primo dipinto userebbe il profilo sbagliato. */
+    if (window.scrollY > 0) settleNow()
 
     /* Il parallasse è roba da mouse: col dito non esiste il passare sopra
        senza toccare. Il puntatore condiviso si accende solo se serve. */
