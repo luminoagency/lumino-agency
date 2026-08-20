@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY } from '@/lib/company'
 import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
+import { WA_LINK } from './whatsappLink'
 
 /**
  * Blocco WhatsApp della sezione Contatti.
@@ -19,10 +20,10 @@ import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } f
  * Il verde di WhatsApp è solo un accento — pulsante di invio e spunte. Il resto
  * è la nostra palette: un blocco verde su una vetrina scura sarebbe un corpo
  * estraneo.
+ *
+ * Il link col messaggio precompilato viene da whatsappLink.ts: lo stesso che
+ * usano il pulsante flottante e la scorciatoia nel menu.
  */
-
-const MESSAGE = 'Ciao Lumino, ho visto il vostro sito e vorrei parlarvi di un progetto.'
-const WA_LINK = `${COMPANY.whatsapp.waLink}?text=${encodeURIComponent(MESSAGE)}`
 
 /* Il testo che si scrive da solo: la testa resta, la coda ruota. */
 const TYPED_HEAD = 'Ciao Lumino, vorrei un sito per'
