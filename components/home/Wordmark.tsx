@@ -1,24 +1,44 @@
 /**
- * Wordmark "Lumıno".
+ * Wordmark LUMINO.
  *
- * La i è U+0131 — i SENZA puntino. Il puntino non è tipografico: è una luce
- * calda disegnata in CSS (.lm-il::after) che all'hover si stacca e sale.
- * Per questo ogni lettera è un <b> separato.
+ * Lo stesso carattere display del wordmark gigante dell'hero, in maiuscolo e
+ * stretto. Prima era un serif generico con un puntino luminoso che fluttuava
+ * sopra una "ı" senza puntino: due marchi diversi nella stessa schermata, e
+ * quello piccolo sembrava di un'altra epoca.
  *
- * Il nome resta leggibile per gli screen reader grazie all'aria-label di chi
- * lo contiene, quindi qui le lettere sono decorative.
+ * La firma è la I nel gradiente rosso→rosa→viola, la stessa dell'hero. Il
+ * punto luminoso non è stato spostato: è stato tolto, perché quella luce ora
+ * ce l'ha la I.
+ *
+ * UN SOLO componente per tutti i posti in cui il marchio compare — nav, menu,
+ * footer, preloader. Misura e colore li decide il contenitore con `--wm-size`
+ * e `color`, non una copia del markup: due copie divergono al primo ritocco.
+ *
+ * Le lettere sono decorative: il nome per gli screen reader lo porta
+ * l'aria-label di chi contiene il wordmark.
  */
-export default function Wordmark() {
+
+const LETTERS = ['L', 'U', 'M', 'I', 'N', 'O'] as const
+
+export default function Wordmark({
+  /** false dove l'ingresso a lettere lo governa il contenitore (il preloader). */
+  animated = true,
+}: {
+  animated?: boolean
+}) {
   return (
-    <span className="lm-wm" aria-hidden="true">
-      <b>L</b>
-      <b>u</b>
-      <b>m</b>
-      <b className="lm-il">
-        <span>{'ı'}</span>
-      </b>
-      <b>n</b>
-      <b>o</b>
+    <span className={`lm-wm${animated ? '' : ' is-static'}`} aria-hidden="true">
+      {LETTERS.map((letter, i) => (
+        <b
+          key={letter}
+          className={letter === 'I' ? 'lm-wm-i' : undefined}
+          /* L'indice serve al ritardo: entrata a lettere e bagliore che
+             attraversa da sinistra a destra sono lo stesso scaglionamento. */
+          style={{ ['--i' as string]: i }}
+        >
+          {letter}
+        </b>
+      ))}
     </span>
   )
 }
