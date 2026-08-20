@@ -3,7 +3,8 @@ import Link from 'next/link'
 import SiteChrome from '@/components/site/SiteChrome'
 
 export const metadata: Metadata = {
-  title: 'Lo studio · Lumino',
+  alternates: { canonical: '/chi-siamo' },
+  title: 'Lo studio',
   description:
     'Lumino è uno studio specializzato in siti web per la ristorazione. Lavoriamo solo con chi gestisce un locale.',
 }
