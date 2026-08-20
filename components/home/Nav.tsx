@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Wordmark from './Wordmark'
-import { prefersReducedMotion } from './useMotion'
+import { prefersReducedMotion, scrollPageTo } from './useMotion'
 import { WA_LINK } from './whatsappLink'
 import { COMPANY } from '@/lib/company'
 
@@ -80,6 +80,15 @@ export default function Nav() {
     target?.scrollIntoView({ behavior: 'auto', block: 'start' })
   }
 
+  /* Il marchio riporta in cima, scorrendo. Su questa pagina un <Link href="/">
+     ricaricherebbe la rotta su cui siamo già: non succede niente, e chi ha
+     cliccato resta dov'era senza capire perché. */
+  const toTop = (event: React.MouseEvent) => {
+    if (window.location.pathname !== '/') return
+    event.preventDefault()
+    scrollPageTo(0)
+  }
+
   const navigate = (event: React.MouseEvent, href: string) => {
     event.preventDefault()
     setOpen(false)
@@ -101,7 +110,13 @@ export default function Nav() {
   return (
     <>
       <nav className={`lm-nav${scrolled ? ' is-scrolled' : ''}`}>
-        <Link href="/" className="lm-wordmark" aria-label="Lumino — home" data-cursor="grow">
+        <Link
+          href="/"
+          className="lm-wordmark"
+          aria-label="Lumino — torna in cima"
+          data-cursor="grow"
+          onClick={toTop}
+        >
           <Wordmark />
         </Link>
 
