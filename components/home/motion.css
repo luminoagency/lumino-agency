@@ -973,9 +973,16 @@ body.lm-loaded .lm-wm:not(.is-static) b {
   position: absolute;
   top: max(1rem, env(safe-area-inset-top));
   right: max(1rem, env(safe-area-inset-right));
-  /* Sopra la cornice, sopra il velo, sopra l'iframe: da qui non lo copre più
-     niente, e non scorre via perché non è dentro nulla che scorra. */
-  z-index: 40;
+  /* L'ultimo dell'overlay, con un margine largo: sopra la cornice, sopra il
+     velo che raccoglie il primo gesto, sopra l'iframe. Non scorre via perché
+     non è dentro niente che scorra.
+     Il numero è alto di proposito e non "quanto basta": qui dentro nascono
+     elementi nuovi ogni tanto, e la via d'uscita non deve mai ritrovarsi
+     seconda. */
+  z-index: 100;
+  /* Esplicito: se un giorno un antenato spegnesse i puntatori per animare
+     qualcosa, il pulsante deve continuare a ricevere il click. */
+  pointer-events: auto;
   appearance: none;
   border: 0;
   background: transparent;
