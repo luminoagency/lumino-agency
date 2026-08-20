@@ -142,7 +142,7 @@ export default function Preloader() {
   return (
     <div className={`lm-pre${done ? ' is-done' : ''}`} aria-hidden="true">
       <div className="lm-pre-word">
-        <Wordmark />
+        <Wordmark animated={false} />
       </div>
       <div className="lm-pre-count">{count}</div>
     </div>
