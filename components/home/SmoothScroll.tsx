@@ -34,6 +34,15 @@ export default function SmoothScroll() {
     const onScroll = () => ScrollTrigger.update()
     lenis.on('scroll', onScroll)
 
+    // ANCHE l'evento nativo, non solo quello di Lenis.
+    //
+    // Lenis emette il proprio evento quando è lui a muovere la pagina, ma uno
+    // scroll fatto da codice — `scrollIntoView` di un'ancora, il salto del menu,
+    // un ripristino di posizione del browser — cambia lo scroll senza passare
+    // da lui. In quei casi ScrollTrigger non veniva avvisato e restava fermo:
+    // la sezione pinnata smetteva di essere pinnata e lo scrub non partiva.
+    window.addEventListener('scroll', onScroll, { passive: true })
+
     const raf = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(raf)
     gsap.ticker.lagSmoothing(0)
@@ -60,10 +69,36 @@ export default function SmoothScroll() {
     document.fonts?.ready.then(refresh).catch(() => {})
     const fallback = window.setTimeout(refresh, 2500)
 
+    /* E soprattutto: a ogni volta che la pagina cambia altezza.
+     *
+     * ScrollTrigger misura una volta dove comincia e dove finisce ogni
+     * effetto. Se dopo quella misura la pagina si allunga — un'immagine che
+     * arriva, una sezione che si apre, un blocco che cresce — quelle posizioni
+     * restano riferite a una pagina che non esiste più, e la sezione pinnata
+     * smette semplicemente di pinnare. Non è un caso di scuola: è successo
+     * appena la home è cresciuta di un paio di sezioni.
+     *
+     * Il ricalcolo è rimandato di un attimo perché un cambio di altezza arriva
+     * spesso a raffica, e rifare i conti a ogni singolo passo costerebbe più
+     * dell'aggiornamento stesso. */
+    let settle = 0
+    let lastHeight = document.documentElement.scrollHeight
+    const watchHeight = new ResizeObserver(() => {
+      const height = document.documentElement.scrollHeight
+      if (Math.abs(height - lastHeight) < 4) return
+      lastHeight = height
+      window.clearTimeout(settle)
+      settle = window.setTimeout(() => ScrollTrigger.refresh(), 180)
+    })
+    watchHeight.observe(document.body)
+
     return () => {
       window.clearTimeout(fallback)
+      window.clearTimeout(settle)
+      watchHeight.disconnect()
       locks.disconnect()
       lenis.off('scroll', onScroll)
+      window.removeEventListener('scroll', onScroll)
       gsap.ticker.remove(raf)
       gsap.ticker.lagSmoothing(500, 33)
       lenis.destroy()
