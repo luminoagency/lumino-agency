@@ -220,34 +220,38 @@ export default function WorkViewer({
     <div className="lm-viewer" role="dialog" aria-modal="true" aria-label={`Il sito di ${work.client}`}>
       <div className="lm-viewer-backdrop" ref={backdropRef} onClick={close} />
 
+      {/* La via d'uscita sta FUORI dalla cornice, non dentro la barra finta del
+          browser: lì era un cerchietto chiaro sopra un sito che poteva essere
+          altrettanto chiaro, e su telefono finiva stretto fra le altre voci.
+          Qui è fisso sullo schermo, sopra ogni cosa, e non se ne va mai —
+          nemmeno scorrendo dentro il sito incorporato.
+          Esc e il click sul fondo continuano a funzionare, ma non si può
+          chiedere a chi non li conosce di indovinarli. */}
+      <button
+        type="button"
+        className="lm-viewer-exit"
+        onClick={close}
+        ref={closeRef}
+        aria-label="Chiudi anteprima"
+        data-cursor="grow"
+      >
+        <span className="lm-viewer-exit-word" aria-hidden="true">
+          Chiudi
+        </span>
+        <span className="lm-viewer-exit-ring" aria-hidden="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M6 6l12 12M18 6L6 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      </button>
+
       <div className="lm-viewer-frame" ref={frameRef}>
-        <BrowserChrome
-          tone="viewer"
-          label={work.barLabel}
-          actions={
-            <>
-              <a
-                className="lm-viewer-out"
-                href={work.siteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-cursor="grow"
-              >
-                Apri in una scheda nuova
-              </a>
-              <button
-                type="button"
-                className="lm-viewer-close"
-                onClick={close}
-                ref={closeRef}
-                aria-label="Chiudi"
-                data-cursor="grow"
-              >
-                <span aria-hidden="true">✕</span>
-              </button>
-            </>
-          }
-        />
+        <BrowserChrome tone="viewer" label={work.barLabel} />
 
         <div className="lm-viewer-body">
           {showEmbed && !blocked ? (
@@ -316,6 +320,31 @@ export default function WorkViewer({
               )}
             </div>
           ) : null}
+        </div>
+
+        {/* Barra di piede sempre visibile: dice di chi è il sito che si sta
+            guardando — dentro l'iframe non c'è modo di saperlo — e offre la
+            via d'uscita in avanti, quella che porta al sito vero. */}
+        <div className="lm-viewer-bar">
+          <span className="lm-viewer-bar-who">
+            <b>{work.client}</b>
+            <i>{work.sector}</i>
+          </span>
+
+          {work.siteUrl ? (
+            <a
+              className="lm-viewer-bar-out"
+              href={work.siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-cursor="grow"
+            >
+              Apri in una nuova scheda
+              <span aria-hidden="true">↗</span>
+            </a>
+          ) : (
+            <span className="lm-viewer-bar-out is-quiet">Online a breve</span>
+          )}
         </div>
       </div>
     </div>
