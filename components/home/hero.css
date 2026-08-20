@@ -204,37 +204,6 @@
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.6);
 }
 
-/* ─── Etichette ──────────────────────────────────────────────────────────── */
-/* Stanno negli spazi vuoti, mai sopra una finestra. t1 parte sotto la nav
-   fissa, non a 9% come nel riferimento: lì la nav non c'era. */
-.lm-hero-tag {
-  position: absolute;
-  z-index: 7;
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  border: 1px solid var(--line);
-  padding: 0.4rem 0.7rem;
-  border-radius: 20px;
-  background: rgba(23, 18, 16, 0.55);
-  backdrop-filter: blur(6px);
-  white-space: nowrap;
-}
-.lm-hero-tag.t1 {
-  top: max(12.5%, 6.4rem);
-  left: 50%;
-  translate: -50% 0;
-}
-.lm-hero-tag.t2 {
-  top: 31%;
-  left: 26%;
-}
-.lm-hero-tag.t3 {
-  top: 31%;
-  right: 25%;
-}
-
 /* ─── Payoff e invito ────────────────────────────────────────────────────── */
 /* Sopra la striscia, non addosso: sotto c'è il nastro dei progetti. */
 .lm-hero-foot {
@@ -349,7 +318,7 @@
    1. il bagliore si accende
    2. le lettere salgono una a una, ruotate, e si raddrizzano
    3. le finestre volano dentro inclinate e si posano
-   4. etichette, payoff e striscia in dissolvenza
+   4. payoff e striscia in dissolvenza
 
    Lo stato di partenza è sotto `body.lm-js`: senza JavaScript non si nasconde
    niente e l'hero resta interamente leggibile. Il via lo dà `body.lm-loaded`
@@ -412,13 +381,11 @@ body.lm-loaded .lm-hero-win.w2 { animation-delay: 0.95s; }
 body.lm-loaded .lm-hero-win.w3 { animation-delay: 1.05s; }
 body.lm-loaded .lm-hero-win.w4 { animation-delay: 1.15s; }
 
-/* 4 — etichette, payoff, striscia */
-body.lm-js .lm-hero-tag,
+/* 4 — payoff e striscia */
 body.lm-js .lm-hero-foot,
 body.lm-js .lm-hticker {
   opacity: 0;
 }
-body.lm-loaded .lm-hero-tag,
 body.lm-loaded .lm-hero-foot,
 body.lm-loaded .lm-hticker {
   animation: lm-hero-fade 0.9s forwards;
@@ -428,9 +395,6 @@ body.lm-loaded .lm-hticker {
     opacity: 1;
   }
 }
-body.lm-loaded .lm-hero-tag.t1 { animation-delay: 1.5s; }
-body.lm-loaded .lm-hero-tag.t2 { animation-delay: 1.62s; }
-body.lm-loaded .lm-hero-tag.t3 { animation-delay: 1.74s; }
 body.lm-loaded .lm-hero-foot { animation-duration: 1s; animation-delay: 2.05s; }
 body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
 
@@ -452,7 +416,6 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
   transform: none;
   rotate: var(--rot, 0deg);
 }
-.lm-hero.is-settled .lm-hero-tag,
 .lm-hero.is-settled .lm-hero-foot,
 .lm-hero.is-settled .lm-hticker {
   animation: none;
@@ -460,8 +423,8 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
 }
 
 /* ─── Desktop stretto ────────────────────────────────────────────────────── */
-/* I pezzi non devono toccarsi: prima si ritirano le etichette laterali, poi
-   quella centrale, e le finestre salgono. */
+/* I pezzi non devono toccarsi: il wordmark si stringe e le finestre si
+   restringono con lui. */
 @media (min-width: 821px) and (max-width: 1100px) {
   .lm-hero-ch {
     font-size: 17vw;
@@ -474,15 +437,8 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
   .lm-hero-win.w4 {
     width: 15.5%;
   }
-  .lm-hero-tag.t2,
-  .lm-hero-tag.t3 {
-    display: none;
-  }
 }
 @media (min-width: 821px) and (max-width: 900px) {
-  .lm-hero-tag.t1 {
-    display: none;
-  }
   /* Stesso pavimento in rem della regola base: senza, un telefono in
      orizzontale (844×390 prende questo ramo) porta le due finestre di sopra
      sotto la nav fissa. */
@@ -510,9 +466,6 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
   }
   .lm-hero-win.w4 {
     bottom: max(13%, 9.4rem);
-  }
-  .lm-hero-tag {
-    display: none;
   }
 }
 
@@ -567,12 +520,6 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
     --rot: -8deg;
   }
 
-  /* Non c'è spazio: le etichette starebbero addosso alle finestre, ed è
-     esattamente ciò che non devono fare. */
-  .lm-hero-tag {
-    display: none;
-  }
-
   .lm-hero-foot {
     flex-direction: column;
     align-items: flex-start;
@@ -621,7 +568,6 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
 @media (prefers-reduced-motion: reduce) {
   body.lm-js .lm-hero-ch,
   body.lm-js .lm-hero-win,
-  body.lm-js .lm-hero-tag,
   body.lm-js .lm-hero-foot,
   body.lm-js .lm-hticker {
     opacity: 1;
@@ -636,7 +582,6 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
   .lm-hero-bloom-core,
   .lm-hero-ch,
   .lm-hero-win,
-  .lm-hero-tag,
   .lm-hero-foot,
   .lm-hticker,
   .lm-hticker-track {
