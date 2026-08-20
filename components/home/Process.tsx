@@ -169,7 +169,14 @@ export default function Process() {
     apply(0)
 
     return () => {
-      trigger.kill()
+      /* kill(true) e non kill(): senza il revert, il div che ScrollTrigger
+         inserisce per tenere lo spazio del pin resta in pagina e la sezione
+         si ritrova alta 300vh con dentro un'animazione ferma a metà. È
+         esattamente quello che si vedeva restringendo la finestra oltre la
+         soglia. Il refresh rimisura tutto quello che stava sotto. */
+      trigger.kill(true)
+      ScrollTrigger.refresh()
+
       section.classList.remove('is-pinned')
       media.classList.remove('is-scrubbed')
       layers.forEach((layer) => {
@@ -178,24 +185,43 @@ export default function Process() {
       bars.forEach((bar) => {
         bar.style.transform = ''
       })
+      steps.forEach((step) => step.classList.remove('is-active'))
       stages.forEach((stage) => stage.style.removeProperty('--seek'))
     }
   }, [mode])
 
-  /* Senza pin (mobile): ogni demo parte da solo quando entra in viewport. */
+  /* ── Mobile: nessun pin, nessuno scrub, autoplay a tempo ────────────────
+     I tre atti sono impilati in verticale, ciascuno col proprio testo, e
+     ognuno parte per conto suo quando entra in viewport.
+     L'animazione avanza a TEMPO: `--seek` resta a 0 e l'unica cosa che
+     cambia è animation-play-state. Zero lavoro JS per fotogramma — su un
+     telefono è il modo più economico di far muovere qualcosa.
+     Prima non c'era nulla che facesse avanzare l'animazione: senza pin non
+     arrivava nessun progresso, e la sezione restava al primo fotogramma. */
   useEffect(() => {
     const section = sectionRef.current
     if (!section || mode !== 'auto') return
 
     const stages = Array.from(section.querySelectorAll<HTMLElement>('.lm-demo-stage'))
+    /* Lo scrub, se c'è stato prima, ha lasciato un fotogramma scritto sopra:
+       finché resta, l'atto ripartirebbe da lì invece che da zero. */
+    stages.forEach((stage) => stage.style.removeProperty('--seek'))
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => entry.target.classList.toggle('is-live', entry.isIntersecting))
       },
-      { threshold: 0.25 },
+      /* Abbastanza dentro da essere davvero guardato: sotto questa soglia un
+         atto partirebbe mentre è ancora un bordo in fondo allo schermo, e
+         chi arriva a leggerlo lo trova già a metà. */
+      { threshold: 0.4 },
     )
     stages.forEach((stage) => observer.observe(stage))
-    return () => observer.disconnect()
+
+    return () => {
+      observer.disconnect()
+      stages.forEach((stage) => stage.classList.remove('is-live'))
+    }
   }, [mode])
 
   return (
@@ -221,6 +247,10 @@ export default function Process() {
               <div
                 className={`lm-process-layer${i === 0 ? ' is-active' : ''}`}
                 key={step.num}
+                /* Su mobile media e testi vengono srotolati nella stessa
+                   griglia e riordinati a coppie: serve sapere di quale atto
+                   è questo riquadro. Vedi `display: contents` in process.css. */
+                style={{ ['--act' as string]: i }}
               >
                 {step.ready && step.sources ? (
                   <video poster={step.poster} muted loop playsInline autoPlay preload="metadata">
@@ -243,6 +273,7 @@ export default function Process() {
                 ref={(el) => {
                   stepsRef.current[i] = el
                 }}
+                style={{ ['--act' as string]: i }}
               >
                 <span className="lm-process-num">{step.num}</span>
                 <h3 className="lm-display lm-d3">{step.title}</h3>
