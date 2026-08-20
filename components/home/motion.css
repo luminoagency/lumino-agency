@@ -350,45 +350,86 @@ body.lm-cursor-away .lm-cur-ring {
   z-index: 2;
 }
 
-/* ─── Wordmark: la "ı" senza puntino, il puntino è una luce ──────────────── */
+/* ─── Wordmark ────────────────────────────────────────────────────────────
+   LUMINO nel display dell'hero, non in un serif generico: è lo stesso marchio,
+   e vederne due versioni diverse nella stessa schermata lo faceva sembrare di
+   due epoche. La firma è la I nel gradiente. Il punto luminoso che fluttuava
+   sopra la vecchia "ı" non c'è più: quella luce ora ce l'ha la I.
+   ═══════════════════════════════════════════════════════════════════════════ */
 .lm-wm {
   display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: var(--wm-size, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  text-transform: uppercase;
+  /* Rimpicciolire con la scala e non col corpo del carattere: il corpo è una
+     proprietà di layout e rimpaginerebbe la nav a ogni passo della
+     transizione. Il risultato a schermo è lo stesso. */
+  transform: scale(var(--wm-scale, 1));
+  transform-origin: left center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .lm-wm b {
-  font-weight: 500;
+  font-weight: 400;
   display: inline-block;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: currentColor;
+  transition:
+    color 0.35s,
+    text-shadow 0.35s;
 }
-.lm-wordmark:hover .lm-wm b:nth-child(2),
-.lm-wordmark:active .lm-wm b:nth-child(2) {
-  transform: translateY(-2px);
+/* La I è la firma: stesso gradiente dell'hero, e si legge sia sul fondo scuro
+   della nav sia su quello chiaro del menu. */
+.lm-wm .lm-wm-i {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: filter 0.35s;
 }
-.lm-wordmark:hover .lm-wm b:nth-child(4),
-.lm-wordmark:active .lm-wm b:nth-child(4) {
-  transform: translateY(-1px);
+
+/* Entrata: le lettere salgono una a una, in fretta. Il marchio è la prima cosa
+   che si vede — se ci mette troppo, si è già guardato altrove. */
+body.lm-js .lm-wm:not(.is-static) b {
+  opacity: 0;
+  transform: translateY(70%);
 }
-.lm-il {
-  position: relative;
-  display: inline-block;
+body.lm-loaded .lm-wm:not(.is-static) b {
+  animation: lm-wm-in 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  animation-delay: calc(var(--i) * 45ms);
 }
-.lm-il::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0.04em;
-  width: 0.2em;
-  height: 0.2em;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe2b0, var(--red) 70%);
-  transform: translateX(-50%);
-  box-shadow: 0 0 10px 1px rgba(255, 180, 110, 0.85);
-  transition: 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+@keyframes lm-wm-in {
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-/* All'hover la luce si stacca e sale. */
-.lm-wordmark:hover .lm-il::after,
-.lm-wordmark:active .lm-il::after {
-  transform: translateX(-50%) translateY(-6px) scale(1.35);
-  box-shadow: 0 0 22px 4px rgba(255, 180, 110, 0.9);
+
+/* Hover: un bagliore caldo attraversa il marchio da sinistra a destra. Non è
+   un elemento che si muove sopra le lettere — sono le lettere stesse che si
+   accendono una dopo l'altra, con lo stesso scaglionamento dell'entrata.
+   Niente si sposta: solo colore e alone, quindi nessun sussulto del layout.
+   Solo dove c'è un mouse: col dito non esiste il passare sopra. */
+@media (min-width: 821px) and (pointer: fine) {
+  .lm-wordmark:hover .lm-wm b {
+    color: #ffe7c2;
+    text-shadow: 0 0 16px rgba(255, 190, 110, 0.5);
+    transition-delay: calc(var(--i) * 45ms);
+  }
+  .lm-wordmark:hover .lm-wm .lm-wm-i {
+    /* La I resta nel gradiente: si accende, non cambia colore. */
+    color: transparent;
+    filter: brightness(1.3) saturate(1.1);
+    text-shadow: 0 0 20px rgba(236, 106, 156, 0.5);
+    transition-delay: calc(var(--i) * 45ms);
+  }
+}
+
+/* La nav si compatta scorrendo: il marchio la segue. */
+.lm-nav.is-scrolled .lm-wm {
+  --wm-scale: 0.86;
 }
 
 /* ─── Pulsante menu: 4 punti che ruotano e prendono i colori ─────────────── */
@@ -520,12 +561,12 @@ body.lm-cursor-away .lm-cur-ring {
   justify-content: space-between;
   align-items: center;
 }
+/* Variante su fondo chiaro: lettere in inchiostro, e la I resta nel gradiente
+   — rosso, rosa e viola si leggono anche su bianco, quindi la firma non cambia
+   fra la nav scura e il menu chiaro. */
 .lm-ov-top .lm-wordmark {
   color: var(--ink);
-}
-.lm-ov-top .lm-il::after {
-  background: radial-gradient(circle at 35% 30%, var(--red), var(--bordeaux) 70%);
-  box-shadow: none;
+  --wm-size: clamp(1.25rem, 1.8vw, 1.6rem);
 }
 .lm-close {
   appearance: none;
@@ -1090,6 +1131,22 @@ body.lm-cursor-away .lm-cur-ring {
   .lm-viewer-exit:focus-visible .lm-viewer-exit-ring {
     transform: none;
   }
+  /* Il marchio non entra a lettere e non si rimpicciolisce scorrendo: sta
+     fermo dov'è, alla sua misura piena. */
+  body.lm-js .lm-wm b {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .lm-wm,
+  .lm-pre-word .lm-wm {
+    transition: none;
+    animation: none;
+    translate: none;
+  }
+  .lm-nav.is-scrolled .lm-wm {
+    --wm-scale: 1;
+  }
 }
 
 /* Visibile durante la crescita, e unica cosa mostrata se il sito rifiuta
@@ -1193,21 +1250,23 @@ body.lm-cursor-away .lm-cur-ring {
   gap: 18px;
 }
 .lm-pre-word {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(48px, 10vw, 120px);
-  font-weight: 400;
+  --wm-size: clamp(48px, 10vw, 120px);
   overflow: hidden;
   height: 1.1em;
   color: var(--cream);
   display: flex;
   align-items: center;
 }
+/* Qui il marchio sale intero, non lettera per lettera: è una splash, dura un
+   attimo, e sei ingressi scaglionati non farebbero in tempo a leggersi.
+   Si trasla con la proprietà `translate`, non dentro `transform`: lì c'è già
+   la scala del wordmark, e una delle due cancellerebbe l'altra. */
 .lm-pre-word .lm-wm {
-  transform: translateY(105%);
+  translate: 0 105%;
   animation: lm-preup 0.9s 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes lm-preup {
-  to { transform: none; }
+  to { translate: 0 0; }
 }
 .lm-pre-count {
   font-size: 13px;
