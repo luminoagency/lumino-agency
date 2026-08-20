@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Work } from './worksData'
 import BrowserChrome from './BrowserChrome'
 import WorkMediaView from './WorkMediaView'
@@ -216,7 +217,23 @@ export default function WorkViewer({
     }
   }, [loaded, blocked, taken])
 
-  return (
+  /**
+   * L'overlay si monta in fondo al <body>, non dove sta il componente.
+   *
+   * Non è una preferenza stilistica, è l'unico modo di uscire dal contesto di
+   * impilamento in cui era finito. `.lm main` è `position: relative; z-index: 2`
+   * (serve a tenere il contenuto sopra gli aloni, vedi motion.css): questo crea
+   * un contesto, e lo z-index 900 dell'overlay valeva soltanto DENTRO main.
+   * Fuori, main pesava 2 contro i 60 della nav — quindi la nav copriva tutto
+   * l'overlay, backdrop compreso, e il pulsante di chiusura in alto a destra
+   * finiva esattamente dietro la sua fascia: c'era, ma non lo si vedeva e non
+   * lo si poteva cliccare.
+   *
+   * Attaccato al body, i 900 tornano a confrontarsi con i 60 della nav e
+   * vincono. È anche il posto giusto per un dialogo modale: un `aria-modal`
+   * annidato dentro `<main>` racconta una gerarchia che non esiste.
+   */
+  const overlay = (
     <div className="lm-viewer" role="dialog" aria-modal="true" aria-label={`Il sito di ${work.client}`}>
       <div className="lm-viewer-backdrop" ref={backdropRef} onClick={close} />
 
@@ -349,4 +366,9 @@ export default function WorkViewer({
       </div>
     </div>
   )
+
+  /* Il componente si monta solo dopo un click, quindi `document` c'è sempre.
+     Il controllo resta perché un portal verso un body inesistente è l'errore
+     che si scopre in produzione e non in sviluppo. */
+  return typeof document === 'undefined' ? overlay : createPortal(overlay, document.body)
 }
