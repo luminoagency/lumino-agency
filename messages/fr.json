@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "title": "Lumino — Studio digital | Sites web sur mesure",
+    "description": "Studio digital : nous concevons et développons des sites sur mesure. Identité, interfaces et mouvement pour la restauration, l’hôtellerie, les entreprises et le retail.",
+    "ogImageAlt": "Lumino — Nous concevons et développons des sites dont on se souvient"
+  },
+
+  "nav": {
+    "menu": "Explorer",
+    "close": "Fermer",
+    "home": "Lumino — accueil",
+    "clientArea": "Espace client",
+    "company": "EMYRA LTD — Londres",
+    "languageLabel": "Langue",
+    "items": {
+      "about": "À propos",
+      "works": "Réalisations",
+      "sectors": "Ce que nous faisons",
+      "contact": "Contact"
+    }
+  },
+
+  "hero": {
+    "srTitle": "Lumino — studio digital. Nous concevons et développons des sites dont on se souvient.",
+    "payoffLead": "Nous concevons et développons des sites ",
+    "payoffAccent": "dont on se souvient.",
+    "cta": "Voir les réalisations",
+    "windowAlt": "{client} — site réalisé par Lumino"
+  },
+
+  "marquee": {
+    "words": ["Identité", "Interfaces", "Mouvement", "Code"]
+  },
+
+  "about": {
+    "kicker": "Le studio",
+    "titleLine1": "Nous sommes un studio,",
+    "titleLine2": "pas une agence.",
+    "body1Before": "La différence n’est pas la taille : c’est qui vous répond. Ici, le projet ne passe pas de service en service — ",
+    "body1Strong": "celui qui le dessine est celui qui l’écrit",
+    "body1After": ", et c’est la même personne du premier croquis à la ligne de code mise en ligne.",
+    "body2": "Nous prenons peu de projets à la fois, parce qu’un site bien fait demande de comprendre un métier avant de le représenter. Nous regardons comment vous travaillez, ce que vous vendez, qui pousse votre porte. Ensuite nous construisons quelque chose qui vous ressemble, et non le modèle de quelqu’un d’autre."
+  },
+
+  "works": {
+    "kicker": "Réalisations",
+    "title": "Ce que nous avons construit.",
+    "lead": "Survolez une carte pour voir le site défiler. Cliquez pour l’ouvrir et le parcourir vraiment, sans quitter cette page.",
+    "viewerLabel": "Le site de {client}",
+    "closePreview": "Fermer l’aperçu",
+    "close": "Fermer",
+    "openNewTab": "Ouvrir dans un nouvel onglet",
+    "openNewTabLong": "Ouvrir le site dans un nouvel onglet →",
+    "comingSoon": "Bientôt en ligne",
+    "loading": "Chargement du site…",
+    "tapToBrowse": "touchez pour naviguer"
+  },
+
+  "statement": {
+    "line1": "Un site n’est pas une brochure.",
+    "line2": "C’est le premier endroit où",
+    "line3": "quelqu’un vous choisit."
+  },
+
+  "process": {
+    "kicker": "Le design",
+    "steps": [
+      {
+        "num": "01",
+        "title": "Une ouverture qui arrête le pouce",
+        "body": "Le premier écran décide s’ils restent ou s’ils partent. Nous construisons des ouvertures qui ne ressemblent à aucune autre : une typographie qui réagit, des images qui respirent, aucun modèle tout fait."
+      },
+      {
+        "num": "02",
+        "title": "Un mouvement sur mesure",
+        "body": "Chaque animation a une raison d’être. Le mouvement guide le regard là où il faut, raconte le produit et reste sous les 60 millisecondes de réponse."
+      },
+      {
+        "num": "03",
+        "title": "Le téléphone d’abord",
+        "body": "80 % de vos clients arrivent depuis un mobile. Nous concevons d’abord pour eux, puis nous élargissons. Chargement sous les deux secondes, toujours."
+      }
+    ],
+    "acts": {
+      "wireframe": "maquette",
+      "alive": "vivant",
+      "mobile": "mobile",
+      "loading": "chargement",
+      "scores": ["Performance", "Accessibilité", "SEO"]
+    }
+  },
+
+  "sectors": {
+    "kicker": "Ce que nous faisons",
+    "lead": "Le métier change, pas la méthode. Chaque secteur a sa façon de se faire choisir : notre travail est de comprendre quelle est la vôtre.",
+    "buildLabel": "Ce que nous construisons",
+    "items": [
+      {
+        "name": "Restaurants",
+        "meta": "Carte · Réservations · Salle",
+        "body": "La carte est le produit : elle doit se mettre à jour dans la journée, se lire au pouce et se trouver sur Google. Des réservations qui arrivent directement en salle, sans intermédiaire qui retient une commission.",
+        "build": [
+          "Une carte que vous mettez à jour vous-même, sans nous appeler",
+          "Des réservations qui arrivent directement en salle",
+          "Des photos de plats traitées comme il faut",
+          "Des avis Google qui se mettent à jour tout seuls"
+        ]
+      },
+      {
+        "name": "Hôtels",
+        "meta": "Chambres · Réservation directe · Saisons",
+        "body": "Chaque réservation directe est une commission que vous ne payez pas. Des chambres racontées une par une, des disponibilités toujours justes, et un site qui change au rythme des saisons.",
+        "build": [
+          "Des chambres racontées une par une",
+          "La réservation directe, sans commission",
+          "Des disponibilités toujours alignées sur votre logiciel",
+          "Un site qui change au rythme des saisons"
+        ]
+      },
+      {
+        "name": "Entreprises",
+        "meta": "Identité · Catalogues · Force de vente",
+        "body": "Celui qui vous cherche en évalue trois autres en même temps. Le site doit dire en trente secondes ce que vous faites, pour qui, et pourquoi c’est vous — puis donner à la force de vente des documents qui tiennent la comparaison.",
+        "build": [
+          "Une identité visuelle cohérente partout",
+          "Un catalogue consultable et toujours à jour",
+          "Des supports que la force de vente utilise vraiment",
+          "Des contacts qui arrivent qualifiés"
+        ]
+      },
+      {
+        "name": "Commerce",
+        "meta": "Vitrine · Catalogue · Boutique",
+        "body": "La boutique physique et la boutique en ligne sont la même boutique. Un catalogue qui se feuillette vite, des stocks réels, et une raison de passer en boutique plutôt que d’attendre un livreur.",
+        "build": [
+          "Un catalogue qui se feuillette au pouce",
+          "Des stocks réels, boutique par boutique",
+          "Le retrait en boutique comme choix, pas comme pis-aller",
+          "Une vitrine qui fait entrer les gens"
+        ]
+      },
+      {
+        "name": "Immobilier",
+        "meta": "Portefeuille · Visites · Négociations",
+        "body": "Un bien se vend avec les photos et avec le chemin qui y mène. Des fiches qui se lisent au téléphone pendant une pause, et une demande de visite qui arrive avant celle de la concurrence.",
+        "build": [
+          "Des fiches de bien qui se lisent pendant une pause café",
+          "Des photos et des plans traités comme il faut",
+          "Une demande de visite en deux touches",
+          "Une recherche qui filtre vraiment"
+        ]
+      }
+    ]
+  },
+
+  "stats": {
+    "kicker": "En bref",
+    "items": [
+      { "value": 5, "suffix": "", "label": "secteurs dans lesquels nous avons déjà construit et mis en ligne" },
+      { "value": 100, "suffix": " %", "label": "des projets écrits de zéro, sans thème acheté" },
+      { "value": 1, "suffix": "", "label": "interlocuteur unique du premier croquis à la mise en ligne" }
+    ]
+  },
+
+  "contact": {
+    "kicker": "Contact",
+    "titleLine1": "Vous avez quelque chose",
+    "titleLine2Before": "à ",
+    "titleLine2Accent": "allumer ?",
+    "copied": "copié",
+    "responseTime": "Nous répondons par e-mail sous 1 jour ouvré."
+  },
+
+  "whatsapp": {
+    "message": "Bonjour Lumino, j’ai vu votre site et j’aimerais vous parler d’un projet.",
+    "typedHead": "Bonjour Lumino, je voudrais un site pour",
+    "typedTails": [" mon restaurant", " mon hôtel", " mon entreprise"],
+    "cta": "Écrivez-nous sur WhatsApp",
+    "status": "en ligne",
+    "bubble": "Bonjour 👋 Parlez-nous de votre projet — nous répondons en général dans la journée.",
+    "now": "maintenant"
+  },
+
+  "footer": {
+    "legalNav": "Liens légaux",
+    "links": {
+      "privacy": "Confidentialité",
+      "cookie": "Cookies",
+      "terms": "Conditions",
+      "gdpr": "RGPD"
+    }
+  }
+}
