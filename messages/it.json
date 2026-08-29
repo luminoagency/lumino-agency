@@ -4,7 +4,6 @@
     "description": "Studio digitale: progettiamo e costruiamo siti su misura. Identità, interfacce e movimento per ristoranti, hotel, aziende e retail.",
     "ogImageAlt": "Lumino — Progettiamo e costruiamo siti che si ricordano"
   },
-
   "nav": {
     "menu": "Esplora",
     "close": "Chiudi",
@@ -19,7 +18,6 @@
       "contact": "Contatti"
     }
   },
-
   "hero": {
     "srTitle": "Lumino — studio digitale. Progettiamo e costruiamo siti che si ricordano.",
     "payoffLead": "Progettiamo e costruiamo siti che ",
@@ -27,11 +25,16 @@
     "cta": "Guarda i lavori",
     "windowAlt": "{client} — sito realizzato da Lumino"
   },
-
   "marquee": {
-    "words": ["Identità", "Interfacce", "Movimento", "Codice"]
+    "words": [
+      "Identità",
+      "Interfacce",
+      "Movimento",
+      "Codice"
+    ],
+    "aria": "Identità, interfacce, movimento, codice",
+    "dragHint": "↔ trascina"
   },
-
   "about": {
     "kicker": "Lo studio",
     "titleLine1": "Siamo uno studio,",
@@ -41,7 +44,6 @@
     "body1After": ", e resta la stessa persona dal primo schizzo alla riga di codice che va online.",
     "body2": "Prendiamo pochi progetti per volta perché un sito fatto bene richiede di capire un mestiere prima di rappresentarlo. Guardiamo come lavori, cosa vendi, chi entra dalla porta. Poi costruiamo qualcosa che somigli a te e non al template di qualcun altro."
   },
-
   "works": {
     "kicker": "Lavori",
     "title": "Quello che abbiamo costruito.",
@@ -55,13 +57,11 @@
     "loading": "Carico il sito…",
     "tapToBrowse": "tocca per navigare"
   },
-
   "statement": {
     "line1": "Un sito non è una brochure.",
     "line2": "È il primo posto in cui",
     "line3": "qualcuno ti sceglie."
   },
-
   "process": {
     "kicker": "Il design",
     "steps": [
@@ -86,10 +86,13 @@
       "alive": "vivo",
       "mobile": "mobile",
       "loading": "caricamento",
-      "scores": ["Prestazioni", "Accessibilità", "SEO"]
+      "scores": [
+        "Prestazioni",
+        "Accessibilità",
+        "SEO"
+      ]
     }
   },
-
   "sectors": {
     "kicker": "Cosa facciamo",
     "lead": "Cambia il mestiere, non il metodo. Ogni settore ha un modo diverso di farsi scegliere: il nostro lavoro è capire quale sia il tuo.",
@@ -99,7 +102,7 @@
         "name": "Ristoranti",
         "meta": "Menu · Prenotazioni · Sala",
         "body": "Il menu è il prodotto: va aggiornato in giornata, letto col pollice e trovato su Google. Prenotazioni che arrivano in sala senza intermediari che trattengono una percentuale.",
-        "build": [
+        "builds": [
           "Menù che aggiorni da solo, senza chiamarci",
           "Prenotazioni che arrivano dritte in sala",
           "Foto dei piatti trattate come si deve",
@@ -110,7 +113,7 @@
         "name": "Hotel",
         "meta": "Camere · Booking diretto · Stagioni",
         "body": "Ogni prenotazione diretta è una commissione che non paghi. Camere raccontate una per una, disponibilità sempre vera, e un sito che cambia col cambiare della stagione.",
-        "build": [
+        "builds": [
           "Camere raccontate una per una",
           "Prenotazione diretta, senza commissioni",
           "Disponibilità sempre allineata al gestionale",
@@ -121,7 +124,7 @@
         "name": "Aziende",
         "meta": "Identità · Cataloghi · Rete vendita",
         "body": "Chi ti cerca sta valutando anche altri tre. Il sito deve dire in trenta secondi cosa fai, per chi, e perché sei tu — poi mettere in mano alla rete vendita materiale che regge il confronto.",
-        "build": [
+        "builds": [
           "Identità visiva coerente ovunque",
           "Catalogo consultabile e sempre aggiornato",
           "Materiali che la rete vendita può usare davvero",
@@ -132,7 +135,7 @@
         "name": "Retail",
         "meta": "Vetrina · Catalogo · Negozio",
         "body": "Il negozio fisico e quello online sono lo stesso negozio. Catalogo che si sfoglia veloce, disponibilità reale, e un motivo per venire in via a ritirare invece di aspettare un corriere.",
-        "build": [
+        "builds": [
           "Catalogo che si sfoglia col pollice",
           "Disponibilità reale, negozio per negozio",
           "Ritiro in negozio come scelta, non ripiego",
@@ -143,7 +146,7 @@
         "name": "Immobiliare",
         "meta": "Portfolio · Visite · Trattative",
         "body": "Un immobile si vende con le foto e con il percorso che ci porta. Schede che si leggono dal telefono durante una pausa, e una richiesta di visita che arriva prima della concorrenza.",
-        "build": [
+        "builds": [
           "Schede immobile che si leggono in pausa caffè",
           "Foto e planimetrie trattate come si deve",
           "Richiesta di visita in due tocchi",
@@ -152,16 +155,26 @@
       }
     ]
   },
-
   "stats": {
     "kicker": "In breve",
     "items": [
-      { "value": 5, "suffix": "", "label": "settori in cui abbiamo già costruito e messo online" },
-      { "value": 100, "suffix": "%", "label": "dei progetti scritti da zero, senza temi comprati" },
-      { "value": 1, "suffix": "", "label": "referente unico dal primo schizzo alla messa online" }
+      {
+        "value": 5,
+        "suffix": "",
+        "label": "settori in cui abbiamo già costruito e messo online"
+      },
+      {
+        "value": 100,
+        "suffix": "%",
+        "label": "dei progetti scritti da zero, senza temi comprati"
+      },
+      {
+        "value": 1,
+        "suffix": "",
+        "label": "referente unico dal primo schizzo alla messa online"
+      }
     ]
   },
-
   "contact": {
     "kicker": "Contatti",
     "titleLine1": "Hai qualcosa",
@@ -170,17 +183,19 @@
     "copied": "copiato",
     "responseTime": "Rispondiamo via email entro 1 giorno lavorativo."
   },
-
   "whatsapp": {
     "message": "Ciao Lumino, ho visto il vostro sito e vorrei parlarvi di un progetto.",
     "typedHead": "Ciao Lumino, vorrei un sito per",
-    "typedTails": [" il mio ristorante", " il mio hotel", " la mia azienda"],
+    "typedTails": [
+      " il mio ristorante",
+      " il mio hotel",
+      " la mia azienda"
+    ],
     "cta": "Scrivici su WhatsApp",
     "status": "online",
     "bubble": "Ciao 👋 Raccontaci del tuo progetto — rispondiamo di solito in giornata.",
     "now": "ora"
   },
-
   "footer": {
     "legalNav": "Link legali",
     "links": {

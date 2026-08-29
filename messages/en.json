@@ -4,7 +4,6 @@
     "description": "Digital studio: we design and build websites to measure. Identity, interfaces and motion for restaurants, hotels, companies and retail.",
     "ogImageAlt": "Lumino — We design and build websites people remember"
   },
-
   "nav": {
     "menu": "Explore",
     "close": "Close",
@@ -19,7 +18,6 @@
       "contact": "Contact"
     }
   },
-
   "hero": {
     "srTitle": "Lumino — digital studio. We design and build websites people remember.",
     "payoffLead": "We design and build websites ",
@@ -27,11 +25,16 @@
     "cta": "See the work",
     "windowAlt": "{client} — website built by Lumino"
   },
-
   "marquee": {
-    "words": ["Identity", "Interfaces", "Motion", "Code"]
+    "words": [
+      "Identity",
+      "Interfaces",
+      "Motion",
+      "Code"
+    ],
+    "aria": "Identity, interfaces, motion, code",
+    "dragHint": "↔ drag"
   },
-
   "about": {
     "kicker": "The studio",
     "titleLine1": "We’re a studio,",
@@ -41,7 +44,6 @@
     "body1After": ", and it stays the same person from the first sketch to the line of code that goes live.",
     "body2": "We take on few projects at a time, because a site done properly means understanding a trade before representing it. We look at how you work, what you sell, who walks through the door. Then we build something that looks like you, not like somebody else’s template."
   },
-
   "works": {
     "kicker": "Work",
     "title": "What we’ve built.",
@@ -55,13 +57,11 @@
     "loading": "Loading the site…",
     "tapToBrowse": "tap to browse"
   },
-
   "statement": {
     "line1": "A website isn’t a brochure.",
     "line2": "It’s the first place where",
     "line3": "somebody chooses you."
   },
-
   "process": {
     "kicker": "The design",
     "steps": [
@@ -86,10 +86,13 @@
       "alive": "alive",
       "mobile": "mobile",
       "loading": "loading",
-      "scores": ["Performance", "Accessibility", "SEO"]
+      "scores": [
+        "Performance",
+        "Accessibility",
+        "SEO"
+      ]
     }
   },
-
   "sectors": {
     "kicker": "What we do",
     "lead": "The trade changes, the method doesn’t. Every sector has its own way of being chosen: our job is working out what yours is.",
@@ -99,7 +102,7 @@
         "name": "Restaurants",
         "meta": "Menu · Bookings · Floor",
         "body": "The menu is the product: it has to be updated the same day, read with a thumb and found on Google. Bookings that land straight on the floor, with no middleman keeping a percentage.",
-        "build": [
+        "builds": [
           "A menu you update yourself, without calling us",
           "Bookings that land straight on the floor",
           "Food photography treated properly",
@@ -110,7 +113,7 @@
         "name": "Hotels",
         "meta": "Rooms · Direct booking · Seasons",
         "body": "Every direct booking is a commission you don’t pay. Rooms told one by one, availability that’s always true, and a site that changes as the season changes.",
-        "build": [
+        "builds": [
           "Rooms told one by one",
           "Direct booking, no commission",
           "Availability always in step with your system",
@@ -121,7 +124,7 @@
         "name": "Companies",
         "meta": "Identity · Catalogues · Sales team",
         "body": "Whoever is looking at you is looking at three others too. The site has to say in thirty seconds what you do, for whom, and why it’s you — then hand the sales team material that holds up in comparison.",
-        "build": [
+        "builds": [
           "A visual identity that holds together everywhere",
           "A catalogue that’s browsable and always current",
           "Material the sales team will actually use",
@@ -132,7 +135,7 @@
         "name": "Retail",
         "meta": "Storefront · Catalogue · Shop",
         "body": "The shop and the online shop are the same shop. A catalogue that flicks through fast, real availability, and a reason to come in and collect rather than wait for a courier.",
-        "build": [
+        "builds": [
           "A catalogue you can flick through with a thumb",
           "Real availability, shop by shop",
           "Click and collect as a choice, not a fallback",
@@ -143,7 +146,7 @@
         "name": "Real estate",
         "meta": "Portfolio · Viewings · Deals",
         "body": "A property sells on the photographs and on the path that leads to them. Listings that read on a phone during a break, and a viewing request that arrives before the competition’s.",
-        "build": [
+        "builds": [
           "Listings that read over a coffee break",
           "Photographs and floor plans treated properly",
           "A viewing request in two taps",
@@ -152,16 +155,26 @@
       }
     ]
   },
-
   "stats": {
     "kicker": "In short",
     "items": [
-      { "value": 5, "suffix": "", "label": "sectors we’ve already built in and put online" },
-      { "value": 100, "suffix": "%", "label": "of projects written from scratch, no bought themes" },
-      { "value": 1, "suffix": "", "label": "single point of contact from first sketch to going live" }
+      {
+        "value": 5,
+        "suffix": "",
+        "label": "sectors we’ve already built in and put online"
+      },
+      {
+        "value": 100,
+        "suffix": "%",
+        "label": "of projects written from scratch, no bought themes"
+      },
+      {
+        "value": 1,
+        "suffix": "",
+        "label": "single point of contact from first sketch to going live"
+      }
     ]
   },
-
   "contact": {
     "kicker": "Contact",
     "titleLine1": "Got something",
@@ -170,17 +183,19 @@
     "copied": "copied",
     "responseTime": "We reply by email within 1 working day."
   },
-
   "whatsapp": {
     "message": "Hi Lumino, I saw your site and I'd like to talk to you about a project.",
     "typedHead": "Hi Lumino, I'd like a website for",
-    "typedTails": [" my restaurant", " my hotel", " my company"],
+    "typedTails": [
+      " my restaurant",
+      " my hotel",
+      " my company"
+    ],
     "cta": "Message us on WhatsApp",
     "status": "online",
     "bubble": "Hi 👋 Tell us about your project — we usually reply the same day.",
     "now": "now"
   },
-
   "footer": {
     "legalNav": "Legal links",
     "links": {
