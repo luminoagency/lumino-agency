@@ -20,34 +20,21 @@ import {
 const PROTECTED_PREFIXES = ['/admin', '/lumino-admin', '/lumino-dashboard']
 
 /**
- * Percorsi che la lingua non tocca MAI.
+ * I percorsi che ESISTONO in tre lingue.
  *
- * Area riservata, pagamento, autenticazione, demo e siti dei clienti: sono
- * applicazioni, non contenuto indicizzabile, e infilarli in /fr o /it
- * significherebbe raddoppiare rotte che non hanno traduzione e rompere i
- * redirect di login.
+ * È una lista di inclusione e non di esclusione, di proposito: una pagina
+ * entra nel giro delle lingue solo quando è stata davvero tradotta e spostata
+ * sotto app/[locale]. Con una lista di esclusione, ogni rotta nuova sarebbe
+ * localizzata per default e risponderebbe 404 finché qualcuno non se ne
+ * ricorda — l'errore lo scoprirebbe un visitatore, non noi.
+ *
+ * Area riservata, pagamento, autenticazione, demo e siti dei clienti non
+ * entreranno mai: sono applicazioni, non contenuto indicizzabile.
  */
-const LOCALE_EXEMPT = [
-  '/admin',
-  '/lumino-admin',
-  '/lumino-dashboard',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/auth',
-  '/pay',
-  '/sites',
-  '/demo',
-  '/preview',
-  '/lab-preview',
-]
+const LOCALISED = ['/']
 
-function isExempt(pathname: string): boolean {
-  for (const p of LOCALE_EXEMPT) {
-    if (pathname === p || pathname.startsWith(p + '/')) return true
-  }
-  return false
+function isLocalised(path: string): boolean {
+  return LOCALISED.includes(path)
 }
 
 export function middleware(request: NextRequest) {
@@ -78,18 +65,34 @@ export function middleware(request: NextRequest) {
   }
 
   /* ── 2. La lingua ──────────────────────────────────────────────────────── */
-  if (isExempt(pathname)) return NextResponse.next()
+
+  const { locale: urlLocale, path: barePath } = splitLocale(pathname)
+  const hasPrefix = pathname === `/${urlLocale}` || pathname.startsWith(`/${urlLocale}/`)
+
+  /* Un percorso col prefisso ma non tradotto — /fr/login — non esiste: non
+     va riscritto, va lasciato cadere sulle rotte normali. */
+  if (!isLocalised(barePath)) return NextResponse.next()
+
+  /* Le pagine vivono TUTTE sotto app/[locale]. L'inglese però sta sulla
+     radice, senza prefisso: la riscrittura interna manda / su /en senza che
+     l'indirizzo cambi. È il motivo per cui non serve una copia inglese delle
+     rotte. */
+  const rewriteTo = (locale: string) => {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}${barePath === '/' ? '' : barePath}`
+    return url
+  }
 
   /* I bot ricevono ESATTAMENTE la pagina che hanno chiesto.
      È la regola che tiene in piedi tutta l'indicizzazione multilingua: se
      Googlebot chiedesse la radice e si vedesse rispondere un redirect verso
      /it perché scansiona da un IP italiano, l'inglese non finirebbe mai
      nell'indice — e siccome i crawler escono da paesi diversi, ogni lingua
-     rischierebbe di sparire a turno. */
-  if (isBot(request.headers.get('user-agent'))) return NextResponse.next()
-
-  const { locale: urlLocale } = splitLocale(pathname)
-  const hasPrefix = pathname === `/${urlLocale}` || pathname.startsWith(`/${urlLocale}/`)
+     rischierebbe di sparire a turno. La riscrittura invece resta: serve a
+     trovare il file, non cambia l'indirizzo né risponde 3xx. */
+  if (isBot(request.headers.get('user-agent'))) {
+    return hasPrefix ? NextResponse.next() : NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+  }
 
   /* Chi ha scritto /fr o /it a mano ha già scelto: quella scelta vince sempre
      sul paese, e si scrive nel cookie perché duri anche dopo. */
@@ -113,10 +116,8 @@ export function middleware(request: NextRequest) {
      cookie 'en' e non viene più rimbalzato su /fr al prossimo ingresso. */
   const saved = request.cookies.get(LOCALE_COOKIE)?.value
   if (isLocale(saved)) {
-    if (saved === DEFAULT_LOCALE) return NextResponse.next()
-    const url = request.nextUrl.clone()
-    url.pathname = `/${saved}${pathname === '/' ? '' : pathname}`
-    return NextResponse.redirect(url)
+    if (saved === DEFAULT_LOCALE) return NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+    return NextResponse.redirect(rewriteTo(saved))
   }
 
   /* Primo ingresso, nessuna preferenza salvata. Il paese decide; la lingua del
@@ -128,11 +129,9 @@ export function middleware(request: NextRequest) {
     localeFromAcceptLanguage(request.headers.get('accept-language')) ||
     DEFAULT_LOCALE
 
-  if (target === DEFAULT_LOCALE) return NextResponse.next()
+  if (target === DEFAULT_LOCALE) return NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
 
-  const url = request.nextUrl.clone()
-  url.pathname = `/${target}${pathname === '/' ? '' : pathname}`
-  const response = NextResponse.redirect(url)
+  const response = NextResponse.redirect(rewriteTo(target))
   response.cookies.set(LOCALE_COOKIE, target, {
     maxAge: LOCALE_COOKIE_MAX_AGE,
     path: '/',
