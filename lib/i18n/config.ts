@@ -66,6 +66,40 @@ export function isLocale(value: string | undefined | null): value is Locale {
 }
 
 /**
+ * Da quale header viene il paese del visitatore, e in che ordine crederci.
+ *
+ * `cf-ipcountry` PRIMO, e non è un dettaglio: da quando Cloudflare sta in
+ * proxy davanti a Vercel, Vercel non vede più l'IP del visitatore ma quello di
+ * Cloudflare — e `x-vercel-ip-country` finisce per raccontare dove sta il nodo
+ * Cloudflare, non dove sta la persona. È esattamente il motivo per cui dal
+ * Marocco arrivava l'italiano: il paese non si risolveva, si ricadeva sulla
+ * lingua del telefono, e quella era italiana.
+ *
+ * `x-vercel-ip-country` resta come riserva per il caso in cui il proxy venga
+ * tolto o si acceda a un dominio *.vercel.app, dove Cloudflare non c'è.
+ *
+ * XX e T1 sono i due valori con cui Cloudflare dice "non lo so" (paese ignoto,
+ * uscita Tor): vanno trattati come assenza, non come un paese.
+ */
+const COUNTRY_HEADERS = ['cf-ipcountry', 'x-vercel-ip-country'] as const
+const UNKNOWN_COUNTRY = new Set(['XX', 'T1', ''])
+
+export interface GeoRead {
+  country: string | null
+  /** Quale header ha risposto. Serve a capire, guardando una sola risposta,
+      se la catena sta funzionando come crediamo. */
+  source: string
+}
+
+export function readCountry(get: (name: string) => string | null | undefined): GeoRead {
+  for (const header of COUNTRY_HEADERS) {
+    const raw = get(header)?.trim().toUpperCase()
+    if (raw && !UNKNOWN_COUNTRY.has(raw)) return { country: raw, source: header }
+  }
+  return { country: null, source: 'none' }
+}
+
+/**
  * Il percorso di `path` nella lingua `locale`.
  *
  * L'inglese non porta prefisso perché è il default e sta sulla radice; le
