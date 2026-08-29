@@ -1375,3 +1375,97 @@ body.lm-lock {
 .lm-ov-links a.lm-ov-wa:hover .lm-ov-wa-num {
   color: var(--red);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Selettore di lingua
+
+   Tre lingue stanno in tre caratteri l'una: un menu a tendina chiederebbe un
+   click solo per scoprire cosa contiene, e il punto è che chi preferisce
+   un'altra lingua la veda subito. Stanno in fila, la corrente accesa.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(23, 18, 16, 0.5);
+  backdrop-filter: blur(8px);
+}
+.lm-lang-opt {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--cream-dim);
+  font: inherit;
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  padding: 0.44rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    background 0.3s;
+}
+.lm-lang-opt:hover {
+  color: var(--cream);
+}
+/* La corrente non è solo più chiara: ha il suo fondo. Con tre voci vicine il
+   solo cambio di colore si legge come "una è sbiadita", non come "una è
+   scelta". */
+.lm-lang-opt.is-on {
+  background: var(--cream);
+  color: var(--void);
+}
+.lm-lang-opt:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* Nell'overlay c'è più aria e il fondo è già scuro: la pastiglia non serve. */
+.lm-lang-overlay {
+  background: transparent;
+  padding: 0;
+  border-color: var(--line);
+}
+.lm-lang-overlay .lm-lang-opt {
+  font-size: 0.72rem;
+  padding: 0.55rem 0.85rem;
+}
+
+@media (max-width: 820px) {
+  /* Area di tocco: tre bersagli piccoli e affiancati sono il caso peggiore
+     per un pollice, quindi qui crescono invece di stringersi. */
+  .lm-lang-opt {
+    min-height: 40px;
+    padding-inline: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-lang-opt {
+    transition: none;
+  }
+}
+
+/* Il gruppo a destra nella nav: selettore di lingua e pulsante del menu.
+   Erano due elementi ai due capi della barra; ora sono due cose vicine,
+   allineate sulla stessa mediana. */
+.lm-nav-right {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.6rem, 1.6vw, 1.1rem);
+}
+
+/* Nell'overlay il selettore sta fra le voci e il piede: dopo la navigazione,
+   prima dei dati societari. Chi cerca un'altra lingua l'ha già trovata nella
+   barra; questo è il secondo posto dove guarderebbe. */
+.lm-ov-lang {
+  padding-top: clamp(1.5rem, 4vh, 2.5rem);
+  border-top: 1px solid var(--line);
+  margin-top: clamp(1.5rem, 4vh, 2.5rem);
+}
