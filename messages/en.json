@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "title": "Lumino — Digital studio | Websites built to measure",
+    "description": "Digital studio: we design and build websites to measure. Identity, interfaces and motion for restaurants, hotels, companies and retail.",
+    "ogImageAlt": "Lumino — We design and build websites people remember"
+  },
+
+  "nav": {
+    "menu": "Explore",
+    "close": "Close",
+    "home": "Lumino — home",
+    "clientArea": "Client area",
+    "company": "EMYRA LTD — London",
+    "languageLabel": "Language",
+    "items": {
+      "about": "About",
+      "works": "Work",
+      "sectors": "What we do",
+      "contact": "Contact"
+    }
+  },
+
+  "hero": {
+    "srTitle": "Lumino — digital studio. We design and build websites people remember.",
+    "payoffLead": "We design and build websites ",
+    "payoffAccent": "people remember.",
+    "cta": "See the work",
+    "windowAlt": "{client} — website built by Lumino"
+  },
+
+  "marquee": {
+    "words": ["Identity", "Interfaces", "Motion", "Code"]
+  },
+
+  "about": {
+    "kicker": "The studio",
+    "titleLine1": "We’re a studio,",
+    "titleLine2": "not an agency.",
+    "body1Before": "The difference isn’t size: it’s who answers. Here a project doesn’t get handed between departments — ",
+    "body1Strong": "whoever designs it is the one who writes it",
+    "body1After": ", and it stays the same person from the first sketch to the line of code that goes live.",
+    "body2": "We take on few projects at a time, because a site done properly means understanding a trade before representing it. We look at how you work, what you sell, who walks through the door. Then we build something that looks like you, not like somebody else’s template."
+  },
+
+  "works": {
+    "kicker": "Work",
+    "title": "What we’ve built.",
+    "lead": "Hover a card to watch the site scroll. Click to open it and browse it for real, without leaving this page.",
+    "viewerLabel": "The {client} website",
+    "closePreview": "Close preview",
+    "close": "Close",
+    "openNewTab": "Open in a new tab",
+    "openNewTabLong": "Open the site in a new tab →",
+    "comingSoon": "Live soon",
+    "loading": "Loading the site…",
+    "tapToBrowse": "tap to browse"
+  },
+
+  "statement": {
+    "line1": "A website isn’t a brochure.",
+    "line2": "It’s the first place where",
+    "line3": "somebody chooses you."
+  },
+
+  "process": {
+    "kicker": "The design",
+    "steps": [
+      {
+        "num": "01",
+        "title": "An opening that stops the thumb",
+        "body": "The first screen decides whether they stay or leave. We build openings that look like nothing else: typography that reacts, media that breathes, no templates."
+      },
+      {
+        "num": "02",
+        "title": "Motion made to measure",
+        "body": "Every animation has a reason. Motion guides the eye where it’s needed, tells the product’s story, and stays under 60 milliseconds of response."
+      },
+      {
+        "num": "03",
+        "title": "Phone first",
+        "body": "80% of your customers arrive on mobile. We design there first, then widen out. Loading under two seconds, every time."
+      }
+    ],
+    "acts": {
+      "wireframe": "wireframe",
+      "alive": "alive",
+      "mobile": "mobile",
+      "loading": "loading",
+      "scores": ["Performance", "Accessibility", "SEO"]
+    }
+  },
+
+  "sectors": {
+    "kicker": "What we do",
+    "lead": "The trade changes, the method doesn’t. Every sector has its own way of being chosen: our job is working out what yours is.",
+    "buildLabel": "What we build",
+    "items": [
+      {
+        "name": "Restaurants",
+        "meta": "Menu · Bookings · Floor",
+        "body": "The menu is the product: it has to be updated the same day, read with a thumb and found on Google. Bookings that land straight on the floor, with no middleman keeping a percentage.",
+        "build": [
+          "A menu you update yourself, without calling us",
+          "Bookings that land straight on the floor",
+          "Food photography treated properly",
+          "Google reviews that update on their own"
+        ]
+      },
+      {
+        "name": "Hotels",
+        "meta": "Rooms · Direct booking · Seasons",
+        "body": "Every direct booking is a commission you don’t pay. Rooms told one by one, availability that’s always true, and a site that changes as the season changes.",
+        "build": [
+          "Rooms told one by one",
+          "Direct booking, no commission",
+          "Availability always in step with your system",
+          "A site that changes as the season changes"
+        ]
+      },
+      {
+        "name": "Companies",
+        "meta": "Identity · Catalogues · Sales team",
+        "body": "Whoever is looking at you is looking at three others too. The site has to say in thirty seconds what you do, for whom, and why it’s you — then hand the sales team material that holds up in comparison.",
+        "build": [
+          "A visual identity that holds together everywhere",
+          "A catalogue that’s browsable and always current",
+          "Material the sales team will actually use",
+          "Enquiries that arrive qualified"
+        ]
+      },
+      {
+        "name": "Retail",
+        "meta": "Storefront · Catalogue · Shop",
+        "body": "The shop and the online shop are the same shop. A catalogue that flicks through fast, real availability, and a reason to come in and collect rather than wait for a courier.",
+        "build": [
+          "A catalogue you can flick through with a thumb",
+          "Real availability, shop by shop",
+          "Click and collect as a choice, not a fallback",
+          "A storefront that brings people in"
+        ]
+      },
+      {
+        "name": "Real estate",
+        "meta": "Portfolio · Viewings · Deals",
+        "body": "A property sells on the photographs and on the path that leads to them. Listings that read on a phone during a break, and a viewing request that arrives before the competition’s.",
+        "build": [
+          "Listings that read over a coffee break",
+          "Photographs and floor plans treated properly",
+          "A viewing request in two taps",
+          "Search that actually filters"
+        ]
+      }
+    ]
+  },
+
+  "stats": {
+    "kicker": "In short",
+    "items": [
+      { "value": 5, "suffix": "", "label": "sectors we’ve already built in and put online" },
+      { "value": 100, "suffix": "%", "label": "of projects written from scratch, no bought themes" },
+      { "value": 1, "suffix": "", "label": "single point of contact from first sketch to going live" }
+    ]
+  },
+
+  "contact": {
+    "kicker": "Contact",
+    "titleLine1": "Got something",
+    "titleLine2Before": "to ",
+    "titleLine2Accent": "light up?",
+    "copied": "copied",
+    "responseTime": "We reply by email within 1 working day."
+  },
+
+  "whatsapp": {
+    "message": "Hi Lumino, I saw your site and I'd like to talk to you about a project.",
+    "typedHead": "Hi Lumino, I'd like a website for",
+    "typedTails": [" my restaurant", " my hotel", " my company"],
+    "cta": "Message us on WhatsApp",
+    "status": "online",
+    "bubble": "Hi 👋 Tell us about your project — we usually reply the same day.",
+    "now": "now"
+  },
+
+  "footer": {
+    "legalNav": "Legal links",
+    "links": {
+      "privacy": "Privacy",
+      "cookie": "Cookies",
+      "terms": "Terms",
+      "gdpr": "GDPR"
+    }
+  }
+}
