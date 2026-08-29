@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import { prefersReducedMotion } from './useMotion'
 
 /**
@@ -20,7 +21,6 @@ import { prefersReducedMotion } from './useMotion'
  * leggibile.
  */
 
-const PHRASE = ['Identità', 'Interfacce', 'Movimento', 'Codice']
 
 function Star() {
   return (
@@ -30,10 +30,10 @@ function Star() {
   )
 }
 
-function Half({ ghost }: { ghost: boolean }) {
+function Half({ ghost, words }: { ghost: boolean; words: readonly string[] }) {
   return (
     <>
-      {PHRASE.map((word) => (
+      {words.map((word) => (
         <span key={word} style={{ display: 'contents' }}>
           <span className="lm-marquee-item" data-ghost={ghost ? 'true' : 'false'}>
             {word}
@@ -46,6 +46,7 @@ function Half({ ghost }: { ghost: boolean }) {
 }
 
 export default function Marquee() {
+  const { m } = useI18n()
   const wrapRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
@@ -140,14 +141,14 @@ export default function Marquee() {
     <section
       className="lm-marquee"
       ref={wrapRef}
-      aria-label="Identità, interfacce, movimento, codice"
+      aria-label={m.marquee.aria}
     >
       <span className="lm-grabhint" aria-hidden="true">
-        ↔ trascina
+        {m.marquee.dragHint}
       </span>
       <div className="lm-marquee-track" ref={trackRef} aria-hidden="true">
-        <Half ghost={false} />
-        <Half ghost />
+        <Half ghost={false} words={m.marquee.words} />
+        <Half ghost words={m.marquee.words} />
       </div>
     </section>
   )

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Work } from './worksData'
+import { useI18n } from '@/components/i18n/I18nProvider'
+import { fill } from '@/lib/i18n/messages'
 import BrowserChrome from './BrowserChrome'
 import WorkMediaView from './WorkMediaView'
 import { gsap, prefersReducedMotion } from './useMotion'
@@ -56,6 +58,7 @@ export default function WorkViewer({
   origin: DOMRect
   onClose: () => void
 }) {
+  const { m } = useI18n()
   const frameRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -234,7 +237,7 @@ export default function WorkViewer({
    * annidato dentro `<main>` racconta una gerarchia che non esiste.
    */
   const overlay = (
-    <div className="lm-viewer" role="dialog" aria-modal="true" aria-label={`Il sito di ${work.client}`}>
+    <div className="lm-viewer" role="dialog" aria-modal="true" aria-label={fill(m.works.viewerLabel, { client: work.client })}>
       <div className="lm-viewer-backdrop" ref={backdropRef} onClick={close} />
 
       {/* La via d'uscita sta FUORI dalla cornice, non dentro la barra finta del
@@ -249,11 +252,11 @@ export default function WorkViewer({
         className="lm-viewer-exit"
         onClick={close}
         ref={closeRef}
-        aria-label="Chiudi anteprima"
+        aria-label={m.works.closePreview}
         data-cursor="grow"
       >
         <span className="lm-viewer-exit-word" aria-hidden="true">
-          Chiudi
+          {m.works.close}
         </span>
         <span className="lm-viewer-exit-ring" aria-hidden="true">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -276,7 +279,7 @@ export default function WorkViewer({
               ref={iframeRef}
               className={`lm-viewer-iframe${taken ? ' is-taken' : ''}`}
               src={work.siteUrl}
-              title={`Il sito di ${work.client}`}
+              title={fill(m.works.viewerLabel, { client: work.client })}
               loading="lazy"
               onLoad={() => setLoaded(true)}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -296,7 +299,7 @@ export default function WorkViewer({
               onTouchStart={takeOver}
               role="presentation"
             >
-              <span className="lm-viewer-grab-hint">tocca per navigare</span>
+              <span className="lm-viewer-grab-hint">{m.works.tapToBrowse}</span>
             </div>
           ) : null}
 
@@ -326,14 +329,14 @@ export default function WorkViewer({
                       rel="noopener noreferrer"
                       data-cursor="grow"
                     >
-                      Apri il sito in una nuova scheda →
+                      {m.works.openNewTabLong}
                     </a>
                   ) : (
-                    <span className="lm-viewer-cta is-quiet">Online a breve</span>
+                    <span className="lm-viewer-cta is-quiet">{m.works.comingSoon}</span>
                   )}
                 </div>
               ) : (
-                <span className="lm-viewer-loading">Carico il sito…</span>
+                <span className="lm-viewer-loading">{m.works.loading}</span>
               )}
             </div>
           ) : null}
@@ -356,11 +359,11 @@ export default function WorkViewer({
               rel="noopener noreferrer"
               data-cursor="grow"
             >
-              Apri in una nuova scheda
+              {m.works.openNewTab}
               <span aria-hidden="true">↗</span>
             </a>
           ) : (
-            <span className="lm-viewer-bar-out is-quiet">Online a breve</span>
+            <span className="lm-viewer-bar-out is-quiet">{m.works.comingSoon}</span>
           )}
         </div>
       </div>

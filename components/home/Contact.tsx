@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY, MAILTO } from '@/lib/company'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import WhatsAppBlock from './WhatsAppBlock'
 
 /**
@@ -13,6 +14,7 @@ import WhatsAppBlock from './WhatsAppBlock'
  * può fallire (permessi, contesto non sicuro) e non deve restare nulla in mano.
  */
 export default function Contact() {
+  const { m } = useI18n()
   const [copied, setCopied] = useState(false)
   const timer = useRef(0)
 
@@ -35,12 +37,13 @@ export default function Contact() {
   return (
     <section className="lm-section lm-contact" id="contatti">
       <div className="lm-wrap">
-        <p className="lm-kicker lm-reveal">Contatti</p>
+        <p className="lm-kicker lm-reveal">{m.contact.kicker}</p>
 
         <h2 className="lm-display lm-d1 lm-reveal">
-          Hai qualcosa
+          {m.contact.titleLine1}
           <br />
-          da <span className="lm-grad-text">accendere?</span>
+          {m.contact.titleLine2Before}
+          <span className="lm-grad-text">{m.contact.titleLine2Accent}</span>
         </h2>
 
         <div
@@ -53,11 +56,11 @@ export default function Contact() {
             </a>
             <span className="lm-mail-burst" aria-hidden="true" />
             <span className="lm-mail-said" aria-live="polite">
-              {copied ? 'copiato' : ''}
+              {copied ? m.contact.copied : ''}
             </span>
           </span>
 
-          <p className="lm-lead">{COMPANY.responseTime}</p>
+          <p className="lm-lead">{m.contact.responseTime}</p>
         </div>
 
         <div className="lm-reveal" style={{ marginTop: 'clamp(2.5rem, 6vh, 3.5rem)' }}>

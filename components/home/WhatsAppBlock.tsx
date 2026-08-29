@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY } from '@/lib/company'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
 import { WA_LINK } from './whatsappLink'
 
@@ -35,6 +36,7 @@ const HOLD_MS = 1400
 const TILT_MAX = 4
 
 export default function WhatsAppBlock() {
+  const { m } = useI18n()
   const rootRef = useRef<HTMLAnchorElement>(null)
   const typedRef = useRef<HTMLSpanElement>(null)
   const [live, setLive] = useState(false)
@@ -202,7 +204,7 @@ export default function WhatsAppBlock() {
         href={WA_LINK}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Scrivici su WhatsApp"
+        aria-label={m.whatsapp.cta}
         data-cursor="whatsapp"
         onPointerDown={() => {
           setBurst(true)
@@ -218,7 +220,7 @@ export default function WhatsAppBlock() {
           </span>
           <span className="lm-wa-who">
             <b>Lumino</b>
-            <i className="lm-wa-status">online</i>
+            <i className="lm-wa-status">{m.whatsapp.status}</i>
           </span>
         </span>
 

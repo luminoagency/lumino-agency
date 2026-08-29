@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useI18n } from '@/components/i18n/I18nProvider'
+import LocaleSwitch from '@/components/i18n/LocaleSwitch'
 import Wordmark from './Wordmark'
 import { prefersReducedMotion, scrollPageTo } from './useMotion'
 import { WA_LINK } from './whatsappLink'
@@ -25,12 +27,14 @@ interface MenuItem {
   label: string
 }
 
-const MENU: MenuItem[] = [
-  { href: '#studio', label: 'Chi siamo' },
-  { href: '#lavori', label: 'Lavori' },
-  { href: '#settori', label: 'Cosa facciamo' },
-  { href: '#contatti', label: 'Contatti' },
-]
+/* Gli ancoraggi non cambiano con la lingua — sono id nel DOM — ma le
+   etichette sì: qui c'è la chiave, il testo lo mette il catalogo. */
+const MENU = [
+  { href: '#studio', key: 'about' },
+  { href: '#lavori', key: 'works' },
+  { href: '#settori', key: 'sectors' },
+  { href: '#contatti', key: 'contact' },
+] as const
 
 /** Durata del pannello, allineata a @keyframes lm-swipe in motion.css. */
 const SWIPE_MS = 1100
@@ -38,6 +42,7 @@ const SWIPE_MS = 1100
 const SWIPE_MID_MS = 520
 
 export default function Nav() {
+  const { m } = useI18n()
   const [open, setOpen] = useState(false)
   const [hot, setHot] = useState<number | null>(null)
   const [scrolled, setScrolled] = useState(false)
@@ -105,7 +110,7 @@ export default function Nav() {
     timers.current.push(window.setTimeout(() => setSwiping(false), SWIPE_MS))
   }
 
-  const activeLabel = hot === null ? null : MENU[hot].label
+  const activeLabel = hot === null ? null : m.nav.items[MENU[hot].key]
 
   return (
     <>
@@ -113,22 +118,25 @@ export default function Nav() {
         <Link
           href="/"
           className="lm-wordmark"
-          aria-label="Lumino — torna in cima"
+          aria-label={m.nav.home}
           data-cursor="grow"
           onClick={toTop}
         >
           <Wordmark />
         </Link>
 
+        <div className="lm-nav-right">
+          <LocaleSwitch />
+
         <button
           type="button"
           className="lm-menu-btn"
           onClick={() => setOpen(true)}
-          aria-label="Apri il menu"
+          aria-label={m.nav.menu}
           aria-expanded={open}
           data-cursor="grow"
         >
-          <span className="lm-menu-word">Esplora</span>
+          <span className="lm-menu-word">{m.nav.menu}</span>
           <span className="lm-halo" aria-hidden="true" />
           <span className="lm-cluster" aria-hidden="true">
             <i />
@@ -137,6 +145,7 @@ export default function Nav() {
             <i />
           </span>
         </button>
+        </div>
       </nav>
 
       <div
@@ -163,7 +172,7 @@ export default function Nav() {
             ref={closeBtnRef}
             data-cursor="grow"
           >
-            <span>Chiudi</span>
+            <span>{m.nav.close}</span>
             <span className="lm-close-ring" aria-hidden="true">
               <i />
               <i />
@@ -184,7 +193,7 @@ export default function Nav() {
               data-cursor="grow"
             >
               <span className="lm-ix">{String(i + 1).padStart(2, '0')}</span>
-              <span className="lm-ov-label">{item.label}</span>
+              <span className="lm-ov-label">{m.nav.items[item.key]}</span>
             </a>
           ))}
 
@@ -199,15 +208,19 @@ export default function Nav() {
             onClick={close}
             data-cursor="whatsapp"
           >
-            <span className="lm-ov-wa-label">Scrivici su WhatsApp</span>
+            <span className="lm-ov-wa-label">{m.whatsapp.cta}</span>
             <span className="lm-ov-wa-num">{COMPANY.whatsapp.display}</span>
           </a>
         </div>
 
+        <div className="lm-ov-lang">
+          <LocaleSwitch tone="overlay" />
+        </div>
+
         <div className="lm-ov-foot">
-          <span>EMYRA LTD — Londra</span>
+          <span>{m.nav.company}</span>
           <Link href="/login" onClick={close} data-cursor="grow">
-            Area clienti
+            {m.nav.clientArea}
           </Link>
         </div>
       </div>

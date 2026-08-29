@@ -1,33 +1,36 @@
+import type { Messages } from '@/lib/i18n/messages'
+
 /**
- * Sezione 3 — Chi siamo.
- * Server component: nessuna interazione, solo testo.
+ * Sezione 3 — Lo studio.
+ *
+ * Server component: è testo e basta. Le stringhe arrivano come props, così
+ * questo non entra nel bundle del client.
+ *
+ * Il primo paragrafo è spezzato in tre pezzi perché ha una parte in grassetto
+ * nel mezzo: tenerlo come stringa unica avrebbe voluto dire o perdere il
+ * grassetto o mettere HTML dentro il catalogo, e l'HTML nei file di traduzione
+ * è la porta da cui entrano i tag rotti.
  */
-export default function About() {
+export default function About({ m }: { m: Messages }) {
   return (
     <section className="lm-section" id="studio">
       <div className="lm-wrap">
-        <p className="lm-kicker lm-reveal">Lo studio</p>
+        <p className="lm-kicker lm-reveal">{m.about.kicker}</p>
 
         <div className="lm-about-grid">
           <h2 className="lm-display lm-d2 lm-reveal">
-            Siamo uno studio,
+            {m.about.titleLine1}
             <br />
-            non un&apos;agenzia.
+            {m.about.titleLine2}
           </h2>
 
           <div className="lm-about-copy">
             <p className="lm-reveal">
-              La differenza non è la dimensione: è chi risponde. Da noi il progetto
-              non passa di mano fra reparti — <strong>chi lo disegna è chi lo scrive</strong>,
-              e resta la stessa persona dal primo schizzo alla riga di codice che va
-              online.
+              {m.about.body1Before}
+              <strong>{m.about.body1Strong}</strong>
+              {m.about.body1After}
             </p>
-            <p className="lm-reveal">
-              Prendiamo pochi progetti per volta perché un sito fatto bene richiede
-              di capire un mestiere prima di rappresentarlo. Guardiamo come lavori,
-              cosa vendi, chi entra dalla porta. Poi costruiamo qualcosa che somigli
-              a te e non al template di qualcun altro.
-            </p>
+            <p className="lm-reveal">{m.about.body2}</p>
           </div>
         </div>
       </div>

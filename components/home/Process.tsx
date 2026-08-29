@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { POINTER_BREAKPOINT, ScrollTrigger, prefersReducedMotion, registerScrollTrigger } from './useMotion'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import ProcessDemo, { seekDemo, type DemoMode } from './ProcessDemos'
 
 /**
@@ -25,15 +26,6 @@ import ProcessDemo, { seekDemo, type DemoMode } from './ProcessDemos'
  * sotto l'altro, ciascuno sul proprio fotogramma finale.
  */
 
-interface Step {
-  num: string
-  title: string
-  body: string
-  /** Sorgenti video. Vuoto finché le clip non sono in /public/motion/. */
-  ready: boolean
-  poster?: string
-  sources?: { src: string; type: string }[]
-}
 
 /*  TODO ASSET — clip da produrre, 6–8 secondi, mute, loop senza stacco,
     verticali 4:5, da mettere in /public/motion/:
@@ -46,47 +38,29 @@ interface Step {
     Quando arrivano: ready: true e il markup <video> qui sotto entra in
     funzione senza altre modifiche.  */
 
-export const PROCESS_STEPS: Step[] = [
-  {
-    num: '01',
-    title: 'Hero che ferma il pollice',
-    body: 'La prima schermata decide se restano o se ne vanno. Costruiamo aperture che non somigliano a nessun’altra: tipografia che reagisce, media che respira, nessun template.',
-    ready: false,
-    poster: '/motion/01-hero.jpg',
-    sources: [
-      { src: '/motion/01-hero.webm', type: 'video/webm' },
-      { src: '/motion/01-hero.mp4', type: 'video/mp4' },
-    ],
-  },
-  {
-    num: '02',
-    title: 'Movimento su misura',
-    body: 'Ogni animazione ha un motivo. Il movimento guida l’occhio dove serve, racconta il prodotto e resta sotto i 60 millisecondi di risposta.',
-    ready: false,
-    poster: '/motion/02-motion.jpg',
-    sources: [
-      { src: '/motion/02-motion.webm', type: 'video/webm' },
-      { src: '/motion/02-motion.mp4', type: 'video/mp4' },
-    ],
-  },
-  {
-    num: '03',
-    title: 'Prima il telefono',
-    body: 'L’80% dei tuoi clienti arriva da mobile. Progettiamo lì per primo, poi allarghiamo. Caricamento sotto i due secondi, sempre.',
-    ready: false,
-    poster: '/motion/03-mobile.jpg',
-    sources: [
-      { src: '/motion/03-mobile.webm', type: 'video/webm' },
-      { src: '/motion/03-mobile.mp4', type: 'video/mp4' },
-    ],
-  },
-]
+/** Le clip, quando ci saranno. Non si traducono: stesse per le tre lingue,
+    unite al testo dall'indice. */
+export const STEP_MEDIA = [
+  { ready: false, poster: '/motion/01-hero.jpg', sources: [
+    { src: '/motion/01-hero.webm', type: 'video/webm' },
+    { src: '/motion/01-hero.mp4', type: 'video/mp4' },
+  ] },
+  { ready: false, poster: '/motion/02-motion.jpg', sources: [
+    { src: '/motion/02-motion.webm', type: 'video/webm' },
+    { src: '/motion/02-motion.mp4', type: 'video/mp4' },
+  ] },
+  { ready: false, poster: '/motion/03-mobile.jpg', sources: [
+    { src: '/motion/03-mobile.webm', type: 'video/webm' },
+    { src: '/motion/03-mobile.mp4', type: 'video/mp4' },
+  ] },
+] as const
 
 /** Quanto dura la dissolvenza fra due step, in frazione di step. */
 const FADE = 0.15
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 
 export default function Process() {
+  const { m } = useI18n()
   const [mode, setMode] = useState<DemoMode>('auto')
   const sectionRef = useRef<HTMLElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
@@ -227,12 +201,12 @@ export default function Process() {
   return (
     <section className="lm-section lm-process" id="design" ref={sectionRef}>
       <div className="lm-wrap">
-        <p className="lm-kicker lm-reveal">Il design</p>
+        <p className="lm-kicker lm-reveal">{m.process.kicker}</p>
 
         <div className="lm-process-grid">
           <div className="lm-process-media" ref={mediaRef} aria-hidden="true">
             <div className="lm-process-bars">
-              {PROCESS_STEPS.map((step, i) => (
+              {m.process.steps.map((step, i) => (
                 <i key={step.num}>
                   <span
                     ref={(el) => {
@@ -243,7 +217,7 @@ export default function Process() {
               ))}
             </div>
 
-            {PROCESS_STEPS.map((step, i) => (
+            {m.process.steps.map((step, i) => (
               <div
                 className={`lm-process-layer${i === 0 ? ' is-active' : ''}`}
                 key={step.num}
@@ -252,9 +226,9 @@ export default function Process() {
                    è questo riquadro. Vedi `display: contents` in process.css. */
                 style={{ ['--act' as string]: i }}
               >
-                {step.ready && step.sources ? (
-                  <video poster={step.poster} muted loop playsInline autoPlay preload="metadata">
-                    {step.sources.map((source) => (
+                {STEP_MEDIA[i].ready ? (
+                  <video poster={STEP_MEDIA[i].poster} muted loop playsInline autoPlay preload="metadata">
+                    {STEP_MEDIA[i].sources.map((source) => (
                       <source key={source.src} src={source.src} type={source.type} />
                     ))}
                   </video>
@@ -266,7 +240,7 @@ export default function Process() {
           </div>
 
           <div className="lm-process-steps">
-            {PROCESS_STEPS.map((step, i) => (
+            {m.process.steps.map((step, i) => (
               <div
                 className={`lm-process-step${i === 0 ? ' is-active' : ''}`}
                 key={step.num}

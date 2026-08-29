@@ -2,16 +2,11 @@
 
 import Image from 'next/image'
 import { useEffect, useRef } from 'react'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import HeroTicker from './HeroTicker'
 import { createHeroDriver } from './heroMotion'
-import {
-  HERO_ENTRANCE_MS,
-  HERO_LETTERS,
-  HERO_PAYOFF_ACCENT,
-  HERO_PAYOFF_LEAD,
-  HERO_TITLE,
-  HERO_WINDOWS,
-} from './heroScene'
+import { HERO_ENTRANCE_MS, HERO_LETTERS, HERO_WINDOWS } from './heroScene'
+import { fill } from '@/lib/i18n/messages'
 import {
   POINTER_BREAKPOINT,
   onAmbientMotionChange,
@@ -48,6 +43,7 @@ import {
  */
 
 export default function Hero() {
+  const { m } = useI18n()
   const heroRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -201,7 +197,7 @@ export default function Hero() {
       </div>
 
       <h1 className="lm-hero-word">
-        <span className="lm-sr">{HERO_TITLE}</span>
+        <span className="lm-sr">{m.hero.srTitle}</span>
         <span className="lm-hero-letters" aria-hidden="true">
           {HERO_LETTERS.map((letter) => (
             <span className={`lm-hero-ch${letter === 'I' ? ' is-grad' : ''}`} key={letter}>
@@ -220,7 +216,7 @@ export default function Hero() {
           </span>
           <Image
             src={win.src}
-            alt={`${win.client} — sito realizzato da Lumino`}
+            alt={fill(m.hero.windowAlt, { client: win.client })}
             width={win.width}
             height={win.height}
             sizes={`(max-width: ${POINTER_BREAKPOINT - 1}px) 42vw, 18vw`}
@@ -235,15 +231,15 @@ export default function Hero() {
 
       <div className="lm-hero-foot">
         <p className="lm-hero-payoff">
-          {HERO_PAYOFF_LEAD}
-          <em>{HERO_PAYOFF_ACCENT}</em>
+          {m.hero.payoffLead}
+          <em>{m.hero.payoffAccent}</em>
         </p>
 
         <a className="lm-hero-cta" href="#lavori" data-cursor="grow">
           <span className="lm-hero-cta-ring" aria-hidden="true">
             ↓
           </span>
-          Guarda i lavori
+          {m.hero.cta}
         </a>
       </div>
 

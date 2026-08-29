@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { WORKS, type Work } from './worksData'
 import WorkCard from './WorkCard'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import WorkViewer from './WorkViewer'
 
 /**
@@ -16,6 +17,7 @@ import WorkViewer from './WorkViewer'
  * cliccato invece di apparire dal nulla.
  */
 export default function Works() {
+  const { m } = useI18n()
   const [open, setOpen] = useState<{ work: Work; origin: DOMRect } | null>(null)
 
   const handleOpen = useCallback((work: Work, origin: DOMRect) => {
@@ -29,12 +31,11 @@ export default function Works() {
       <div className="lm-wrap">
         <div className="lm-works-head">
           <div>
-            <p className="lm-kicker lm-reveal">Lavori</p>
-            <h2 className="lm-display lm-d2 lm-reveal">Quello che abbiamo costruito.</h2>
+            <p className="lm-kicker lm-reveal">{m.works.kicker}</p>
+            <h2 className="lm-display lm-d2 lm-reveal">{m.works.title}</h2>
           </div>
           <p className="lm-lead lm-reveal" style={{ maxWidth: '32ch' }}>
-            Passa sopra una card per vedere il sito scorrere. Clicca per aprirlo
-            e navigarlo davvero, senza uscire da qui.
+            {m.works.lead}
           </p>
         </div>
 

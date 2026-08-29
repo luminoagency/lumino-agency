@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { COMPANY } from '@/lib/company'
+import type { Messages } from '@/lib/i18n/messages'
 import Wordmark from './Wordmark'
 
 /**
@@ -11,14 +12,17 @@ import Wordmark from './Wordmark'
  * alcun richiamo commerciale.
  */
 
+/* Le pagine legali non sono ancora tradotte: restano in italiano, allo stesso
+   indirizzo per tutte e tre le lingue. Qui cambia l'etichetta, non la
+   destinazione — meglio un'etichetta nella lingua giusta che un link rotto. */
 const LEGAL = [
-  { href: '/privacy-policy', label: 'Privacy' },
-  { href: '/cookie-policy', label: 'Cookie' },
-  { href: '/termini-condizioni', label: 'Termini' },
-  { href: '/gdpr', label: 'GDPR' },
-]
+  { href: '/privacy-policy', key: 'privacy' },
+  { href: '/cookie-policy', key: 'cookie' },
+  { href: '/termini-condizioni', key: 'terms' },
+  { href: '/gdpr', key: 'gdpr' },
+] as const
 
-export default function Footer() {
+export default function Footer({ m }: { m: Messages }) {
   const year = new Date().getFullYear()
 
   return (
@@ -32,10 +36,10 @@ export default function Footer() {
           © {year} {COMPANY.legalName} — {COMPANY.brand}. Company no. {COMPANY.companyNumber}.
         </span>
 
-        <nav className="lm-footer-links" aria-label="Link legali">
+        <nav className="lm-footer-links" aria-label={m.footer.legalNav}>
           {LEGAL.map((item) => (
             <Link href={item.href} key={item.href}>
-              {item.label}
+              {m.footer.links[item.key]}
             </Link>
           ))}
         </nav>

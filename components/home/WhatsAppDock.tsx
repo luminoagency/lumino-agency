@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useI18n } from '@/components/i18n/I18nProvider'
 import { WA_LINK } from './whatsappLink'
 
 /**
@@ -30,6 +31,7 @@ import { WA_LINK } from './whatsappLink'
 const APPEAR_AT = 0.9
 
 export default function WhatsAppDock() {
+  const { m } = useI18n()
   const [past, setPast] = useState(false)
   const [atContact, setAtContact] = useState(false)
 
@@ -74,7 +76,7 @@ export default function WhatsAppDock() {
       tabIndex={visible ? undefined : -1}
       data-cursor="whatsapp"
     >
-      <span className="lm-wadock-label">Scrivici su WhatsApp</span>
+      <span className="lm-wadock-label">{m.whatsapp.cta}</span>
 
       <span className="lm-wadock-icon">
         <span className="lm-wadock-ring" aria-hidden="true" />
