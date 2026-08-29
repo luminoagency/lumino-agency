@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Fraunces, Inter } from 'next/font/google'
 import './globals.css'
 import CookieBanner from '@/components/cookie/CookieBanner'
+import { DEFAULT_LOCALE } from '@/lib/i18n/config'
 import WhatsAppFloatingButton from '@/components/WhatsAppFloatingButton'
 import { OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, organizationJsonLd } from '@/lib/seo'
 
@@ -71,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="it" className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang={DEFAULT_LOCALE} className={`${inter.variable} ${fraunces.variable}`}>
       <head>
         {/* Dati strutturati dello studio: dicono a Google che cosa siamo, non
             solo che cosa scriviamo. Uno solo, sul layout, così vale ovunque. */}
