@@ -7,7 +7,9 @@ import {
   isBot,
   isLocale,
   localeFromAcceptLanguage,
+  readCountry,
   splitLocale,
+  type GeoRead,
 } from '@/lib/i18n/config'
 
 // Solo rotte protette. NIENTE redirect "guest-only" su /login,/register:
@@ -91,7 +93,9 @@ export function middleware(request: NextRequest) {
      rischierebbe di sparire a turno. La riscrittura invece resta: serve a
      trovare il file, non cambia l'indirizzo né risponde 3xx. */
   if (isBot(request.headers.get('user-agent'))) {
-    return hasPrefix ? NextResponse.next() : NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+    if (hasPrefix) return NextResponse.next()
+    const geo = readCountry((name) => request.headers.get(name))
+    return withGeoHeaders(NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE)), geo, 'bot')
   }
 
   /* Chi ha scritto /fr o /it a mano ha già scelto: quella scelta vince sempre
@@ -116,27 +120,60 @@ export function middleware(request: NextRequest) {
      cookie 'en' e non viene più rimbalzato su /fr al prossimo ingresso. */
   const saved = request.cookies.get(LOCALE_COOKIE)?.value
   if (isLocale(saved)) {
-    if (saved === DEFAULT_LOCALE) return NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
-    return NextResponse.redirect(rewriteTo(saved))
+    const geo = readCountry((name) => request.headers.get(name))
+    const response =
+      saved === DEFAULT_LOCALE
+        ? NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+        : NextResponse.redirect(rewriteTo(saved))
+    return withGeoHeaders(response, geo, 'cookie')
   }
 
   /* Primo ingresso, nessuna preferenza salvata. Il paese decide; la lingua del
      browser è il secondo segnale, non il primo — un marocchino col telefono in
      inglese sta comunque comprando in Marocco. */
-  const country = request.headers.get('x-vercel-ip-country')?.toUpperCase()
-  const target =
-    (country && COUNTRY_TO_LOCALE[country]) ||
-    localeFromAcceptLanguage(request.headers.get('accept-language')) ||
-    DEFAULT_LOCALE
+  const geo = readCountry((name) => request.headers.get(name))
+  const fromCountry = geo.country ? COUNTRY_TO_LOCALE[geo.country] : undefined
+  const fromLanguage = localeFromAcceptLanguage(request.headers.get('accept-language'))
+  const target = fromCountry || fromLanguage || DEFAULT_LOCALE
 
-  if (target === DEFAULT_LOCALE) return NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+  const response =
+    target === DEFAULT_LOCALE
+      ? NextResponse.rewrite(rewriteTo(DEFAULT_LOCALE))
+      : NextResponse.redirect(rewriteTo(target))
 
-  const response = NextResponse.redirect(rewriteTo(target))
-  response.cookies.set(LOCALE_COOKIE, target, {
-    maxAge: LOCALE_COOKIE_MAX_AGE,
-    path: '/',
-    sameSite: 'lax',
-  })
+  if (target !== DEFAULT_LOCALE) {
+    response.cookies.set(LOCALE_COOKIE, target, {
+      maxAge: LOCALE_COOKIE_MAX_AGE,
+      path: '/',
+      sameSite: 'lax',
+    })
+  }
+
+  return withGeoHeaders(response, geo, fromCountry ? 'country' : fromLanguage ? 'language' : 'default')
+}
+
+/**
+ * Due cose sulla risposta, e la seconda è quella che conta.
+ *
+ * `x-lumino-geo` dice, guardando una sola risposta, quale header ha risposto e
+ * cosa se n'è concluso. Senza, per capire perché dal Marocco arrivava
+ * l'italiano bisognava indovinare: non si vede da fuori cosa riceve il
+ * middleware.
+ *
+ * `Cache-Control: private, no-store` è la parte seria. Questa risposta dipende
+ * dal PAESE di chi la chiede e dal suo cookie, ma l'indirizzo è sempre lo
+ * stesso — la radice. Una cache condivisa che ne salvasse una copia la
+ * servirebbe a tutti: basta un italiano per primo e da lì in poi i marocchini
+ * ricevono l'italiano, che è esattamente il guasto da evitare. Cloudflare oggi
+ * risponde `cf-cache-status: DYNAMIC` e non la sta salvando, ma dipende dalla
+ * configurazione e va detto qui, non sperato là.
+ *
+ * Le pagine con prefisso — /fr, /it — non passano di qui e restano cacheabili:
+ * il loro indirizzo dice già quale lingua sono.
+ */
+function withGeoHeaders(response: NextResponse, geo: GeoRead, decidedBy: string): NextResponse {
+  response.headers.set('x-lumino-geo', `${geo.country ?? 'none'}/${geo.source}/${decidedBy}`)
+  response.headers.set('Cache-Control', 'private, no-store')
   return response
 }
 
