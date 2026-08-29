@@ -177,9 +177,9 @@
   },
   "contact": {
     "kicker": "Contact",
-    "titleLine1": "Vous avez quelque chose",
-    "titleLine2Before": "à ",
-    "titleLine2Accent": "allumer ?",
+    "titleLine1": "Vous avez un projet",
+    "titleLine2Before": "",
+    "titleLine2Accent": "en tête ?",
     "copied": "copié",
     "responseTime": "Nous répondons par e-mail sous 1 jour ouvré."
   },
