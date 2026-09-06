@@ -56,12 +56,32 @@ function FakeSite({ work }: { work: Work }) {
   )
 }
 
-export default function WorkMediaView({ work, eager = false }: { work: Work; eager?: boolean }) {
-  const { media } = work
+/**
+ * `variant` decide QUALE immagine, non come mostrarla:
+ *   · 'card' → la sola prima schermata, 16/10. È quello che serve nella
+ *     griglia, dove la card è una finestrella da monitor e l'immagine sta
+ *     ferma.
+ *   · 'full' → lo screenshot intero. Serve solo dentro l'overlay, sotto
+ *     l'iframe, dove c'è tutta l'altezza per mostrarlo.
+ */
+export default function WorkMediaView({
+  work,
+  eager = false,
+  variant = 'full',
+}: {
+  work: Work
+  eager?: boolean
+  variant?: 'card' | 'full'
+}) {
+  const media = variant === 'card' ? work.shot : work.media
 
   if (!work.ready) return <FakeSite work={work} />
 
-  if (media.kind === 'video') {
+  /* 'sources' e non 'kind': è la proprietà che esiste SOLO sul video, quindi
+     TypeScript restringe davvero, e nel ramo sotto sa che webp e png ci sono.
+     Con 'kind' non ci riusciva, perché la prima schermata quel campo non ce
+     l'ha affatto. */
+  if ('sources' in media) {
     return (
       <video
         className="lm-card-media"

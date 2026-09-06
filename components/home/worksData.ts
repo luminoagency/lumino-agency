@@ -46,6 +46,18 @@ export interface Work {
    */
   siteUrl: string
   blurb: string
+  /**
+   * La SOLA PRIMA SCHERMATA, 1440×900 (16/10), ritagliata dalla cima del
+   * full-page. È quella che si vede nella griglia e nelle finestre dell'hero:
+   * lì servono immagini da monitor, ferme e riconoscibili.
+   *
+   * Tenuta separata da `media` di proposito. Quando i full-page hanno preso il
+   * posto delle prime schermate, l'hero si è ritrovato quattro strisce alte
+   * diecimila pixel al posto delle finestrelle: un file solo per due usi che
+   * vogliono proporzioni opposte non può funzionare.
+   */
+  shot: { webp: string; png: string; width: number; height: number }
+
   /** Token colore usato per l'accento della card. */
   accent: string
   ready: boolean
@@ -86,6 +98,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://zayyane.vercel.app',
     blurb:
       'Mosaico zellige generato in SVG che si compone tessera per tessera, medaglioni dei piatti a bordo dorato, menù completo e prenotazione via WhatsApp. Bilingue francese e inglese.',
+    shot: {
+      webp: '/works/hero/zayyane.webp',
+      png: '/works/hero/zayyane.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--red)',
     ready: true,
     media: {
@@ -105,6 +123,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://bienvenu-sito.vercel.app',
     blurb:
       'Sito in sei lingue con arabo RTL, pensato per i turisti che cercano prima di partire. Piatti che entrano da destra e da sinistra, prenotazione telefonica in primo piano.',
+    shot: {
+      webp: '/works/hero/bienvenu.webp',
+      png: '/works/hero/bienvenu.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--violet)',
     ready: true,
     media: {
@@ -124,6 +148,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://guizza-web.vercel.app',
     blurb:
       "Menù da oltre 130 pizze, configuratore d'ordine e consegna a domicilio. Tipografia grossa, colore pieno, zero fronzoli.",
+    shot: {
+      webp: '/works/hero/guizza.webp',
+      png: '/works/hero/guizza.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--red)',
     ready: true,
     media: {
@@ -143,6 +173,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://incanto-gelateria-siwakyceos-projects.vercel.app',
     blurb:
       'Lilla, cono scontornato e particelle che fluttuano. Un sito che sa di gelato prima ancora di leggerlo.',
+    shot: {
+      webp: '/works/hero/incanto.webp',
+      png: '/works/hero/incanto.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--violet)',
     ready: true,
     media: {
@@ -162,6 +198,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://hosteria-moderna.vercel.app/it',
     blurb:
       'Osteria e burger gourmet raccontati senza fronzoli. Menu che si aggiorna da solo, prenotazioni gestite dalla sala.',
+    shot: {
+      webp: '/works/hero/hosteria-moderna.webp',
+      png: '/works/hero/hosteria-moderna.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--red)',
     ready: true,
     media: {
@@ -181,6 +223,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://trattoria-oste.vercel.app/it',
     blurb:
       'Carne, brace e un sipario che si apre sulla sala. Tipografia grossa, contrasto netto, zero decorazione inutile.',
+    shot: {
+      webp: '/works/hero/trattoria-dalloste.webp',
+      png: '/works/hero/trattoria-dalloste.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--bordeaux)',
     ready: true,
     media: {
@@ -200,6 +248,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://aurora-preview-blush.vercel.app/',
     blurb:
       "Quattro stelle superior fronte mare. L'ora dorata come chiave visiva, prenotazione diretta senza intermediari.",
+    shot: {
+      webp: '/works/hero/hotel-aurora.webp',
+      png: '/works/hero/hotel-aurora.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--violet)',
     ready: true,
     media: {
@@ -219,6 +273,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://misspoppy.vercel.app/it',
     blurb:
       'Fast food 100% vegetale che online doveva restare sé stesso: colore pieno, ritmo veloce, menu che si sfoglia col pollice.',
+    shot: {
+      webp: '/works/hero/miss-poppy.webp',
+      png: '/works/hero/miss-poppy.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--pink)',
     ready: true,
     media: {
@@ -243,6 +303,12 @@ export const WORKS: Work[] = [
     siteUrl: 'https://rossi-restaurant-siwakyceos-projects.vercel.app/',
     blurb:
       'Wordmark che si apre attorno al video, palette petrolio e ottone. Recensioni Google in tempo reale, menù e prenotazioni.',
+    shot: {
+      webp: '/works/hero/rossi-restaurant.webp',
+      png: '/works/hero/rossi-restaurant.png',
+      width: 1440,
+      height: 900,
+    },
     accent: 'var(--blue)',
     ready: true,
     media: {
