@@ -23,10 +23,10 @@ export interface HeroWindow {
 }
 
 export const HERO_WINDOWS: HeroWindow[] = [
-  { slot: 'w1', src: '/works/hosteria-moderna.webp', width: 1600, height: 779, client: 'Hosteria Moderna' },
-  { slot: 'w2', src: '/works/hotel-aurora.webp', width: 1600, height: 774, client: 'Hotel Aurora' },
-  { slot: 'w3', src: '/works/miss-poppy.webp', width: 1600, height: 768, client: 'Miss Poppy' },
-  { slot: 'w4', src: '/works/trattoria-dalloste.webp', width: 1600, height: 778, client: "Trattoria Dall'Oste" },
+  { slot: 'w1', src: '/works/hero/hosteria-moderna.webp', width: 1440, height: 900, client: 'Hosteria Moderna' },
+  { slot: 'w2', src: '/works/hero/hotel-aurora.webp', width: 1440, height: 900, client: 'Hotel Aurora' },
+  { slot: 'w3', src: '/works/hero/miss-poppy.webp', width: 1440, height: 900, client: 'Miss Poppy' },
+  { slot: 'w4', src: '/works/hero/trattoria-dalloste.webp', width: 1440, height: 900, client: "Trattoria Dall'Oste" },
 ]
 
 /** Le sei lettere del wordmark. La I è quella nel gradiente. */
