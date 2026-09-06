@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import type { Work } from './worksData'
 import BrowserChrome from './BrowserChrome'
-import CardShot from './CardShot'
+import WorkMediaView from './WorkMediaView'
 import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
 
 /**
@@ -15,7 +15,7 @@ import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } f
  *
  * Qui restano la cornice e gli effetti legati al mouse: inclinazione verso il
  * puntatore e riflesso di luce, quindi solo da 821px in su con puntatore fine.
- * Il movimento dello screenshot vive in CardShot, che lo decide dalle
+ * Lo screenshot sta FERMO: il movimento vive nell'overlay. Prima lo decideva
  * proporzioni dell'immagine.
  */
 
@@ -33,7 +33,6 @@ export default function WorkCard({
   const cardRef = useRef<HTMLElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
-  const barRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     const card = cardRef.current
@@ -149,11 +148,12 @@ export default function WorkCard({
         <BrowserChrome label={work.barLabel} />
 
         <div className="lm-card-viewport" ref={viewportRef}>
-          <CardShot work={work} index={index} viewportRef={viewportRef} barRef={barRef} />
+          {/* Ferma. Nella griglia lo screenshot non si muove: nove card che
+              scorrono da sole sono nove animazioni che si contendono lo
+              sguardo, e il sito non lo si vede comunque. Il movimento sta
+              nell'overlay, dove c'è una cosa sola da guardare. */}
+          <WorkMediaView work={work} eager={index < 2} variant="card" />
 
-          <div className="lm-card-progress" aria-hidden="true">
-            <span ref={barRef} />
-          </div>
           <div className="lm-card-sheen" aria-hidden="true" />
 
           {/* Su desktop l'informazione "si apre" la dà il cursore che diventa un

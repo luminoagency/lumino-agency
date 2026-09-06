@@ -348,22 +348,21 @@ body {
   white-space: nowrap;
   border: 0;
 }
-/* Il nastro dello screenshot. Ancorato in alto e largo quanto la finestra:
-   l'altezza la decide l'immagine, e da quella CardShot capisce se c'è pagina
-   da scorrere o solo da far respirare. */
-.lm-card-scroll {
+/* Lo screenshot nella card: copre la finestra 16/10 ed è ancorato in ALTO.
+   L'immagine è il full-page ritagliato alla prima schermata, quindi la parte
+   alta è esattamente quello che si vedrebbe aprendo il sito.
+   Niente will-change e niente transform: qui non si muove più niente. */
+.lm-card-media,
+.lm-card-viewport picture {
   position: absolute;
-  inset: 0 0 auto;
-  width: 100%;
-  will-change: transform;
-}
-.lm-card-scroll picture {
+  inset: 0;
   display: block;
+  width: 100%;
+  height: 100%;
 }
 .lm-card-media {
-  display: block;
-  width: 100%;
-  height: auto;
+  object-fit: cover;
+  object-position: top center;
 }
 /* Finto layout di sito, finché lo screenshot vero non è in /public/works/.
    Non è un riempitivo: ha nav, hero, blocchi immagine nei colori del progetto,
@@ -512,26 +511,6 @@ body {
 
 /* Il nastro scorre da solo, quindi la barra è un indicatore di posizione e sta
    sempre accesa: comparire solo all'hover la faceva sembrare un effetto. */
-.lm-card-progress {
-  position: absolute;
-  inset: auto 0 0;
-  height: 2px;
-  background: var(--line-ink);
-  opacity: 0.9;
-  transition: opacity 0.3s ease;
-}
-.lm-card-progress span {
-  display: block;
-  height: 100%;
-  width: 100%;
-  background: var(--grad);
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-.lm-card:hover .lm-card-progress,
-.lm-card:active .lm-card-progress {
-  opacity: 1;
-}
 
 /* Riflesso di luce che segue il cursore */
 .lm-card-sheen {
