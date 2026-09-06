@@ -31,10 +31,15 @@ import { gsap, prefersReducedMotion } from './useMotion'
 
 const OPEN_MS = 0.55
 const CLOSE_MS = 0.4
-/* Oltre questo tempo senza un caricamento buono, l'incorporamento è da dare
+/* Tre secondi, non cinque.
+   Oltre questo tempo senza un caricamento buono, l'incorporamento è da dare
    per rifiutato: il sito blocca il framing, è offline, o la rete è andata
-   male. Da fuori non si distinguono, e la risposta è la stessa. */
-const EMBED_TIMEOUT_MS = 5000
+   male. Da fuori non si distinguono, e la risposta è la stessa — si mostra
+   lo screenshot e la via d'uscita verso il sito vero.
+   Cinque secondi erano troppi: davanti a un riquadro che non si riempie,
+   cinque secondi si leggono come "è rotto", non come "sta caricando". Il
+   fondo intanto non è mai vuoto, perché lo screenshot è già lì sotto. */
+const EMBED_TIMEOUT_MS = 3000
 /** Durata della visita guidata prima che l utente prenda il controllo. */
 const TOUR_S = 26
 
@@ -280,7 +285,6 @@ export default function WorkViewer({
               className={`lm-viewer-iframe${taken ? ' is-taken' : ''}`}
               src={work.siteUrl}
               title={fill(m.works.viewerLabel, { client: work.client })}
-              loading="lazy"
               onLoad={() => setLoaded(true)}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
@@ -307,8 +311,15 @@ export default function WorkViewer({
               l'incorporamento è stato rifiutato o non c'è un indirizzo.
               REGOLA: un click non deve MAI produrre il nulla. Se il sito non
               si può mostrare qui, si mostra comunque il progetto. */}
+          {/* Lo screenshot è SEMPRE montato finché non serve più: è quello
+              che il visitatore vede nell'istante in cui apre la card, senza
+              un fotogramma di vuoto. Quando l'iframe ha caricato sfuma via
+              invece di sparire di scatto — `is-gone` — e solo a dissolvenza
+              finita esce dal DOM. */}
           {!loaded || blocked ? (
-            <div className={`lm-viewer-fallback${blocked ? ' is-blocked' : ''}`}>
+            <div
+              className={`lm-viewer-fallback${blocked ? ' is-blocked' : ''}${loaded && !blocked ? ' is-gone' : ''}`}
+            >
               <div className="lm-viewer-shot">
                 <WorkMediaView work={work} eager />
               </div>

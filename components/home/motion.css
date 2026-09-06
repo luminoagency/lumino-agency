@@ -1469,3 +1469,17 @@ body.lm-lock {
   border-top: 1px solid var(--line);
   margin-top: clamp(1.5rem, 4vh, 2.5rem);
 }
+
+/* Lo screenshot che lascia il posto all'iframe: sfuma, non sparisce.
+   Senza, il passaggio dal fermo-immagine al sito vero era uno scatto secco
+   che si legge come un errore di caricamento. */
+.lm-viewer-fallback {
+  transition: opacity 0.35s ease;
+}
+.lm-viewer-fallback.is-gone {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-viewer-fallback { transition: none; }
+}
