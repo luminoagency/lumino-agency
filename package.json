@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "staff:seed": "node scripts/staff-seed.mjs",
+    "staff:seed:clean": "node scripts/staff-seed.mjs --clean"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

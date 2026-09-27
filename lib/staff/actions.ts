@@ -1,9 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from './auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { COOKIE_DEMO_NOME } from './demo'
 import { BUCKET_CAMPO } from './storage'
 import {
   SETTORI,
@@ -202,6 +204,32 @@ function messaggio(raw: string): string {
     return 'Serve il motivo del rifiuto.'
   }
   return raw
+}
+
+/**
+ * L'interruttore dei dati demo.
+ *
+ * Un cookie e non una colonna sul profilo: è una preferenza di *questa
+ * finestra*, non una proprietà dell'utente. L'admin lo accende per far vedere
+ * la dashboard piena a qualcuno, e quando chiude il browser è finita lì.
+ *
+ * Il controllo del ruolo è qui e non solo nell'interfaccia: nascondere un
+ * interruttore non impedisce a nessuno di chiamare l'azione.
+ */
+export async function impostaDemo(acceso: boolean): Promise<Esito> {
+  const me = await requireStaff()
+  if (me.role !== 'admin') return { ok: false, error: 'Solo un amministratore.' }
+
+  cookies().set(COOKIE_DEMO_NOME, acceso ? '1' : '0', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/staff',
+    /* Di sessione: si spegne da solo chiudendo il browser, che è esattamente
+       quello che serve per non ritrovarsi i clienti finti il lunedì mattina. */
+  })
+
+  revalidatePath('/staff', 'layout')
+  return { ok: true }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

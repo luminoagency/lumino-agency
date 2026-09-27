@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { LayoutGrid, Plus, Upload } from 'lucide-react'
 import PageHead from '@/components/staff/PageHead'
 import { requireStaff } from '@/lib/staff/auth'
+import { demoAttivo } from '@/lib/staff/demo'
 import { AVVISO_SCHEMA, caricaClienti } from '@/lib/staff/queries'
 import ClientiView from './ClientiView'
 
@@ -10,8 +11,10 @@ export const metadata = { title: 'Clienti' }
 export const dynamic = 'force-dynamic'
 
 export default async function ClientiPage() {
-  await requireStaff()
-  const { clienti, prezzi, venditori, zone, mancaSchema } = await caricaClienti()
+  const me = await requireStaff()
+  const { clienti, prezzi, venditori, zone, mancaSchema } = await caricaClienti(
+    demoAttivo(me.role),
+  )
 
   return (
     <>

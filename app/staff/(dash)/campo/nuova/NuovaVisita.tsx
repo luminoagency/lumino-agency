@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { Check, MapPin, Search } from 'lucide-react'
 import { Chips, ChipsOne, ChipsSiNo, opzioni } from '@/components/staff/Chips'
+import { iniziali } from '@/components/staff/ClienteCardBody'
 import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import PhotoPicker, { type FotoScattata } from '@/components/staff/PhotoPicker'
 import VoiceNote from '@/components/staff/VoiceNote'
@@ -569,13 +570,20 @@ function SceltaCliente({
             data-selected={scelto?.id === c.id}
             onClick={() => onScegli(c)}
           >
-            <span className="lm-ccard-name">{c.nome}</span>
-            <span className="lm-ccard-meta">
-              <span className="lm-dot" data-settore={c.settore} aria-hidden="true" />
-              {SETTORE_LABEL[c.settore]}
-              {[c.citta, c.zona].filter(Boolean).length > 0 && (
-                <>· {[c.citta, c.zona].filter(Boolean).join(' · ')}</>
-              )}
+            <span className="lm-ccard-head">
+              <span className="lm-avatar-i" aria-hidden="true">
+                {iniziali(c.nome)}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span className="lm-ccard-name">{c.nome}</span>
+                <span className="lm-ccard-meta">
+                  <span className="lm-dot" data-settore={c.settore} aria-hidden="true" />
+                  {SETTORE_LABEL[c.settore]}
+                  {[c.citta, c.zona].filter(Boolean).length > 0 && (
+                    <>· {[c.citta, c.zona].filter(Boolean).join(' · ')}</>
+                  )}
+                </span>
+              </span>
             </span>
             <span className="lm-ccard-foot">
               <StatoPill stato={c.stato} />

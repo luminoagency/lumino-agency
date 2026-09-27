@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { staffDb } from './db'
+import { senzaDemo } from './demo'
 import { firmaFoto } from './storage'
 import {
   STAFF_COUNTRY,
@@ -9,11 +10,11 @@ import {
   type Stato,
 } from './types'
 
-const CAMPI_CLIENTE = `
-  id, nome, settore, citta, zona, indirizzo, referente, telefono, email, instagram,
-  sito_attuale, note_sito, stato, motivo_rifiuto, assegnato_a, prezzo_consigliato,
-  voto_sito, fonte, created_at
-`
+/* `*` e non un elenco di colonne: serve leggere anche `is_demo`, che arriva
+   con la migration 0031, e nominarla farebbe fallire la query su un database
+   dove non è ancora passata. Le colonne in più non danno fastidio a nessuno —
+   sono righe corte e sono centinaia. */
+const CAMPI_CLIENTE = '*'
 
 export interface ElencoClienti {
   clienti: ClienteRiga[]
@@ -35,8 +36,8 @@ export interface ElencoClienti {
  * Le zone e i venditori si ricavano dai dati veri: un elenco di zone scritto a
  * mano diventa sbagliato al primo cliente in un paese nuovo.
  */
-export async function caricaClienti(): Promise<ElencoClienti> {
-  const supabase = createClient()
+export async function caricaClienti(demo: boolean): Promise<ElencoClienti> {
+  const supabase = staffDb()
 
   const [clienti, deals, profili] = await Promise.all([
     supabase
@@ -48,7 +49,7 @@ export async function caricaClienti(): Promise<ElencoClienti> {
     supabase.from('staff_profiles').select('id, nome').eq('attivo', true).order('nome'),
   ])
 
-  const righe = (clienti.data ?? []) as unknown as ClienteRiga[]
+  const righe = senzaDemo((clienti.data ?? []) as unknown as ClienteRiga[], demo)
 
   const prezzi: Record<string, number | null> = {}
   for (const d of (deals.data ?? []) as {
@@ -130,8 +131,8 @@ export interface DatiCampo {
  * Le foto si firmano tutte insieme alla fine, una chiamata sola per l'intera
  * schermata (vedi storage.ts).
  */
-export async function caricaCampo(): Promise<DatiCampo> {
-  const supabase = createClient()
+export async function caricaCampo(demo: boolean): Promise<DatiCampo> {
+  const supabase = staffDb()
 
   const [reports, aperti, chiusi] = await Promise.all([
     supabase
@@ -141,19 +142,19 @@ export async function caricaCampo(): Promise<DatiCampo> {
       .limit(20),
     supabase
       .from('staff_followups')
-      .select('id, client_id, user_id, data, nota, fatto, staff_clients ( nome, telefono )')
+      .select('*, staff_clients ( nome, telefono )')
       .eq('fatto', false)
       .order('data', { ascending: true })
       .limit(50),
     supabase
       .from('staff_followups')
-      .select('id, client_id, user_id, data, nota, fatto, staff_clients ( nome, telefono )')
+      .select('*, staff_clients ( nome, telefono )')
       .eq('fatto', true)
       .order('data', { ascending: false })
       .limit(10),
   ])
 
-  const visite = (reports.data ?? []).map((r) => {
+  const visite = senzaDemo(reports.data ?? [], demo).map((r) => {
     const { staff_clients: embed, ...resto } = r as Record<string, unknown> & {
       staff_clients: unknown
     }
@@ -169,8 +170,8 @@ export async function caricaCampo(): Promise<DatiCampo> {
   return {
     visite,
     foto: await firmaFoto(visite.flatMap((v) => v.foto ?? [])),
-    daFare: followup(aperti.data),
-    fatti: followup(chiusi.data),
+    daFare: followup(senzaDemo(aperti.data ?? [], demo)),
+    fatti: followup(senzaDemo(chiusi.data ?? [], demo)),
     mancaSchema: [reports, aperti, chiusi].some((r) => r.error?.code === '42P01'),
   }
 }
@@ -182,18 +183,20 @@ export async function caricaCampo(): Promise<DatiCampo> {
  * recente, si cerca il locale che si ha davanti, e lo si cerca per come si
  * chiama.
  */
-export async function clientiPerVisita(): Promise<{ clienti: ClienteScelta[]; mancaSchema: boolean }> {
-  const supabase = createClient()
+export async function clientiPerVisita(
+  demo: boolean,
+): Promise<{ clienti: ClienteScelta[]; mancaSchema: boolean }> {
+  const supabase = staffDb()
 
   const { data, error } = await supabase
     .from('staff_clients')
-    .select('id, nome, settore, citta, zona, indirizzo, telefono, stato')
+    .select('*')
     .eq('country', STAFF_COUNTRY)
     .order('nome')
     .limit(1000)
 
   return {
-    clienti: (data ?? []) as unknown as ClienteScelta[],
+    clienti: senzaDemo((data ?? []) as unknown as ClienteScelta[], demo),
     mancaSchema: error?.code === '42P01',
   }
 }
@@ -202,7 +205,7 @@ export async function clientiPerVisita(): Promise<{ clienti: ClienteScelta[]; ma
 export async function reportDiCliente(
   clientId: string,
 ): Promise<{ visite: ReportRiga[]; foto: Record<string, string> }> {
-  const supabase = createClient()
+  const supabase = staffDb()
 
   const { data } = await supabase
     .from('staff_field_reports')
@@ -217,7 +220,7 @@ export async function reportDiCliente(
 
 /** I richiami aperti di un cliente solo, per la sua scheda. */
 export async function followupDiCliente(clientId: string): Promise<FollowupRiga[]> {
-  const supabase = createClient()
+  const supabase = staffDb()
 
   const { data } = await supabase
     .from('staff_followups')
@@ -232,11 +235,7 @@ export async function followupDiCliente(clientId: string): Promise<FollowupRiga[
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
-const CAMPI_REPORT = `
-  id, client_id, user_id, gestione_prenotazioni, strumenti_usati, lingue_clienti,
-  commissioni_pagate, turisti, problemi_dichiarati, reazione, obiezione_principale,
-  frase_titolare, trascrizione_vocale, foto, lat, lng, created_at
-`
+const CAMPI_REPORT = '*'
 
 /**
  * La tabella collegata, appiattita.

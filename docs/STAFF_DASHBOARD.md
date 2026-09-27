@@ -17,72 +17,153 @@ la apre il titolare: **niente merge su `main`**.
 
 ## Design
 
-Il linguaggio dell'area interna è fissato dai tre riferimenti in
-`docs/design-refs/` (`ref1.png`, `ref2.png`, `ref3.png`). **Valgono per tutte le
-fasi** e sostituiscono le regole di design precedenti di questo file: le pill e
-le card bento qui sono volute, non un ripiego da template.
+Il linguaggio dell'area interna è fissato da **`docs/design-refs/ref1.png`,
+`ref3.png` e `ref4.png`**. Valgono per tutte le fasi e **sostituiscono per
+intero** la sezione Design precedente: la dashboard scura con l'alone viola era
+il classico pannello che sembra generato da un'AI, ed è stata buttata.
+(`ref2.png` resta nella cartella ma non è più un riferimento.)
 
-### Impianto
+### L'idea
 
-- **Bento**: griglia di card, raggio grande (24–32px), spaziature ampie.
-  Gerarchia tipografica per contrasto di scala — numero molto grande, etichetta
-  molto piccola in maiuscoletto (ref1).
-- **Base scura, contrasto chiaro**: pagina `#0E0B0A`, card scure su `--void
-  #171210` con bordo sottile semi-trasparente. Alcune card in `--cream #F4EEE4`
-  per contrasto, come la colonna chiara di ref1/ref2. Il chiaro è un accento:
-  una o due card per schermata, non metà.
-- **Glow**: alone radiale sfumato viola/rosa fisso sullo sfondo (ref3), e un
-  glow morbido dietro le card che contano. Il gradiente firma
-  `linear-gradient(100deg, #E5342A, #EC6A9C 46%, #8B5CF6)` si usa **solo** per
-  questi aloni, per la voce di menù attiva e per le evidenziazioni — mai come
-  maschera sul testo (l'eccezione storica è la I del wordmark).
+**La dashboard non è una pagina: è un oggetto di vetro appoggiato dentro una
+stanza.** Dietro c'è un ambiente vero che si muove piano, davanti un pannello
+smerigliato con dentro le card. È il modello di ref1 e ref4, ed è quello che
+distingue un prodotto da un cruscotto.
 
-### Colore
+Tre regole da cui discende tutto il resto:
 
-- `--violet #8B5CF6` è il colore di selezione e dell'azione principale (ref3):
-  bottone primario, pill attiva, riga selezionata, focus.
-- `--red #E5342A` resta per il ritardo, l'errore e il rifiuto.
-- `--cream #F4EEE4` per il testo, `--cream-dim #B9AEA1` per il secondario.
-- Il **pannello di dettaglio** dell'elemento selezionato è in gradiente viola
-  pieno, con sotto-card interne traslucide (ref3).
+1. **Base chiara.** Il fondo dell'interfaccia è la stanza, non un colore. Le
+   card sono bianche o grigio perla traslucide; il **nero pieno** è un accento
+   raro (ref4 «Living room», ref1 «Геометрия хаоса») e il viola è riservato a
+   due cose sole — l'azione principale e la selezione.
+2. **Gerarchia per scala, non per colore.** Il titolo di pagina è enorme e
+   sottile come il «Dashboard» di ref1. Tutto il resto parla a voce bassa
+   proprio perché il titolo grida.
+3. **Densità vera.** Ogni card porta qualcosa da guardare — un grafico, un
+   calendario, una mappa, un oggetto. Una card con dentro solo un numero grosso
+   è il segno che manca il contenuto, non che il design è pulito.
 
-### Componenti
+### La scena
 
-- **Pill**: tab, filtri e range di tempo sono pill — attiva piena in viola,
-  inattive in outline (ref3). La barra dei filtri mostra un contatore
-  "Filtri attivi · N" e un azzeramento.
-- **Glass**: blur + trasparenza su navigazioni flottanti, modali e overlay
-  (ref2).
-- **Navigazione**: desktop = sidebar a sinistra, voce attiva in gradiente
-  morbido (ref3); mobile = nav a pill flottante in basso, in glass (ref2).
-- **Grafici**: area chart con linea morbida, tooltip e punto luminoso (ref3);
-  anelli di progresso circolari con la percentuale al centro (ref1, ref2);
-  barre lollipop o arrotondate (ref2); barre orizzontali di progresso (ref2).
-- **Header di pagina**: titolo grande + sottotitolo piccolo + azione principale
-  a destra. La home apre con "Ciao, [nome]" col nome in viola (ref3) e la barra
-  "Chiedi a Lumino AI" (ref3), disabilitata finché manca la chiave.
+- `public/staff/bg.mp4` — interno sfocato con luce morbida (Pexels, libero),
+  **muto, in loop, 1600px, 1.8MB**, con `bg.jpg` come poster. Il loop è
+  palindromo: va avanti e torna indietro, quindi non c'è stacco al
+  riavvolgimento. Per cambiarlo si sostituiscono quei due file e basta.
+- Con `prefers-reduced-motion` il video **non viene nemmeno scaricato**:
+  `components/staff/Stage.tsx` monta il solo poster. Nasconderlo in CSS avrebbe
+  lasciato il download a carico di chi ha chiesto meno movimento.
+- Sopra il video un velo che alza le basse luci, così il vetro bianco ha sempre
+  contrasto anche quando la stanza è scura.
+
+### Colore e superfici
+
+| Ruolo | Valore |
+| --- | --- |
+| Inchiostro | `#17130F`, secondario `rgba(23,19,15,.58)` |
+| Card bianca | `rgba(255,255,255,.82)` |
+| Card perla | `rgba(244,242,238,.58)` |
+| Card nera | `#14120F` — una o due per schermata |
+| Viola | `#8B5CF6` (azione, selezione), `#6D3FE0` per i testi su chiaro |
+| Rosso | `#E5342A` — ritardo, errore, rifiuto |
+| Verde | `#1F9D63` — chiuso, in linea |
+
+Il pannello di vetro: `rgba(255,255,255,.5)`, `blur(34px) saturate(1.25)`, un
+solo bordo chiaro sottile, raggio 34px, e un'ombra lunga e morbida. Si stacca
+dalla stanza per l'ombra, non per il contorno.
 
 ### Tipografia
 
-- **Manrope** (Google Fonts) per tutta l'interfaccia e per i numeri: i pesi
-  700/800 reggono i numeri grandi senza bisogno di un secondo carattere.
-- Il logo resta il wordmark `LUMINO` attuale, con la I nel gradiente
-  (`components/home/Wordmark.tsx`).
+- **Manrope**, pesi 200–700. Titolo di pagina `clamp(2.5rem, 6.4vw, 4.6rem)` a
+  **peso 200**, interlinea 0.96, `letter-spacing -0.045em`. I numeri grandi a
+  peso 300.
+- **Etichette in tondo minuscolo.** Il maiuscoletto spaziato è vietato ovunque:
+  è la firma del pannello generico.
+- Il logo resta il wordmark `LUMINO` con la I nel gradiente.
 
-### Movimento (GSAP)
+### Navigazione
 
-- Card che entrano a cascata (stagger corto, 40–60ms).
-- Numeri che contano.
-- Hover: leggero lift + glow.
-- Transizioni morbide tra pagine.
-- Tutto si spegne con `prefers-reduced-motion`.
+- **Desktop:** rail nero stretto (74px) **dentro** il pannello, sole icone, con
+  il nome al passaggio. La voce attiva è bianca piena.
+- **Le sezioni non ancora costruite non fanno una lista.** Stanno dietro
+  un'unica icona in fondo che le elenca in un tooltip. `lib/staff/nav.ts`
+  esporta `FASE_VIVA`: a fine fase si alza di uno.
+- **Mobile:** pill flottante in basso, in vetro (ref1), dove arriva il pollice.
 
-### Regole ferme
+### Componenti
 
-- **Mobile-first**: i venditori la usano per strada, con una mano.
-- Vietato: eyebrow con ✦, numerazioni 01/02/03, gradiente come maschera del
-  testo, card generiche senza gerarchia (una card è tale se ha un numero o un
-  grafico, non se contiene solo una riga di testo).
+- **Card bento** con `data-span` su 12 colonne, `data-tone` (`pearl` / `black` /
+  `violet`) e `data-hover` per il riflesso.
+- **Controlli veri** (ref4): `Toggle`, `Slider`, `Stepper`, `Segmented` con la
+  pill che scivola. Tutti costruiti su elementi nativi travestiti dal CSS.
+- **Chip** per le risposte a tocco (38px di altezza).
+- **Lista + dettaglio** (ref3): colonna scura con le **iniziali** di ogni
+  cliente e la riga selezionata in viola, pannello di dettaglio in gradiente
+  viola con sotto-card traslucide.
+- **Callout** con la linea che punta al dettaglio (ref4, l'aspirapolvere).
+
+### Visualizzazioni
+
+Sottili e in bianco/nero come ref1: **il colore lo porta il dato, non il
+grafico**. Il viola compare solo su ciò che è selezionato o in corso.
+
+- `Ring` — anello sottile, percentuale al centro.
+- `Progress` — barra orizzontale con il valore a destra.
+- `Lollipop` — gambo di 2px e pallino in cima, numero sopra.
+- `AreaChart` — curva morbida, righello e punto luminoso, tooltip nero.
+- `Spark` — il mini grafico dentro ogni card KPI: è ciò che impedisce alle
+  caselle di essere numeri nudi.
+- `Settimana` — i prossimi sette giorni con gli impegni in **pill nere**, lo
+  scaduto in rosso appoggiato su oggi (ref1, il calendario).
+- `Mappa` — le zone coperte come punti su una sagoma schematica. Non è una
+  mappa geografica e non finge di esserlo: Leaflet resta nel piano per la F4.
+- `Oggetto` — la sfera cromata con la I di LUMINO, in CSS puro. Gira il metallo
+  (`conic-gradient`), non il corpo: ruotare in 3D un cerchio piatto lo
+  schiaccerebbe in un'ellisse.
+
+### Movimento
+
+- Card in cascata con **blur-in** (stagger 50ms), numeri che contano, barre e
+  archi che si disegnano.
+- `Tilt` — inclinazione di 4 gradi al massimo e riflesso che segue il
+  puntatore, scrivendo `--mx/--my`. Solo dove c'è un puntatore fine.
+- Video e oggetto in movimento lento e continuo; punto «live» che pulsa.
+- Trascinamento del kanban con la card che si inclina e sbiadisce.
+- **Tutto si spegne con `prefers-reduced-motion`**, e anche in una scheda in
+  secondo piano: lì `requestAnimationFrame` non gira e GSAP resterebbe
+  congelato a metà dissolvenza.
+
+### Vietato
+
+Sono le cose che facevano sembrare la versione precedente un pannello generato:
+
+- fondo quasi nero con alone viola;
+- card vuote con dentro solo un numero gigante;
+- etichette in MAIUSCOLO spaziato;
+- card tutte uguali con bordo scuro;
+- blocco viola pieno usato come decorazione;
+- sidebar con l'elenco delle sezioni «in arrivo»;
+- eyebrow con ✦ e numerazioni 01/02/03;
+- gradiente come maschera del testo (l'eccezione storica è la I del wordmark).
+
+Pill e card bento restano: qui sono volute.
+
+### Dati demo
+
+Un'interfaccia vuota non si può giudicare. `lib/staff/demo.ts` contiene
+**25 locali veneti** con storie diverse (chi ha detto di no, chi ha pagato
+l'acconto, chi ha un rinnovo la settimana prossima), date sempre relative a
+oggi e nessun `Math.random()` — server e browser devono disegnare gli stessi
+numeri.
+
+- Nel database vivono con `is_demo = true` (migration **0031**) e si vedono solo
+  se un **admin** accende l'interruttore nel rail. Il filtro è applicato in
+  memoria, non nella query: così su un database senza la colonna non si rompe
+  niente.
+- `npm run staff:seed` li inserisce, `npm run staff:seed:clean` li cancella.
+- **Anteprima di sviluppo:** con `STAFF_DEV_PREVIEW=1` in `.env.local` le pagine
+  di /staff si aprono in locale **senza login e senza toccare Supabase**, su
+  `/staff/anteprima`. Due lucchetti (`NODE_ENV !== 'production'` più la
+  variabile) e sola lettura. Fuori da lì la route non esiste.
 
 ## Auth e ruoli
 

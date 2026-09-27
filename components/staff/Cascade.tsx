@@ -30,7 +30,11 @@ export default function Cascade({
     const items = Array.from(el.querySelectorAll<HTMLElement>('[data-reveal]'))
     if (!items.length) return
 
-    if (prefersReducedMotion()) {
+    /* Niente animazione se non si può vedere: con `prefers-reduced-motion`
+       perché è stato chiesto, e in una scheda in secondo piano perché lì
+       requestAnimationFrame non gira — GSAP si fermerebbe a metà dissolvenza e
+       tornando sulla scheda si troverebbero card semitrasparenti. */
+    if (prefersReducedMotion() || document.visibilityState === 'hidden') {
       items.forEach((item) => {
         item.style.opacity = '1'
       })
@@ -39,14 +43,18 @@ export default function Cascade({
 
     const tween = gsap.fromTo(
       items,
-      { opacity: 0, y: 18 },
+      /* Il blur in entrata: le card arrivano come se stessero mettendo a
+         fuoco. Su un pannello di vetro è il movimento giusto — e costa un
+         filtro solo per mezzo secondo, non una proprietà animata per sempre. */
+      { opacity: 0, y: 18, filter: 'blur(9px)' },
       {
         opacity: 1,
         y: 0,
-        duration: 0.5,
+        filter: 'blur(0px)',
+        duration: 0.62,
         ease: 'power2.out',
         stagger: 0.05,
-        clearProps: 'transform',
+        clearProps: 'transform,filter',
       },
     )
 

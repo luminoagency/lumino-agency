@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { Check, MapPin, Phone, RotateCcw } from 'lucide-react'
+import { Segmented } from '@/components/staff/Controls'
 import { aggiornaFollowup } from '@/lib/staff/actions'
 import type { FollowupVista, VisitaRiga } from '@/lib/staff/queries'
 import {
@@ -23,7 +24,7 @@ import {
 type Tab = 'visite' | 'followup'
 
 /**
- * Le due metà del Campo, dietro due pill.
+ * Le due metà del Campo, dietro una segmentata.
  *
  * Tab e non due pagine: sono le due facce dello stesso gesto — si esce, si
  * visita, si prende un richiamo — e chi le usa passa dall'una all'altra dieci
@@ -50,29 +51,16 @@ export default function CampoView({
 
   return (
     <section className="lm-section">
-      <div className="lm-tabs" role="tablist" aria-label="Campo">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'visite'}
-          className="lm-pill"
-          data-on={tab === 'visite'}
-          onClick={() => setTab('visite')}
-        >
-          Visite
-          <span className="lm-pill-n">{visite.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'followup'}
-          className="lm-pill"
-          data-on={tab === 'followup'}
-          onClick={() => setTab('followup')}
-        >
-          Follow-up
-          <span className="lm-pill-n">{daFare.length}</span>
-        </button>
+      <div className="lm-tabs">
+        <Segmented
+          label="Campo"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'visite', label: `Visite · ${visite.length}` },
+            { value: 'followup', label: `Follow-up · ${daFare.length}` },
+          ]}
+        />
       </div>
 
       {tab === 'visite' ? (
@@ -257,7 +245,7 @@ function Gruppo({
   if (!righe.length) return null
 
   return (
-    <article className="lm-card" data-span={span} data-glow={allarme ? true : undefined}>
+    <article className="lm-card" data-span={span} data-tone={allarme ? 'pearl' : undefined}>
       <div className="lm-card-top">
         <span className="lm-label">{titolo}</span>
         <span className="lm-pill-n">{righe.length}</span>

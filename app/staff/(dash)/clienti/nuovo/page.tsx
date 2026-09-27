@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import PageHead from '@/components/staff/PageHead'
 import { requireStaff } from '@/lib/staff/auth'
-import { createClient } from '@/lib/supabase/server'
+import { staffDb } from '@/lib/staff/db'
 import NuovoClienteForm from './NuovoClienteForm'
 
 export const metadata = { title: 'Nuovo cliente' }
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function NuovoClientePage() {
   const me = await requireStaff()
-  const supabase = createClient()
+  const supabase = staffDb()
 
   /* L'elenco dei colleghi serve solo all'admin. Un venditore lo riceverebbe
      comunque filtrato dalla RLS (vede solo sé), ma chiederlo per poi non

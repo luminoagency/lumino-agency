@@ -1,86 +1,174 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LUMINO STAFF — vestito dell'area interna
+   LUMINO STAFF — la scena e l'oggetto
 
-   Linguaggio fissato dai riferimenti in docs/design-refs/ e descritto nella
-   sezione Design di docs/STAFF_DASHBOARD.md: bento su fondo quasi nero, viola
-   come colore di selezione, gradiente firma solo negli aloni, pill per tab e
-   filtri, glass sulle navigazioni flottanti.
+   Il modello mentale, preso da ref1 e ref4: la dashboard non è una pagina, è
+   un OGGETTO DI VETRO appoggiato dentro una stanza. Dietro c'è un ambiente
+   vero che si muove piano; davanti un pannello smerigliato con dentro card
+   bianche, nere e una sola viola.
 
-   Tutto è annidato sotto .lm-staff perché il body dell'app è chiaro
-   (globals.css: bg-white): senza un contenitore che dichiari il proprio fondo
-   scuro, il tema di quest'area colerebbe sulle pagine pubbliche o, peggio,
-   quelle colerebbero qui.
+   Le tre regole da cui discende tutto il resto:
 
-   Mobile-first per obbligo, non per stile: i venditori la usano in piedi
-   davanti a un bar, con una mano.
+   1. BASE CHIARA. Il fondo dell'interfaccia è la stanza, non un colore.
+      Le card sono bianche o grigio perla traslucido; il NERO PIENO è un
+      accento raro (ref4 "Living room", ref1 "Геометрия хаоса") e il viola
+      Lumino è riservato a due cose sole — l'azione principale e la selezione.
+
+   2. GERARCHIA PER SCALA, non per colore. Il titolo di pagina è enorme e
+      sottile come il "Dashboard" di ref1 (Manrope 200/300). Le etichette sono
+      in tondo minuscolo: nessun maiuscoletto spaziato, da nessuna parte.
+
+   3. DENSITÀ VERA. Ogni card porta qualcosa da guardare — un grafico, una
+      foto, un oggetto, un calendario. Una card con dentro solo un numero
+      grosso è il segno che manca il contenuto, non che il design è pulito.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .lm-staff {
   /* Struttura */
-  --rail: 256px;
-  /* Quanto la pill flottante in basso ruba al contenuto sul telefono. */
-  --dock: 86px;
+  --rail: 74px;
+  --dock: 84px;
 
-  /* Superfici. Il fondo pagina è più scuro di --void: le card devono
-     staccare *sopra* il foglio, non fondersi con esso. */
-  --ink: #0e0b0a;
-  --card: rgba(255, 255, 255, 0.038);
-  --card-2: rgba(255, 255, 255, 0.062);
-  --card-line: rgba(244, 238, 228, 0.1);
-  --card-line-strong: rgba(244, 238, 228, 0.18);
+  /* Inchiostro e superfici. Il bianco delle card non è mai opaco al 100%:
+     deve lasciare intuire la stanza sotto, o il vetro non è vetro. */
+  --ink: #17130f;
+  --ink-2: rgba(23, 19, 15, 0.58);
+  --ink-3: rgba(23, 19, 15, 0.38);
+  --line: rgba(23, 19, 15, 0.09);
+  --line-2: rgba(23, 19, 15, 0.16);
 
-  /* Raggi: grandi, e coerenti fra loro. */
+  --white: rgba(255, 255, 255, 0.82);
+  --pearl: rgba(244, 242, 238, 0.58);
+  --black: #14120f;
+
+  --violet: #8b5cf6;
+  --violet-2: #6d3fe0;
+  --red: #e5342a;
+  --green: #1f9d63;
+
+  /* Raggi generosi, come in ref1/ref4. */
   --r-xl: 30px;
-  --r-lg: 24px;
-  --r-md: 16px;
-  --r-sm: 11px;
+  --r-lg: 22px;
+  --r-md: 15px;
+  --r-sm: 10px;
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
+  position: relative;
   min-height: 100dvh;
-  background: var(--ink);
-  color: var(--cream);
+  color: var(--ink);
   font-family: var(--font-ui), system-ui, sans-serif;
   font-feature-settings: 'ss01';
   -webkit-font-smoothing: antialiased;
+  isolation: isolate;
 }
 
 .lm-staff ::selection {
-  background: rgba(139, 92, 246, 0.4);
-  color: #fff;
-}
-
-/* L'alone dello sfondo: due luci ferme, viola in alto a destra e rosa/rosso a
-   sinistra. Ferme e non al seguito del puntatore — è un'interfaccia di lavoro,
-   non un hero. */
-.lm-staff::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(52vw 44vh at 88% -10%, rgba(139, 92, 246, 0.2), transparent 58%),
-    radial-gradient(48vw 40vh at -4% 4%, rgba(236, 106, 156, 0.1), transparent 56%),
-    radial-gradient(64vw 52vh at 50% 112%, rgba(139, 92, 246, 0.08), transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+  background: rgba(139, 92, 246, 0.28);
+  color: var(--ink);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Struttura
+   La scena
+
+   Il video sta dietro tutto e non chiede attenzione: è sfocato in partenza,
+   desaturato, e si muove di un respiro lentissimo. Se si nota, è sbagliato —
+   deve solo togliere all'interfaccia quell'aria di finestra su fondo piatto.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #cfc7bd url('/staff/bg.jpg') center / cover no-repeat;
+}
+.lm-scene video,
+.lm-scene-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.08);
+  animation: lm-drift 48s ease-in-out infinite alternate;
+}
+.lm-scene-poster {
+  background: url('/staff/bg.jpg') center / cover no-repeat;
+  animation: none;
+}
+@keyframes lm-drift {
+  from {
+    transform: scale(1.08) translate3d(-1.2%, -0.6%, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(1.2%, 0.8%, 0);
+  }
+}
+
+/* Il velo: alza le basse luci e scalda leggermente, così il vetro bianco
+   sopra ha sempre abbastanza contrasto anche quando la stanza è scura. */
+.lm-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120vw 90vh at 50% 0%, rgba(255, 253, 250, 0.42), transparent 62%),
+    linear-gradient(180deg, rgba(255, 252, 248, 0.34), rgba(38, 31, 26, 0.3));
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il pannello di vetro
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-shell {
   position: relative;
-  z-index: 1;
+  min-height: 100dvh;
+}
+
+@media (min-width: 1040px) {
+  .lm-staff-shell {
+    display: flex;
+    max-width: 1660px;
+    margin: 0 auto;
+    padding: 2.2rem 2rem 2.6rem;
+  }
+}
+
+/* Il vetro vero e proprio: un solo bordo chiaro sottile, un'ombra lunga e
+   morbida, e il blur. Niente bordi doppi, niente inner glow: in ref1 e ref4
+   il pannello si stacca dalla stanza per l'ombra, non per il contorno. */
+.lm-glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(34px) saturate(1.25);
+  -webkit-backdrop-filter: blur(34px) saturate(1.25);
+  box-shadow: 0 50px 120px -48px rgba(28, 22, 18, 0.62);
+}
+@media (min-width: 1040px) {
+  .lm-glass {
+    flex: 1;
+    /* `min-width: 0` non è cosmetico: senza, il pannello si allarga fino al
+       contenuto più largo che ha dentro (il kanban, la riga dei KPI) e sfonda
+       lo schermo invece di far scorrere quel contenuto. È il comportamento di
+       default dei figli di un flex, e qui non va bene. */
+    min-width: 0;
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-radius: 34px;
+  }
 }
 
 .lm-staff-main {
-  padding: 1rem 1rem calc(var(--dock) + 1.5rem);
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1rem calc(var(--dock) + 1.6rem);
 }
-
-@media (min-width: 960px) {
+@media (min-width: 1040px) {
   .lm-staff-main {
-    padding: 2.4rem 2.6rem 4rem calc(var(--rail) + 2.6rem);
-    max-width: 1560px;
+    padding: 1.4rem 1.6rem 1.6rem;
+    max-height: calc(100dvh - 6.4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(23, 19, 15, 0.22) transparent;
   }
 }
 
@@ -90,286 +178,303 @@
 .lm-staff-brand {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.5rem;
-  color: var(--cream);
+  gap: 0.45rem;
+  color: var(--ink);
   text-decoration: none;
-  --wm-size: 1.2rem;
+  --wm-size: 1.15rem;
 }
-
 .lm-staff-brand .lm-staff-tag {
-  font-size: 0.58rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  color: var(--ink-3);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Sidebar (desktop) — voce attiva in gradiente morbido
+   Il rail nero (ref4)
+
+   Sole icone, dentro il pannello, con l'angolo arrotondato come una barra
+   fisica. Le sezioni non ancora costruite non fanno una lista di "in arrivo":
+   stanno dietro un'unica icona in fondo, che le elenca al passaggio.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-rail {
   display: none;
 }
-
-@media (min-width: 960px) {
+@media (min-width: 1040px) {
   .lm-staff-rail {
-    position: fixed;
-    inset: 0.9rem auto 0.9rem 0.9rem;
-    z-index: 30;
     display: flex;
     flex-direction: column;
-    width: calc(var(--rail) - 1.8rem);
-    padding: 1.4rem 0.9rem 1rem;
-    border: 1px solid var(--card-line);
-    border-radius: var(--r-lg);
-    background: rgba(23, 18, 16, 0.6);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    align-items: center;
+    gap: 0.3rem;
+    width: var(--rail);
+    padding: 0.9rem 0;
+    border-radius: 26px;
+    background: var(--black);
+    color: rgba(255, 255, 255, 0.62);
   }
 }
-
-.lm-staff-rail > .lm-staff-brand {
-  padding: 0 0.6rem;
+.lm-rail-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 0.6rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 1.15rem;
+  line-height: 1;
 }
-
-.lm-staff-nav {
-  margin-top: 1.7rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+.lm-rail-mark span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .lm-staff-link {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem 0.7rem;
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  font-size: 0.87rem;
-  font-weight: 500;
-  color: var(--cream-dim);
-  text-decoration: none;
-  transition:
-    color 0.22s,
-    background-color 0.22s,
-    border-color 0.22s;
-}
-
-.lm-staff-link svg {
-  width: 17px;
-  height: 17px;
-  stroke-width: 1.7;
-  flex: none;
-  opacity: 0.8;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .lm-staff-link:hover {
-    color: var(--cream);
-    background: var(--card);
-  }
-}
-
-/* L'unico gradiente della navigazione: morbido, sotto la voce attiva. */
-.lm-staff-link[aria-current='page'] {
-  color: #fff;
-  border-color: rgba(139, 92, 246, 0.42);
-  background: linear-gradient(
-    100deg,
-    rgba(229, 52, 42, 0.18),
-    rgba(236, 106, 156, 0.2) 46%,
-    rgba(139, 92, 246, 0.34)
-  );
-}
-.lm-staff-link[aria-current='page'] svg {
-  opacity: 1;
-}
-
-.lm-staff-link[data-soon='true'] {
-  color: rgba(185, 174, 161, 0.5);
-}
-.lm-staff-soon {
-  margin-left: auto;
-  font-size: 0.54rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(185, 174, 161, 0.45);
-  white-space: nowrap;
-}
-
-/* Piede della sidebar: chi sei e come si esce. */
-.lm-staff-me {
-  margin-top: 0.8rem;
-  padding: 0.85rem;
-  border-radius: var(--r-md);
-  background: var(--card);
-  border: 1px solid var(--card-line);
-  font-size: 0.74rem;
-  color: var(--cream-dim);
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-.lm-staff-me strong {
-  display: block;
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: var(--cream);
-}
-.lm-staff-out {
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--cream-dim);
-  font: inherit;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color 0.22s;
-}
-.lm-staff-out:hover {
-  color: var(--red);
-}
-
-.lm-staff-avatar {
-  width: 32px;
-  height: 32px;
-  flex: none;
   display: grid;
   place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+.lm-staff-link svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+.lm-staff-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.lm-staff-link[aria-current='page'] {
+  background: #fff;
+  color: var(--black);
+}
+.lm-rail-spacer {
+  flex: 1;
+}
+
+/* Il tooltip: il rail dice cosa fa solo quando glielo si chiede. */
+.lm-tip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 0.35rem 0.6rem;
+  border-radius: 9px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.3s var(--ease);
+  z-index: 20;
+}
+.lm-staff-link:hover .lm-tip,
+.lm-staff-link:focus-visible .lm-tip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+.lm-tip[data-multi='true'] {
+  white-space: normal;
+  width: 190px;
+  line-height: 1.55;
+}
+.lm-tip b {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.lm-rail-me {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  width: 44px;
+}
+.lm-staff-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--grad);
+  background: var(--violet);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
 }
+.lm-staff-out {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.lm-staff-out:hover {
+  color: #fff;
+}
+.lm-staff-out svg {
+  width: 16px;
+  height: 16px;
+}
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Testa mobile e nav a pill flottante
+   Testa e dock su telefono
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-top {
-  position: sticky;
-  top: 0;
-  z-index: 25;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.8rem 1rem;
-  background: linear-gradient(to bottom, var(--ink) 55%, transparent);
+  gap: 1rem;
+  padding: 0.9rem 1rem 0;
 }
-
-@media (min-width: 960px) {
+@media (min-width: 1040px) {
   .lm-staff-top {
     display: none;
   }
 }
 
+/* La pill flottante in basso (ref1): vetro, non nero — sul telefono galleggia
+   sopra il contenuto e deve lasciarlo intravedere. */
 .lm-staff-dock {
   position: fixed;
-  inset: auto auto calc(0.85rem + env(safe-area-inset-bottom)) 50%;
+  left: 50%;
+  bottom: 0.9rem;
   transform: translateX(-50%);
-  z-index: 40;
+  z-index: 50;
   display: flex;
   align-items: center;
   gap: 0.15rem;
-  padding: 0.35rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 999px;
-  background: rgba(23, 18, 16, 0.68);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.9);
-  max-width: calc(100vw - 1.6rem);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 20px 44px -18px rgba(28, 22, 18, 0.5);
+  max-width: calc(100vw - 1.4rem);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-
-@media (min-width: 960px) {
+.lm-staff-dock::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 1040px) {
   .lm-staff-dock {
     display: none;
   }
 }
-
 .lm-staff-tab {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.5rem 0.7rem;
+  gap: 0.35rem;
+  height: 40px;
+  padding: 0 0.8rem;
   border: 0;
   border-radius: 999px;
-  background: none;
-  color: var(--cream-dim);
+  background: transparent;
+  color: var(--ink-2);
   font: inherit;
-  font-size: 0.56rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition:
-    color 0.2s,
-    background-color 0.25s var(--ease);
+    background-color 0.25s,
+    color 0.25s;
 }
 .lm-staff-tab svg {
-  width: 19px;
-  height: 19px;
-  stroke-width: 1.7;
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
 }
-.lm-staff-tab[aria-current='page'],
-.lm-staff-tab[aria-expanded='true'] {
+.lm-staff-tab[aria-current='page'] {
+  background: var(--black);
   color: #fff;
-  background: var(--violet);
 }
 
-/* Pannello "Altro": le voci che nella pill non ci stanno. */
 .lm-staff-sheet {
   position: fixed;
   inset: 0;
-  z-index: 45;
+  z-index: 60;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  background: rgba(8, 6, 5, 0.66);
+  align-items: flex-end;
+  padding: 1rem;
+  background: rgba(30, 24, 20, 0.4);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  animation: lm-fade 0.24s ease both;
 }
 .lm-staff-sheet-inner {
-  border: 1px solid var(--card-line);
-  border-bottom: 0;
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-  background: rgba(23, 18, 16, 0.94);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  padding: 1.3rem 1rem calc(var(--dock) + 1.2rem);
-  animation: lm-rise 0.36s var(--ease) both;
+  width: 100%;
+  margin-bottom: calc(var(--dock) - 1rem);
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+  box-shadow: 0 30px 70px -30px rgba(28, 22, 18, 0.6);
 }
-.lm-staff-sheet .lm-staff-nav {
-  margin-top: 0.7rem;
-  overflow: visible;
+.lm-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.8rem;
 }
-
-@keyframes lm-fade {
-  from {
-    opacity: 0;
-  }
+.lm-sheet-item {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
 }
-@keyframes lm-rise {
-  from {
-    transform: translateY(12%);
-  }
+.lm-sheet-item svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+.lm-sheet-item[data-soon='true'] {
+  opacity: 0.42;
+  pointer-events: none;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Header di pagina — titolo grande, sottotitolo piccolo, azione a destra
+   Titoli
+
+   Il "Dashboard" di ref1: grande, sottilissimo, quasi senza spaziatura. È la
+   sola cosa gridata della pagina, e proprio per questo tutto il resto può
+   parlare a voce bassa.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-head {
   display: flex;
@@ -377,43 +482,47 @@
   justify-content: space-between;
   gap: 1.2rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.4rem;
 }
 .lm-head-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   flex-wrap: wrap;
 }
 
 .lm-h1 {
-  font-size: clamp(1.85rem, 6.5vw, 2.7rem);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.032em;
+  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
+  font-weight: 200;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
 }
 .lm-h1 em {
   font-style: normal;
+  font-weight: 500;
   color: var(--violet);
 }
 .lm-sub {
-  margin-top: 0.45rem;
-  font-size: 0.86rem;
-  color: var(--cream-dim);
-  max-width: 52ch;
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  max-width: 54ch;
 }
 
-/* L'etichetta che apre una sezione o una card. */
+/* L'etichetta di una card. Tondo minuscolo, nessuna spaziatura forzata:
+   il maiuscoletto spaziato è la firma del pannello generico. */
 .lm-label {
-  font-size: 0.6rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 0.17em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  color: var(--ink);
+}
+.lm-card[data-tone='black'] .lm-label,
+.lm-card[data-tone='violet'] .lm-label {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .lm-section {
-  margin-top: 1.6rem;
+  margin-top: 1.5rem;
 }
 .lm-section > .lm-label {
   display: block;
@@ -421,30 +530,23 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Bento — la griglia e le sue card
+   Bento
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-bento {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
+  gap: 0.6rem;
 }
-
-@media (min-width: 720px) {
+@media (min-width: 760px) {
   .lm-bento {
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0.9rem;
+    gap: 0.72rem;
   }
 }
-
-/* Le campate: su telefono tutto sta su 1 o 2 colonne, da 720px in su vale
-   quello che la card chiede. */
 .lm-bento > [data-span] {
   grid-column: span 2;
 }
-.lm-bento > [data-span='1'] {
-  grid-column: span 1;
-}
-@media (min-width: 720px) {
+@media (min-width: 760px) {
   .lm-bento > [data-span='1'] {
     grid-column: span 2;
   }
@@ -478,157 +580,204 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 1.05rem 1.1rem;
-  border: 1px solid var(--card-line);
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--r-lg);
-  background: linear-gradient(170deg, var(--card-2), var(--card));
-  color: var(--cream);
+  background: var(--white);
+  color: var(--ink);
   text-decoration: none;
+  overflow: hidden;
   transition:
-    transform 0.4s var(--ease),
-    border-color 0.3s,
-    box-shadow 0.4s var(--ease);
+    box-shadow 0.45s var(--ease),
+    border-color 0.3s;
 }
-
-@media (min-width: 720px) {
+@media (min-width: 760px) {
   .lm-card {
-    padding: 1.25rem 1.35rem;
+    padding: 1.15rem 1.25rem;
     border-radius: var(--r-xl);
   }
 }
 
-/* Il glow morbido dietro la card: è qui che il gradiente firma ha diritto di
-   esistere, sfocato e sotto, mai come fondo pieno. */
-.lm-card[data-glow]::before {
-  content: '';
-  position: absolute;
-  inset: 22% -6% -30% -6%;
-  border-radius: inherit;
-  background: var(--grad);
-  filter: blur(34px);
-  opacity: 0.2;
-  z-index: -1;
-  pointer-events: none;
+.lm-card[data-tone='pearl'] {
+  background: var(--pearl);
+  border-color: rgba(255, 255, 255, 0.48);
 }
 
-.lm-card[data-tone='cream'] {
-  background: var(--cream);
-  border-color: rgba(22, 17, 14, 0.12);
-  color: #15100e;
-}
-.lm-card[data-tone='cream'] .lm-label,
-.lm-card[data-tone='cream'] .lm-kpi-name,
-.lm-card[data-tone='cream'] .lm-muted {
-  color: rgba(21, 16, 14, 0.56);
-}
-.lm-card[data-tone='cream'] .lm-num {
-  color: #15100e;
-}
-
-.lm-card[data-tone='violet'] {
-  background: linear-gradient(152deg, #7b46ef, #8b5cf6 48%, #6b3fd4);
-  border-color: rgba(255, 255, 255, 0.2);
+/* Il nero pieno: uno o due per schermata, mai di più. È l'accento che tiene
+   in piedi tutta la composizione chiara (ref4 "Living room"). */
+.lm-card[data-tone='black'] {
+  background: var(--black);
+  border-color: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
-.lm-card[data-tone='violet'] .lm-label,
-.lm-card[data-tone='violet'] .lm-kpi-name,
-.lm-card[data-tone='violet'] .lm-muted {
-  color: rgba(255, 255, 255, 0.72);
+.lm-card[data-tone='black'] .lm-muted,
+.lm-card[data-tone='black'] .lm-kpi-name,
+.lm-card[data-tone='black'] .lm-sub,
+.lm-card[data-tone='black'] .lm-empty {
+  color: rgba(255, 255, 255, 0.58);
+}
+.lm-card[data-tone='black'] .lm-num {
+  color: #fff;
 }
 
+/* Il viola: solo l'elemento selezionato (ref3). Uno per schermata. */
+.lm-card[data-tone='violet'] {
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.lm-card[data-tone='violet'] .lm-muted,
+.lm-card[data-tone='violet'] .lm-kpi-name,
+.lm-card[data-tone='violet'] .lm-sub,
+.lm-card[data-tone='violet'] .lm-empty {
+  color: rgba(255, 255, 255, 0.76);
+}
+.lm-card[data-tone='violet'] .lm-num {
+  color: #fff;
+}
+
+/* Il riflesso che segue il puntatore: due variabili scritte dal JS (Tilt), e
+   niente se il mouse non ci è mai passato. */
+.lm-card[data-hover]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    22rem 22rem at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.5),
+    transparent 62%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.lm-card[data-tone='black'][data-hover]::after,
+.lm-card[data-tone='violet'][data-hover]::after {
+  background: radial-gradient(
+    22rem 22rem at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.22),
+    transparent 60%
+  );
+}
 @media (hover: hover) and (pointer: fine) {
   .lm-card[data-hover]:hover {
-    transform: translateY(-3px);
-    border-color: var(--card-line-strong);
-    box-shadow: 0 22px 52px -26px rgba(139, 92, 246, 0.85);
+    box-shadow: 0 26px 54px -30px rgba(28, 22, 18, 0.55);
   }
-}
-
-/* Sotto-card traslucide dentro il pannello viola (ref3). */
-.lm-sub-card {
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.13);
-  color: inherit;
+  .lm-card[data-hover]:hover::after {
+    opacity: 1;
+  }
 }
 
 .lm-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.9rem;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+}
+
+/* Sotto-card traslucide dentro il pannello viola (ref3). */
+.lm-sub-card {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
 }
 
 .lm-muted {
-  color: var(--cream-dim);
+  color: var(--ink-2);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Numeri — grandi, con l'etichetta piccola sotto
+   Numeri
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-num {
   display: block;
-  font-weight: 800;
-  line-height: 0.94;
-  letter-spacing: -0.04em;
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
-  color: var(--cream);
+  color: var(--ink);
 }
 .lm-num-sm {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .lm-num-md {
-  font-size: clamp(1.7rem, 5vw, 2.2rem);
+  font-size: clamp(1.7rem, 4.6vw, 2.3rem);
 }
 .lm-num-lg {
-  font-size: clamp(2.3rem, 8vw, 3.1rem);
+  font-size: clamp(2.4rem, 7vw, 3.2rem);
 }
 .lm-num-xl {
-  font-size: clamp(3rem, 11vw, 4.6rem);
+  font-size: clamp(3.2rem, 10vw, 4.6rem);
 }
 
 .lm-kpi-name {
-  margin-top: 0.5rem;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
-/* La riga di variazione sotto un KPI (ref3). */
 .lm-delta {
-  margin-top: 0.4rem;
+  margin-top: 0.35rem;
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.74rem;
-  color: var(--cream-dim);
+  font-size: 0.78rem;
+  color: var(--ink-2);
 }
 .lm-delta[data-dir='up'] {
-  color: #6ee7a8;
+  color: var(--green);
 }
 .lm-delta[data-dir='down'] {
   color: var(--red);
 }
 
+/* Il punto "live" di ref4. */
+.lm-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.lm-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.5);
+  animation: lm-live 2.4s ease-out infinite;
+}
+@keyframes lm-live {
+  60%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(31, 157, 99, 0);
+  }
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
-   Pill — tab, filtri, range di tempo, stati
+   Pill e bottoni
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.38rem;
   height: 34px;
-  padding: 0 0.85rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0 0.8rem;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: transparent;
-  color: var(--cream-dim);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
@@ -636,190 +785,76 @@
   transition:
     background-color 0.22s,
     color 0.22s,
-    border-color 0.22s,
-    transform 0.3s var(--ease);
+    border-color 0.22s;
 }
 .lm-pill svg {
   width: 14px;
   height: 14px;
-  stroke-width: 2;
+  stroke-width: 1.9;
 }
-
 @media (hover: hover) and (pointer: fine) {
   .lm-pill:hover {
-    color: var(--cream);
-    border-color: rgba(244, 238, 228, 0.34);
+    color: var(--ink);
+    background: #fff;
   }
 }
-
 .lm-pill[data-on='true'] {
   background: var(--violet);
   border-color: transparent;
   color: #fff;
 }
 .lm-pill[data-on='true']:hover {
+  background: var(--violet);
+  color: #fff;
+}
+.lm-pill[data-size='sm'] {
+  height: 27px;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+}
+.lm-card[data-tone='black'] .lm-pill,
+.lm-card[data-tone='violet'] .lm-pill {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
-.lm-pill[data-size='sm'] {
-  height: 26px;
-  padding: 0 0.6rem;
-  font-size: 0.68rem;
-}
-
-/* Il contatore dentro la pill (ref3: "Unpaid 5"). */
 .lm-pill-n {
   display: inline-grid;
   place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 0.3rem;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 0.32rem;
   border-radius: 999px;
-  background: rgba(244, 238, 228, 0.14);
-  font-size: 0.62rem;
-  font-weight: 700;
+  background: rgba(23, 19, 15, 0.1);
+  font-size: 0.68rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 .lm-pill[data-on='true'] .lm-pill-n {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.lm-card[data-tone='black'] .lm-pill-n,
+.lm-card[data-tone='violet'] .lm-pill-n {
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
-/* Le pill di stato del cliente: stesso disegno, colore per famiglia. */
-.lm-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.22rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-.lm-state::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.lm-state[data-stato='da_contattare'] {
-  color: #b9aea1;
-  border-color: rgba(185, 174, 161, 0.4);
-}
-.lm-state[data-stato='contattato'] {
-  color: #8fb7ff;
-  border-color: rgba(143, 183, 255, 0.4);
-}
-.lm-state[data-stato='in_trattativa'] {
-  color: #c4a6ff;
-  border-color: rgba(196, 166, 255, 0.45);
-}
-.lm-state[data-stato='preventivo_inviato'] {
-  color: #f0a5c6;
-  border-color: rgba(240, 165, 198, 0.45);
-}
-.lm-state[data-stato='accettato'] {
-  color: #6ee7a8;
-  border-color: rgba(110, 231, 168, 0.45);
-}
-.lm-state[data-stato='rifiutato'] {
-  color: #ff7a72;
-  border-color: rgba(255, 122, 114, 0.45);
-}
-.lm-state[data-stato='in_pausa'] {
-  color: #d8c48f;
-  border-color: rgba(216, 196, 143, 0.4);
-}
-
-/* ───────────────────────────────────────────────────────────────────────────
-   Barra dei filtri
-   ─────────────────────────────────────────────────────────────────────────── */
-.lm-filters {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  margin: 1.1rem 0;
-  padding-bottom: 0.2rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.lm-filters::-webkit-scrollbar {
-  display: none;
-}
-
-.lm-filters-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.7rem 0 0;
-  margin-right: 0.15rem;
-  border-right: 1px solid var(--card-line);
-  height: 34px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  white-space: nowrap;
-}
-
-/* Il menù a tendina travestito da pill: è un <select> vero, perché su un
-   telefono il selettore di sistema batte qualunque finta lista. */
-.lm-select {
-  position: relative;
-  display: inline-flex;
-}
-.lm-select select {
-  appearance: none;
-  height: 34px;
-  padding: 0 1.9rem 0 0.85rem;
-  border: 1px solid var(--card-line-strong);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--cream-dim);
-  font: inherit;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-.lm-select select option {
-  background: #1e1715;
-  color: var(--cream);
-}
-.lm-select[data-on='true'] select {
-  background: var(--violet);
-  border-color: transparent;
-  color: #fff;
-}
-.lm-select svg {
-  position: absolute;
-  right: 0.6rem;
-  top: 50%;
-  translate: 0 -50%;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-/* ───────────────────────────────────────────────────────────────────────────
-   Bottoni
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
   height: 40px;
-  padding: 0 1.1rem;
+  padding: 0 1.05rem;
   border: 1px solid transparent;
   border-radius: 999px;
   background: var(--violet);
   color: #fff;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -835,415 +870,352 @@
 }
 .lm-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  filter: brightness(1.08);
-  box-shadow: 0 14px 30px -14px rgba(139, 92, 246, 0.9);
+  box-shadow: 0 14px 28px -14px rgba(139, 92, 246, 0.8);
 }
 .lm-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
-
 .lm-btn[data-variant='ghost'] {
-  background: transparent;
-  border-color: var(--card-line-strong);
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--line-2);
+  color: var(--ink);
 }
 .lm-btn[data-variant='ghost']:hover:not(:disabled) {
-  background: var(--card);
+  background: #fff;
   box-shadow: none;
+}
+/* Il bottone nero di ref4 ("+ ADD ROOM"): azione neutra ma decisa. */
+.lm-btn[data-variant='dark'] {
+  background: var(--black);
 }
 .lm-btn[data-variant='danger'] {
   background: var(--red);
 }
 .lm-btn[data-variant='light'] {
-  background: var(--cream);
-  color: #15100e;
+  background: #fff;
+  color: var(--ink);
 }
 
 .lm-icon-btn {
   display: inline-grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--card-line-strong);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-2);
   border-radius: 50%;
-  background: transparent;
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
   cursor: pointer;
-  transition:
-    background-color 0.22s,
-    border-color 0.22s;
+  transition: background-color 0.22s;
 }
 .lm-icon-btn:hover {
-  background: var(--card);
+  background: #fff;
 }
 .lm-icon-btn svg {
-  width: 17px;
-  height: 17px;
+  width: 16px;
+  height: 16px;
   stroke-width: 1.8;
 }
 
+.lm-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.lm-back:hover {
+  color: var(--ink);
+}
+.lm-back svg {
+  width: 15px;
+  height: 15px;
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
-   Barra "Chiedi a Lumino AI"
+   Controlli veri (ref4): interruttore, cursore, stepper, segmentata
    ─────────────────────────────────────────────────────────────────────────── */
-.lm-ask {
+.lm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: inherit;
+}
+.lm-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.lm-toggle-track {
   position: relative;
+  flex: none;
+  width: 46px;
+  height: 27px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.16);
+  transition: background-color 0.3s var(--ease);
+}
+.lm-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(20, 16, 12, 0.3);
+  transition: transform 0.34s var(--ease);
+}
+.lm-toggle input:checked + .lm-toggle-track {
+  background: var(--violet);
+}
+.lm-toggle input:checked + .lm-toggle-track::after {
+  transform: translateX(19px);
+}
+.lm-card[data-tone='black'] .lm-toggle-track {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Il cursore bianco di ref4. */
+.lm-slider {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  margin: 1.2rem 0 0;
-  padding: 0.75rem 0.8rem 0.75rem 1.1rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0.35rem 0.6rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
 }
-.lm-ask::before {
-  content: '';
-  position: absolute;
-  inset: 30% 10% -60% 10%;
-  background: var(--grad);
-  filter: blur(30px);
-  opacity: 0.22;
-  z-index: -1;
-  border-radius: inherit;
-}
-.lm-ask input {
+.lm-slider input {
   flex: 1;
-  min-width: 0;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.14);
+  outline: none;
+}
+.lm-slider input::-webkit-slider-thumb {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 1px 5px rgba(20, 16, 12, 0.32);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.lm-slider input::-webkit-slider-thumb:hover {
+  transform: scale(1.14);
+}
+.lm-slider input::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
   border: 0;
-  background: none;
-  color: var(--cream);
-  font: inherit;
-  font-size: 0.88rem;
+  border-radius: 50%;
+  background: var(--violet);
+  cursor: pointer;
 }
-.lm-ask input::placeholder {
-  color: rgba(185, 174, 161, 0.62);
-}
-.lm-ask input:disabled {
-  cursor: not-allowed;
-}
-.lm-ask-note {
-  font-size: 0.64rem;
+.lm-slider b {
+  min-width: 3.4ch;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(185, 174, 161, 0.6);
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
-.lm-ask-spark {
+
+.lm-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.18rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.lm-stepper button {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
   border-radius: 50%;
-  background: var(--grad);
-  color: #fff;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
 }
-.lm-ask-spark svg {
+.lm-stepper button:hover {
+  background: rgba(23, 19, 15, 0.07);
+}
+.lm-stepper button svg {
   width: 14px;
   height: 14px;
 }
-
-/* ───────────────────────────────────────────────────────────────────────────
-   Grafici
-   ─────────────────────────────────────────────────────────────────────────── */
-
-/* Anello di progresso: percentuale al centro (ref1, ref2). */
-.lm-ring {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-}
-.lm-ring svg {
-  display: block;
-  transform: rotate(-90deg);
-}
-.lm-ring-track {
-  fill: none;
-  stroke: rgba(244, 238, 228, 0.12);
-}
-.lm-ring-arc {
-  fill: none;
-  stroke: var(--violet);
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.9s var(--ease);
-}
-.lm-card[data-tone='violet'] .lm-ring-track {
-  stroke: rgba(255, 255, 255, 0.24);
-}
-.lm-card[data-tone='violet'] .lm-ring-arc {
-  stroke: #fff;
-}
-.lm-card[data-tone='cream'] .lm-ring-track {
-  stroke: rgba(21, 16, 14, 0.12);
-}
-.lm-ring-mid {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
+.lm-stepper b {
+  min-width: 2.6ch;
   text-align: center;
-  line-height: 1.05;
-}
-.lm-ring-n {
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 0.84rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.lm-ring-cap {
-  margin-top: 0.15rem;
-  font-size: 0.55rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.66;
-}
 
-/* Barra orizzontale di progresso (ref2). */
-.lm-prog {
-  display: grid;
-  gap: 0.3rem;
-}
-.lm-prog-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  font-size: 0.78rem;
-}
-.lm-prog-top b {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.lm-prog-track {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(244, 238, 228, 0.1);
-  overflow: hidden;
-}
-.lm-prog-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--violet);
-  transform-origin: left center;
-}
-.lm-prog-fill[data-tone='grad'] {
-  background: var(--grad);
-}
-.lm-card[data-tone='violet'] .lm-prog-track {
-  background: rgba(255, 255, 255, 0.24);
-}
-.lm-card[data-tone='violet'] .lm-prog-fill {
-  background: #fff;
-}
-.lm-card[data-tone='cream'] .lm-prog-track {
-  background: rgba(21, 16, 14, 0.1);
-}
-
-/* Lollipop (ref2): un gambo sottile e una testa tonda. */
-.lm-lolli {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.35rem;
-  height: 108px;
-  padding-top: 0.5rem;
-}
-.lm-lolli-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  gap: 0.4rem;
-  min-width: 0;
-}
-.lm-lolli-stem {
+/* Segmentata con la pill che scivola (ref3/ref4). */
+.lm-seg {
   position: relative;
-  width: 3px;
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(244, 238, 228, 0.16);
-  transform-origin: bottom center;
+  background: rgba(255, 255, 255, 0.55);
 }
-.lm-lolli-stem[data-on='true'] {
-  background: var(--violet);
-}
-.lm-lolli-stem::after {
-  content: '';
+.lm-seg-ind {
   position: absolute;
-  top: -5px;
-  left: 50%;
-  translate: -50% 0;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: inherit;
-}
-.lm-lolli-stem[data-on='true']::after {
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.9);
-}
-.lm-lolli-cap {
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--cream-dim);
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-/* Area chart: linea morbida, riempimento sfumato, punto luminoso (ref3). */
-.lm-area {
-  position: relative;
-  width: 100%;
-}
-.lm-area svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-.lm-area-line {
-  fill: none;
-  stroke: var(--violet);
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-.lm-area-dot {
-  fill: #fff;
-  stroke: var(--violet);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-}
-.lm-area-hit {
-  fill: transparent;
-  cursor: crosshair;
-}
-.lm-area-rule {
-  stroke: rgba(244, 238, 228, 0.22);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-  vector-effect: non-scaling-stroke;
-}
-.lm-area-tip {
-  position: absolute;
-  z-index: 3;
-  translate: -50% -125%;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--card-line-strong);
-  border-radius: var(--r-sm);
-  background: rgba(23, 18, 16, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  font-size: 0.7rem;
-  white-space: nowrap;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  border-radius: 999px;
+  background: var(--black);
+  transition:
+    transform 0.42s var(--ease),
+    width 0.42s var(--ease);
   pointer-events: none;
 }
-.lm-area-tip b {
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.lm-area-x {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-  font-size: 0.58rem;
+.lm-seg button {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  padding: 0 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.79rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.lm-seg button[data-on='true'] {
+  color: #fff;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Le due viste della pipeline
-
-   Kanban e lista non sono lo stesso albero con un CSS diverso: sul telefono
-   una colonna trascinabile è inutilizzabile, quindi la lista è un altro DOM.
-   La scelta la fa il CSS e non un hook sulla larghezza, perché un hook
-   deciderebbe solo dopo l'idratazione — e sul telefono si vedrebbe comparire
-   per un istante il kanban.
+   Stati del cliente
    ─────────────────────────────────────────────────────────────────────────── */
-.lm-desk {
+.lm-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.2rem 0.58rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.lm-state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lm-state[data-stato='contattato'] {
+  color: #2f6dd0;
+}
+.lm-state[data-stato='in_trattativa'] {
+  color: var(--violet-2);
+}
+.lm-state[data-stato='preventivo_inviato'] {
+  color: #c2417f;
+}
+.lm-state[data-stato='accettato'] {
+  color: var(--green);
+}
+.lm-state[data-stato='rifiutato'] {
+  color: var(--red);
+}
+.lm-state[data-stato='in_pausa'] {
+  color: #a5791f;
+}
+.lm-card[data-tone='violet'] .lm-state,
+.lm-card[data-tone='black'] .lm-state {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Filtri e ricerca
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  padding-bottom: 0.2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lm-filters::-webkit-scrollbar {
   display: none;
 }
-@media (min-width: 960px) {
-  .lm-desk {
-    display: block;
-  }
-  .lm-mob {
-    display: none;
-  }
+.lm-filters-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding-right: 0.7rem;
+  margin-right: 0.15rem;
+  border-right: 1px solid var(--line);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Riga di KPI compatti
-   ─────────────────────────────────────────────────────────────────────────── */
-.lm-kpis {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
+.lm-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
-@media (min-width: 560px) {
-  .lm-kpis {
-    grid-template-columns: repeat(auto-fit, minmax(146px, 1fr));
-    gap: 0.7rem;
-  }
-}
-
-.lm-kpi {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.85rem 0.95rem;
-  border: 1px solid var(--card-line);
-  border-radius: var(--r-lg);
-  background: linear-gradient(170deg, var(--card-2), var(--card));
-  color: inherit;
-  text-align: left;
+.lm-select select {
+  appearance: none;
+  height: 34px;
+  padding: 0 1.9rem 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
   font: inherit;
+  font-size: 0.8rem;
   cursor: pointer;
-  transition:
-    transform 0.3s var(--ease),
-    border-color 0.25s,
-    box-shadow 0.3s var(--ease);
 }
-@media (hover: hover) and (pointer: fine) {
-  .lm-kpi:hover {
-    transform: translateY(-2px);
-    border-color: var(--card-line-strong);
-    box-shadow: 0 16px 36px -24px rgba(139, 92, 246, 0.9);
-  }
-}
-.lm-kpi[data-on='true'] {
+.lm-select[data-on='true'] select {
+  background: var(--violet);
   border-color: transparent;
-  background: linear-gradient(152deg, #7b46ef, #8b5cf6 48%, #6b3fd4);
   color: #fff;
 }
-.lm-kpi[data-on='true'] .lm-kpi-name {
-  color: rgba(255, 255, 255, 0.78);
+.lm-select svg {
+  position: absolute;
+  right: 0.65rem;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.6;
 }
-.lm-kpi .lm-num {
-  font-size: clamp(1.5rem, 5vw, 1.9rem);
-}
-.lm-kpi[data-on='true'] .lm-num {
+.lm-select[data-on='true'] svg {
   color: #fff;
-}
-.lm-kpi .lm-kpi-name {
-  margin-top: 0.15rem;
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
+  opacity: 1;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Ricerca
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-search {
   position: relative;
   display: flex;
@@ -1253,236 +1225,831 @@
 }
 .lm-search svg {
   position: absolute;
-  left: 0.75rem;
+  left: 0.72rem;
   width: 15px;
   height: 15px;
-  opacity: 0.55;
+  opacity: 0.45;
   pointer-events: none;
 }
 .lm-search input {
   width: 100%;
   height: 34px;
-  padding: 0 0.9rem 0 2.1rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0 0.9rem 0 2.05rem;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: transparent;
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 .lm-search input::placeholder {
-  color: rgba(185, 174, 161, 0.55);
+  color: var(--ink-3);
 }
 .lm-search input:focus {
   outline: none;
   border-color: var(--violet);
-}
-
-/* Il ritorno alla lista, sopra il titolo di una scheda. */
-.lm-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.7rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.lm-back:hover {
-  color: var(--cream);
-}
-.lm-back svg {
-  width: 14px;
-  height: 14px;
+  background: #fff;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Kanban
+   Visualizzazioni
+
+   Sottili e in bianco/nero come ref1: il colore lo porta il dato, non il
+   grafico. Il viola compare solo quando qualcosa è selezionato.
    ─────────────────────────────────────────────────────────────────────────── */
+
+/* Anello sottile con la percentuale al centro (ref1). */
+.lm-ring {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+}
+.lm-ring svg {
+  transform: rotate(-90deg);
+}
+.lm-ring-track {
+  fill: none;
+  stroke: rgba(23, 19, 15, 0.11);
+}
+.lm-ring-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.1s var(--ease);
+}
+.lm-card[data-tone='black'] .lm-ring-track,
+.lm-card[data-tone='violet'] .lm-ring-track {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+.lm-card[data-tone='black'] .lm-ring-arc,
+.lm-card[data-tone='violet'] .lm-ring-arc {
+  stroke: #fff;
+}
+.lm-ring-mid {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.lm-ring-n {
+  font-size: 1.45rem;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.lm-ring-cap {
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: var(--ink-2);
+}
+.lm-card[data-tone='black'] .lm-ring-cap,
+.lm-card[data-tone='violet'] .lm-ring-cap {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Barra orizzontale con la percentuale a destra (ref1). */
+.lm-prog + .lm-prog {
+  margin-top: 0.55rem;
+}
+.lm-prog-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.79rem;
+}
+.lm-prog-top b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.lm-prog-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.1);
+  overflow: hidden;
+}
+.lm-prog-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+  transform-origin: left center;
+  animation: lm-grow 1s var(--ease) both;
+}
+.lm-prog-fill[data-tone='violet'] {
+  background: var(--violet);
+}
+.lm-card[data-tone='black'] .lm-prog-track,
+.lm-card[data-tone='violet'] .lm-prog-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+.lm-card[data-tone='black'] .lm-prog-fill,
+.lm-card[data-tone='violet'] .lm-prog-fill {
+  background: #fff;
+}
+@keyframes lm-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Lollipop: gambo sottile, pallino in cima (ref1). */
+.lm-lolli {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 126px;
+  margin-top: 0.5rem;
+}
+.lm-lolli-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  height: 100%;
+  min-width: 0;
+}
+.lm-lolli-stem {
+  position: relative;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.2);
+  animation: lm-stem 0.9s var(--ease) both;
+}
+.lm-lolli-stem::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(23, 19, 15, 0.2);
+}
+.lm-lolli-stem[data-on='true'],
+.lm-lolli-stem[data-on='true']::after {
+  background: var(--ink);
+}
+.lm-lolli-col[data-sel='true'] .lm-lolli-stem,
+.lm-lolli-col[data-sel='true'] .lm-lolli-stem::after {
+  background: var(--violet);
+}
+@keyframes lm-stem {
+  from {
+    height: 0 !important;
+  }
+}
+.lm-lolli-cap {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.lm-lolli-n {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Area chart in bianco e nero, linea morbida e punto luminoso (ref1/ref3). */
+.lm-area {
+  position: relative;
+  width: 100%;
+}
+.lm-area svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.lm-area-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lm-area-dot {
+  fill: var(--ink);
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.lm-area-rule {
+  stroke: rgba(23, 19, 15, 0.12);
+  stroke-dasharray: 2 4;
+}
+.lm-area-x {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+.lm-area-tip {
+  position: absolute;
+  transform: translate(-50%, -125%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.lm-area-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+/* Sparkline dentro le card KPI (ref3). */
+.lm-spark {
+  display: block;
+  width: 100%;
+  height: 38px;
+  margin-top: 0.6rem;
+  overflow: visible;
+}
+.lm-spark path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lm-spark rect {
+  fill: rgba(23, 19, 15, 0.16);
+}
+.lm-spark rect[data-last='true'] {
+  fill: var(--violet);
+}
+/* Su fondo nero l'inchiostro non si vede: le barre e la linea passano al
+   bianco, come già fanno anelli e barre di progresso. */
+.lm-card[data-tone='black'] .lm-spark rect,
+.lm-card[data-tone='violet'] .lm-spark rect {
+  fill: rgba(255, 255, 255, 0.34);
+}
+.lm-card[data-tone='black'] .lm-spark rect[data-last='true'],
+.lm-card[data-tone='violet'] .lm-spark rect[data-last='true'] {
+  fill: #fff;
+}
+.lm-card[data-tone='black'] .lm-spark path,
+.lm-card[data-tone='violet'] .lm-spark path {
+  stroke: #fff;
+}
+
+/* Calendario della settimana con gli eventi in pill nere (ref1). */
+.lm-cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+.lm-cal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.26rem;
+  min-height: 112px;
+  padding: 0.45rem 0.32rem;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid transparent;
+}
+.lm-cal-day[data-oggi='true'] {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+.lm-cal-dow {
+  font-size: 0.66rem;
+  color: var(--ink-3);
+  text-align: center;
+}
+.lm-cal-n {
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.1rem;
+}
+.lm-cal-ev {
+  display: block;
+  padding: 0.24rem 0.4rem;
+  border-radius: 7px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+.lm-cal-ev[data-late='true'] {
+  background: var(--red);
+}
+.lm-cal-ev:hover {
+  background: var(--violet);
+}
+
+/* Mappa delle zone: punti su una sagoma, non una mappa vera (ref1). */
+.lm-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.lm-map-land {
+  fill: rgba(23, 19, 15, 0.1);
+}
+.lm-map-dot {
+  fill: var(--ink);
+}
+.lm-map-halo {
+  fill: rgba(139, 92, 246, 0.18);
+}
+.lm-map-cap {
+  font-size: 7.5px;
+  fill: var(--ink-2);
+}
+
+/* Il callout con la linea che punta al dettaglio (ref4, l'aspirapolvere). */
+.lm-callout {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.28rem 0.58rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px -8px rgba(20, 16, 12, 0.55);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  z-index: 2;
+}
+.lm-callout b {
+  font-weight: 700;
+}
+.lm-callout span {
+  color: var(--ink-2);
+}
+.lm-callout::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  width: var(--len, 34px);
+  background: rgba(255, 255, 255, 0.8);
+}
+.lm-callout::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+.lm-callout[data-dir='right']::before {
+  left: 100%;
+}
+.lm-callout[data-dir='right']::after {
+  left: calc(100% + var(--len, 34px));
+  transform: translate(-50%, -50%);
+}
+.lm-callout[data-dir='left']::before {
+  right: 100%;
+}
+.lm-callout[data-dir='left']::after {
+  right: calc(100% + var(--len, 34px));
+  transform: translate(50%, -50%);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   L'oggetto cromato (ref1, la sfera)
+
+   Una card nera con dentro una cosa che gira piano. Non è decorazione: è ciò
+   che distingue un pannello da un prodotto — e la I di LUMINO ci sta dentro
+   come firma.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-object {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  perspective: 620px;
+}
+.lm-object-core {
+  position: relative;
+  width: 74%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    inset 0 -16px 28px rgba(0, 0, 0, 0.62),
+    inset 0 12px 24px rgba(255, 255, 255, 0.38),
+    0 26px 48px -20px rgba(0, 0, 0, 0.95);
+}
+/* Il metallo gira, il corpo no.
+   Ruotare in 3D un cerchio piatto lo schiaccia in un'ellisse: sembra un disco
+   di traverso, non una sfera. Qui gira solo il `conic-gradient` sotto, mentre
+   la luce e il riflesso restano fermi dove sono — che è come si comporta una
+   palla cromata vera sotto una lampada ferma. */
+.lm-object-core::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  background: conic-gradient(
+    from 210deg,
+    #2b2723,
+    #e9e4dd 16%,
+    #6f6961 30%,
+    #ffffff 44%,
+    #8b5cf6 58%,
+    #3a3530 72%,
+    #d9d3cb 86%,
+    #2b2723
+  );
+  animation: lm-spin 22s linear infinite;
+}
+/* La luce: un riflesso alto a sinistra e un rimbalzo viola in basso a destra.
+   Fermi, sopra il metallo che scorre. */
+.lm-object-core::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(38% 32% at 30% 24%, rgba(255, 255, 255, 0.95), transparent 70%),
+    radial-gradient(58% 48% at 74% 80%, rgba(139, 92, 246, 0.55), transparent 68%),
+    radial-gradient(120% 120% at 50% 50%, transparent 58%, rgba(0, 0, 0, 0.45));
+}
+@keyframes lm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* L'anello che orbita: dà la profondità che una sfera sola non ha. */
+.lm-object-ring {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-bottom-color: rgba(139, 92, 246, 0.7);
+  transform: rotateX(74deg);
+  animation: lm-orbit 14s linear infinite;
+}
+@keyframes lm-orbit {
+  to {
+    transform: rotateX(74deg) rotate(360deg);
+  }
+}
+.lm-object-i {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 3.6rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.9);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Kanban e card cliente
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-desk {
+  display: none;
+}
+.lm-mob {
+  display: block;
+}
+@media (min-width: 1040px) {
+  .lm-desk {
+    display: block;
+  }
+  .lm-mob {
+    display: none;
+  }
+}
+
 .lm-kanban {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 282px;
-  gap: 0.8rem;
+  grid-auto-columns: minmax(208px, 1fr);
+  gap: 0.55rem;
   overflow-x: auto;
-  padding-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
   scrollbar-width: thin;
 }
-
 .lm-col {
   display: flex;
   flex-direction: column;
-  min-height: 220px;
-  padding: 0.8rem 0.7rem;
-  border: 1px solid var(--card-line);
+  min-height: 190px;
+  padding: 0.7rem 0.6rem;
   border-radius: var(--r-lg);
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid transparent;
   transition:
     background-color 0.25s,
     border-color 0.25s;
 }
 .lm-col[data-over='true'] {
-  border-color: rgba(139, 92, 246, 0.7);
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
 }
 .lm-col-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.7rem;
-  padding: 0 0.2rem;
+  margin-bottom: 0.6rem;
+  padding: 0 0.25rem;
+}
+.lm-col-top .lm-label {
+  font-size: 0.78rem;
 }
 .lm-col-n {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--ink-3);
   font-variant-numeric: tabular-nums;
-  color: var(--cream-dim);
 }
 .lm-col-body {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
+  gap: 0.4rem;
 }
 .lm-col-empty {
-  padding: 1.2rem 0.5rem;
-  border: 1px dashed var(--card-line);
-  border-radius: var(--r-md);
-  text-align: center;
-  font-size: 0.72rem;
-  color: rgba(185, 174, 161, 0.6);
+  padding: 0.7rem 0.3rem;
+  font-size: 0.76rem;
+  color: var(--ink-3);
 }
 
 .lm-ccard {
   display: block;
-  padding: 0.75rem 0.8rem;
-  border: 1px solid var(--card-line);
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: var(--r-md);
-  background: linear-gradient(170deg, var(--card-2), var(--card));
+  background: rgba(255, 255, 255, 0.78);
   color: inherit;
   text-decoration: none;
   cursor: grab;
   transition:
-    transform 0.3s var(--ease),
-    border-color 0.25s,
-    box-shadow 0.3s var(--ease),
-    opacity 0.2s;
+    transform 0.32s var(--ease),
+    box-shadow 0.32s var(--ease),
+    opacity 0.2s,
+    background-color 0.25s;
 }
 .lm-ccard:hover {
-  border-color: var(--card-line-strong);
   transform: translateY(-2px);
-  box-shadow: 0 16px 34px -22px rgba(139, 92, 246, 0.9);
+  box-shadow: 0 16px 30px -20px rgba(28, 22, 18, 0.6);
 }
+/* Il trascinamento: la card che parte resta come un'ombra e si inclina. */
 .lm-ccard[data-dragging='true'] {
-  opacity: 0.35;
+  opacity: 0.32;
   cursor: grabbing;
+  transform: scale(0.97) rotate(-1.4deg);
 }
 .lm-ccard[data-selected='true'] {
   border-color: transparent;
-  background: linear-gradient(152deg, #7b46ef, #8b5cf6 48%, #6b3fd4);
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+  color: #fff;
+  box-shadow: 0 18px 34px -18px rgba(109, 63, 224, 0.75);
+}
+.lm-ccard.lm-pick {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.lm-ccard-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+/* Le iniziali al posto dell'avatar (ref3): un cerchio con due lettere è
+   riconoscibile in un elenco molto più di un'icona uguale per tutti. */
+.lm-avatar-i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(23, 19, 15, 0.08);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.lm-ccard[data-selected='true'] .lm-avatar-i {
+  background: rgba(255, 255, 255, 0.22);
   color: #fff;
 }
 .lm-ccard-name {
-  font-size: 0.88rem;
-  font-weight: 700;
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
   letter-spacing: -0.012em;
 }
 .lm-ccard-meta {
-  margin-top: 0.3rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.32rem;
   flex-wrap: wrap;
-  font-size: 0.7rem;
-  color: var(--cream-dim);
+  font-size: 0.72rem;
+  color: var(--ink-2);
 }
 .lm-ccard[data-selected='true'] .lm-ccard-meta {
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255, 255, 255, 0.78);
 }
 .lm-ccard-foot {
-  margin-top: 0.55rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--card-line);
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
 }
 .lm-ccard[data-selected='true'] .lm-ccard-foot {
-  border-top-color: rgba(255, 255, 255, 0.24);
+  border-top-color: rgba(255, 255, 255, 0.26);
 }
 .lm-ccard-price {
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-/* Il punto colorato del settore: una virgola, non un badge in più. */
 .lm-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--ink-3);
   flex: none;
-  background: var(--cream-dim);
 }
 .lm-dot[data-settore='ristorante'] {
-  background: #ff9f68;
+  background: #d0772f;
 }
 .lm-dot[data-settore='bar'] {
-  background: #8fb7ff;
+  background: #2f8fd0;
 }
 .lm-dot[data-settore='hotel'] {
-  background: #c4a6ff;
+  background: var(--violet);
 }
 .lm-dot[data-settore='estetista'] {
-  background: #f0a5c6;
+  background: #c2417f;
 }
 .lm-dot[data-settore='barbiere'] {
-  background: #6ee7a8;
+  background: #4b4540;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Vista lista + pannello di dettaglio (ref3)
+   KPI cliccabili della pipeline (ref3: card bianche con mini grafico)
    ─────────────────────────────────────────────────────────────────────────── */
-.lm-split {
-  display: grid;
-  gap: 0.8rem;
-}
-@media (min-width: 1040px) {
-  .lm-split {
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-    align-items: start;
-  }
-}
-
-.lm-listbox {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  max-height: 68vh;
-  overflow-y: auto;
-  padding-right: 0.2rem;
-  scrollbar-width: thin;
-}
-
-.lm-detail {
-  position: sticky;
-  top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-.lm-detail-grid {
+.lm-kpis {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
-@media (min-width: 640px) {
+@media (min-width: 680px) {
+  .lm-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1240px) {
+  .lm-kpis {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+.lm-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-lg);
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.3s var(--ease),
+    box-shadow 0.3s var(--ease),
+    background-color 0.25s;
+}
+.lm-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px -22px rgba(28, 22, 18, 0.55);
+}
+.lm-kpi[data-on='true'] {
+  background: var(--black);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-kpi[data-on='true'] .lm-kpi-name,
+.lm-kpi[data-on='true'] .lm-num {
+  color: #fff;
+}
+.lm-kpi[data-on='true'] .lm-spark path {
+  stroke: #fff;
+}
+.lm-kpi[data-on='true'] .lm-spark rect {
+  fill: rgba(255, 255, 255, 0.3);
+}
+.lm-kpi .lm-num {
+  font-size: 1.9rem;
+}
+.lm-kpi .lm-kpi-name {
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Lista + dettaglio (ref3)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-split {
+  display: grid;
+  gap: 0.7rem;
+}
+@media (min-width: 1100px) {
+  .lm-split {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+}
+/* La colonna della lista è scura (ref3): fa da contrappeso al pannello viola
+   accanto, e fa risaltare la riga selezionata. */
+.lm-listbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 0.6rem;
+  border-radius: var(--r-xl);
+  background: var(--black);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.lm-listbox .lm-ccard {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.94);
+}
+.lm-listbox .lm-ccard:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+.lm-listbox .lm-ccard[data-selected='true'] {
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+}
+.lm-listbox .lm-ccard-meta {
+  color: rgba(255, 255, 255, 0.55);
+}
+.lm-listbox .lm-ccard-foot {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+.lm-listbox .lm-avatar-i {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.lm-listbox .lm-state {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+}
+.lm-listbox .lm-col-empty {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.lm-detail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.lm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 620px) {
   .lm-detail-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1491,35 +2058,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.8rem;
+  gap: 0.7rem;
   flex-wrap: wrap;
   margin-top: 0.9rem;
   padding-top: 0.9rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-/* Dentro il pannello viola le pill di stato perdono il colore di famiglia:
-   su quel fondo un verde o un rosa tenue smettono di leggersi. Restano bianche
-   — lì lo stato è già scritto per esteso accanto. */
-.lm-card[data-tone='violet'] .lm-state {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
 }
 .lm-card[data-tone='violet'] .lm-select select {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.lm-card[data-tone='violet'] .lm-select svg {
   color: #fff;
 }
 .lm-card[data-tone='violet'] .lm-row {
   border-bottom-color: rgba(255, 255, 255, 0.2);
 }
-.lm-card[data-tone='violet'] .lm-empty,
-.lm-card[data-tone='violet'] .lm-sub {
-  color: rgba(255, 255, 255, 0.76);
-}
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Righe, liste di lavoro, timeline
+   Righe, timeline
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-rows {
   display: flex;
@@ -1529,10 +2087,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.9rem;
-  padding: 0.62rem 0;
-  border-bottom: 1px solid var(--card-line);
-  font-size: 0.83rem;
+  gap: 0.85rem;
+  padding: 0.58rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.84rem;
   color: inherit;
   text-decoration: none;
 }
@@ -1542,54 +2100,56 @@
 }
 .lm-row-note {
   display: block;
-  margin-top: 0.15rem;
-  font-size: 0.72rem;
-  color: var(--cream-dim);
+  margin-top: 0.12rem;
+  font-size: 0.74rem;
+  color: var(--ink-2);
+}
+.lm-card[data-tone='violet'] .lm-row-note,
+.lm-card[data-tone='black'] .lm-row-note {
+  color: rgba(255, 255, 255, 0.7);
 }
 .lm-row-v {
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .lm-when {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--ink-2);
   white-space: nowrap;
 }
 .lm-when[data-late='true'] {
   color: var(--red);
+  font-weight: 600;
 }
-
 .lm-empty {
-  padding: 1.1rem 0.2rem;
-  font-size: 0.82rem;
-  color: rgba(185, 174, 161, 0.72);
+  padding: 1rem 0.2rem;
+  font-size: 0.84rem;
+  color: var(--ink-3);
 }
 
 .lm-time {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.85rem;
   padding-left: 0.9rem;
-  border-left: 1px solid var(--card-line);
+  border-left: 1px solid var(--line);
 }
 .lm-time-item {
   position: relative;
-  font-size: 0.84rem;
+  font-size: 0.85rem;
 }
 .lm-time-item::before {
   content: '';
   position: absolute;
   left: calc(-0.9rem - 4px);
-  top: 0.42rem;
+  top: 0.4rem;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--violet);
-  box-shadow: 0 0 0 3px var(--ink);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
 }
 .lm-time-head {
   display: flex;
@@ -1598,68 +2158,145 @@
   gap: 0.8rem;
 }
 .lm-time-tipo {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--violet);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--violet-2);
 }
 .lm-time-body {
-  margin-top: 0.2rem;
-  color: var(--cream-dim);
+  margin-top: 0.15rem;
+  color: var(--ink-2);
   line-height: 1.5;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Barra «Chiedi a Lumino»
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-ask {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+}
+.lm-ask-spark {
+  display: grid;
+  place-items: center;
+  color: var(--violet);
+}
+.lm-ask-spark svg {
+  width: 17px;
+  height: 17px;
+}
+.lm-ask input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+}
+.lm-ask input:focus {
+  outline: none;
+}
+.lm-ask input::placeholder {
+  color: var(--ink-3);
+}
+.lm-ask-note {
+  flex: none;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.07);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-2);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
    Avvisi
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-warn {
-  margin: 1.1rem 0;
-  padding: 0.9rem 1.1rem;
-  border: 1px solid rgba(229, 52, 42, 0.42);
+  margin: 0.9rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(229, 52, 42, 0.3);
   border-radius: var(--r-md);
-  background: rgba(229, 52, 42, 0.08);
-  font-size: 0.83rem;
+  background: rgba(229, 52, 42, 0.07);
+  font-size: 0.84rem;
   line-height: 1.55;
-  color: var(--cream);
 }
 .lm-warn code {
-  font-size: 0.86em;
-  color: var(--pink);
+  font-size: 0.88em;
+  color: var(--red);
+}
+.lm-error {
+  font-size: 0.82rem;
+  color: var(--red);
+}
+
+/* La fascia dell'anteprima: deve essere impossibile scambiarla per il vero. */
+.lm-anteprima {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(23, 19, 15, 0.92) 0 12px,
+    rgba(23, 19, 15, 0.76) 12px 24px
+  );
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Modale in glass
+   Modale
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-modal {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 70;
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(8, 6, 5, 0.62);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(34, 27, 22, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   animation: lm-fade 0.22s ease both;
+}
+@keyframes lm-fade {
+  from {
+    opacity: 0;
+  }
 }
 .lm-modal-box {
   width: 100%;
   max-width: 440px;
   padding: 1.4rem;
-  border: 1px solid var(--card-line-strong);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: var(--r-xl);
-  background: rgba(30, 23, 21, 0.86);
-  backdrop-filter: blur(26px) saturate(1.3);
-  -webkit-backdrop-filter: blur(26px) saturate(1.3);
-  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.95);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(30px) saturate(1.3);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  box-shadow: 0 50px 100px -40px rgba(28, 22, 18, 0.7);
   animation: lm-pop 0.34s var(--ease) both;
 }
+.lm-modal-box:has(.lm-modal-form) {
+  max-width: 680px;
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
 .lm-modal-box h2 {
-  margin-top: 0.5rem;
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: -0.028em;
+  margin-top: 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.035em;
 }
 .lm-modal-actions {
   display: flex;
@@ -1670,7 +2307,7 @@
 @keyframes lm-pop {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(10px) scale(0.985);
   }
 }
 
@@ -1679,7 +2316,7 @@
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-form {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.85rem;
 }
 @media (min-width: 640px) {
   .lm-form[data-cols='2'] {
@@ -1689,26 +2326,23 @@
     grid-column: 1 / -1;
   }
 }
-
 .lm-field label,
 .lm-field > .lm-label {
   display: block;
-  margin-bottom: 0.35rem;
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
 }
 .lm-field input,
 .lm-field textarea,
 .lm-field select {
   width: 100%;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0.62rem 0.82rem;
+  border: 1px solid var(--line-2);
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
   font: inherit;
   font-size: 0.88rem;
   transition:
@@ -1724,29 +2358,21 @@
   appearance: none;
   cursor: pointer;
 }
-.lm-field select option {
-  background: #1e1715;
-}
 .lm-field input:focus,
 .lm-field textarea:focus,
 .lm-field select:focus {
   outline: none;
   border-color: var(--violet);
-  background: rgba(139, 92, 246, 0.08);
+  background: #fff;
 }
 .lm-field input::placeholder,
 .lm-field textarea::placeholder {
-  color: rgba(185, 174, 161, 0.45);
+  color: var(--ink-3);
 }
 .lm-field-hint {
-  margin-top: 0.3rem;
-  font-size: 0.72rem;
-  color: rgba(185, 174, 161, 0.75);
-}
-
-.lm-error {
-  font-size: 0.8rem;
-  color: var(--red);
+  margin-top: 0.28rem;
+  font-size: 0.76rem;
+  color: var(--ink-3);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -1754,29 +2380,28 @@
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--card-line);
+  border: 1px solid var(--line);
   border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.5);
   scrollbar-width: thin;
 }
 .lm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 .lm-table th,
 .lm-table td {
   padding: 0.55rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid var(--card-line);
+  border-bottom: 1px solid var(--line);
 }
 .lm-table th {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--cream-dim);
-  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.6);
   position: sticky;
   top: 0;
 }
@@ -1784,16 +2409,17 @@
   border-bottom: 0;
 }
 .lm-table td[data-skip='true'] {
-  color: rgba(185, 174, 161, 0.4);
+  color: var(--ink-3);
 }
 
 .lm-drop {
   display: grid;
   place-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   padding: 2rem 1rem;
-  border: 1px dashed var(--card-line-strong);
+  border: 1px dashed var(--line-2);
   border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.4);
   text-align: center;
   cursor: pointer;
   transition:
@@ -1817,11 +2443,11 @@
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-soon-page {
   max-width: 46ch;
-  padding-top: 8vh;
+  padding-top: 7vh;
 }
 .lm-thread {
-  margin-top: 1.6rem;
-  height: 3px;
+  margin-top: 1.5rem;
+  height: 2px;
   border-radius: 999px;
   background: var(--grad);
   transform-origin: left center;
@@ -1844,6 +2470,10 @@
 
 /* ───────────────────────────────────────────────────────────────────────────
    Login
+
+   La stessa scena, e sopra un solo pannello di vetro. È la prima cosa che si
+   vede dell'area: se qui il linguaggio non è già tutto, dentro non ci si
+   crede.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-login {
   min-height: 100dvh;
@@ -1856,43 +2486,31 @@
   width: 100%;
   max-width: 400px;
   padding: 1.9rem 1.7rem;
-  border: 1px solid var(--card-line-strong);
-  border-radius: var(--r-xl);
-  background: rgba(30, 23, 21, 0.62);
-  backdrop-filter: blur(24px) saturate(1.3);
-  -webkit-backdrop-filter: blur(24px) saturate(1.3);
-  box-shadow: 0 40px 100px -50px rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(34px) saturate(1.35);
+  -webkit-backdrop-filter: blur(34px) saturate(1.35);
+  box-shadow: 0 50px 110px -45px rgba(28, 22, 18, 0.7);
 }
-.lm-login-card::before {
-  content: '';
-  position: absolute;
-  inset: 30% -8% -24% -8%;
-  border-radius: inherit;
-  background: var(--grad);
-  filter: blur(46px);
-  opacity: 0.26;
-  z-index: -1;
+.lm-login-card .lm-h1 {
+  margin-top: 1.2rem;
+  font-size: clamp(2.2rem, 9vw, 2.9rem);
 }
 .lm-login-card form {
-  margin-top: 1.6rem;
+  margin-top: 1.5rem;
   display: grid;
-  gap: 0.9rem;
+  gap: 0.85rem;
 }
 .lm-login-card .lm-btn {
   margin-top: 0.3rem;
   width: 100%;
-  height: 44px;
+  height: 46px;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Campo (F3) — chip, passi, visita, follow-up
-
-   È la parte che si usa in piedi, con una mano: ogni bersaglio da toccare qui
-   sta sopra i 40px, e l'azione principale resta in fondo allo schermo, dove
-   arriva il pollice.
+   Campo — chip, passi, visita, follow-up
    ─────────────────────────────────────────────────────────────────────────── */
-
-/* Chip — la risposta a tocco. Sono pill, e il viola pieno vuol dire scelto. */
 .lm-chips-group {
   border: 0;
   padding: 0;
@@ -1900,39 +2518,32 @@
   min-width: 0;
 }
 .lm-chips-hint {
-  margin-top: 0.15rem;
-  margin-bottom: 0.1rem;
+  margin-top: 0.12rem;
 }
 .lm-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.55rem;
+  gap: 0.36rem;
+  margin-top: 0.5rem;
 }
-/* Un chip si tocca con il pollice, non con un puntatore: 38px di altezza e
-   niente troncamento, perché due chip larghi uguali si scambiano di posto
-   nella memoria di chi li usa tutti i giorni. */
+/* Un chip si tocca col pollice: 38px, e nessuna troncatura. */
 .lm-chips .lm-pill {
   height: 38px;
-  padding: 0 0.95rem;
-  font-size: 0.8rem;
+  padding: 0 0.92rem;
+  font-size: 0.82rem;
 }
 
-/* Tab a pill in testa a una sezione. */
 .lm-tabs {
   display: flex;
-  gap: 0.45rem;
-  margin-bottom: 1.1rem;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   I tre passi della visita
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-steps {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.9rem;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1942,16 +2553,16 @@
 .lm-step {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.42rem;
   height: 38px;
-  padding: 0 0.9rem 0 0.4rem;
-  border: 1px solid var(--card-line-strong);
+  padding: 0 0.85rem 0 0.35rem;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: transparent;
-  color: var(--cream-dim);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -1964,30 +2575,30 @@
   cursor: not-allowed;
 }
 .lm-step[data-on='true'] {
-  background: var(--violet);
+  background: var(--black);
   border-color: transparent;
   color: #fff;
 }
 .lm-step[data-done='true'] {
-  color: var(--cream);
-  border-color: rgba(139, 92, 246, 0.5);
+  color: var(--ink);
+  border-color: rgba(139, 92, 246, 0.45);
 }
 .lm-step-n {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 27px;
+  height: 27px;
   border-radius: 50%;
-  background: rgba(244, 238, 228, 0.12);
-  font-size: 0.72rem;
+  background: rgba(23, 19, 15, 0.08);
+  font-size: 0.74rem;
   font-variant-numeric: tabular-nums;
 }
 .lm-step[data-on='true'] .lm-step-n {
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.2);
 }
 .lm-step[data-done='true'] .lm-step-n {
-  background: rgba(139, 92, 246, 0.24);
-  color: var(--violet);
+  background: rgba(139, 92, 246, 0.16);
+  color: var(--violet-2);
 }
 .lm-step-n svg {
   width: 13px;
@@ -1995,16 +2606,10 @@
   stroke-width: 2.6;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Il modulo della visita
-   ─────────────────────────────────────────────────────────────────────────── */
-/* Sul telefono la barra delle azioni è fissa e copre il fondo della pagina:
-   il modulo si lascia sotto tanto spazio quanto la barra occupa, altrimenti
-   l'ultimo campo resta irraggiungibile proprio mentre lo si compila. */
 .lm-visita {
   margin-bottom: 4.2rem;
 }
-@media (min-width: 960px) {
+@media (min-width: 1040px) {
   .lm-visita {
     margin-bottom: 0;
   }
@@ -2012,50 +2617,46 @@
 .lm-visita-blocchi {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.2rem;
 }
 .lm-visita .lm-listbox {
-  max-height: 50vh;
+  max-height: 48vh;
 }
 
-/* La scheda cliente dentro il selettore: non si trascina, si sceglie. */
-.lm-ccard.lm-pick {
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-}
-
-/* La barra delle azioni. Sul telefono sta incollata in fondo sopra la nav,
-   su desktop torna in linea: là il pollice non c'entra e una barra fissa
-   ruberebbe solo altezza. */
 .lm-visita-bar {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--dock) - 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--dock) + 0.4rem);
   z-index: 40;
   display: flex;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem;
-  border-top: 1px solid var(--card-line);
-  background: rgba(14, 11, 10, 0.82);
-  backdrop-filter: blur(20px) saturate(1.3);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  gap: 0.45rem;
+  width: calc(100% - 1.6rem);
+  padding: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 20px 44px -20px rgba(28, 22, 18, 0.55);
 }
 .lm-visita-bar .lm-btn {
   flex: 1;
-  height: 46px;
+  height: 44px;
 }
-@media (min-width: 960px) {
+@media (min-width: 1040px) {
   .lm-visita-bar {
     position: static;
+    transform: none;
     justify-content: flex-end;
-    padding: 1.2rem 0 0;
-    border-top: 0;
+    width: auto;
+    padding: 1.1rem 0 0;
+    border: 0;
+    border-radius: 0;
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    box-shadow: none;
   }
   .lm-visita-bar .lm-btn {
     flex: 0 0 auto;
@@ -2063,17 +2664,16 @@
   }
 }
 
-/* La riga del GPS: uno stato, non un comando. */
 .lm-gps {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--card-line);
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 0.8rem;
-  color: var(--cream-dim);
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 0.82rem;
+  color: var(--ink-2);
 }
 .lm-gps svg {
   width: 16px;
@@ -2085,18 +2685,13 @@
   flex: 1;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Nota vocale
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-voice-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.4rem;
 }
-/* Il pallino che pulsa mentre il microfono ascolta: è l'unica conferma che
-   il dettato è vivo, e senza non si sa se parlare o toccare di nuovo. */
 .lm-voice-live {
   width: 7px;
   height: 7px;
@@ -2111,14 +2706,11 @@
   }
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Foto
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-shots {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
 }
 .lm-shot {
   position: relative;
@@ -2127,8 +2719,8 @@
   height: 84px;
   border-radius: var(--r-md);
   overflow: hidden;
-  border: 1px solid var(--card-line-strong);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.5);
 }
 .lm-shot img {
   width: 100%;
@@ -2146,9 +2738,7 @@
   height: 24px;
   border: 0;
   border-radius: 50%;
-  background: rgba(8, 6, 5, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(20, 16, 12, 0.72);
   color: #fff;
   cursor: pointer;
 }
@@ -2160,156 +2750,142 @@
 .lm-shot-add {
   display: grid;
   place-items: center;
-  gap: 0.25rem;
+  gap: 0.2rem;
   width: 84px;
   height: 84px;
-  border: 1px dashed var(--card-line-strong);
+  border: 1px dashed var(--line-2);
   border-radius: var(--r-md);
-  background: transparent;
-  color: var(--cream-dim);
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--ink-2);
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
   transition:
     border-color 0.25s,
-    background-color 0.25s,
-    color 0.25s;
+    background-color 0.25s;
 }
 .lm-shot-add:hover:not(:disabled) {
   border-color: var(--violet);
   background: rgba(139, 92, 246, 0.07);
-  color: var(--cream);
 }
 .lm-shot-add:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 .lm-shot-add svg {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   stroke-width: 1.6;
   color: var(--violet);
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Le visite registrate
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-visit-name {
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--cream);
+  color: inherit;
   text-decoration: none;
 }
 .lm-visit-name:hover {
-  color: var(--violet);
+  color: var(--violet-2);
 }
 .lm-visit-map {
   align-self: flex-start;
-  margin-top: 0.9rem;
+  margin-top: 0.85rem;
 }
 
-/* La reazione: l'unico posto dell'area dove un colore dice un giudizio, e
-   allora lo dice per intero — dal verde al rosso, senza mezze tinte. */
+/* La reazione è l'unico posto in cui un colore esprime un giudizio. */
 .lm-react {
   display: inline-flex;
   align-items: center;
-  padding: 0.22rem 0.6rem;
-  border: 1px solid transparent;
+  padding: 0.2rem 0.58rem;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  font-weight: 600;
   white-space: nowrap;
-  color: var(--cream-dim);
-  border-color: rgba(185, 174, 161, 0.4);
+  color: var(--ink-2);
 }
 .lm-react[data-r='entusiasta'] {
-  color: #6ee7a8;
-  border-color: rgba(110, 231, 168, 0.5);
-  background: rgba(110, 231, 168, 0.1);
+  color: var(--green);
+  border-color: rgba(31, 157, 99, 0.4);
+  background: rgba(31, 157, 99, 0.09);
 }
 .lm-react[data-r='interessato'] {
-  color: #c4a6ff;
-  border-color: rgba(196, 166, 255, 0.5);
-  background: rgba(139, 92, 246, 0.12);
+  color: var(--violet-2);
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.09);
 }
 .lm-react[data-r='tiepido'] {
-  color: #d8c48f;
-  border-color: rgba(216, 196, 143, 0.45);
+  color: #a5791f;
+  border-color: rgba(165, 121, 31, 0.35);
 }
 .lm-react[data-r='diffidente'] {
-  color: #f0a5c6;
-  border-color: rgba(240, 165, 198, 0.45);
+  color: #c2417f;
+  border-color: rgba(194, 65, 127, 0.35);
 }
 .lm-react[data-r='chiuso'] {
-  color: #ff7a72;
-  border-color: rgba(255, 122, 114, 0.5);
+  color: var(--red);
+  border-color: rgba(229, 52, 42, 0.4);
 }
 
-/* La frase del titolare: si legge prima di tutto il resto, ed è voluto. */
 .lm-quote {
-  margin: 0.8rem 0 0;
+  margin: 0.75rem 0 0;
   padding-left: 0.85rem;
   border-left: 2px solid var(--violet);
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 300;
   line-height: 1.45;
-  letter-spacing: -0.012em;
-  color: var(--cream);
+  letter-spacing: -0.015em;
 }
 
 .lm-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.85rem;
+  gap: 0.32rem;
+  margin-top: 0.8rem;
 }
 .lm-tag {
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--card-line);
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 0.66rem;
-  font-weight: 600;
-  color: var(--cream-dim);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-2);
   white-space: nowrap;
 }
 .lm-tag[data-kind='strumento'] {
-  border-color: rgba(139, 92, 246, 0.35);
-  color: #c4a6ff;
+  border-color: rgba(139, 92, 246, 0.3);
+  color: var(--violet-2);
 }
 .lm-tag[data-kind='lingua'] {
-  border-color: rgba(236, 106, 156, 0.32);
-  color: #f0a5c6;
+  border-color: rgba(194, 65, 127, 0.28);
+  color: #c2417f;
 }
 
-/* Il testo dettato è testo di macchina: si legge, ma non si fa credere che
-   qualcuno lo abbia scritto. */
 .lm-dictated {
-  margin-top: 0.7rem;
-  padding: 0.65rem 0.8rem;
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.75rem;
   border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.035);
-  font-size: 0.8rem;
+  background: rgba(23, 19, 15, 0.045);
+  font-size: 0.82rem;
   font-style: italic;
   line-height: 1.55;
+  color: var(--ink-2);
 }
 
-/* I report dentro la scheda cliente: uno sotto l'altro, separati da un filo. */
 .lm-reports {
   display: flex;
   flex-direction: column;
-  gap: 1.3rem;
+  gap: 1.2rem;
 }
 .lm-report + .lm-report {
-  padding-top: 1.3rem;
-  border-top: 1px solid var(--card-line);
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Righe di follow-up
-   ─────────────────────────────────────────────────────────────────────────── */
 .lm-follow {
   align-items: flex-start;
   flex-wrap: wrap;
@@ -2328,33 +2904,21 @@
   text-decoration: none;
 }
 .lm-follow-who a:hover {
-  color: var(--violet);
+  color: var(--violet-2);
 }
 .lm-follow-do {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.32rem;
   flex-wrap: wrap;
 }
 .lm-follow-do .lm-icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 31px;
+  height: 31px;
 }
 .lm-follow-do .lm-icon-btn svg {
   width: 15px;
   height: 15px;
-}
-
-/* ───────────────────────────────────────────────────────────────────────────
-   La modale che contiene un modulo intero
-   ─────────────────────────────────────────────────────────────────────────── */
-/* `:has` invece di una prop sul componente: dove non è supportato la modale
-   resta stretta e il modulo scorre, che è un peggioramento, non una rottura. */
-.lm-modal-box:has(.lm-modal-form) {
-  max-width: 680px;
-  max-height: 88vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -2382,8 +2946,8 @@
   border: 0;
 }
 
-/* Lo stato di partenza lo scrive il CSS, non il JS: se GSAP arriva un attimo
-   dopo, il contenuto non lampeggia già in posizione. */
+/* Lo stato di partenza lo scrive il CSS: se GSAP arriva un attimo dopo, il
+   contenuto non lampeggia già in posizione per poi rifare l'entrata. */
 .lm-staff-enter,
 .lm-in {
   opacity: 0;
@@ -2394,8 +2958,15 @@
   .lm-in {
     opacity: 1;
   }
-  .lm-thread {
-    animation: none;
+  .lm-scene video,
+  .lm-scene-poster,
+  .lm-object-core::before,
+  .lm-object-ring,
+  .lm-thread,
+  .lm-live::before,
+  .lm-prog-fill,
+  .lm-lolli-stem {
+    animation: none !important;
   }
   .lm-staff *,
   .lm-staff *::before,
@@ -2407,11 +2978,6 @@
 
 /* ───────────────────────────────────────────────────────────────────────────
    Wordmark
-
-   Il disegno del marchio vive in components/home/motion.css, che è il foglio
-   della home: caricarlo qui vorrebbe dire portarsi dietro hero, particelle e
-   sezioni pinnate per tre lettere e mezzo. Qui ne sta la versione ferma —
-   stesse misure, stessa I nel gradiente, nessuna animazione d'ingresso.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff .lm-wm {
   display: inline-flex;

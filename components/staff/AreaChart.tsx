@@ -70,8 +70,8 @@ export default function AreaChart({
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.42" />
-            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+            <stop offset="0%" stopColor="#17130f" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="#17130f" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -80,7 +80,7 @@ export default function AreaChart({
 
         <line className="lm-area-rule" x1={xy[active].x} y1={PAD} x2={xy[active].x} y2={H} />
         <circle className="lm-area-dot" cx={xy[active].x} cy={xy[active].y} r="4.5" />
-        <circle cx={xy[active].x} cy={xy[active].y} r="10" fill="#8b5cf6" opacity="0.22" />
+        <circle cx={xy[active].x} cy={xy[active].y} r="10" fill="#8b5cf6" opacity="0.26" />
 
         {/* Una fascia trasparente sopra tutto: rende l'intero riquadro
             sensibile al puntatore, anche dove la curva non passa. */}

@@ -1,4 +1,6 @@
 import { requireStaff } from '@/lib/staff/auth'
+import { ANTEPRIMA } from '@/lib/staff/db'
+import { demoAttivo } from '@/lib/staff/demo'
 import StaffShell from './StaffShell'
 
 /**
@@ -13,5 +15,10 @@ import StaffShell from './StaffShell'
  */
 export default async function StaffDashLayout({ children }: { children: React.ReactNode }) {
   const me = await requireStaff()
-  return <StaffShell me={me}>{children}</StaffShell>
+
+  return (
+    <StaffShell me={me} demo={demoAttivo(me.role)} anteprima={ANTEPRIMA}>
+      {children}
+    </StaffShell>
+  )
 }

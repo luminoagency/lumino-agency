@@ -129,6 +129,23 @@ export const FASE_LABEL: Record<FaseProgetto, string> = {
  */
 export const STATI_BOARD = STATI
 
+/**
+ * Le etichette corte per i grafici.
+ *
+ * Non si ricavano tagliando quelle lunghe alla prima parola: «In trattativa» e
+ * «In pausa» diventerebbero due colonne chiamate «In», che oltre a essere
+ * illeggibili sono la stessa chiave React due volte.
+ */
+export const STATO_CORTO: Record<Stato, string> = {
+  da_contattare: 'Da fare',
+  contattato: 'Contattati',
+  in_trattativa: 'Trattativa',
+  preventivo_inviato: 'Preventivo',
+  accettato: 'Accettati',
+  rifiutato: 'Rifiutati',
+  in_pausa: 'In pausa',
+}
+
 /** Data breve all'italiana: 4 set, 12 dic. */
 export function dataBreve(value: string | null | undefined): string {
   if (!value) return '—'

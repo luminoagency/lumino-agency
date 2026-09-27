@@ -46,27 +46,37 @@ export function Progress({
 }
 
 /**
- * Lollipop: un gambo sottile e una testa tonda per ogni voce.
+ * Lollipop: un gambo sottile e una testa tonda per ogni voce (ref1).
  *
- * Le colonne a zero restano visibili come moncone: una categoria vuota è
- * un'informazione, e farla sparire fa perdere il conto delle posizioni.
+ * Gambo di due pixel e pallino in cima, non una barra piena: a parità di dato
+ * occupa un quarto dell'inchiostro e lascia respirare una card che ne contiene
+ * sette di fila.
  */
 export function Lollipop({
   items,
+  selezionato,
 }: {
-  items: { label: string; value: number; href?: string }[]
+  items: { label: string; value: number }[]
+  /** L'etichetta della colonna evidenziata, se ce n'è una. */
+  selezionato?: string
 }) {
   const max = Math.max(1, ...items.map((i) => i.value))
 
   return (
     <div className="lm-lolli">
       {items.map((item) => {
+        /* Una colonna a zero resta un moncone visibile: farla sparire fa
+           perdere il conto delle posizioni, ed è proprio la categoria vuota
+           l'informazione che si stava cercando. */
         const h = Math.max(6, (item.value / max) * 100)
         return (
-          <div key={item.label} className="lm-lolli-col" title={`${item.label}: ${item.value}`}>
-            <span className="lm-num lm-num-sm" style={{ fontSize: '0.8rem' }}>
-              {item.value}
-            </span>
+          <div
+            key={item.label}
+            className="lm-lolli-col"
+            data-sel={selezionato === item.label}
+            title={`${item.label}: ${item.value}`}
+          >
+            <span className="lm-lolli-n">{item.value}</span>
             <span
               className="lm-lolli-stem"
               data-on={item.value > 0}

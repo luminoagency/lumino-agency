@@ -50,6 +50,13 @@ export function middleware(request: NextRequest) {
      app/staff/(dash)/layout.tsx. */
   if (pathname === '/staff' || pathname.startsWith('/staff/')) {
     if (pathname === '/staff/login' || pathname === '/staff/logout') return NextResponse.next()
+    /* Anteprima di sviluppo: le stesse pagine senza sessione, coi dati finti.
+       I due lucchetti sono ripetuti qui alla lettera invece di importarli da
+       lib/staff/db.ts, che tira dentro next/headers e il client Supabase —
+       roba che nell'edge runtime del middleware non deve entrare. */
+    if (process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1') {
+      return NextResponse.next()
+    }
     if (hasSessionCookie(request)) return NextResponse.next()
 
     const url = request.nextUrl.clone()

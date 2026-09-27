@@ -8,6 +8,7 @@ import ClienteCardBody from '@/components/staff/ClienteCardBody'
 import Counter from '@/components/staff/Counter'
 import FilterBar, { type Filtro } from '@/components/staff/Filters'
 import MotivoRifiuto from '@/components/staff/MotivoRifiuto'
+import Spark from '@/components/staff/Spark'
 import { cambiaStato } from '@/lib/staff/actions'
 import {
   SETTORE_LABEL,
@@ -91,6 +92,24 @@ export default function PipelineView({
     return mappa
   }, [clienti, filtri.settore, filtri.zona, filtri.assegnato])
 
+  /* Otto settimane di ingressi per ogni stato: è quello che trasforma una
+     casella con dentro «6» in una che dice anche se quel sei sta crescendo
+     o è fermo da un mese. Si conta sull'arrivo in archivio, l'unica data che
+     ogni cliente ha di sicuro. */
+  const andamenti = useMemo(() => {
+    const settimane = 8
+    const ora = Date.now()
+    const mappa = new Map<Stato, number[]>()
+    for (const stato of STATI) mappa.set(stato, new Array(settimane).fill(0))
+
+    for (const c of clienti) {
+      const giorni = (ora - new Date(c.created_at).getTime()) / 86_400_000
+      const i = settimane - 1 - Math.floor(giorni / 7)
+      if (i >= 0 && i < settimane) mappa.get(c.stato)![i] += 1
+    }
+    return mappa
+  }, [clienti])
+
   const elencoFiltri: Filtro[] = [
     {
       key: 'settore',
@@ -167,6 +186,10 @@ export default function PipelineView({
           >
             <Counter value={conteggi.get(stato) ?? 0} />
             <span className="lm-kpi-name">{STATO_LABEL[stato]}</span>
+            <Spark
+              serie={andamenti.get(stato) ?? []}
+              label={`Nuovi in «${STATO_LABEL[stato]}» nelle ultime otto settimane`}
+            />
           </button>
         ))}
       </Cascade>

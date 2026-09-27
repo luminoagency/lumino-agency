@@ -6,7 +6,9 @@ import Cascade from '@/components/staff/Cascade'
 import Counter from '@/components/staff/Counter'
 import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
+import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { demoAttivo } from '@/lib/staff/demo'
 import { followupDiCliente, reportDiCliente } from '@/lib/staff/queries'
 import {
   ATTIVITA_LABEL,
@@ -31,13 +33,13 @@ import {
   type ReportRiga,
   type TipoAttivita,
 } from '@/lib/staff/types'
-import { createClient } from '@/lib/supabase/server'
+import { staffDb } from '@/lib/staff/db'
 import SchedaAzioni from './SchedaAzioni'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const supabase = createClient()
+  const supabase = staffDb()
   const { data } = await supabase
     .from('staff_clients')
     .select('nome')
@@ -57,7 +59,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
  */
 export default async function SchedaCliente({ params }: { params: { id: string } }) {
   const me = await requireStaff()
-  const supabase = createClient()
+  const supabase = staffDb()
 
   const [cliente, deals, abbonamenti, progetti, attivita, profili, campo, richiami] =
     await Promise.all([
@@ -88,7 +90,12 @@ export default async function SchedaCliente({ params }: { params: { id: string }
       followupDiCliente(params.id),
     ])
 
-  if (!cliente.data) notFound()
+  /* Un cliente finto con l'interruttore spento non esiste: aprirlo dal suo
+     link diretto deve dare lo stesso 404 che dà un cliente di un collega. */
+  const demo = demoAttivo(me.role)
+  if (!cliente.data || (!demo && (cliente.data as { is_demo?: boolean }).is_demo === true)) {
+    notFound()
+  }
 
   const c = cliente.data as ClienteRiga & { instagram: string | null }
   const deal = (deals.data?.[0] ?? null) as Deal | null
@@ -122,8 +129,9 @@ export default async function SchedaCliente({ params }: { params: { id: string }
         <p className="lm-warn">Rifiutato: {c.motivo_rifiuto}</p>
       )}
 
-      <Cascade className="lm-bento">
-        <article className="lm-card lm-in" data-span="5" data-reveal>
+      <Tilt>
+        <Cascade className="lm-bento">
+        <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
           <span className="lm-label">Anagrafica</span>
           <div className="lm-rows" style={{ marginTop: '0.9rem' }}>
             <Riga titolo="Referente" valore={c.referente} />
@@ -148,7 +156,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="4" data-glow data-reveal>
+        <article className="lm-card lm-in" data-span="4" data-tone="black" data-hover data-reveal>
           <span className="lm-label">Trattativa</span>
           {deal ? (
             <>
@@ -189,7 +197,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="3" data-reveal>
+        <article className="lm-card lm-in" data-span="3" data-tone="pearl" data-hover data-reveal>
           <span className="lm-label">Abbonamento</span>
           {abbonamento ? (
             <>
@@ -208,7 +216,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="5" data-reveal>
+        <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
           <div className="lm-card-top">
             <span className="lm-label">Progetto</span>
             {progetto?.preview_url && (
@@ -242,7 +250,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="7" data-reveal>
+        <article className="lm-card lm-in" data-span="7" data-hover data-reveal>
           <div className="lm-card-top">
             <span className="lm-label">Attività</span>
             <span className="lm-pill-n">{storico.length}</span>
@@ -267,7 +275,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="5" data-reveal>
+        <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
           <div className="lm-card-top">
             <span className="lm-label">Richiami</span>
             <span className="lm-pill-n">{aperti.length}</span>
@@ -296,7 +304,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
           )}
         </article>
 
-        <article className="lm-card lm-in" data-span="12" data-reveal>
+        <article className="lm-card lm-in" data-span="12" data-hover data-reveal>
           <div className="lm-card-top">
             <span className="lm-label">Report di campo</span>
             <span className="lm-pill-n">{campo.visite.length}</span>
@@ -314,7 +322,8 @@ export default async function SchedaCliente({ params }: { params: { id: string }
             </p>
           )}
         </article>
-      </Cascade>
+        </Cascade>
+      </Tilt>
     </>
   )
 }

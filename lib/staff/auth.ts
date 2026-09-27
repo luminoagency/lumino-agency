@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { ANTEPRIMA } from './db'
+import { PROFILO_DEMO } from './demo'
 import type { StaffProfile } from './types'
 
 /**
@@ -16,6 +18,10 @@ import type { StaffProfile } from './types'
  * cerchio): si dice che non è roba sua.
  */
 export async function requireStaff(): Promise<StaffProfile> {
+  /* In anteprima di sviluppo non c'è nessuna sessione da verificare: il
+     profilo è finto come i dati. I due lucchetti stanno in db.ts. */
+  if (ANTEPRIMA) return PROFILO_DEMO
+
   const supabase = createClient()
 
   const { data: auth } = await supabase.auth.getUser()

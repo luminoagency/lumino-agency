@@ -40,9 +40,7 @@ export default async function StaffLoginPage({
           <span className="lm-staff-tag">Staff</span>
         </span>
 
-        <h1 className="lm-h1" style={{ marginTop: '1.3rem' }}>
-          Bentornato.
-        </h1>
+        <h1 className="lm-h1">Bentornato</h1>
         <p className="lm-sub">
           {searchParams.motivo === 'non-autorizzato'
             ? 'Questo account esiste ma non è un account dello staff. Entra con le credenziali dello staff.'

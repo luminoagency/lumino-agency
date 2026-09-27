@@ -1,41 +1,45 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import {
   Banknote,
   Bot,
   BookOpen,
   Folder,
   LayoutGrid,
+  LogOut,
   MapPin,
   Menu,
+  MoreHorizontal,
   PieChart,
-  Sparkles,
   Sun,
   Users,
   X,
   type LucideIcon,
 } from 'lucide-react'
-import Wordmark from '@/components/home/Wordmark'
-import { gsap, prefersReducedMotion } from '@/components/home/useMotion'
+import { Toggle } from '@/components/staff/Controls'
+import { impostaDemo } from '@/lib/staff/actions'
 import { FASE_VIVA, activeHref, visibleNav, type StaffNavItem } from '@/lib/staff/nav'
 import type { StaffProfile } from '@/lib/staff/types'
 
 /**
  * La struttura dell'area staff: dove sei, dove puoi andare, chi sei.
  *
- * Due navigazioni per lo stesso elenco, non due elenchi:
- *  · da 960px in su una sidebar in glass a sinistra, con la voce attiva su un
- *    gradiente morbido (ref3);
- *  · sotto, una pill flottante in basso, in glass (ref2). In basso e non in
- *    alto perché la dashboard si usa camminando, con una mano, e il pollice
- *    non arriva in cima allo schermo.
+ * Il rail di ref4: **una barra nera stretta dentro il pannello di vetro**, con
+ * sole icone. Nera perché è l'unico elemento sempre presente, e in una
+ * composizione tutta chiara serve un punto fermo scuro che la tenga insieme;
+ * stretta perché le etichette le dice al passaggio, e una dashboard usata ogni
+ * giorno impara le sue sette icone in due giorni.
  *
- * Il movimento qui fa una cosa sola: dire che la pagina è cambiata. Niente
- * scroll animato (in una lista di lavoro è un intralcio) e niente entrate
- * lunghe: 0.4s e via.
+ * **Le sezioni non ancora costruite non fanno una lista.** Prima erano sette
+ * voci spente con scritto "in arrivo" accanto: un menù per metà di promesse fa
+ * sembrare incompiuto anche quello che c'è. Ora stanno dietro l'ultima icona,
+ * che le elenca solo a chi va a cercarle.
+ *
+ * Su telefono niente rail: la pill flottante in basso di ref1, in vetro, dove
+ * arriva il pollice.
  */
 
 const ICONS: Record<string, LucideIcon> = {
@@ -48,21 +52,29 @@ const ICONS: Record<string, LucideIcon> = {
   '/staff/statistiche': PieChart,
   '/staff/team': Users,
   '/staff/risorse': BookOpen,
-  '/staff/lab-ai': Sparkles,
+  '/staff/lab-ai': Bot,
   '/staff/agent': Bot,
 }
 
 export default function StaffShell({
   me,
+  demo,
+  anteprima,
   children,
 }: {
   me: StaffProfile
+  /** L'interruttore dei dati finti, già risolto dal server. */
+  demo: boolean
+  /** Si sta guardando l'anteprima di sviluppo, non l'area vera. */
+  anteprima: boolean
   children: React.ReactNode
 }) {
   const pathname = usePathname() ?? '/staff'
   const active = activeHref(pathname)
   const items = visibleNav(me.role === 'admin')
-  const tabs = items.filter((item) => item.mobile)
+  const vive = items.filter((i) => i.fase <= FASE_VIVA)
+  const future = items.filter((i) => i.fase > FASE_VIVA)
+  const tabs = vive.filter((i) => i.mobile)
   const [sheetOpen, setSheetOpen] = useState(false)
 
   /* Il pannello si chiude da sé al cambio pagina: lasciarlo aperto sopra la
@@ -73,7 +85,7 @@ export default function StaffShell({
     <div className="lm-staff-shell">
       <header className="lm-staff-top">
         <Link href="/staff" className="lm-staff-brand" aria-label="Lumino Staff">
-          <Wordmark animated={false} />
+          <Wordmark />
           <span className="lm-staff-tag">Staff</span>
         </Link>
         <span className="lm-staff-avatar" aria-hidden="true">
@@ -81,33 +93,52 @@ export default function StaffShell({
         </span>
       </header>
 
-      <nav className="lm-staff-rail" aria-label="Sezioni">
-        <Link href="/staff" className="lm-staff-brand" aria-label="Lumino Staff">
-          <Wordmark animated={false} />
-          <span className="lm-staff-tag">Staff</span>
-        </Link>
+      <div className="lm-glass">
+        <nav className="lm-staff-rail" aria-label="Sezioni">
+          <Link href="/staff" className="lm-rail-mark" aria-label="Lumino Staff">
+            L<span>I</span>
+          </Link>
 
-        <div className="lm-staff-nav">
-          {items.map((item) => (
-            <NavLink key={item.href} item={item} active={active} />
-          ))}
-        </div>
+          {vive.map((item) => {
+            const Icon = ICONS[item.href] ?? LayoutGrid
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="lm-staff-link"
+                aria-current={active === item.href ? 'page' : undefined}
+              >
+                <Icon aria-hidden="true" />
+                <span className="lm-tip">{item.label}</span>
+              </Link>
+            )
+          })}
 
-        <div className="lm-staff-me">
-          <span className="lm-staff-avatar" aria-hidden="true">
-            {iniziale(me.nome)}
-          </span>
-          <span>
-            <strong>{me.nome}</strong>
-            {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
-          </span>
-          <LogoutButton />
-        </div>
-      </nav>
+          {future.length > 0 && <Prossime items={future} />}
 
-      <main className="lm-staff-main">
-        <PageEnter key={pathname}>{children}</PageEnter>
-      </main>
+          <span className="lm-rail-spacer" />
+
+          {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
+
+          <div className="lm-rail-me">
+            <span className="lm-staff-avatar" title={me.nome} aria-hidden="true">
+              {iniziale(me.nome)}
+            </span>
+            <form action="/staff/logout" method="post">
+              <button type="submit" className="lm-staff-out" aria-label="Esci">
+                <LogOut aria-hidden="true" />
+              </button>
+            </form>
+          </div>
+        </nav>
+
+        <main className="lm-staff-main">
+          {anteprima && (
+            <p className="lm-anteprima">Anteprima di sviluppo · dati finti · sola lettura</p>
+          )}
+          <PageEnter key={pathname}>{children}</PageEnter>
+        </main>
+      </div>
 
       <nav className="lm-staff-dock" aria-label="Sezioni">
         {tabs.map((item) => {
@@ -145,22 +176,40 @@ export default function StaffShell({
         >
           <div className="lm-staff-sheet-inner" onClick={(event) => event.stopPropagation()}>
             <span className="lm-label">Tutte le sezioni</span>
-            <div className="lm-staff-nav">
-              {items
-                .filter((item) => !item.mobile)
-                .map((item) => (
-                  <NavLink key={item.href} item={item} active={active} />
-                ))}
+            <div className="lm-sheet-grid">
+              {items.map((item) => {
+                const Icon = ICONS[item.href] ?? LayoutGrid
+                const soon = item.fase > FASE_VIVA
+                return (
+                  <Link
+                    key={item.href}
+                    href={soon ? pathname : item.href}
+                    className="lm-sheet-item"
+                    data-soon={soon}
+                    aria-disabled={soon}
+                  >
+                    <Icon aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </div>
-            <div className="lm-staff-me">
-              <span className="lm-staff-avatar" aria-hidden="true">
-                {iniziale(me.nome)}
+
+            {me.role === 'admin' && (
+              <div style={{ marginTop: '1rem' }}>
+                <InterruttoreDemo acceso={demo} esteso />
+              </div>
+            )}
+
+            <div className="lm-modal-actions">
+              <span className="lm-muted" style={{ marginRight: 'auto', fontSize: '0.82rem' }}>
+                {me.nome} · {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
               </span>
-              <span>
-                <strong>{me.nome}</strong>
-                {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
-              </span>
-              <LogoutButton />
+              <form action="/staff/logout" method="post">
+                <button type="submit" className="lm-btn" data-variant="ghost">
+                  Esci
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -169,31 +218,71 @@ export default function StaffShell({
   )
 }
 
-function NavLink({ item, active }: { item: StaffNavItem; active: string }) {
-  const soon = item.fase > FASE_VIVA
-  const Icon = ICONS[item.href] ?? LayoutGrid
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/** Il marchio: la I nel gradiente, come sul sito pubblico. */
+function Wordmark() {
   return (
-    <Link
-      href={item.href}
-      className="lm-staff-link"
-      data-soon={soon}
-      aria-current={active === item.href ? 'page' : undefined}
-    >
-      <Icon aria-hidden="true" />
-      {item.label}
-      {soon && <span className="lm-staff-soon">in arrivo</span>}
-    </Link>
+    <span className="lm-wm" aria-label="Lumino">
+      <b>LUM</b>
+      <b className="lm-wm-i">I</b>
+      <b>NO</b>
+    </span>
   )
 }
 
-/** Un form, non un link: l'uscita cambia lo stato, e lo stato si cambia in POST. */
-function LogoutButton() {
+/**
+ * Le sezioni future, dietro una sola icona.
+ *
+ * La promessa c'è ancora — serve a sapere che la sezione è prevista e in quale
+ * fase — ma non occupa più metà del menù.
+ */
+function Prossime({ items }: { items: StaffNavItem[] }) {
   return (
-    <form action="/staff/logout" method="post">
-      <button type="submit" className="lm-staff-out">
-        Esci
-      </button>
-    </form>
+    <span className="lm-staff-link" tabIndex={0} role="button" aria-label="Sezioni in arrivo">
+      <MoreHorizontal aria-hidden="true" />
+      <span className="lm-tip" data-multi="true">
+        <b>In arrivo</b>
+        {items.map((i) => `${i.label} (fase ${i.fase})`).join(' · ')}
+      </span>
+    </span>
+  )
+}
+
+/**
+ * L'interruttore dei dati demo.
+ *
+ * Solo per l'admin, e spento di default. Sta nel rail e non in una pagina di
+ * impostazioni perché serve esattamente mentre si guarda una schermata: si
+ * accende, si vede com'è piena, si spegne.
+ */
+function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolean }) {
+  const router = useRouter()
+  const [inCorso, avvia] = useTransition()
+
+  function cambia(on: boolean) {
+    avvia(async () => {
+      await impostaDemo(on)
+      router.refresh()
+    })
+  }
+
+  if (esteso) return <Toggle label="Dati demo" checked={acceso} onChange={cambia} />
+
+  return (
+    <span className="lm-staff-link" style={{ width: 44, height: 34 }}>
+      <label className="lm-toggle" style={{ gap: 0 }}>
+        <span className="lm-sr">Dati demo</span>
+        <input
+          type="checkbox"
+          checked={acceso}
+          disabled={inCorso}
+          onChange={(e) => cambia(e.target.checked)}
+        />
+        <span className="lm-toggle-track" aria-hidden="true" style={{ width: 34, height: 20 }} />
+      </label>
+      <span className="lm-tip">{acceso ? 'Dati demo accesi' : 'Dati demo spenti'}</span>
+    </span>
   )
 }
 
@@ -202,7 +291,7 @@ function iniziale(nome: string): string {
 }
 
 /**
- * L'entrata della pagina.
+ * L'entrata della pagina: sale di dieci pixel e mette a fuoco.
  *
  * Il `key={pathname}` sul chiamante rimonta questo componente a ogni
  * navigazione, quindi l'animazione riparte senza dover confrontare i percorsi.
@@ -216,18 +305,32 @@ function PageEnter({ children }: { children: React.ReactNode }) {
     const el = ref.current
     if (!el) return
 
-    if (prefersReducedMotion()) {
-      el.style.opacity = '1'
-      return
-    }
+    let annullato = false
+    import('@/components/home/useMotion').then(({ gsap, prefersReducedMotion }) => {
+      const corrente = ref.current
+      if (annullato || !corrente) return
+      /* Come in Cascade: in una scheda nascosta rAF non gira e la
+         dissolvenza resterebbe congelata a metà. */
+      if (prefersReducedMotion() || document.visibilityState === 'hidden') {
+        corrente.style.opacity = '1'
+        return
+      }
+      gsap.fromTo(
+        corrente,
+        { opacity: 0, y: 10, filter: 'blur(6px)' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.45,
+          ease: 'power2.out',
+          clearProps: 'transform,filter',
+        },
+      )
+    })
 
-    const tween = gsap.fromTo(
-      el,
-      { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform' },
-    )
     return () => {
-      tween.kill()
+      annullato = true
     }
   }, [])
 

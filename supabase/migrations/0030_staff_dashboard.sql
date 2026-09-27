@@ -62,28 +62,10 @@ as $$
   )
 $$;
 
--- Il cliente è mio (o sono admin). È il perno di quasi tutte le policy: le
--- tabelle figlie non ripetono la logica, la chiamano.
-create or replace function public.staff_owns_client(target uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from staff_clients c
-    where c.id = target
-      and (public.is_staff_admin() or c.assegnato_a = auth.uid())
-  )
-$$;
-
 revoke all on function public.is_staff() from public;
 revoke all on function public.is_staff_admin() from public;
-revoke all on function public.staff_owns_client(uuid) from public;
 grant execute on function public.is_staff() to authenticated;
 grant execute on function public.is_staff_admin() to authenticated;
-grant execute on function public.staff_owns_client(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 3. Clienti
@@ -135,6 +117,30 @@ create index if not exists idx_staff_clients_stato     on staff_clients (stato);
 create index if not exists idx_staff_clients_assegnato on staff_clients (assegnato_a);
 create index if not exists idx_staff_clients_settore   on staff_clients (settore);
 create index if not exists idx_staff_clients_zona      on staff_clients (citta, zona);
+
+-- Il cliente è mio (o sono admin). È il perno di quasi tutte le policy: le
+-- tabelle figlie non ripetono la logica, la chiamano.
+--
+-- Sta qui e non con le altre due funzioni di ruolo perché il corpo nomina
+-- staff_clients: Postgres valida il corpo di una funzione `language sql`
+-- quando la crea, quindi definirla prima della tabella fa fallire la
+-- migration su un database vuoto (`relation "staff_clients" does not exist`).
+create or replace function public.staff_owns_client(target uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from staff_clients c
+    where c.id = target
+      and (public.is_staff_admin() or c.assegnato_a = auth.uid())
+  )
+$$;
+
+revoke all on function public.staff_owns_client(uuid) from public;
+grant execute on function public.staff_owns_client(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 4. Trattative, e i margini a parte

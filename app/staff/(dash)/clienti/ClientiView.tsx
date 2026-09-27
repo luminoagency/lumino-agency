@@ -138,13 +138,12 @@ export default function ClientiView({
             <button
               key={cliente.id}
               type="button"
-              className="lm-ccard"
-              style={{ textAlign: 'left', cursor: 'pointer' }}
+              className="lm-ccard lm-pick"
               data-selected={scelto?.id === cliente.id}
               aria-pressed={scelto?.id === cliente.id}
               onClick={() => setSceltoId(cliente.id)}
             >
-              <ClienteCardBody cliente={cliente} prezzo={prezzi[cliente.id]} />
+              <ClienteCardBody cliente={cliente} prezzo={prezzi[cliente.id]} stato />
             </button>
           ))}
           {!visibili.length && (

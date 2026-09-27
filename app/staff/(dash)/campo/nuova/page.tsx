@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { requireStaff } from '@/lib/staff/auth'
+import { demoAttivo } from '@/lib/staff/demo'
 import { AVVISO_SCHEMA, clientiPerVisita } from '@/lib/staff/queries'
 import NuovaVisita from './NuovaVisita'
 
@@ -18,7 +19,7 @@ export const dynamic = 'force-dynamic'
  */
 export default async function NuovaVisitaPage() {
   const me = await requireStaff()
-  const { clienti, mancaSchema } = await clientiPerVisita()
+  const { clienti, mancaSchema } = await clientiPerVisita(demoAttivo(me.role))
 
   return (
     <>
