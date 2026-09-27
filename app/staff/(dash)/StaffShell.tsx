@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   LogOut,
   MapPin,
+  FlaskConical,
   Menu,
   MoreHorizontal,
   PieChart,
@@ -118,15 +119,28 @@ export default function StaffShell({
 
           <span className="lm-rail-spacer" />
 
-          {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
-
-          <div className="lm-rail-me">
-            <span className="lm-staff-avatar" title={me.nome} aria-hidden="true">
-              {iniziale(me.nome)}
+          {/* Il piede del rail: tre bersagli della stessa misura delle icone
+              sopra, incolonnati sullo stesso asse. Prima l'avatar era un
+              cerchio da 32px dentro un blocco da 44 e il logout un quadrato da
+              32 senza contorno: due misure e due forme diverse in fondo a una
+              colonna di quadrati da 42, che è esattamente il punto in cui una
+              barra smette di sembrare costruita. */}
+          <div className="lm-rail-foot">
+            {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
+            <span className="lm-rail-sep" aria-hidden="true" />
+            <span className="lm-staff-link" data-static tabIndex={0} role="img" aria-label={me.nome}>
+              <span className="lm-staff-avatar" aria-hidden="true">
+                {iniziale(me.nome)}
+              </span>
+              <span className="lm-tip">
+                <b>{me.nome}</b>
+                {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+              </span>
             </span>
             <form action="/staff/logout" method="post">
-              <button type="submit" className="lm-staff-out" aria-label="Esci">
+              <button type="submit" className="lm-staff-link" aria-label="Esci">
                 <LogOut aria-hidden="true" />
+                <span className="lm-tip">Esci</span>
               </button>
             </form>
           </div>
@@ -255,6 +269,18 @@ function Prossime({ items }: { items: StaffNavItem[] }) {
  * Solo per l'admin, e spento di default. Sta nel rail e non in una pagina di
  * impostazioni perché serve esattamente mentre si guarda una schermata: si
  * accende, si vede com'è piena, si spegne.
+ *
+ * **Nel rail non è più un interruttore a scorrimento.** Lo era, con la sua
+ * pista rimpicciolita a 34×20 da uno `style` inline mentre il pallino restava
+ * quello da 21px del formato grande: il pallino usciva dal binario, e si vedeva.
+ * Ma il difetto vero era prima di quello — un interruttore con la pista in mezzo
+ * a una colonna di quadrati da 42px è l'unico oggetto di forma diversa di tutta
+ * la barra, e in una barra di icone la cosa giusta è un'icona.
+ *
+ * Quindi qui è un bottone che si accende, con `aria-pressed` perché è
+ * esattamente ciò che uno stato acceso/spento vuole dire per un lettore di
+ * schermo. L'interruttore vero resta nel pannello «Altro» del telefono, dove
+ * c'è spazio per l'etichetta accanto e la forma ha senso.
  */
 function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolean }) {
   const router = useRouter()
@@ -270,19 +296,18 @@ function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolea
   if (esteso) return <Toggle label="Dati demo" checked={acceso} onChange={cambia} />
 
   return (
-    <span className="lm-staff-link" style={{ width: 44, height: 34 }}>
-      <label className="lm-toggle" style={{ gap: 0 }}>
-        <span className="lm-sr">Dati demo</span>
-        <input
-          type="checkbox"
-          checked={acceso}
-          disabled={inCorso}
-          onChange={(e) => cambia(e.target.checked)}
-        />
-        <span className="lm-toggle-track" aria-hidden="true" style={{ width: 34, height: 20 }} />
-      </label>
+    <button
+      type="button"
+      className="lm-staff-link"
+      data-on={acceso}
+      aria-pressed={acceso}
+      aria-label="Dati demo"
+      disabled={inCorso}
+      onClick={() => cambia(!acceso)}
+    >
+      <FlaskConical aria-hidden="true" />
       <span className="lm-tip">{acceso ? 'Dati demo accesi' : 'Dati demo spenti'}</span>
-    </span>
+    </button>
   )
 }
 
@@ -315,17 +340,13 @@ function PageEnter({ children }: { children: React.ReactNode }) {
         corrente.style.opacity = '1'
         return
       }
+      /* Solo trasformazioni e opacità: il `filter: blur()` che c'era qui
+         obbligava il browser a rasterizzare di nuovo l'intera pagina a ogni
+         fotogramma del cambio pagina. Vedi il commento in Cascade. */
       gsap.fromTo(
         corrente,
-        { opacity: 0, y: 10, filter: 'blur(6px)' },
-        {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: 0.45,
-          ease: 'power2.out',
-          clearProps: 'transform,filter',
-        },
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform' },
       )
     })
 

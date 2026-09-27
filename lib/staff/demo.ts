@@ -85,6 +85,8 @@ const CODICI: Record<string, string> = {
   b: '0006', // attività (chiamata, messaggio, nota)
   f: '0007', // follow-up
   r: '0008', // report di campo
+  e: '0009', // modifiche extra
+  m: '0010', // margini delle trattative
 }
 
 function id(prefisso: string, n: number): string {
@@ -167,6 +169,8 @@ export interface RigheDemo {
   staff_deals: Record<string, unknown>[]
   staff_subscriptions: Record<string, unknown>[]
   staff_projects: Record<string, unknown>[]
+  staff_extra_changes: Record<string, unknown>[]
+  staff_deal_margins: Record<string, unknown>[]
   staff_activities: Record<string, unknown>[]
   staff_followups: Record<string, unknown>[]
   staff_field_reports: Record<string, unknown>[]
@@ -227,6 +231,17 @@ const FRASI_DEMO = [
   'Se mi porti clienti ti pago volentieri, ma voglio vedere prima.',
   'Ho provato con uno di Milano, mi ha preso i soldi e sparito.',
 ]
+/* Le modifiche extra: 80 euro, 120 per gli hotel. Non sono un dettaglio
+   decorativo — sono la voce che in «Soldi» fa la differenza fra un mese in pari
+   e un mese buono, e senza qualche riga qui la card resterebbe sempre vuota. */
+const EXTRA_DEMO = [
+  'Cambio foto della home e del menù di primavera.',
+  'Aggiunta pagina eventi per le serate con musica.',
+  'Tradotto il menù in tedesco.',
+  'Sostituiti gli orari e i prezzi delle camere.',
+  'Aggiunto il modulo prenotazioni sul sito.',
+]
+
 const PROBLEMI_DEMO = [
   'Fuori stagione lavora tre giorni su sette. Vuole allungare la stagione.',
   'Le recensioni gliele scrive la figlia quando ha tempo, cioè mai.',
@@ -246,6 +261,8 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
   const deals: Record<string, unknown>[] = []
   const subs: Record<string, unknown>[] = []
   const projects: Record<string, unknown>[] = []
+  const extras: Record<string, unknown>[] = []
+  const margins: Record<string, unknown>[] = []
   const activities: Record<string, unknown>[] = []
   const followups: Record<string, unknown>[] = []
   const reports: Record<string, unknown>[] = []
@@ -309,6 +326,23 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
         is_demo: true,
         created_at: fraOre(-(50 - i)),
       })
+
+      /* Il margine sta in una tabella a parte perché un venditore non deve
+         vederlo (vedi il piano): qui il costo interno è un terzo del prezzo, che
+         è l'ordine di grandezza vero di un sito fatto in casa. È `is_demo` per
+         eredità dal deal, non per colonna propria — `staff_deal_margins` non ne
+         ha una, e non serve: si legge sempre partendo dai deal. */
+      if (chiuso) {
+        const chiusoA = Math.round(s.prezzo * 0.92)
+        const costo = Math.round(chiusoA * 0.32)
+        margins.push({
+          deal_id: id('d', i + 1),
+          costo_interno: costo,
+          margine: chiusoA - costo,
+          note: null,
+          updated_at: fraOre(-(40 - i)),
+        })
+      }
     }
 
     if (s.stato === 'accettato') {
@@ -337,6 +371,21 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
         is_demo: true,
         created_at: fraOre(-(30 - i)),
       })
+
+      /* Un progetto su due ha una modifica extra, e una su tre è già pagata:
+         serve a far vedere insieme la riga da sollecitare e quella chiusa, che
+         è l'unico modo di capire se la card «Soldi» si legge. */
+      if (i % 2 === 0) {
+        extras.push({
+          id: id('e', i + 1),
+          project_id: id('p', i + 1),
+          descrizione: EXTRA_DEMO[i % EXTRA_DEMO.length],
+          prezzo: s.settore === 'hotel' ? 120 : 80,
+          pagato: i % 3 === 0,
+          is_demo: true,
+          created_at: fraOre(-(18 - (i % 12))),
+        })
+      }
     }
 
     /* Le visite: una su due, così il Campo ha di che riempirsi senza che ogni
@@ -419,6 +468,8 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
     staff_deals: deals,
     staff_subscriptions: subs,
     staff_projects: projects,
+    staff_extra_changes: extras,
+    staff_deal_margins: margins,
     staff_activities: activities,
     staff_followups: followups,
     staff_field_reports: reports,

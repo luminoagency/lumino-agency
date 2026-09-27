@@ -3,11 +3,13 @@ import { senzaDemo } from './demo'
 import { firmaFoto } from './storage'
 import {
   STAFF_COUNTRY,
+  quandoOre,
   type ClienteRiga,
   type FollowupRiga,
   type ReportRiga,
   type Settore,
   type Stato,
+  type TipoAttivita,
 } from './types'
 
 /* `*` e non un elenco di colonne: serve leggere anche `is_demo`, che arriva
@@ -261,4 +263,71 @@ function followup(righe: unknown[] | null): FollowupVista[] {
       telefono: c?.telefono ?? null,
     }
   })
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Il flusso del team (la card nera della home)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export interface VoceFlusso {
+  id: string
+  tipo: TipoAttivita
+  testo: string | null
+  quando: string
+  cliente: string
+  clientId: string
+  chi: string
+}
+
+/**
+ * Le ultime cose fatte, da chiunque le abbia fatte.
+ *
+ * Due query e non una join a tre tavoli: il nome del cliente lo porta l'embed
+ * (`staff_clients` è l'unica relazione annidata che quest'area usa), il nome di
+ * chi ha agito lo si incrocia in memoria su un elenco di profili che è lungo
+ * quanto il team. Chiedere a PostgREST due relazioni annidate costringerebbe
+ * anche il finto client dell'anteprima a saperle gestire, per risparmiare una
+ * `Map` di tre righe.
+ *
+ * Il «quando» si calcola **qui, sul server**, e arriva al browser già a parole.
+ * Calcolarlo nel componente vorrebbe dire che il server scrive «2 ore fa» e il
+ * browser, un istante dopo, «3 ore fa»: è un errore di idratazione, e su una
+ * card che si chiama flusso sarebbe anche l'unica riga sbagliata visibile.
+ *
+ * Non è tempo reale con la maiuscola: la home è `force-dynamic`, quindi ogni
+ * caricamento è aggiornato. Un canale realtime di Supabase per una card che si
+ * guarda entrando costerebbe una connessione aperta tutto il giorno per
+ * anticipare un `F5`.
+ */
+export async function flussoTeam(demo: boolean, quante = 7): Promise<VoceFlusso[]> {
+  const supabase = staffDb()
+
+  const [attivita, profili] = await Promise.all([
+    supabase
+      .from('staff_activities')
+      .select('*, staff_clients ( nome )')
+      .order('data', { ascending: false })
+      .limit(quante * 3),
+    supabase.from('staff_profiles').select('id, nome'),
+  ])
+
+  const nomi = new Map(
+    ((profili.data ?? []) as { id: string; nome: string }[]).map((p) => [p.id, p.nome]),
+  )
+
+  return senzaDemo(attivita.data ?? [], demo)
+    .slice(0, quante)
+    .map((riga) => {
+      const r = riga as Record<string, unknown> & { staff_clients: unknown }
+      const c = primo(r.staff_clients) as { nome?: string } | null
+      return {
+        id: String(r.id),
+        tipo: (r.tipo as TipoAttivita) ?? 'nota',
+        testo: (r.testo as string) ?? null,
+        quando: quandoOre(String(r.data ?? r.created_at)),
+        cliente: c?.nome ?? 'Cliente',
+        clientId: String(r.client_id),
+        chi: nomi.get(String(r.user_id)) ?? '·',
+      }
+    })
 }

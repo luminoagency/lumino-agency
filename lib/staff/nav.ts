@@ -11,7 +11,7 @@
  */
 
 /** L'ultima fase costruita. Si alza a fine fase, non prima. */
-export const FASE_VIVA = 3
+export const FASE_VIVA = 4
 
 export interface StaffNavItem {
   href: string
@@ -33,7 +33,11 @@ export const STAFF_NAV: StaffNavItem[] = [
   { href: '/staff/soldi', label: 'Soldi', short: 'Soldi', fase: 4 },
   { href: '/staff/progetti', label: 'Progetti', short: 'Progetti', fase: 4 },
   { href: '/staff/statistiche', label: 'Statistiche', short: 'Stats', fase: 4 },
-  { href: '/staff/team', label: 'Team', short: 'Team', fase: 4, adminOnly: true },
+  /* Team dichiarava `fase: 4`, ma la F4 del piano è «soldi + progetti +
+     statistiche»: non c'era dentro, e lasciarla a 4 l'avrebbe fatta apparire
+     come voce viva alzando FASE_VIVA — cioè un'icona che porta a una pagina
+     «in arrivo». Vale 5, come le altre ancora da costruire. */
+  { href: '/staff/team', label: 'Team', short: 'Team', fase: 5, adminOnly: true },
   { href: '/staff/risorse', label: 'Risorse', short: 'Risorse', fase: 5 },
   { href: '/staff/lab-ai', label: 'Lab AI', short: 'Lab', fase: 5 },
   { href: '/staff/agent', label: 'Ricerca Agent', short: 'Agent', fase: 5 },

@@ -45,15 +45,30 @@ Tre regole da cui discende tutto il resto:
 
 ### La scena
 
-- `public/staff/bg.mp4` — interno sfocato con luce morbida (Pexels, libero),
-  **muto, in loop, 1600px, 1.8MB**, con `bg.jpg` come poster. Il loop è
-  palindromo: va avanti e torna indietro, quindi non c'è stacco al
-  riavvolgimento. Per cambiarlo si sostituiscono quei due file e basta.
-- Con `prefers-reduced-motion` il video **non viene nemmeno scaricato**:
-  `components/staff/Stage.tsx` monta il solo poster. Nasconderlo in CSS avrebbe
-  lasciato il download a carico di chi ha chiesto meno movimento.
-- Sopra il video un velo che alza le basse luci, così il vetro bianco ha sempre
-  contrasto anche quando la stanza è scura.
+**Niente video.** C'era `bg.mp4` (1.8MB), ed è stato tolto: un `<video>` sotto un
+`backdrop-filter` costringe il compositore a rifare la sfocatura a ogni
+fotogramma del filmato, venticinque volte al secondo su tutta la larghezza del
+pannello. Era la voce più cara della pagina, per una cosa che non si deve
+nemmeno notare.
+
+Al suo posto `components/staff/Sfondo.tsx`: **quattro macchie di colore che si
+muovono piano e non si fermano mai**, nei toni Lumino — perla, crema, un filo di
+rosa e uno di viola. Sono `radial-gradient` su quattro livelli, con durate
+(48s, 61s, 73s, 89s) senza divisori in comune, così la composizione non torna mai
+identica a sé stessa.
+
+- Si anima **solo `transform`**. Ogni livello diventa una texture sulla GPU una
+  volta sola e poi viene spostato: costa come far scorrere la pagina. Un blur
+  animato o un gradiente che cambia colore obbligherebbero a rasterizzare mezzo
+  schermo a ogni frame.
+- La sfumatura la fa la **forma** del gradiente (`transparent 70%`), non un
+  filtro: quattro `blur(80px)` grandi come la finestra sarebbero la cosa più
+  costosa della pagina, e si vedrebbero uguali.
+- È un Server Component: nessun JS, nessuna idratazione. Con
+  `prefers-reduced-motion` resta il solo fondo fermo, che da solo deve già stare
+  in piedi — e sta in piedi.
+- Sopra, un velo appena accennato che scurisce gli angoli: dà un bordo alla
+  stanza, senza il quale quattro macchie su fondo chiaro sembrano una texture.
 
 ### Colore e superfici
 
@@ -67,9 +82,22 @@ Tre regole da cui discende tutto il resto:
 | Rosso | `#E5342A` — ritardo, errore, rifiuto |
 | Verde | `#1F9D63` — chiuso, in linea |
 
-Il pannello di vetro: `rgba(255,255,255,.5)`, `blur(34px) saturate(1.25)`, un
+Il pannello di vetro: `rgba(255,255,255,.5)`, `blur(22px) saturate(1.22)`, un
 solo bordo chiaro sottile, raggio 34px, e un'ombra lunga e morbida. Si stacca
 dalla stanza per l'ombra, non per il contorno.
+
+**Il blur vive solo da 1040px in su.** Sotto quella soglia il pannello occupa
+tutta la finestra, quindi sfocare il suo sfondo vuol dire ricalcolare una
+sfocatura grande come lo schermo di un telefono a ogni fotogramma, sul
+dispositivo che ha meno memoria per farlo: lì resta un bianco più coprente,
+indistinguibile a vedersi e gratis. Il raggio è sceso da 34 a 22px per la stessa
+ragione — sopra i venti pixel l'occhio non distingue più *quanto* è sfocato, ma
+il tempo di calcolo continua a crescere.
+
+**Il blur sta sul pannello e sugli strati che coprono** (dock, sheet, modale,
+barra della visita, card di login) e **su nient'altro**: mai su una card, mai su
+un callout. Due strati sfocati uno sopra l'altro si pagano due volte e si vedono
+una.
 
 ### Tipografia
 
@@ -114,19 +142,71 @@ grafico**. Il viola compare solo su ciò che è selezionato o in corso.
   caselle di essere numeri nudi.
 - `Settimana` — i prossimi sette giorni con gli impegni in **pill nere**, lo
   scaduto in rosso appoggiato su oggi (ref1, il calendario).
-- `Mappa` — le zone coperte come punti su una sagoma schematica. Non è una
-  mappa geografica e non finge di esserlo: Leaflet resta nel piano per la F4.
-- `Oggetto` — la sfera cromata con la I di LUMINO, in CSS puro. Gira il metallo
-  (`conic-gradient`), non il corpo: ruotare in 3D un cerchio piatto lo
-  schiaccerebbe in un'ellisse.
+- `Mappa` — **Leaflet vero**, con clustering. Era un piano cartesiano con dei
+  cerchi disegnati a mano: con i dati veri i punti di Jesolo, Cavallino e Caorle
+  si sovrapponevano e le etichette si coprivano fra loro, cioè proprio dove
+  serviva leggere. Dettagli sotto.
+- `FlussoTeam` — le ultime attività del team, dentro la card nera. Ha preso il
+  posto della sfera cromata che girava: quella era un ornamento nel punto più
+  guardato della schermata, ed era un errore di priorità, non di gusto. La card
+  nera è l'accento che tiene in piedi una composizione tutta chiara e va spesa
+  per qualcosa su cui si può agire.
+
+### La mappa
+
+`components/staff/Mappa.tsx` (l'involucro) + `MappaLeaflet.tsx` (il pezzo vero).
+La usano la home e le Statistiche, e useranno il Lab AI: **un componente solo**.
+
+- **Leaflet entra solo nel browser e solo dove serve.** `next/dynamic` con
+  `ssr: false` e `import('leaflet')` dentro l'effetto: Leaflet tocca `window`
+  mentre si carica, e comunque sono ~180KB che una pagina senza mappa non deve
+  pagare. La cornice con la sua altezza esiste dal primo dipinto, così la card
+  non salta quando la mappa arriva.
+- **Le tile sono quelle standard di OpenStreetMap**, schiarite e desaturate dal
+  CSS (`filter: saturate(.08) brightness(1.08) contrast(.92)` sul tile pane): il
+  risultato è il grigio perla di Positron. Il filtro è statico, si applica una
+  volta per tile.
+- **Perché non CartoDB Positron**, che nasce già grigio: oggi vuole una chiave.
+  `basemaps.cartocdn.com` risponde con una tile segnaposto da 2KB con scritto
+  «API KEY REQUIRED» — e lo fa con uno `200 OK`, quindi Leaflet la disegna senza
+  lamentarsi e la mappa sembra funzionare finché non la si guarda. Stadia Maps
+  fa di peggio: senza account funziona in locale e smette di funzionare sul
+  dominio vero, cioè si rompe dopo il deploy. OSM non chiede chiavi e la sua
+  policy d'uso copre un'applicazione interna come questa; il giorno che non
+  bastasse, qui si cambia una stringa.
+- **L'attribuzione è obbligatoria** (licenza ODbL) e sta in basso a destra. È
+  rivestita come il resto, non nascosta.
+- **I punti vicini si sommano** (`leaflet.markercluster`): a livello di regione
+  un disco con «12» dice più di dodici pallini sovrapposti. Il numero del cluster
+  è la somma dei clienti, non dei marker. Il raggio cresce con la **radice
+  quadrata**: l'occhio confronta le aree.
+- **Il nome sta nel popup, non sulla mappa.** Le etichette fisse erano il difetto
+  peggiore della versione precedente.
+- Lo scroll della pagina **non** zooma la mappa: su una dashboard che si scorre è
+  il modo più rapido di perdere il segno.
 
 ### Movimento
 
-- Card in cascata con **blur-in** (stagger 50ms), numeri che contano, barre e
-  archi che si disegnano.
-- `Tilt` — inclinazione di 4 gradi al massimo e riflesso che segue il
-  puntatore, scrivendo `--mx/--my`. Solo dove c'è un puntatore fine.
-- Video e oggetto in movimento lento e continuo; punto «live» che pulsa.
+**Si animano solo `transform` e `opacity`.** Sono le due proprietà che il
+compositore sa muovere senza ridisegnare: tutto il resto — `filter`, `height`,
+`background` — obbliga a rasterizzare di nuovo l'elemento a ogni fotogramma.
+
+- Card in cascata (stagger 50ms), numeri che contano, barre e archi che si
+  disegnano. Il **blur-in** che c'era in entrata è stato tolto: l'idea era bella
+  ma costava una rasterizzazione di dodici card per ogni fotogramma di mezzo
+  secondo, sopra un pannello già sfocato — ed era il mezzo secondo in cui si
+  guarda.
+- Il gambo del `Lollipop` cresce in `scaleY` e non in `height`, che rimetteva in
+  coda il layout di tutta la colonna sette volte per fotogramma.
+- `Tilt` — inclinazione di 4 gradi al massimo e riflesso che segue il puntatore,
+  scrivendo `--mx/--my`. Solo dove c'è un puntatore fine. **Misura i rettangoli
+  una volta** e li rimisura solo su scroll, resize o cambio del DOM; lavora una
+  volta per fotogramma (`requestAnimationFrame`) e tocca la sola card sotto il
+  puntatore. La prima versione faceva una `querySelectorAll` e un
+  `getBoundingClientRect()` per ogni card a **ogni** `pointermove`: misurato in
+  pagina, 1.42ms per evento contro 0.01ms, cioè 135 volte tanto, e ogni misura
+  era un layout forzato. Era la causa principale dello scatto della home.
+- Le macchie dello sfondo si muovono lente e continue; il punto «live» pulsa.
 - Trascinamento del kanban con la card che si inclina e sbiadisce.
 - **Tutto si spegne con `prefers-reduced-motion`**, e anche in una scheda in
   secondo piano: lì `requestAnimationFrame` non gira e GSAP resterebbe
@@ -250,8 +330,8 @@ Migration SQL in `supabase/migrations/`.
 | F1 | schema + RLS + auth + layout/nav | fatta |
 | F2 | pipeline + scheda cliente + import CSV dei lead | fatta |
 | F3 | campo + follow-up | fatta |
-| F4 | soldi + progetti + statistiche | da fare |
-| F5 | lab AI + risorse + placeholder agent | da fare |
+| F4 | soldi + progetti + statistiche | fatta |
+| F5 | lab AI + risorse + team + placeholder agent | da fare |
 
 A fine di ogni fase: build pulita, commit, una riga su cosa si è fatto.
 
@@ -377,3 +457,55 @@ La F3 non ha aggiunto tabelle: `staff_field_reports`, `staff_followups` e
 
 Non c'è ancora: gestione delle trattative (deal, acconti, abbonamenti), che
 arriva con la F4 insieme a Soldi e Progetti.
+
+### Cosa è già in piedi (F4)
+
+`FASE_VIVA` passa a **4**. La voce **Team** dichiarava `fase: 4` ma non è nella
+F4 del piano: è stata spostata a 5, altrimenti alzando `FASE_VIVA` sarebbe
+comparsa nel rail un'icona che porta a una pagina «in arrivo».
+
+Le letture stanno in `lib/staff/f4.ts` e non in `queries.ts` per una ragione
+precisa: quello importa `storage.ts`, che importa la service-role per firmare le
+foto del Campo. Tre pagine che non mostrano una foto non devono avere quella
+chiave nel grafo dei propri import.
+
+Tutte le somme si fanno **in memoria e non in SQL**: con centinaia di righe la
+differenza è irrilevante, e in cambio il filtro dei dati demo resta applicabile
+dopo la lettura (vedi `demo.ts`) e la RLS resta l'unica regola su chi vede cosa,
+senza viste o funzioni da tenere in pari.
+
+- **`app/staff/(dash)/soldi`** — acconti al 30 e saldi al 70, abbonamenti,
+  modifiche extra, e per il solo admin il margine. Incassato e residuo si
+  ricavano dalle due spunte, mai da un campo «pagato» aggiornato a mano. Nella
+  card **nera** ci sono i solleciti, ordinati dal credito più vecchio: è la sola
+  cosa della pagina su cui si può agire oggi, e il nero è dove l'occhio va per
+  primo. Il grafico mette ogni incasso nel mese in cui è **entrato**, non in
+  quello della firma.
+  I margini si leggono solo per l'admin, e non per una `if` di cortesia: la RLS
+  di `staff_deal_margins` non dà le righe a un venditore. La richiesta si evita
+  perché sarebbe a vuoto — la protezione sta nel database.
+- **`app/staff/(dash)/progetti`** — la fase di ogni sito (cinque tacche, non una
+  barra continua: un sito non è «al 62% del design», è in design), il link
+  all'anteprima, il dominio. Nella card **nera** i domini in scadenza, con i già
+  scaduti in cima: un dominio scaduto è un sito offline, cioè un cliente che
+  telefona, ed è l'unica urgenza della sezione.
+- **`app/staff/(dash)/statistiche`** — tasso di chiusura, prezzo medio, giorni
+  medi dalla proposta alla firma, i tre tagli (settore, zona, venditore), la
+  mappa Leaflet grande e, nella card **nera**, le obiezioni sentite in campo con
+  le frasi testuali dei titolari.
+  **Il tasso si calcola sulle trattative decise** (`accettato` + `rifiutato`),
+  non su tutti i clienti in archivio: contare anche chi è ancora «da contattare»
+  farebbe scendere il numero a ogni import di lead, cioè peggiorerebbe il
+  risultato proprio mentre si lavora di più. Un tasso che punisce il lavoro non
+  lo guarda nessuno due volte. Il rovescio è che con pochi dati balla, e ogni
+  percentuale porta accanto il suo denominatore («3/4», «su 7 decise») — un
+  numero grosso senza denominatore è la cosa più vicina a una bugia che una
+  dashboard possa dire.
+
+La F4 **non ha aggiunto tabelle**: `staff_deals`, `staff_deal_margins`,
+`staff_subscriptions`, `staff_projects` e `staff_extra_changes` erano già nella
+0030. Ha aggiunto la migration **0032**, che mette `is_demo` su
+`staff_extra_changes` — la 0031 l'aveva saltata perché fino alla F3 nessuno
+leggeva quella tabella, e senza la colonna gli extra finti finirebbero nei totali
+veri a interruttore spento. La stessa migration porta tre indici di lettura per
+le pagine nuove.

@@ -27,7 +27,13 @@ import { createRequire } from 'node:module'
 const radice = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(path.join(radice, 'package.json'))
 
+/* L'ordine è quello della cancellazione: prima le figlie, poi i genitori.
+   `on delete cascade` basterebbe, ma cancellare in ordine dà un conteggio per
+   tabella invece di un numero solo — ed è quello che si guarda per capire se il
+   seed è andato. `staff_deal_margins` non ha `is_demo` e non le serve: sparisce
+   in cascata col deal, che è l'unico modo in cui si legge. */
 const TABELLE = [
+  'staff_extra_changes',
   'staff_field_reports',
   'staff_followups',
   'staff_activities',
@@ -100,14 +106,27 @@ function valoreArg(nome) {
  */
 async function controllaColonna(sb) {
   const { error } = await sb.from('staff_clients').select('is_demo').limit(1)
-  if (!error) return
-  if (error.code === '42P01') {
-    throw new Error('Le tabelle staff_* non esistono: esegui prima 0030_staff_dashboard.sql')
+  if (error) {
+    if (error.code === '42P01') {
+      throw new Error('Le tabelle staff_* non esistono: esegui prima 0030_staff_dashboard.sql')
+    }
+    throw new Error(
+      'Manca la colonna is_demo: esegui supabase/migrations/0031_staff_demo.sql nell’SQL editor ' +
+        'di Supabase, poi rilancia. Senza, le righe finte non sarebbero più distinguibili dalle vere.',
+    )
   }
-  throw new Error(
-    'Manca la colonna is_demo: esegui supabase/migrations/0031_staff_demo.sql nell’SQL editor ' +
-      'di Supabase, poi rilancia. Senza, le righe finte non sarebbero più distinguibili dalle vere.',
-  )
+
+  /* La stessa colonna, sulla tabella che la 0031 aveva lasciato fuori. Il
+     controllo è separato perché il rimedio è un'altra migration, e dire «esegui
+     la 0031» a chi ha già eseguito la 0031 è il modo più rapido di far perdere
+     mezz'ora. */
+  const extra = await sb.from('staff_extra_changes').select('is_demo').limit(1)
+  if (extra.error) {
+    throw new Error(
+      'Manca is_demo su staff_extra_changes: esegui supabase/migrations/' +
+        '0032_staff_extra_demo.sql nell’SQL editor di Supabase, poi rilancia.',
+    )
+  }
 }
 
 async function scegliStaff(sb, email) {
@@ -149,8 +168,10 @@ async function semina(sb, venditore, collega) {
   const ordine = [
     'staff_clients',
     'staff_deals',
+    'staff_deal_margins',
     'staff_subscriptions',
     'staff_projects',
+    'staff_extra_changes',
     'staff_activities',
     'staff_followups',
     'staff_field_reports',

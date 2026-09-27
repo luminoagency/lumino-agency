@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState, useTransition } from 'react'
+import { memo, useCallback, useMemo, useState, useTransition } from 'react'
 import { Search } from 'lucide-react'
 import Cascade from '@/components/staff/Cascade'
 import ClienteCardBody from '@/components/staff/ClienteCardBody'
@@ -54,6 +54,15 @@ export default function PipelineView({
   const [rifiuto, setRifiuto] = useState<{ id: string; nome: string; da: Stato } | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
+
+  /* Le due funzioni che finiscono dentro ogni card sono `useCallback` per una
+     ragione sola: `memo` confronta le prop, e una funzione ricreata a ogni
+     render è una prop diversa a ogni render — le card si rirenderizzerebbero
+     tutte comunque, e il memo sarebbe un confronto pagato per niente. */
+  const lascia = useCallback(() => {
+    setTrascinato(null)
+    setSopra(null)
+  }, [])
 
   const visibili = useMemo(() => {
     const q = cerca.trim().toLowerCase()
@@ -229,7 +238,13 @@ export default function PipelineView({
                 data-over={sopra === stato}
                 onDragOver={(event) => {
                   event.preventDefault()
-                  setSopra(stato)
+                  /* Il confronto prima del `setSopra` non è un vezzo:
+                     `dragover` si ripete finché il dito resta fermo sopra la
+                     colonna, e uno `setState` con lo stesso valore rirenderizza
+                     comunque l'intero tabellone — sette colonne e tutte le
+                     card — decine di volte al secondo. Era il motivo per cui il
+                     trascinamento scattava con la pipeline piena. */
+                  setSopra((s) => (s === stato ? s : stato))
                 }}
                 onDragLeave={() => setSopra((s) => (s === stato ? null : s))}
                 onDrop={(event) => {
@@ -246,24 +261,14 @@ export default function PipelineView({
                 </div>
                 <div className="lm-col-body">
                   {righe.map((cliente) => (
-                    <Link
+                    <CardKanban
                       key={cliente.id}
-                      href={`/staff/clienti/${cliente.id}`}
-                      className="lm-ccard"
-                      draggable
-                      data-dragging={trascinato === cliente.id}
-                      onDragStart={(event) => {
-                        event.dataTransfer.setData('text/plain', cliente.id)
-                        event.dataTransfer.effectAllowed = 'move'
-                        setTrascinato(cliente.id)
-                      }}
-                      onDragEnd={() => {
-                        setTrascinato(null)
-                        setSopra(null)
-                      }}
-                    >
-                      <ClienteCardBody cliente={cliente} prezzo={prezzi[cliente.id]} />
-                    </Link>
+                      cliente={cliente}
+                      prezzo={prezzi[cliente.id] ?? null}
+                      inMano={trascinato === cliente.id}
+                      onPresa={setTrascinato}
+                      onLascia={lascia}
+                    />
                   ))}
                   {!righe.length && <p className="lm-col-empty">Nessuno qui.</p>}
                 </div>
@@ -319,3 +324,49 @@ export default function PipelineView({
     </>
   )
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Una card del kanban, memoizzata.
+ *
+ * Il tabellone tiene fino a qualche centinaio di card, e ogni render del
+ * contenitore — un filtro che cambia, una lettera digitata nella ricerca, una
+ * colonna che si accende sotto il trascinamento — ne ridisegnava **tutte**.
+ * Con `memo` si ridisegnano solo quelle le cui prop sono davvero cambiate: in
+ * pratica, durante un trascinamento, due.
+ *
+ * Il prezzo arriva già risolto (`prezzo`) e non come tutto il dizionario: passare
+ * l'oggetto `prezzi` renderebbe il confronto delle prop sempre falso, perché è
+ * un oggetto nuovo a ogni render del genitore.
+ */
+const CardKanban = memo(function CardKanban({
+  cliente,
+  prezzo,
+  inMano,
+  onPresa,
+  onLascia,
+}: {
+  cliente: ClienteRiga
+  prezzo: number | null
+  inMano: boolean
+  onPresa: (id: string) => void
+  onLascia: () => void
+}) {
+  return (
+    <Link
+      href={`/staff/clienti/${cliente.id}`}
+      className="lm-ccard"
+      draggable
+      data-dragging={inMano}
+      onDragStart={(event) => {
+        event.dataTransfer.setData('text/plain', cliente.id)
+        event.dataTransfer.effectAllowed = 'move'
+        onPresa(cliente.id)
+      }}
+      onDragEnd={onLascia}
+    >
+      <ClienteCardBody cliente={cliente} prezzo={prezzo} />
+    </Link>
+  )
+})

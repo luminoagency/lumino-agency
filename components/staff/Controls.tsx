@@ -22,18 +22,24 @@ export function Toggle({
   checked,
   onChange,
   name,
+  size,
+  disabled,
 }: {
   label: string
   checked: boolean
   onChange: (v: boolean) => void
   name?: string
+  /** `sm` accorcia la pista: il pallino si adegua da sé, vedi staff.css. */
+  size?: 'sm'
+  disabled?: boolean
 }) {
   return (
-    <label className="lm-toggle">
+    <label className="lm-toggle" data-size={size}>
       <input
         type="checkbox"
         name={name}
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
       />
       <span className="lm-toggle-track" aria-hidden="true" />

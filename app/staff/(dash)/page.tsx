@@ -4,8 +4,8 @@ import AreaChart, { type AreaPoint } from '@/components/staff/AreaChart'
 import { Lollipop, Progress } from '@/components/staff/Bars'
 import Cascade from '@/components/staff/Cascade'
 import Counter from '@/components/staff/Counter'
+import FlussoTeam from '@/components/staff/FlussoTeam'
 import Mappa, { type PuntoZona } from '@/components/staff/Mappa'
-import Oggetto from '@/components/staff/Oggetto'
 import PageHead from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
 import Settimana, { type EventoSettimana } from '@/components/staff/Settimana'
@@ -14,6 +14,7 @@ import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
 import { staffDb } from '@/lib/staff/db'
 import { demoAttivo, senzaDemo } from '@/lib/staff/demo'
+import { flussoTeam } from '@/lib/staff/queries'
 import {
   STAFF_COUNTRY,
   STATI,
@@ -35,9 +36,9 @@ export const dynamic = 'force-dynamic'
  * quest'ordine — quanto ho incassato, cosa ho chiuso, come sta andando,
  * **che settimana mi aspetta**, dove sto girando.
  *
- * La composizione segue ref1: una card nera con dentro un oggetto che gira,
- * accanto i numeri che contano, sotto un calendario largo e una mappa. Le card
- * non sono tutte uguali e non devono esserlo — la varietà delle forme è ciò
+ * La composizione segue ref1: una card nera col flusso del team, accanto i
+ * numeri che contano, sotto un calendario largo e la mappa del territorio. Le
+ * card non sono tutte uguali e non devono esserlo — la varietà delle forme è ciò
  * che rende leggibile una schermata densa, perché ogni riquadro si riconosce
  * dalla sua figura prima che dal suo titolo.
  *
@@ -56,7 +57,7 @@ export default async function StaffHome() {
   const inizioMeseScorso = iso(new Date(oggi.getFullYear(), oggi.getMonth() - 1, 1))
   const fra30Giorni = iso(new Date(oggi.getTime() + 30 * 86_400_000))
 
-  const [clienti, deals, abbonamenti, followup, rinnovi] = await Promise.all([
+  const [clienti, deals, abbonamenti, followup, rinnovi, flusso] = await Promise.all([
     /* `*` e non l'elenco delle colonne: serve `is_demo`, che arriva con la
        migration 0031, e nominarla esplicitamente farebbe fallire ogni query
        su un database dove non è ancora passata. Con `*` la colonna c'è se
@@ -79,6 +80,7 @@ export default async function StaffHome() {
       .lte('data_rinnovo', fra30Giorni)
       .order('data_rinnovo', { ascending: true })
       .limit(6),
+    flussoTeam(demo),
   ])
 
   /* Se la migration 0030 non è ancora passata, Postgres risponde 42P01
@@ -206,17 +208,19 @@ export default async function StaffHome() {
 
       <Tilt>
         <Cascade className="lm-bento">
-          {/* La card-oggetto: è quella che dice che questo è un prodotto e non
-              un pannello generato. Nera, con dentro qualcosa che gira. */}
+          {/* La card nera: qui c'era una sfera cromata che girava. Era un
+              ornamento nel punto più guardato della schermata — ora c'è cosa
+              sta facendo il team, che è la sola card della home a parlare del
+              presente invece di contare il passato. */}
           <article className="lm-card lm-in" data-span="4" data-tone="black" data-hover data-reveal>
             <div className="lm-card-top">
-              <span className="lm-label">Lumino</span>
+              <span className="lm-label">Il team, adesso</span>
               <span className="lm-live" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 in linea
               </span>
             </div>
-            <Oggetto />
-            <div className="lm-rows" style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+            <FlussoTeam voci={flusso} />
+            <div className="lm-rows" style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
               <div className="lm-row">
                 <span className="lm-muted">Clienti in archivio</span>
                 <span className="lm-row-v">{righeCliente.length}</span>
@@ -332,7 +336,7 @@ export default async function StaffHome() {
                 Campo
               </Link>
             </div>
-            <Mappa punti={zone(righeCliente)} />
+            <Mappa punti={zone(righeCliente)} unita="clienti" />
           </article>
 
           <article className="lm-card lm-in" data-span="6" data-hover data-reveal>
@@ -415,13 +419,18 @@ function ultimiSeiMesi(deals: { data_chiusura: string | null }[], oggi: Date): A
 }
 
 /**
- * I punti della mappa: un cerchio per città, grande quanto i clienti che ci
- * stanno dentro.
+ * I punti della mappa: uno per città, grande quanto i clienti che ci stanno
+ * dentro.
  *
- * Le coordinate sono quelle dei clienti, non un elenco di città scritto a
- * mano: il giorno che si vende a Belluno il punto compare da solo. Chi non ha
- * coordinate non entra — meglio una mappa con meno punti che un punto nel
- * posto sbagliato.
+ * Le coordinate sono quelle dei clienti, non un elenco di città scritto a mano:
+ * il giorno che si vende a Belluno il punto compare da solo. Chi non ha
+ * coordinate non entra — meglio una mappa con meno punti che un punto nel posto
+ * sbagliato.
+ *
+ * Il taglio a nove città non serve più a evitare che le etichette si coprano
+ * (era il difetto della mappa disegnata a mano): ora ci pensa il cluster di
+ * Leaflet. Resta perché la card è alta 210px e nove punti sono già una risposta
+ * completa alla domanda «sto coprendo il territorio».
  */
 function zone(
   clienti: { citta: string | null; lat: number | null; lng: number | null }[],

@@ -87,8 +87,20 @@ export default function AreaChart({
         <rect className="lm-area-hit" x="0" y="0" width={W} height={H} />
       </svg>
 
+      {/* Il cartellino resta **dentro** il riquadro.
+          Prima era centrato sul punto e alzato del 125% della propria altezza,
+          il che va bene finché il punto sta in mezzo: sul massimo dell'ultimo
+          mese — cioè esattamente il caso che si guarda più spesso — usciva in
+          alto e a destra dalla card e veniva tagliato dal bordo.
+
+          Due correzioni, entrambe fatte qui e non nel CSS perché dipendono da
+          dove sta il punto: `data-lato` lo àncora al bordo invece di centrarlo
+          quando è nel primo o nell'ultimo sesto, e `data-sotto` lo ribalta sotto
+          la curva quando il punto è troppo in alto per averci spazio sopra. */}
       <span
         className="lm-area-tip"
+        data-lato={latoDelTip(xy[active].x)}
+        data-sotto={xy[active].y < H * 0.34 ? 'true' : undefined}
         style={{ left: `${(xy[active].x / W) * 100}%`, top: `${(xy[active].y / H) * 100}%` }}
       >
         {points[active].label} · <b>{fmt(points[active].value, format)}</b>
@@ -103,6 +115,19 @@ export default function AreaChart({
       </div>
     </div>
   )
+}
+
+/**
+ * Da che parte deve stare il cartellino.
+ *
+ * Nel primo sesto del grafico si appoggia a sinistra, nell'ultimo a destra, in
+ * mezzo si centra: è il modo più semplice di non farlo uscire, e non richiede di
+ * misurare la sua larghezza — che al primo render non si conosce ancora.
+ */
+function latoDelTip(x: number): 'sx' | 'dx' | undefined {
+  if (x < W / 6) return 'sx'
+  if (x > W - W / 6) return 'dx'
+  return undefined
 }
 
 /** Catmull-Rom → Bézier cubiche, tensione 1/6. */

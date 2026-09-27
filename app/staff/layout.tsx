@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { anton } from '@/components/home/fonts'
 import { manrope } from '@/components/staff/fonts'
-import Stage from '@/components/staff/Stage'
+import Sfondo from '@/components/staff/Sfondo'
 import './staff.css'
 
 /**
@@ -12,9 +12,10 @@ import './staff.css'
  * sessione. Il gate sta in app/staff/(dash)/layout.tsx, che avvolge tutto il
  * resto.
  *
- * La scena sta qui per la stessa ragione: il video dietro il vetro è il fondo
- * dell'area intera, login compreso. Montarlo nel layout interno vorrebbe dire
- * che la porta d'ingresso ha un aspetto e la casa un altro.
+ * La scena sta qui per la stessa ragione: lo sfondo che si muove dietro il
+ * vetro è il fondo dell'area intera, login compreso. Montarlo nel layout
+ * interno vorrebbe dire che la porta d'ingresso ha un aspetto e la casa un
+ * altro.
  *
  * I due font sono dichiarati qui e non in app/layout.tsx: Manrope veste tutta
  * l'interfaccia, Anton serve solo al wordmark. Caricarli a livello di app li
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`lm-staff ${manrope.variable} ${anton.variable}`}>
-      <Stage />
+      <Sfondo />
       {children}
     </div>
   )

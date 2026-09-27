@@ -41,20 +41,23 @@ export default function Cascade({
       return
     }
 
+    /* Solo `opacity` e `y`, cioè solo trasformazioni.
+       Qui c'era anche un `filter: blur(9px)` che si apriva: l'idea era bella —
+       le card mettevano a fuoco — ma il blur non è una proprietà che la GPU sa
+       comporre, quindi per ogni fotogramma dell'entrata il browser doveva
+       rasterizzare di nuovo ognuna delle dodici card, sopra un pannello già
+       sfocato. Era il mezzo secondo più costoso della pagina, ed era il mezzo
+       secondo in cui si guardava. */
     const tween = gsap.fromTo(
       items,
-      /* Il blur in entrata: le card arrivano come se stessero mettendo a
-         fuoco. Su un pannello di vetro è il movimento giusto — e costa un
-         filtro solo per mezzo secondo, non una proprietà animata per sempre. */
-      { opacity: 0, y: 18, filter: 'blur(9px)' },
+      { opacity: 0, y: 18 },
       {
         opacity: 1,
         y: 0,
-        filter: 'blur(0px)',
-        duration: 0.62,
+        duration: 0.55,
         ease: 'power2.out',
         stagger: 0.05,
-        clearProps: 'transform,filter',
+        clearProps: 'transform',
       },
     )
 

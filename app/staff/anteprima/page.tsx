@@ -12,6 +12,13 @@ const PAGINE = [
   { href: '/staff/clienti', nome: 'Clienti', cosa: 'lista scura e pannello di dettaglio viola' },
   { href: '/staff/campo', nome: 'Campo', cosa: 'visite registrate e follow-up della settimana' },
   { href: '/staff/campo/nuova', nome: 'Nuova visita', cosa: 'i tre passi, chip e controlli' },
+  { href: '/staff/soldi', nome: 'Soldi', cosa: 'acconti 30/70, abbonamenti, extra, margine' },
+  { href: '/staff/progetti', nome: 'Progetti', cosa: 'fasi, anteprime, domini in scadenza' },
+  {
+    href: '/staff/statistiche',
+    nome: 'Statistiche',
+    cosa: 'tassi di chiusura, mappa Leaflet, obiezioni',
+  },
   { href: '/staff/login', nome: 'Accesso', cosa: 'il pannello di vetro sulla scena' },
 ]
 

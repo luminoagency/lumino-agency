@@ -371,3 +371,26 @@ export function quando(data: string): { testo: string; tardi: boolean } {
   if (giorni < 0) return { testo: `${-giorni} giorni fa`, tardi: true }
   return { testo: `fra ${giorni} giorni`, tardi: false }
 }
+
+/**
+ * Quanto tempo è passato, a parole: «adesso», «2 ore fa», «ieri», «4 set».
+ *
+ * Serve al flusso del team, dove le attività sono `timestamptz` e non `date`:
+ * `quando()` ragiona in giorni interi e direbbe «oggi» a una chiamata di cinque
+ * minuti fa, che è l'informazione sbagliata proprio nel caso in cui quella card
+ * serve.
+ *
+ * Oltre la settimana torna alla data breve: «9 giorni fa» costringe a fare il
+ * conto, «4 set» no.
+ */
+export function quandoOre(value: string): string {
+  const minuti = Math.round((Date.now() - new Date(value).getTime()) / 60_000)
+  if (minuti < 2) return 'adesso'
+  if (minuti < 60) return `${minuti} min`
+  const ore = Math.round(minuti / 60)
+  if (ore < 24) return `${ore} h`
+  const giorni = Math.round(ore / 24)
+  if (giorni === 1) return 'ieri'
+  if (giorni < 8) return `${giorni} giorni`
+  return dataBreve(value)
+}
