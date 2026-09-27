@@ -1,28 +1,38 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { ArrowLeft, ExternalLink, MapPin } from 'lucide-react'
 import { Progress } from '@/components/staff/Bars'
 import Cascade from '@/components/staff/Cascade'
 import Counter from '@/components/staff/Counter'
 import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
 import { requireStaff } from '@/lib/staff/auth'
+import { followupDiCliente, reportDiCliente } from '@/lib/staff/queries'
 import {
   ATTIVITA_LABEL,
   FASE_LABEL,
   FASI_PROGETTO,
+  GESTIONE_LABEL,
+  LINGUA_LABEL,
+  OBIEZIONE_LABEL,
   PACCHETTO_LABEL,
+  REAZIONE_LABEL,
   SETTORE_LABEL,
   SITO_LABEL,
+  STRUMENTO_LABEL,
   dataBreve,
   dataLunga,
+  etichetta,
   euro,
+  quando,
   type ClienteRiga,
   type FaseProgetto,
   type Pacchetto,
+  type ReportRiga,
   type TipoAttivita,
 } from '@/lib/staff/types'
 import { createClient } from '@/lib/supabase/server'
+import SchedaAzioni from './SchedaAzioni'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,33 +56,37 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
  * La RLS restituisce zero righe, e zero righe qui vuol dire "non c'è".
  */
 export default async function SchedaCliente({ params }: { params: { id: string } }) {
-  await requireStaff()
+  const me = await requireStaff()
   const supabase = createClient()
 
-  const [cliente, deals, abbonamenti, progetti, attivita] = await Promise.all([
-    supabase.from('staff_clients').select('*').eq('id', params.id).maybeSingle(),
-    supabase
-      .from('staff_deals')
-      .select('*')
-      .eq('client_id', params.id)
-      .order('data_proposta', { ascending: false }),
-    supabase
-      .from('staff_subscriptions')
-      .select('*')
-      .eq('client_id', params.id)
-      .order('data_inizio', { ascending: false }),
-    supabase
-      .from('staff_projects')
-      .select('*')
-      .eq('client_id', params.id)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('staff_activities')
-      .select('id, tipo, testo, data')
-      .eq('client_id', params.id)
-      .order('data', { ascending: false })
-      .limit(20),
-  ])
+  const [cliente, deals, abbonamenti, progetti, attivita, profili, campo, richiami] =
+    await Promise.all([
+      supabase.from('staff_clients').select('*').eq('id', params.id).maybeSingle(),
+      supabase
+        .from('staff_deals')
+        .select('*')
+        .eq('client_id', params.id)
+        .order('data_proposta', { ascending: false }),
+      supabase
+        .from('staff_subscriptions')
+        .select('*')
+        .eq('client_id', params.id)
+        .order('data_inizio', { ascending: false }),
+      supabase
+        .from('staff_projects')
+        .select('*')
+        .eq('client_id', params.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('staff_activities')
+        .select('id, tipo, testo, data')
+        .eq('client_id', params.id)
+        .order('data', { ascending: false })
+        .limit(20),
+      supabase.from('staff_profiles').select('id, nome').eq('attivo', true).order('nome'),
+      reportDiCliente(params.id),
+      followupDiCliente(params.id),
+    ])
 
   if (!cliente.data) notFound()
 
@@ -81,6 +95,8 @@ export default async function SchedaCliente({ params }: { params: { id: string }
   const abbonamento = (abbonamenti.data?.[0] ?? null) as Abbonamento | null
   const progetto = (progetti.data?.[0] ?? null) as Progetto | null
   const storico = (attivita.data ?? []) as Attivita[]
+  const venditori = (profili.data ?? []) as { id: string; nome: string }[]
+  const aperti = richiami.filter((r) => !r.fatto)
 
   /* 30% all'ordine, 70% alla consegna: la quota pagata si legge dalle due
      spunte, non da una percentuale tenuta in pari a mano. */
@@ -99,6 +115,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
         sub={[SETTORE_LABEL[c.settore], c.citta, c.zona].filter(Boolean).join(' · ')}
       >
         <StatoPill stato={c.stato} />
+        <SchedaAzioni cliente={c} venditori={venditori} isAdmin={me.role === 'admin'} />
       </PageHead>
 
       {c.stato === 'rifiutato' && c.motivo_rifiuto && (
@@ -244,12 +261,156 @@ export default async function SchedaCliente({ params }: { params: { id: string }
             </div>
           ) : (
             <p className="lm-empty">
-              Ancora nessuna attività. Visite, chiamate e note arrivano qui dalla fase 3.
+              Ancora nessuna attività. Le visite arrivano dal Campo, le chiamate e le note dal
+              bottone «Attività» qui sopra.
+            </p>
+          )}
+        </article>
+
+        <article className="lm-card lm-in" data-span="5" data-reveal>
+          <div className="lm-card-top">
+            <span className="lm-label">Richiami</span>
+            <span className="lm-pill-n">{aperti.length}</span>
+          </div>
+          {richiami.length ? (
+            <div className="lm-rows">
+              {richiami.map((f) => {
+                const q = quando(f.data)
+                return (
+                  <div key={f.id} className="lm-row">
+                    <span>
+                      {f.fatto ? 'Fatto' : 'Da fare'}
+                      {f.nota && <span className="lm-row-note">{f.nota}</span>}
+                    </span>
+                    <span className="lm-when" data-late={!f.fatto && q.tardi}>
+                      {f.fatto ? dataBreve(f.data) : q.testo}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="lm-empty">
+              Nessun richiamo preso. Si prende dal bottone «Richiamo», o alla fine di una visita.
+            </p>
+          )}
+        </article>
+
+        <article className="lm-card lm-in" data-span="12" data-reveal>
+          <div className="lm-card-top">
+            <span className="lm-label">Report di campo</span>
+            <span className="lm-pill-n">{campo.visite.length}</span>
+          </div>
+          {campo.visite.length ? (
+            <div className="lm-reports">
+              {campo.visite.map((v) => (
+                <Report key={v.id} visita={v} foto={campo.foto} />
+              ))}
+            </div>
+          ) : (
+            <p className="lm-empty">
+              Nessuna visita registrata. Dal Campo si raccoglie come lavora, cosa usa e cosa ha
+              detto — è il materiale su cui si costruisce il preventivo.
             </p>
           )}
         </article>
       </Cascade>
     </>
+  )
+}
+
+/**
+ * Un report di campo dentro la scheda.
+ *
+ * Più stretto di quello della pagina Campo: là si sfogliano visite di clienti
+ * diversi e serve il nome grande, qui il cliente è già il titolo della pagina
+ * e quello che conta è cosa è cambiato da una visita all'altra.
+ */
+function Report({ visita, foto }: { visita: ReportRiga; foto: Record<string, string> }) {
+  const scatti = (visita.foto ?? []).map((path) => foto[path]).filter(Boolean)
+  const tag = [
+    ...(visita.gestione_prenotazioni ?? []).map((v) => etichetta(v, GESTIONE_LABEL)),
+    ...(visita.strumenti_usati ?? []).map((v) => etichetta(v, STRUMENTO_LABEL)),
+    ...(visita.lingue_clienti ?? []).map((v) => etichetta(v, LINGUA_LABEL)),
+  ]
+
+  return (
+    <div className="lm-report">
+      <div className="lm-card-top">
+        <span className="lm-when">{dataLunga(visita.created_at)}</span>
+        {visita.reazione && (
+          <span className="lm-react" data-r={visita.reazione}>
+            {etichetta(visita.reazione, REAZIONE_LABEL)}
+          </span>
+        )}
+      </div>
+
+      {visita.frase_titolare && <p className="lm-quote">«{visita.frase_titolare}»</p>}
+
+      {tag.length > 0 && (
+        <div className="lm-tags">
+          {tag.map((t) => (
+            <span key={t} className="lm-tag">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="lm-rows" style={{ marginTop: '0.7rem' }}>
+        {visita.obiezione_principale && (
+          <div className="lm-row">
+            <span className="lm-muted">Obiezione</span>
+            <span className="lm-row-v">
+              {etichetta(visita.obiezione_principale, OBIEZIONE_LABEL)}
+            </span>
+          </div>
+        )}
+        {visita.commissioni_pagate != null && (
+          <div className="lm-row">
+            <span className="lm-muted">Commissioni</span>
+            <span className="lm-row-v">{euro(visita.commissioni_pagate)} al mese</span>
+          </div>
+        )}
+        {visita.turisti != null && (
+          <div className="lm-row">
+            <span className="lm-muted">Turisti</span>
+            <span className="lm-row-v">{visita.turisti ? 'Sì' : 'No'}</span>
+          </div>
+        )}
+      </div>
+
+      {visita.problemi_dichiarati && <p className="lm-sub">{visita.problemi_dichiarati}</p>}
+      {visita.trascrizione_vocale && (
+        <p className="lm-sub lm-dictated">{visita.trascrizione_vocale}</p>
+      )}
+
+      {scatti.length > 0 && (
+        <div className="lm-shots" style={{ marginTop: '0.8rem' }}>
+          {scatti.map((url) => (
+            /* URL firmati che scadono in un'ora: next/image li metterebbe in
+               una cache che muore prima di servire a qualcosa. */
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <span key={url} className="lm-shot">
+              <img src={url} alt="Foto della visita" loading="lazy" />
+            </span>
+          ))}
+        </div>
+      )}
+
+      {visita.lat != null && visita.lng != null && (
+        <a
+          className="lm-pill lm-visit-map"
+          data-size="sm"
+          href={`https://www.openstreetmap.org/?mlat=${visita.lat}&mlon=${visita.lng}#map=18/${visita.lat}/${visita.lng}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <MapPin aria-hidden="true" />
+          Dov&apos;era
+        </a>
+      )}
+    </div>
   )
 }
 

@@ -20,3 +20,21 @@ await supabase.storage.createBucket('site-images', {
 })
 ```
 Già creato sul progetto di produzione attuale.
+
+## `staff-field`
+- **Uso:** foto scattate durante le visite di campo (`staff_field_reports.foto`), area interna `/staff/campo`.
+- **Public:** no. Sono vetrine, sale e a volte facce: materiale di lavoro, non contenuto pubblico. Si mostrano con URL firmati da `lib/staff/storage.ts` (validi un'ora).
+- **Limite file:** 6MB in ingresso, ma il browser ridimensiona a 1600px/JPEG prima di inviare (`components/staff/PhotoPicker.tsx`): in pratica arrivano poche centinaia di KB.
+- **Mime ammessi:** `image/jpeg`, `image/png`, `image/webp`.
+- **Struttura path:** `{client_id}/{uuid}.jpg`.
+- **Scrittura:** solo via server action (`caricaFoto` / `eliminaFoto` in `lib/staff/actions.ts`) con service-role, dopo aver riletto il cliente con la sessione dell'utente — cioè attraverso la RLS. Non servono policy sullo storage.
+
+### Ricreazione (service-role)
+```js
+await supabase.storage.createBucket('staff-field', {
+  public: false,
+  fileSizeLimit: '6MB',
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+})
+```
+Già creato sul progetto di produzione attuale.

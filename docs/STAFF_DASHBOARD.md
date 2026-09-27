@@ -168,7 +168,7 @@ Migration SQL in `supabase/migrations/`.
 | --- | --- | --- |
 | F1 | schema + RLS + auth + layout/nav | fatta |
 | F2 | pipeline + scheda cliente + import CSV dei lead | fatta |
-| F3 | campo + follow-up | da fare |
+| F3 | campo + follow-up | fatta |
 | F4 | soldi + progetti + statistiche | da fare |
 | F5 | lab AI + risorse + placeholder agent | da fare |
 
@@ -231,5 +231,68 @@ riferimenti (bento, viola, pill, glass) prima di aggiungere le pagine nuove.
 - `lib/staff/queries.ts` — `caricaClienti()`, la lettura condivisa fra pipeline
   e vista a lista.
 
-Non c'è ancora: modifica dei dati di un cliente dalla scheda, inserimento di
-attività a mano (arriva con la F3, dal Campo) e gestione delle trattative.
+### Cosa è già in piedi (F3)
+
+Stesso branch, stesso linguaggio. La voce «Campo» smette di essere un
+segnaposto: `lib/staff/nav.ts` esporta ora `FASE_VIVA`, e a fine di ogni fase
+si alza quel numero invece di falsificare la fase delle voci appena costruite.
+
+- `components/staff/Chips.tsx` — `Chips` (scelta multipla), `ChipsOne` (scelta
+  singola, si spegne ritoccandola), `ChipsSiNo` (con il «non chiesto», perché
+  esiste). Bersagli da 38px: si usano col pollice.
+- `components/staff/VoiceNote.tsx` — dettatura con la Web Speech API del
+  browser (`it-IT`, gratis). Riparte da sola quando Chrome chiude la sessione
+  dopo un silenzio, e scrive dentro un campo modificabile: il riconoscimento
+  sbaglia i nomi propri e i dialetti, e qui si parla di quelli. **Nessun audio
+  viene salvato**, solo il testo. Dove l'API non c'è (Firefox) resta il campo.
+- `components/staff/PhotoPicker.tsx` — `capture="environment"`, ridimensiona in
+  canvas a 1600px/JPEG prima di inviare, carica subito una per una. Togliere
+  una foto la cancella davvero dal bucket: si carica prima del salvataggio,
+  quindi senza questo gli orfani si accumulerebbero.
+- `lib/staff/storage.ts` — bucket **privato** `staff-field` e firma in blocco
+  degli URL (un'ora). Sta a parte da `queries.ts` perché importa il
+  service-role. Il bucket è già creato sul progetto di produzione ed è
+  documentato in `supabase/storage-buckets.md`.
+- `app/staff/(dash)/campo` — KPI (visite a 7 giorni, da richiamare oggi, in
+  ritardo) e due tab a pill: **Visite** e **Follow-up**. Si apre sui follow-up
+  quando ce n'è almeno uno scaduto. I richiami si chiudono, si riaprono e si
+  rimandano di 3 o 7 giorni; il rinvio si conta da oggi e non dalla scadenza
+  vecchia, altrimenti un arretrato rimandato resterebbe nel passato. La riga
+  sparisce subito e torna se la scrittura fallisce.
+- `app/staff/(dash)/campo/nuova` — la visita in tre passi: **Chi** (ricerca in
+  memoria su nome, città, zona e indirizzo, più «Non è in elenco» che crea il
+  cliente sul posto), **Come lavora** (prenotazioni, strumenti, lingue,
+  turisti, commissioni pagate), **Com'è andata** (reazione, obiezione, frase
+  del titolare, problemi, nota vocale, foto, GPS, nuovo stato, richiamo). Solo
+  il cliente è obbligatorio e si può salvare da qualunque passo: una visita a
+  metà vale più di una visita non registrata. La barra delle azioni sta in
+  fondo allo schermo sul telefono.
+- Il GPS si chiede **entrando nel terzo passo**, non all'apertura: il permesso
+  del browser è una finestra che copre tutto, e chiederlo mentre si cerca il
+  cliente vuol dire vederlo negare. Negato o assente, la visita si salva lo
+  stesso con `lat`/`lng` a `null`.
+- `app/staff/(dash)/clienti/[id]/SchedaAzioni.tsx` — dalla scheda: **Modifica**
+  (anagrafica completa in una modale larga), **Attività** (chiamata, messaggio,
+  nota; la visita no, quella si registra dal Campo) e **Richiamo**. Lo stato
+  non si cambia da qui: si sposta dalla pipeline, dove il rifiuto chiede il
+  motivo. Due porte sullo stesso dato sono due porte per dimenticarsene una.
+- La scheda cliente mostra ora anche **Richiami** e **Report di campo**, con le
+  foto firmate.
+- `lib/staff/actions.ts` — `aggiornaCliente`, `salvaVisita`, `creaAttivita`,
+  `creaFollowup`, `aggiornaFollowup`, `caricaFoto`, `eliminaFoto`.
+  `salvaVisita` scrive il report **per primo** e poi attività, stato e
+  richiamo: non è una transazione (PostgREST non ne offre), e se cade una
+  scrittura successiva resta comunque il dato che costa raccogliere.
+- `lib/staff/queries.ts` — `caricaCampo`, `clientiPerVisita`,
+  `reportDiCliente`, `followupDiCliente`.
+- `lib/staff/types.ts` — il vocabolario del campo (gestioni, strumenti, lingue,
+  reazioni, obiezioni) e gli aiuti `etichetta`, `oggiISO`, `quando`. Le colonne
+  di `staff_field_reports` non hanno check constraint: il vocabolario è una
+  proposta, non un cancello, perché un insert rifiutato in mezzo a una visita
+  costa più di un valore fuori elenco.
+
+La F3 non ha aggiunto tabelle: `staff_field_reports`, `staff_followups` e
+`staff_activities` erano già nella 0030. Ha aggiunto **un bucket Storage**.
+
+Non c'è ancora: gestione delle trattative (deal, acconti, abbonamenti), che
+arriva con la F4 insieme a Soldi e Progetti.

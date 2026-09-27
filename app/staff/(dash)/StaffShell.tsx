@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import Wordmark from '@/components/home/Wordmark'
 import { gsap, prefersReducedMotion } from '@/components/home/useMotion'
-import { activeHref, visibleNav, type StaffNavItem } from '@/lib/staff/nav'
+import { FASE_VIVA, activeHref, visibleNav, type StaffNavItem } from '@/lib/staff/nav'
 import type { StaffProfile } from '@/lib/staff/types'
 
 /**
@@ -170,7 +170,7 @@ export default function StaffShell({
 }
 
 function NavLink({ item, active }: { item: StaffNavItem; active: string }) {
-  const soon = item.fase > 1
+  const soon = item.fase > FASE_VIVA
   const Icon = ICONS[item.href] ?? LayoutGrid
   return (
     <Link

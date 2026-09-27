@@ -3,16 +3,22 @@
  *
  * Le consumano tre viste diverse (rail desktop, barra mobile, pannello
  * "Altro"): con tre elenchi separati la quarta pagina finirebbe in due su tre.
- * `fase` è la fase del piano in cui la pagina viene davvero costruita: è anche
- * ciò che distingue una voce viva da un segnaposto.
+ * `fase` è la fase del piano in cui la pagina viene davvero costruita, e
+ * confrontata con FASE_VIVA distingue una voce viva da un segnaposto: alla
+ * fine di ogni fase si alza quel numero di uno e le voci appena costruite
+ * smettono di dire "in arrivo". Il valore resta quello vero, così il piano
+ * resta leggibile dal codice.
  */
+
+/** L'ultima fase costruita. Si alza a fine fase, non prima. */
+export const FASE_VIVA = 3
 
 export interface StaffNavItem {
   href: string
   label: string
   /** Etichetta corta per la barra in basso sul telefono. */
   short: string
-  /** Fase del piano: 1 = già viva, le altre sono segnaposto. */
+  /** Fase del piano in cui la pagina viene costruita. Vedi FASE_VIVA. */
   fase: 1 | 2 | 3 | 4 | 5
   adminOnly?: boolean
   /** Le cinque voci che stanno nella barra mobile. */
