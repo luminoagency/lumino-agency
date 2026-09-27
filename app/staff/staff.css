@@ -1,0 +1,760 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUMINO STAFF — vestito dell'area interna
+
+   Non è un pannello di amministrazione: è la stessa mano della vetrina messa
+   al lavoro. Da lì arrivano i token (globals.css), i tre caratteri, il
+   gradiente firma e il modo di usarlo — un filo, un accento, mai una maschera
+   sul testo.
+
+   Tutto è annidato sotto .lm-staff perché il body dell'app è chiaro
+   (globals.css: bg-white): senza un contenitore che dichiari il proprio fondo
+   scuro, il tema di quest'area colerebbe sulle pagine pubbliche o, peggio,
+   quelle colerebbero qui.
+
+   Mobile-first per obbligo, non per stile: i venditori la usano in piedi
+   davanti a un bar, con una mano.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-staff {
+  --rail: 268px;
+  /* Lo spazio che la barra in basso ruba al contenuto sul telefono. */
+  --dock: 68px;
+
+  min-height: 100dvh;
+  background: var(--void);
+  color: var(--cream);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lm-staff ::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+/* Un alone caldo fisso in alto a sinistra: la stessa luce della home, ferma.
+   Qui non insegue il puntatore — è un'interfaccia di lavoro, non un hero. */
+.lm-staff::before {
+  content: '';
+  position: fixed;
+  inset: -20vh auto auto -10vw;
+  width: 70vw;
+  height: 70vh;
+  background: radial-gradient(circle, rgba(229, 52, 42, 0.14), transparent 62%);
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Struttura
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.lm-staff-main {
+  padding: 1.25rem 1.15rem calc(var(--dock) + 2rem);
+}
+
+@media (min-width: 900px) {
+  .lm-staff-main {
+    padding: 3rem 3.25rem 5rem calc(var(--rail) + 3.25rem);
+    max-width: 1380px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Marchio
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  color: var(--cream);
+  text-decoration: none;
+  --wm-size: 1.22rem;
+}
+
+/* "Staff" accanto al marchio, in piccolo: dice dove sei senza un titolo. */
+.lm-staff-brand span.lm-staff-tag {
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Rail (desktop) — un indice tipografico, non un menù a icone
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-rail {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .lm-staff-rail {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    width: var(--rail);
+    padding: 2rem 1.5rem 1.5rem;
+    border-right: 1px solid var(--line);
+    background: rgba(23, 18, 16, 0.72);
+    backdrop-filter: blur(14px);
+  }
+}
+
+.lm-staff-nav {
+  margin-top: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.lm-staff-link {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0 0.5rem 0.85rem;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  color: var(--cream-dim);
+  text-decoration: none;
+  transition:
+    color 0.25s,
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Il filo del gradiente a sinistra: cresce da 0 e resta solo sull'attiva.
+   È l'unico posto in cui il gradiente compare nella navigazione. */
+.lm-staff-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  background: var(--grad);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lm-staff-link:hover {
+    color: var(--cream);
+    transform: translateX(3px);
+  }
+  .lm-staff-link:hover::before {
+    height: 42%;
+  }
+}
+
+.lm-staff-link[aria-current='page'] {
+  color: var(--cream);
+}
+.lm-staff-link[aria-current='page']::before {
+  height: 72%;
+}
+
+/* Le pagine che arriveranno: leggibili ma spente, e col perché accanto. */
+.lm-staff-link[data-soon='true'] {
+  color: rgba(185, 174, 161, 0.55);
+}
+.lm-staff-soon {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(185, 174, 161, 0.5);
+  white-space: nowrap;
+}
+
+/* Piede del rail: chi sei e come si esce. */
+.lm-staff-me {
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+}
+.lm-staff-me strong {
+  display: block;
+  font-weight: 500;
+  color: var(--cream);
+}
+.lm-staff-out {
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cream-dim);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+.lm-staff-out:hover {
+  color: var(--red);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Testa e barra mobile
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-top {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(23, 18, 16, 0.82);
+  backdrop-filter: blur(14px);
+}
+
+@media (min-width: 900px) {
+  .lm-staff-top {
+    display: none;
+  }
+}
+
+.lm-staff-initial {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cream);
+  background: var(--void-2);
+}
+
+.lm-staff-dock {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-top: 1px solid var(--line);
+  background: rgba(23, 18, 16, 0.9);
+  backdrop-filter: blur(16px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 900px) {
+  .lm-staff-dock {
+    display: none;
+  }
+}
+
+.lm-staff-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.7rem 0.2rem 0.6rem;
+  border: 0;
+  background: none;
+  color: var(--cream-dim);
+  font: inherit;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.lm-staff-tab[aria-current='page'],
+.lm-staff-tab[aria-expanded='true'] {
+  color: var(--cream);
+}
+/* Il punto del gradiente sopra la voce attiva: due pixel, non una pillola. */
+.lm-staff-tab::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--grad);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.25s,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lm-staff-tab[aria-current='page']::before {
+  opacity: 1;
+  transform: none;
+}
+.lm-staff-tab svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.6;
+}
+
+/* Pannello "Altro": tutte le voci che nella barra non ci stanno. */
+.lm-staff-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: rgba(10, 7, 6, 0.6);
+  animation: lm-staff-fade 0.25s ease both;
+}
+.lm-staff-sheet-inner {
+  background: var(--void-2);
+  border-top: 1px solid var(--line);
+  border-radius: 20px 20px 0 0;
+  padding: 1.5rem 1.25rem calc(var(--dock) + 1.5rem);
+  animation: lm-staff-rise 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lm-staff-sheet .lm-staff-nav {
+  margin-top: 0.5rem;
+}
+@keyframes lm-staff-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes lm-staff-rise {
+  from {
+    transform: translateY(14%);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Titoli e testi
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-h1 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(1.9rem, 6vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
+}
+.lm-staff-sub {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--cream-dim);
+  max-width: 46ch;
+}
+
+/* L'etichetta che apre una sezione. Niente ✦, niente numeri: una parola in
+   maiuscoletto e un filo di gradiente che la sottolinea. */
+.lm-staff-label {
+  display: inline-block;
+  padding-bottom: 0.4rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  border-bottom: 1px solid transparent;
+  border-image: var(--grad) 1;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+.lm-staff-section {
+  margin-top: 2.75rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   KPI — numeri grandi in Anton, separati da fili, non chiusi in card
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-kpi-lead {
+  margin-top: 1.6rem;
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 900px) {
+  .lm-staff-kpi-lead {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 3rem;
+    align-items: start;
+  }
+}
+
+.lm-staff-num {
+  display: block;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--cream);
+}
+.lm-staff-num-xl {
+  font-size: clamp(4.2rem, 19vw, 8.5rem);
+}
+.lm-staff-num-md {
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+}
+
+.lm-staff-kpi-name {
+  margin-top: 0.55rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+}
+
+/* La lista dei numeri secondari: righe separate da fili. Una card per ognuno
+   sarebbe la griglia da pannello che non vogliamo. */
+.lm-staff-rows {
+  display: flex;
+  flex-direction: column;
+}
+.lm-staff-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 0;
+  border-top: 1px solid var(--line);
+}
+.lm-staff-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.lm-staff-row dt {
+  font-size: 0.82rem;
+  color: var(--cream-dim);
+}
+.lm-staff-row dd {
+  margin: 0;
+  text-align: right;
+}
+
+/* Pipeline in miniatura: stati in fila, con la barra proporzionale sotto. */
+.lm-staff-states {
+  margin-top: 1.4rem;
+  display: grid;
+  gap: 0.15rem;
+}
+.lm-staff-state {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.62rem 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  color: inherit;
+}
+.lm-staff-state-name {
+  font-size: 0.86rem;
+  color: var(--cream-dim);
+}
+.lm-staff-state-n {
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 1.28rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.lm-staff-bar {
+  grid-column: 1 / -1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--grad);
+  transform-origin: left center;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Liste di lavoro (follow-up, rinnovi)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-list {
+  margin-top: 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+.lm-staff-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.lm-staff-item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.lm-staff-item-note {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--cream-dim);
+}
+.lm-staff-when {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  white-space: nowrap;
+}
+.lm-staff-when[data-late='true'] {
+  color: var(--red);
+}
+
+.lm-staff-empty {
+  margin-top: 1rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  color: var(--cream-dim);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Avvisi (migration da eseguire, chiave mancante)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-warn {
+  margin-top: 1.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(229, 52, 42, 0.4);
+  border-left-width: 2px;
+  background: rgba(229, 52, 42, 0.07);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--cream);
+}
+.lm-staff-warn code {
+  font-size: 0.82em;
+  color: var(--pink);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Pagine in arrivo
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-soon-page {
+  max-width: 48ch;
+  padding-top: 12vh;
+}
+.lm-staff-soon-page .lm-staff-h1 {
+  margin-top: 1.1rem;
+}
+/* Il filo del gradiente che si allunga: dice "in costruzione" senza scriverlo
+   dentro un badge. */
+.lm-staff-thread {
+  margin-top: 2rem;
+  height: 2px;
+  background: var(--grad);
+  border-radius: 2px;
+  transform-origin: left center;
+  animation: lm-staff-thread 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+@keyframes lm-staff-thread {
+  0% {
+    transform: scaleX(0.04);
+    opacity: 0.5;
+  }
+  55% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Login
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.25rem;
+}
+.lm-staff-login-box {
+  width: 100%;
+  max-width: 360px;
+}
+.lm-staff-login form {
+  margin-top: 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+/* Campi: una riga sottolineata, non una scatola. Su un fondo scuro il bordo
+   pieno di un input è la cosa che fa sembrare tutto un modulo da intranet. */
+.lm-staff-field label {
+  display: block;
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream-dim);
+  margin-bottom: 0.45rem;
+}
+.lm-staff-field input {
+  width: 100%;
+  padding: 0.55rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--cream);
+  font: inherit;
+  font-size: 1rem;
+  border-radius: 0;
+  transition: border-color 0.25s;
+}
+.lm-staff-field input:focus {
+  outline: none;
+  border-bottom-color: var(--violet);
+}
+.lm-staff-field input::placeholder {
+  color: rgba(185, 174, 161, 0.45);
+}
+
+.lm-staff-submit {
+  margin-top: 0.4rem;
+  padding: 0.9rem 1.2rem;
+  border: 0;
+  border-radius: 2px;
+  background: var(--grad);
+  color: #fff;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.25s;
+}
+.lm-staff-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+.lm-staff-submit:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.lm-staff-error {
+  font-size: 0.82rem;
+  color: var(--red);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Accessibilità e movimento
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff a:focus-visible,
+.lm-staff button:focus-visible,
+.lm-staff input:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+
+/* Lo stato di partenza dell'entrata di pagina lo scrive il CSS, non il JS:
+   se GSAP arriva un attimo dopo, il contenuto non lampeggia in posizione. */
+.lm-staff-enter {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-staff-enter {
+    opacity: 1;
+  }
+  .lm-staff-thread {
+    animation: none;
+  }
+  .lm-staff * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Wordmark
+   
+   Il disegno del marchio vive in components/home/motion.css, che è il foglio
+   della home: caricarlo qui vorrebbe dire portarsi dietro hero, particelle e
+   sezioni pinnate per tre lettere e mezzo. Qui ne sta la versione ferma —
+   stesse misure, stessa I nel gradiente, nessuna animazione d'ingresso.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff .lm-wm {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: var(--wm-size, 1.22rem);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.lm-staff .lm-wm b {
+  font-weight: 400;
+  display: inline-block;
+  color: currentColor;
+}
+.lm-staff .lm-wm .lm-wm-i {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Cursore
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff[data-cursor-on='true'],
+.lm-staff[data-cursor-on='true'] * {
+  cursor: none;
+}
+
+.lm-staff-cur,
+.lm-staff-cur-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  margin: -4px 0 0 -4px;
+}
+.lm-staff[data-cursor-on='true'] .lm-staff-cur,
+.lm-staff[data-cursor-on='true'] .lm-staff-cur-ring {
+  opacity: 1;
+}
+
+.lm-staff-cur {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cream);
+}
+.lm-staff-cur-ring {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border: 1px solid rgba(244, 238, 228, 0.35);
+  border-radius: 50%;
+  transition:
+    width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    margin 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s;
+}
+/* Sopra un elemento che si può toccare l'anello cresce: è tutto il feedback
+   che serve in un'area di lavoro. */
+.lm-staff:has([data-cursor='grow']:hover) .lm-staff-cur-ring {
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-color: rgba(139, 92, 246, 0.75);
+}

@@ -108,6 +108,9 @@ export default function CookieBanner() {
   // Sui siti dei ristoratori (e sui loro demo) vale il loro banner cookie,
   // non quello di Lumino: qui ci togliamo di mezzo.
   if (pathname?.startsWith('/sites/') || pathname?.startsWith('/demo/')) return null
+  // L'area staff è interna e dietro login: nessun cookie di tracciamento da
+  // far accettare, e un banner davanti al modulo di accesso a ogni ingresso.
+  if (pathname?.startsWith('/staff')) return null
   // Niente banner se già deciso, a meno che il pannello sia stato riaperto dal footer.
   if (decided && !panelOpen) return null
 

@@ -42,6 +42,23 @@ function isLocalised(path: string): boolean {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  /* ── 0. L'area staff, che ha un suo login ──────────────────────────────── */
+  /* Non entra in PROTECTED_PREFIXES perché quel ramo rimanda a /login, che è il
+     login dei clienti: uno dello staff ci finirebbe dentro e non troverebbe la
+     sua porta. Anche qui la presenza del cookie è solo un gate ottimistico —
+     la verifica vera, compreso il "questo utente è davvero staff", la fa
+     app/staff/(dash)/layout.tsx. */
+  if (pathname === '/staff' || pathname.startsWith('/staff/')) {
+    if (pathname === '/staff/login' || pathname === '/staff/logout') return NextResponse.next()
+    if (hasSessionCookie(request)) return NextResponse.next()
+
+    const url = request.nextUrl.clone()
+    url.pathname = '/staff/login'
+    url.search = ''
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
+  }
+
   /* ── 1. Il gate dell'area riservata, invariato ─────────────────────────── */
   let isProtected = false
   for (const p of PROTECTED_PREFIXES) {
@@ -49,14 +66,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isProtected) {
-    let hasSession = false
-    const all = request.cookies.getAll()
-    for (let i = 0; i < all.length; i++) {
-      const n = all[i].name
-      if (n.indexOf('sb-') === 0 && n.indexOf('auth-token') >= 0) { hasSession = true; break }
-    }
-
-    if (!hasSession) {
+    if (!hasSessionCookie(request)) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.search = ''
@@ -175,6 +185,16 @@ function withGeoHeaders(response: NextResponse, geo: GeoRead, decidedBy: string)
   response.headers.set('x-lumino-geo', `${geo.country ?? 'none'}/${geo.source}/${decidedBy}`)
   response.headers.set('Cache-Control', 'private, no-store')
   return response
+}
+
+/** C'è un cookie di sessione Supabase? Non se sia valido: solo se c'è. */
+function hasSessionCookie(request: NextRequest): boolean {
+  const all = request.cookies.getAll()
+  for (let i = 0; i < all.length; i++) {
+    const n = all[i].name
+    if (n.indexOf('sb-') === 0 && n.indexOf('auth-token') >= 0) return true
+  }
+  return false
 }
 
 export const config = {
