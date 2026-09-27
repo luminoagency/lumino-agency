@@ -2,68 +2,104 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import {
-  Banknote,
+  BarChart3,
   Bot,
   BookOpen,
-  Folder,
-  LayoutGrid,
-  LogOut,
-  MapPin,
+  CalendarCheck,
+  Contact,
   FlaskConical,
+  FolderKanban,
+  Kanban,
+  LogOut,
   Menu,
+  MapPinned,
   MoreHorizontal,
-  PieChart,
-  Sun,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  Sparkles,
   Users,
+  Wallet,
   X,
   type LucideIcon,
 } from 'lucide-react'
+import Salat from '@/components/staff/Salat'
 import { Toggle } from '@/components/staff/Controls'
 import { impostaDemo } from '@/lib/staff/actions'
-import { FASE_VIVA, activeHref, visibleNav, type StaffNavItem } from '@/lib/staff/nav'
+import { iniziali } from '@/lib/staff/avatar'
+import {
+  FASE_VIVA,
+  GRUPPO_LABEL,
+  HREF_IMPOSTAZIONI,
+  activeHref,
+  navPerGruppi,
+  visibleNav,
+  type StaffNavItem,
+} from '@/lib/staff/nav'
 import type { StaffProfile } from '@/lib/staff/types'
 
 /**
  * La struttura dell'area staff: dove sei, dove puoi andare, chi sei.
  *
- * Il rail di ref4: **una barra nera stretta dentro il pannello di vetro**, con
- * sole icone. Nera perché è l'unico elemento sempre presente, e in una
- * composizione tutta chiara serve un punto fermo scuro che la tenga insieme;
- * stretta perché le etichette le dice al passaggio, e una dashboard usata ogni
- * giorno impara le sue sette icone in due giorni.
+ * Il rail di ref4 — **una barra nera dentro il pannello di vetro** — ma non più
+ * una colonna di sole icone. Undici pittogrammi senza etichetta sono leggibili
+ * per chi li ha disegnati e un rebus per chiunque altro: la barra si **apre al
+ * passaggio del mouse** e dice i nomi, e chi la vuole sempre aperta la blocca.
  *
- * **Le sezioni non ancora costruite non fanno una lista.** Prima erano sette
- * voci spente con scritto "in arrivo" accanto: un menù per metà di promesse fa
- * sembrare incompiuto anche quello che c'è. Ora stanno dietro l'ultima icona,
- * che le elenca solo a chi va a cercarle.
+ * **L'apertura non sposta il contenuto.** La barra nera è posizionata in modo
+ * assoluto dentro un segnaposto largo 74px: allargandosi passa *sopra* la
+ * pagina invece di spingerla. Sono due guadagni in uno — il testo che si stava
+ * leggendo non scappa da sotto gli occhi mentre il mouse attraversa la barra,
+ * e la larghezza che cresce non rimette in coda il layout delle dodici card
+ * accanto a ogni fotogramma. Il caso «bloccata», che invece deve spostare il
+ * contenuto, è l'unico in cui il segnaposto si allarga davvero: succede una
+ * volta, al clic, e un layout al clic non lo vede nessuno.
  *
- * Su telefono niente rail: la pill flottante in basso di ref1, in vetro, dove
- * arriva il pollice.
+ * **Il tooltip resta**, e ha ancora un compito: l'apertura ha 150ms di ritardo,
+ * quindi puntando un'icona il nome compare *prima* che la barra si apra, e sotto
+ * le dita o da tastiera — dove l'apertura al passaggio non c'è — è l'unica cosa
+ * che dice a cosa serve quell'icona.
+ *
+ * Su telefono niente rail: la pill flottante in basso di ref1, in vetro, con
+ * **l'etichetta sotto l'icona** e non accanto — di fianco stavano in cinque su
+ * uno schermo da 375px solo perché la barra scorreva, cioè la quinta voce
+ * esisteva ma non si vedeva.
  */
 
 const ICONS: Record<string, LucideIcon> = {
-  '/staff': Sun,
-  '/staff/pipeline': LayoutGrid,
-  '/staff/clienti': Users,
-  '/staff/campo': MapPin,
-  '/staff/soldi': Banknote,
-  '/staff/progetti': Folder,
-  '/staff/statistiche': PieChart,
+  /* Un'icona per voce, e ognuna dice il *contenuto* della pagina e non una
+     categoria generica. Prima Oggi era un sole (che vuol dire «giorno», non
+     «cosa devo fare»), Clienti e Team erano **la stessa** icona `Users`, e sia
+     Lab AI sia Ricerca Agent erano `Bot`: tre coppie identiche in una barra di
+     undici voci, che è il modo più rapido di rendere inutili le icone. */
+  '/staff': CalendarCheck,
+  '/staff/pipeline': Kanban,
+  '/staff/clienti': Contact,
+  '/staff/campo': MapPinned,
+  '/staff/soldi': Wallet,
+  '/staff/progetti': FolderKanban,
+  '/staff/statistiche': BarChart3,
   '/staff/team': Users,
   '/staff/risorse': BookOpen,
-  '/staff/lab-ai': Bot,
+  '/staff/lab-ai': Sparkles,
   '/staff/agent': Bot,
 }
 
+/** Il rail bloccato aperto: è una preferenza del dispositivo, non dell'account. */
+const CHIAVE_RAIL = 'lm_rail_fisso'
+
 export default function StaffShell({
   me,
+  foto,
   demo,
   anteprima,
   children,
 }: {
   me: StaffProfile
+  /** L'URL firmato della foto profilo, o null: le iniziali sono il fallback. */
+  foto: string | null
   /** L'interruttore dei dati finti, già risolto dal server. */
   demo: boolean
   /** Si sta guardando l'anteprima di sviluppo, non l'area vera. */
@@ -75,12 +111,16 @@ export default function StaffShell({
   const items = visibleNav(me.role === 'admin')
   const vive = items.filter((i) => i.fase <= FASE_VIVA)
   const future = items.filter((i) => i.fase > FASE_VIVA)
+  const gruppi = navPerGruppi(vive)
   const tabs = vive.filter((i) => i.mobile)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const { fisso, blocca, aperto, apri, chiudi } = useRail()
 
   /* Il pannello si chiude da sé al cambio pagina: lasciarlo aperto sopra la
      pagina appena aperta è il classico modo di sembrare rotti. */
   useEffect(() => setSheetOpen(false), [pathname])
+
+  const espanso = fisso || aperto
 
   return (
     <div className="lm-staff-shell">
@@ -89,60 +129,115 @@ export default function StaffShell({
           <Wordmark />
           <span className="lm-staff-tag">Staff</span>
         </Link>
-        <span className="lm-staff-avatar" aria-hidden="true">
-          {iniziale(me.nome)}
-        </span>
+        <Link href={HREF_IMPOSTAZIONI} aria-label="Le mie impostazioni">
+          <Avatar nome={me.nome} foto={foto} size="sm" />
+        </Link>
       </header>
 
+      {/* Il widget della preghiera vive nella shell e non in una pagina: si deve
+          vedere da tutta l'area. Ed è **montato una volta sola**, spostato dal
+          CSS — in alto a destra del pannello sul desktop, pill in cima sul
+          telefono. Due istanze nascoste a vicenda da un media query sembrerebbero
+          la soluzione ovvia e sarebbero due conti alla rovescia che battono
+          insieme e due notifiche per ogni orario. */}
+      <div className="lm-shell-salat">
+        <Salat />
+      </div>
+
       <div className="lm-glass">
-        <nav className="lm-staff-rail" aria-label="Sezioni">
-          <Link href="/staff" className="lm-rail-mark" aria-label="Lumino Staff">
-            L<span>I</span>
-          </Link>
-
-          {vive.map((item) => {
-            const Icon = ICONS[item.href] ?? LayoutGrid
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="lm-staff-link"
-                aria-current={active === item.href ? 'page' : undefined}
-              >
-                <Icon aria-hidden="true" />
-                <span className="lm-tip">{item.label}</span>
+        <nav
+          className="lm-staff-rail"
+          aria-label="Sezioni"
+          data-esp={espanso}
+          data-fisso={fisso}
+          onPointerEnter={apri}
+          onPointerLeave={chiudi}
+        >
+          <div className="lm-rail-inner">
+            <div className="lm-rail-head">
+              <Link href="/staff" className="lm-rail-mark" aria-label="Lumino Staff">
+                L<span>I</span>
               </Link>
-            )
-          })}
-
-          {future.length > 0 && <Prossime items={future} />}
-
-          <span className="lm-rail-spacer" />
-
-          {/* Il piede del rail: tre bersagli della stessa misura delle icone
-              sopra, incolonnati sullo stesso asse. Prima l'avatar era un
-              cerchio da 32px dentro un blocco da 44 e il logout un quadrato da
-              32 senza contorno: due misure e due forme diverse in fondo a una
-              colonna di quadrati da 42, che è esattamente il punto in cui una
-              barra smette di sembrare costruita. */}
-          <div className="lm-rail-foot">
-            {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
-            <span className="lm-rail-sep" aria-hidden="true" />
-            <span className="lm-staff-link" data-static tabIndex={0} role="img" aria-label={me.nome}>
-              <span className="lm-staff-avatar" aria-hidden="true">
-                {iniziale(me.nome)}
-              </span>
-              <span className="lm-tip">
-                <b>{me.nome}</b>
-                {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
-              </span>
-            </span>
-            <form action="/staff/logout" method="post">
-              <button type="submit" className="lm-staff-link" aria-label="Esci">
-                <LogOut aria-hidden="true" />
-                <span className="lm-tip">Esci</span>
+              {/* Il bottone del blocco compare solo a barra aperta: a barra
+                  chiusa sarebbe una dodicesima icona da interpretare, e per
+                  premerla bisogna comunque avere il mouse lì sopra. */}
+              <button
+                type="button"
+                className="lm-rail-pin"
+                aria-pressed={fisso}
+                onClick={blocca}
+                title={fisso ? 'Lascia che si chiuda' : 'Tieni la barra aperta'}
+              >
+                {fisso ? <PanelLeftClose aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
+                <span className="lm-sr">
+                  {fisso ? 'Lascia che la barra si chiuda' : 'Tieni la barra aperta'}
+                </span>
               </button>
-            </form>
+            </div>
+
+            <div className="lm-rail-body">
+              {gruppi.map((g, gi) => (
+                <div key={g.gruppo} className="lm-rail-group">
+                  {/* Il separatore sta *sopra* il gruppo e non sotto, così il
+                      primo blocco non ne ha uno appeso sotto il marchio. */}
+                  {gi > 0 && <span className="lm-rail-sep" aria-hidden="true" />}
+                  <span className="lm-rail-group-label" aria-hidden="true">
+                    {GRUPPO_LABEL[g.gruppo]}
+                  </span>
+                  {g.voci.map((item, i) => (
+                    <Voce
+                      key={item.href}
+                      item={item}
+                      attiva={active === item.href}
+                      indice={i}
+                    />
+                  ))}
+                </div>
+              ))}
+
+              {future.length > 0 && (
+                <div className="lm-rail-group">
+                  <span className="lm-rail-sep" aria-hidden="true" />
+                  <Prossime items={future} />
+                </div>
+              )}
+            </div>
+
+            <span className="lm-rail-spacer" />
+
+            {/* Il piede: chi sono, le mie impostazioni, l'uscita. A barra aperta
+                la foto porta con sé nome e ruolo, che è l'unica informazione di
+                tutta la schermata che dice con quale account si è entrati. */}
+            <div className="lm-rail-foot">
+              {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
+              <span className="lm-rail-sep" aria-hidden="true" />
+
+              <Link
+                href={HREF_IMPOSTAZIONI}
+                className="lm-staff-link lm-rail-me"
+                aria-current={pathname.startsWith(HREF_IMPOSTAZIONI) ? 'page' : undefined}
+              >
+                <Avatar nome={me.nome} foto={foto} size="rail" />
+                <span className="lm-rail-label" style={sfasa(0)}>
+                  <b>{me.nome}</b>
+                  <small>{me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}</small>
+                </span>
+                <span className="lm-tip">
+                  <b>{me.nome}</b>
+                  {me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}
+                </span>
+              </Link>
+
+              <form action="/staff/logout" method="post">
+                <button type="submit" className="lm-staff-link" aria-label="Esci">
+                  <LogOut aria-hidden="true" />
+                  <span className="lm-rail-label" style={sfasa(1)}>
+                    Esci
+                  </span>
+                  <span className="lm-tip">Esci</span>
+                </button>
+              </form>
+            </div>
           </div>
         </nav>
 
@@ -156,7 +251,7 @@ export default function StaffShell({
 
       <nav className="lm-staff-dock" aria-label="Sezioni">
         {tabs.map((item) => {
-          const Icon = ICONS[item.href] ?? LayoutGrid
+          const Icon = ICONS[item.href] ?? Kanban
           return (
             <Link
               key={item.href}
@@ -165,7 +260,7 @@ export default function StaffShell({
               aria-current={active === item.href ? 'page' : undefined}
             >
               <Icon aria-hidden="true" />
-              {item.short}
+              <span>{item.short}</span>
             </Link>
           )
         })}
@@ -176,7 +271,7 @@ export default function StaffShell({
           onClick={() => setSheetOpen((open) => !open)}
         >
           {sheetOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-          Altro
+          <span>Altro</span>
         </button>
       </nav>
 
@@ -192,7 +287,7 @@ export default function StaffShell({
             <span className="lm-label">Tutte le sezioni</span>
             <div className="lm-sheet-grid">
               {items.map((item) => {
-                const Icon = ICONS[item.href] ?? LayoutGrid
+                const Icon = ICONS[item.href] ?? Kanban
                 const soon = item.fase > FASE_VIVA
                 return (
                   <Link
@@ -207,6 +302,10 @@ export default function StaffShell({
                   </Link>
                 )
               })}
+              <Link href={HREF_IMPOSTAZIONI} className="lm-sheet-item">
+                <Settings aria-hidden="true" />
+                Impostazioni
+              </Link>
             </div>
 
             {me.role === 'admin' && (
@@ -217,7 +316,7 @@ export default function StaffShell({
 
             <div className="lm-modal-actions">
               <span className="lm-muted" style={{ marginRight: 'auto', fontSize: '0.82rem' }}>
-                {me.nome} · {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+                {me.nome} · {me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}
               </span>
               <form action="/staff/logout" method="post">
                 <button type="submit" className="lm-btn" data-variant="ghost">
@@ -234,6 +333,93 @@ export default function StaffShell({
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * Lo stato della barra.
+ *
+ * `fisso` è la preferenza, e sta in `localStorage` perché è del dispositivo:
+ * sul portatile da 13" la si tiene chiusa, sul monitor grande aperta, e la stessa
+ * persona vuole le due cose diverse nello stesso giorno. Si legge dentro un
+ * effetto e non durante il render — il server non ha `localStorage`, e leggerlo
+ * mentre si disegna darebbe due HTML diversi e un errore di idratazione.
+ *
+ * `aperto` è il passaggio del mouse, con **150ms di ritardo in apertura**: senza,
+ * il rail si spalanca ogni volta che il puntatore lo sfiora andando altrove, che
+ * è il difetto di tutte le barre che si aprono da sole. In chiusura nessun
+ * ritardo — uscendo, si vuole che si chiuda subito.
+ */
+function useRail() {
+  const [fisso, setFisso] = useState(false)
+  const [aperto, setAperto] = useState(false)
+  const timer = useRef<number | null>(null)
+
+  useEffect(() => {
+    try {
+      setFisso(localStorage.getItem(CHIAVE_RAIL) === '1')
+    } catch {
+      /* Finestra privata o storage negato: la barra parte chiusa, e si apre
+         comunque al passaggio. */
+    }
+    return () => {
+      if (timer.current) window.clearTimeout(timer.current)
+    }
+  }, [])
+
+  const blocca = useCallback(() => {
+    setFisso((prima) => {
+      const dopo = !prima
+      try {
+        localStorage.setItem(CHIAVE_RAIL, dopo ? '1' : '0')
+      } catch {
+        /* vedi sopra */
+      }
+      return dopo
+    })
+  }, [])
+
+  const apri = useCallback(() => {
+    if (timer.current) window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setAperto(true), 150)
+  }, [])
+
+  const chiudi = useCallback(() => {
+    if (timer.current) window.clearTimeout(timer.current)
+    setAperto(false)
+  }, [])
+
+  return { fisso, blocca, aperto, apri, chiudi }
+}
+
+/** Una voce del rail: icona, etichetta che entra, tooltip per quando è chiusa. */
+function Voce({ item, attiva, indice }: { item: StaffNavItem; attiva: boolean; indice: number }) {
+  const Icon = ICONS[item.href] ?? Kanban
+  return (
+    <Link
+      href={item.href}
+      className="lm-staff-link"
+      aria-current={attiva ? 'page' : undefined}
+    >
+      <Icon aria-hidden="true" />
+      <span className="lm-rail-label" style={sfasa(indice)}>
+        {item.label}
+      </span>
+      <span className="lm-tip">{item.label}</span>
+    </Link>
+  )
+}
+
+/**
+ * Le etichette non entrano tutte insieme.
+ *
+ * Dodici parole che compaiono nello stesso fotogramma sono un blocco di testo
+ * che lampeggia; le stesse dodici sfasate di 18ms sono una barra che si apre.
+ * Il ritardo va in una variabile CSS e non in un `transition-delay` inline:
+ * così la regola di `prefers-reduced-motion` nel foglio di stile può azzerarlo
+ * tutto in un colpo, cosa che uno stile inline non permetterebbe.
+ */
+function sfasa(i: number): React.CSSProperties {
+  return { '--i': i } as React.CSSProperties
+}
+
 /** Il marchio: la I nel gradiente, come sul sito pubblico. */
 function Wordmark() {
   return (
@@ -246,15 +432,54 @@ function Wordmark() {
 }
 
 /**
+ * La faccia, o le iniziali.
+ *
+ * `<img>` e non `next/image`: l'indirizzo è un URL firmato che scade in sei ore,
+ * quindi l'ottimizzatore di Next lo metterebbe nella sua cache con una chiave
+ * che cambia a ogni firma — cioè ri-scaricherebbe e ri-comprimerebbe la stessa
+ * foto ogni volta, e la terrebbe nella cache come immagine pubblica. Una foto
+ * già ridotta a 512px non ha niente da guadagnare da quel passaggio.
+ *
+ * `onError` torna alle iniziali: una firma scaduta mentre la pagina è aperta
+ * lascerebbe altrimenti un rettangolo rotto al posto della faccia.
+ */
+function Avatar({
+  nome,
+  foto,
+  size,
+}: {
+  nome: string
+  foto: string | null
+  size: 'sm' | 'rail' | 'lg'
+}) {
+  const [rotta, setRotta] = useState(false)
+  const mostra = foto && !rotta
+
+  return (
+    <span className="lm-avatar" data-size={size} data-foto={Boolean(mostra)}>
+      {mostra ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img src={foto} alt="" onError={() => setRotta(true)} />
+      ) : (
+        <span aria-hidden="true">{iniziali(nome)}</span>
+      )}
+    </span>
+  )
+}
+
+/**
  * Le sezioni future, dietro una sola icona.
  *
  * La promessa c'è ancora — serve a sapere che la sezione è prevista e in quale
- * fase — ma non occupa più metà del menù.
+ * fase — ma non occupa metà del menù.
  */
 function Prossime({ items }: { items: StaffNavItem[] }) {
   return (
     <span className="lm-staff-link" tabIndex={0} role="button" aria-label="Sezioni in arrivo">
       <MoreHorizontal aria-hidden="true" />
+      <span className="lm-rail-label" style={sfasa(0)}>
+        In arrivo
+      </span>
       <span className="lm-tip" data-multi="true">
         <b>In arrivo</b>
         {items.map((i) => `${i.label} (fase ${i.fase})`).join(' · ')}
@@ -270,17 +495,11 @@ function Prossime({ items }: { items: StaffNavItem[] }) {
  * impostazioni perché serve esattamente mentre si guarda una schermata: si
  * accende, si vede com'è piena, si spegne.
  *
- * **Nel rail non è più un interruttore a scorrimento.** Lo era, con la sua
- * pista rimpicciolita a 34×20 da uno `style` inline mentre il pallino restava
- * quello da 21px del formato grande: il pallino usciva dal binario, e si vedeva.
- * Ma il difetto vero era prima di quello — un interruttore con la pista in mezzo
- * a una colonna di quadrati da 42px è l'unico oggetto di forma diversa di tutta
- * la barra, e in una barra di icone la cosa giusta è un'icona.
- *
- * Quindi qui è un bottone che si accende, con `aria-pressed` perché è
- * esattamente ciò che uno stato acceso/spento vuole dire per un lettore di
- * schermo. L'interruttore vero resta nel pannello «Altro» del telefono, dove
- * c'è spazio per l'etichetta accanto e la forma ha senso.
+ * Nel rail è un bottone che si accende e non un interruttore a scorrimento: in
+ * una barra di icone la cosa giusta è un'icona, e `aria-pressed` dice a un
+ * lettore di schermo esattamente ciò che uno stato acceso/spento vuol dire.
+ * L'interruttore vero resta nel pannello «Altro» del telefono, dove c'è spazio
+ * per l'etichetta accanto.
  */
 function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolean }) {
   const router = useRouter()
@@ -306,13 +525,12 @@ function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolea
       onClick={() => cambia(!acceso)}
     >
       <FlaskConical aria-hidden="true" />
+      <span className="lm-rail-label" style={sfasa(0)}>
+        Dati demo
+      </span>
       <span className="lm-tip">{acceso ? 'Dati demo accesi' : 'Dati demo spenti'}</span>
     </button>
   )
-}
-
-function iniziale(nome: string): string {
-  return nome.trim().charAt(0).toUpperCase()
 }
 
 /**

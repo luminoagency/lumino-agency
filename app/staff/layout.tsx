@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { anton } from '@/components/home/fonts'
-import { manrope } from '@/components/staff/fonts'
+import { manrope, naskh } from '@/components/staff/fonts'
 import Sfondo from '@/components/staff/Sfondo'
 import './staff.css'
 
@@ -17,9 +17,11 @@ import './staff.css'
  * interno vorrebbe dire che la porta d'ingresso ha un aspetto e la casa un
  * altro.
  *
- * I due font sono dichiarati qui e non in app/layout.tsx: Manrope veste tutta
- * l'interfaccia, Anton serve solo al wordmark. Caricarli a livello di app li
- * farebbe pagare anche alle pagine pubbliche, che hanno i loro.
+ * I tre font sono dichiarati qui e non in app/layout.tsx: Manrope veste tutta
+ * l'interfaccia, Anton serve solo al wordmark, Noto Naskh Arabic solo le ayat
+ * del widget della preghiera. Caricarli a livello di app li farebbe pagare
+ * anche alle pagine pubbliche, che hanno i loro — e il subset arabo non
+ * c'entra niente con il sito di un ristorante.
  */
 export const metadata: Metadata = {
   title: 'Staff',
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`lm-staff ${manrope.variable} ${anton.variable}`}>
+    <div className={`lm-staff ${manrope.variable} ${anton.variable} ${naskh.variable}`}>
       <Sfondo />
       {children}
     </div>

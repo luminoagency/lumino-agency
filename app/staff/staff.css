@@ -25,6 +25,11 @@
 .lm-staff {
   /* Struttura */
   --rail: 74px;
+  /* La barra aperta: 214px non è un numero tondo a caso, è la larghezza in cui
+     «Statistiche» e «Ricerca Agent» stanno su una riga sola accanto all'icona.
+     Un'etichetta che va a capo dentro un rail è peggio di un'etichetta che non
+     c'è. */
+  --rail-aperto: 214px;
   --dock: 84px;
 
   /* Inchiostro e superfici. Il bianco delle card non è mai opaco al 100%:
@@ -279,34 +284,89 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Il rail nero (ref4)
+   Il rail nero (ref4), che ora si apre
 
-   Sole icone, dentro il pannello, con l'angolo arrotondato come una barra
-   fisica. Le sezioni non ancora costruite non fanno una lista di "in arrivo":
-   stanno dietro un'unica icona in fondo, che le elenca al passaggio.
+   Era una colonna di sole icone, e undici pittogrammi senza etichetta sono
+   leggibili per chi li ha disegnati e un rebus per tutti gli altri. Adesso la
+   barra si apre al passaggio del mouse e dice i nomi; chi la vuole sempre
+   aperta la blocca, e la preferenza resta in localStorage.
+
+   LA COSA IMPORTANTE È **COME** SI APRE. Il pannello nero è posizionato in modo
+   assoluto dentro un segnaposto largo 74px: allargandosi passa SOPRA la pagina
+   invece di spingerla. Sono due guadagni in uno.
+     · Il testo che si stava leggendo non scappa da sotto gli occhi mentre il
+       puntatore attraversa la barra per andare altrove.
+     · La larghezza che cresce non rimette in coda il layout delle dodici card
+       accanto, a ogni fotogramma. `width` è una proprietà che non si può
+       animare gratis — il compositore non la sa muovere da solo, la deve
+       ricalcolare — quindi l'unica difesa è limitare cosa c'è dentro il
+       rettangolo che cambia: qui dodici link e niente altro, invece di mezza
+       dashboard.
+   Il caso «bloccata» è l'unico in cui il segnaposto si allarga per davvero e il
+   contenuto si sposta: succede al clic, una volta, e un layout al clic non lo
+   vede nessuno.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-rail {
   display: none;
 }
 @media (min-width: 1040px) {
   .lm-staff-rail {
+    /* Il segnaposto: tiene il posto nel flex del pannello di vetro e non ha
+       colore. Il nero è tutto nel figlio. */
+    display: block;
+    position: relative;
+    flex: none;
+    width: var(--rail);
+    transition: width 0.42s var(--ease);
+  }
+  .lm-staff-rail[data-fisso='true'] {
+    width: var(--rail-aperto);
+  }
+  .lm-rail-inner {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 30;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 0.3rem;
     width: var(--rail);
-    padding: 0.9rem 0;
+    /* 16px per lato: 74 - 32 = 42, cioè esattamente la gabbia dell'icona. È
+       quello che fa sì che da chiusa la voce attiva resti un quadrato e non un
+       rettangolo con dodici pixel di bianco a destra. */
+    padding: 0.9rem 16px;
     border-radius: 26px;
     background: var(--black);
     color: rgba(255, 255, 255, 0.62);
+    overflow: hidden;
+    /* Il ritardo in apertura è il ritardo dello stato in JS (150ms): qui la
+       transizione parte già al valore nuovo, quindi non ne serve un secondo.
+       L'ombra compare solo da aperta: da chiusa la barra è dentro il vetro e
+       non deve staccarsene, da aperta sta sopra il contenuto e deve dire che è
+       un piano più alto. */
+    transition:
+      width 0.42s var(--ease),
+      box-shadow 0.42s var(--ease);
   }
+  .lm-staff-rail[data-esp='true'] .lm-rail-inner {
+    width: var(--rail-aperto);
+    box-shadow: 18px 0 44px -26px rgba(20, 16, 12, 0.6);
+  }
+}
+
+/* Testa del rail: il marchio, e il bottone del blocco che compare da aperta. */
+.lm-rail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
 }
 .lm-rail-mark {
   display: grid;
   place-items: center;
+  flex: none;
   width: 38px;
   height: 38px;
-  margin-bottom: 0.6rem;
+  margin-left: 2px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -315,6 +375,98 @@
   font-size: 1.15rem;
   line-height: 1;
 }
+/* Il bottone del blocco esiste solo a barra aperta: a barra chiusa sarebbe una
+   dodicesima icona da interpretare, e per premerla bisogna comunque avere il
+   puntatore lì sopra — cioè averla già aperta. */
+.lm-rail-pin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.28s var(--ease),
+    background-color 0.22s,
+    color 0.22s;
+}
+.lm-rail-pin svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-pin {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0.16s;
+}
+.lm-rail-pin:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.lm-rail-pin[aria-pressed='true'] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Il corpo prende lo spazio che avanza e, se non basta, scorre.
+   Serve davvero: aperta, la barra guadagna tre titolini di gruppo, e su un
+   portatile basso undici voci più il piede non ci stanno. Senza questo l'ultima
+   riga — che è «Esci» — finirebbe tagliata dal bordo del rail, cioè sparirebbe
+   un comando invece di scorrere. La barra dello scorrimento è nascosta: su una
+   colonna di undici icone sarebbe più larga del contenuto.
+   `min-height: 0` non è ornamentale — senza, un figlio flex non scende mai sotto
+   la propria altezza naturale e l'`overflow` non si attiva mai. */
+.lm-rail-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0.3rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.lm-rail-body::-webkit-scrollbar {
+  display: none;
+}
+/* I tre blocchi: lavoro quotidiano, gestione, risorse. Undici voci in fila sono
+   un elenco; undici voci in tre gruppi sono un menù. */
+.lm-rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+/* Il titolino del blocco vive solo a barra aperta, e a barra chiusa non lascia
+   nemmeno lo spazio: `height: 0` e non `opacity: 0`, altrimenti la colonna di
+   icone avrebbe tre buchi da undici pixel senza niente dentro. */
+.lm-rail-group-label {
+  height: 0;
+  overflow: hidden;
+  padding-left: 0.62rem;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    height 0.3s var(--ease),
+    opacity 0.28s,
+    margin 0.3s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-group-label {
+  height: 1.05rem;
+  margin: 0.3rem 0 0.1rem;
+  opacity: 1;
+  transition-delay: 0.1s;
+}
 .lm-rail-mark span {
   background: var(--grad);
   -webkit-background-clip: text;
@@ -322,16 +474,24 @@
   color: transparent;
 }
 
-/* **Una sola misura per ogni cosa che sta nel rail**: 42×42, raggio 13, icona
-   18. Vale per le voci, per l'interruttore dei dati demo, per l'avatar e per il
-   logout — prima erano 42, 34, 32 e 32, con tre forme diverse, e una colonna di
-   quadrati con due cerchi in fondo si vede subito che è cresciuta a pezzi. */
+/* **Una sola misura per ogni cosa che sta nel rail**: 42 di altezza, raggio 13,
+   icona 18. Vale per le voci, per l'interruttore dei dati demo, per l'avatar e
+   per il logout — prima erano 42, 34, 32 e 32, con tre forme diverse, e una
+   colonna di quadrati con due cerchi in fondo si vede subito che è cresciuta a
+   pezzi.
+
+   Da `grid place-items:center` è diventata una **riga**: l'icona resta larga 42
+   e ancorata a sinistra, e accanto c'è il posto per l'etichetta. Così l'icona
+   non si sposta di un pixel quando la barra si apre — se si muovesse, aprendo
+   il rail si vedrebbero undici pittogrammi scivolare, e nessuno riconoscerebbe
+   più quello che stava cercando. */
 .lm-staff-link {
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
   flex: none;
-  width: 42px;
+  width: 100%;
+  min-width: 0;
   height: 42px;
   padding: 0;
   border: 0;
@@ -339,16 +499,97 @@
   background: transparent;
   color: inherit;
   font: inherit;
+  text-align: left;
+  text-decoration: none;
   cursor: pointer;
+  overflow: hidden;
   transition:
     background-color 0.22s,
     color 0.22s,
     transform 0.22s var(--ease);
 }
+/* L'icona sta dentro una gabbia larga 42 (18 di glifo + 12 di aria per lato): è
+   la gabbia a non muoversi, non l'icona a essere larga. 42 è anche la larghezza
+   utile del rail chiuso, quindi da chiuso la voce attiva è un quadrato perfetto
+   come prima. */
+.lm-staff-link > svg {
+  flex: none;
+  box-sizing: content-box;
+  width: 18px;
+  height: 18px;
+  padding: 0 12px;
+  stroke-width: 1.7;
+}
+.lm-staff-link > .lm-avatar {
+  flex: none;
+  margin: 0 6px;
+}
 .lm-staff-link svg {
   width: 18px;
   height: 18px;
   stroke-width: 1.7;
+}
+
+/* L'etichetta. Non usa `display:none` — una proprietà che non si anima — ma
+   larghezza zero e opacità: così entra insieme alla barra invece di comparire
+   quando ha finito.
+
+   Il ritardo per lettera è nella variabile `--i`, scritta dal componente: dodici
+   parole che appaiono nello stesso fotogramma sono un blocco che lampeggia, le
+   stesse sfasate di 18ms sono una barra che si apre. Sta in una custom property
+   e non in uno stile inline perché `prefers-reduced-motion` la può azzerare da
+   qui, in una regola sola. */
+.lm-rail-label {
+  min-width: 0;
+  padding-right: 0.7rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.26s ease,
+    transform 0.34s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-label {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(0.12s + var(--i, 0) * 18ms);
+}
+/* Il piede: nome sopra, ruolo sotto, in due righe dentro la stessa altezza. */
+.lm-rail-me {
+  height: 46px;
+}
+.lm-rail-me .lm-rail-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.lm-rail-me .lm-rail-label b {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-rail-me .lm-rail-label small {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+/* Sulla propria pagina la riga diventa la pill bianca come ogni voce attiva, e
+   il bianco scritto a mano qui sopra sparirebbe dentro di essa: nome e ruolo
+   devono girarsi insieme al fondo. Era bianco su bianco — una riga vuota al
+   posto del proprio nome, che è l'unico posto in cui si guarda per capire con
+   quale account si è entrati. */
+.lm-rail-me[aria-current='page'] .lm-rail-label b {
+  color: var(--black);
+}
+.lm-rail-me[aria-current='page'] .lm-rail-label small {
+  color: rgba(23, 19, 15, 0.52);
+}
+.lm-rail-foot .lm-rail-me[aria-current='page'] .lm-avatar[data-foto='false'] {
+  background: rgba(23, 19, 15, 0.1);
+  color: var(--black);
 }
 @media (hover: hover) and (pointer: fine) {
   .lm-staff-link:hover {
@@ -380,8 +621,11 @@
 .lm-staff-link[data-static] {
   cursor: default;
 }
+/* Lo spazio che separa le voci dal piede lo fa `.lm-rail-body` con `flex: 1`.
+   Questo resta solo perché il markup lo nomina, e non deve prendersi una seconda
+   porzione di spazio contendendola al corpo. */
 .lm-rail-spacer {
-  flex: 1;
+  flex: 0 0 0.35rem;
 }
 
 /* Il tooltip: il rail dice cosa fa solo quando glielo si chiede. */
@@ -409,6 +653,16 @@
   opacity: 1;
   transform: translateY(-50%) translateX(0);
 }
+/* **A barra aperta il tooltip tace.** Ha ancora un compito, e non è un residuo:
+   l'apertura ha 150ms di ritardo, quindi puntando un'icona il nome compare
+   PRIMA che la barra si apra e sparisce quando l'etichetta vera prende il suo
+   posto. Fuori da quella finestra serve dove l'apertura al passaggio non c'è —
+   sotto le dita e da tastiera. Ripetere due volte la stessa parola, una accanto
+   all'icona e una in un fumetto sopra, sarebbe solo rumore. */
+.lm-staff-rail[data-esp='true'] .lm-staff-link:hover .lm-tip,
+.lm-staff-rail[data-esp='true'] .lm-staff-link:focus-visible .lm-tip {
+  opacity: 0;
+}
 .lm-tip[data-multi='true'] {
   white-space: normal;
   width: 190px;
@@ -419,8 +673,8 @@
   font-weight: 600;
   margin-bottom: 0.15rem;
 }
-/* I tooltip del piede del rail salgono invece di centrarsi: centrati sull'ultima
-   icona finirebbero mezzi sotto il bordo del pannello. */
+/* I tooltip del piede salgono invece di centrarsi: centrati sull'ultima icona
+   finirebbero mezzi sotto il bordo del pannello. */
 .lm-rail-foot .lm-tip {
   top: auto;
   bottom: 0;
@@ -434,16 +688,28 @@
 .lm-rail-foot {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 0.15rem;
 }
-/* Il filo di separazione è larghezza icona, non larghezza rail: un divisore che
-   corre da bordo a bordo taglia la barra in due, e la barra è un oggetto solo. */
+/* Il `<form>` del logout non deve diventare un oggetto di layout: senza questo
+   il bottone dentro starebbe larghezza-contenuto e l'unica riga del rail fuori
+   colonna sarebbe l'ultima. */
+.lm-rail-foot form {
+  display: contents;
+}
+/* Il filo di separazione non corre da bordo a bordo: un divisore che tocca i due
+   lati taglia la barra in due, e la barra è un oggetto solo. Da chiusa è larga
+   come l'icona e sta sotto di lei; aprendosi si allunga con la barra, perché a
+   quel punto deve separare due righe di testo e non due pittogrammi. */
 .lm-rail-sep {
   width: 22px;
   height: 1px;
-  margin: 0.35rem 0;
+  margin: 0.4rem 0 0.4rem 10px;
   background: rgba(255, 255, 255, 0.16);
+  transition: width 0.42s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-sep {
+  width: calc(100% - 20px);
 }
 /* L'avatar nel rail è **neutro, non viola**.
    Lo era: un cerchio viola pieno, appoggiato sotto l'interruttore dei dati demo
@@ -522,13 +788,21 @@
     display: none;
   }
 }
+/* **L'etichetta sta sotto l'icona, non accanto.** Di fianco, cinque voci su uno
+   schermo da 375px stavano solo perché la barra scorreva in orizzontale: la
+   quinta esisteva e non si vedeva, cioè c'era una sezione raggiungibile solo per
+   chi indovinava che si potesse trascinare la barra. In colonna ci stanno tutte
+   e cinque, con il nome sempre leggibile — che è il punto: su telefono non c'è
+   un passaggio del mouse a cui chiedere cosa vuol dire un'icona. */
 .lm-staff-tab {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.16rem;
   flex: none;
-  height: 40px;
-  padding: 0 0.8rem;
+  min-height: 52px;
+  padding: 0.3rem 0.62rem;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -545,9 +819,15 @@
     transform 0.2s var(--ease);
 }
 .lm-staff-tab svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.8;
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.7;
+}
+.lm-staff-tab > span {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.002em;
+  line-height: 1;
 }
 .lm-staff-tab:active {
   transform: scale(0.95);
@@ -556,10 +836,12 @@
   background: var(--black);
   color: #fff;
 }
-/* La barra in basso è l'unica navigazione del telefono: 44px pieni. */
+/* La barra in basso è l'unica navigazione del telefono: il bersaglio è alto 52 e
+   largo almeno 52, cioè sopra i 44 di minimo anche per la voce col nome più
+   corto. */
 @media (pointer: coarse) {
   .lm-staff-tab {
-    height: 44px;
+    min-width: 52px;
   }
 }
 
@@ -1073,6 +1355,17 @@
   box-shadow: none;
   transform: none;
   cursor: not-allowed;
+}
+/* La misura piccola: serve nelle righe del pannello della preghiera, dove un
+   bottone dell'altezza normale sfonderebbe la riga. */
+.lm-btn[data-size='sm'] {
+  height: 32px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+}
+.lm-btn[data-size='sm'] svg {
+  width: 14px;
+  height: 14px;
 }
 .lm-btn[data-variant='ghost'] {
   background: rgba(255, 255, 255, 0.6);
@@ -3611,4 +3904,905 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA PERSONA — avatar, saluto
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* L'avatar: una foto o due iniziali, sempre nella stessa forma.
+   Tre misure e non una scala libera: `sm` nella testata del telefono, `rail`
+   nella barra, `lg` nella pagina delle impostazioni. Una quarta la porta il
+   saluto della home, che è un caso suo perché lì la foto è il soggetto. */
+.lm-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.lm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-avatar[data-size='sm'] {
+  width: 32px;
+  height: 32px;
+  font-size: 0.74rem;
+}
+.lm-avatar[data-size='rail'] {
+  width: 30px;
+  height: 30px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.lm-avatar[data-size='lg'] {
+  width: 104px;
+  height: 104px;
+  font-size: 2rem;
+  font-weight: 300;
+}
+/* Con una foto dentro, il fondo viola non si vede mai: toglierlo evita il lampo
+   di colore fra il montaggio e il caricamento dell'immagine. Con le sole
+   iniziali il viola resta, ed è l'unico posto dove il viola vuol dire
+   identità — vedi la nota sull'avatar del rail. */
+.lm-avatar[data-foto='true'] {
+  background: rgba(23, 19, 15, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+/* Nel rail l'avatar è neutro: sotto c'è l'interruttore dei dati demo, che acceso
+   è viola, e due macchie dello stesso colore una sull'altra direbbero che sono
+   la stessa cosa. */
+.lm-rail-foot .lm-avatar[data-foto='false'] {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+}
+.lm-rail-me:hover .lm-avatar[data-foto='false'] {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.lm-staff-top-end {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il saluto della home
+
+   La prima cosa della giornata: la faccia, grande, e il nome col ruolo davanti.
+   La versione lunga vale una volta al giorno — dal secondo passaggio la stessa
+   intestazione resta, in scala ridotta e ferma. Le parole sono le stesse nelle
+   due versioni, cambia la scala e cosa è visibile: è così che il server può
+   disegnare un markup valido per entrambe senza errori di idratazione.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-head-saluto {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+}
+
+.lm-saluto {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .lm-saluto {
+    gap: 1.4rem;
+  }
+}
+
+/* La foto del saluto: cerchio, bordo sottile, e un alone Lumino appena
+   accennato. L'alone è due ombre — una bianca stretta che fa il bordo e una
+   viola larga e trasparentissima — e non un `filter: drop-shadow`, che
+   obbligherebbe a rasterizzare di nuovo l'elemento a ogni fotogramma
+   dell'entrata. Un `box-shadow` lo compone il compositore. */
+.lm-saluto-foto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-weight: 300;
+  line-height: 1;
+  width: 68px;
+  height: 68px;
+  font-size: 1.5rem;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 0 0 5px rgba(139, 92, 246, 0.1),
+    0 16px 34px -18px rgba(70, 40, 130, 0.5);
+  transition:
+    width 0.5s var(--ease),
+    height 0.5s var(--ease),
+    font-size 0.5s var(--ease);
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-foto {
+  width: 96px;
+  height: 96px;
+  font-size: 2rem;
+}
+.lm-saluto-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-saluto-foto[data-foto='true'] {
+  background: rgba(23, 19, 15, 0.08);
+}
+
+.lm-saluto-testo {
+  min-width: 0;
+}
+
+/* Il titolo: la scala di `.lm-h1`, ridotta nella versione compatta. È la
+   gerarchia per scala della regola 2 — fra le due versioni non cambia un colore,
+   cambia una misura. */
+.lm-saluto-h1 {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  font-weight: 200;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  transition: font-size 0.5s var(--ease);
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-h1 {
+  font-size: clamp(2.3rem, 5.6vw, 4rem);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+/* «Bentornato,» è l'unica cosa che la versione compatta nasconde: senza di lei
+   resta «CCO Ratib», che è un'intestazione di pagina. `display: none` e non
+   opacità — nascosta deve smettere di occupare la riga. */
+.lm-saluto-ben {
+  display: none;
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-ben {
+  display: inline;
+}
+
+/* Il nome nel gradiente Lumino.
+   **È la seconda eccezione alla regola che vieta il gradiente come maschera del
+   testo**, dopo la I del wordmark, ed è annotata nel piano: è il nome della
+   persona appena entrata, compare una volta per schermata e si spegne nella
+   versione compatta di tutti i giorni. Su un'etichetta qualsiasi il gradiente
+   resta vietato — è quello che fa sembrare un pannello generato. */
+.lm-saluto-h1 em {
+  font-style: normal;
+  font-weight: 400;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Le lettere che salgono.
+   Il ritardo è per carattere, in `--l`, scritto dal componente. Si animano solo
+   `transform` e `opacity`: le due proprietà che il compositore muove senza
+   ridisegnare niente.
+   Lo stato di partenza è `attesa`: finché il browser non ha letto se il saluto
+   lungo tocca a oggi, le lettere sono invisibili. È la convenzione di `.lm-in` e
+   `.lm-staff-enter` — meglio non disegnare che disegnare e correggere.
+
+   **Niente `will-change: transform` qui, e la ragione è precisa.** C'era, ed era
+   la cosa giusta da scrivere in qualunque altro punto di questo foglio: promuove
+   la lettera a livello suo e la fa muovere senza ridisegnarla. Ma una lettera
+   promossa esce dal livello di disegno del suo genitore, e il genitore è l'`em`
+   che porta il gradiente in `background-clip: text` — cioè il gradiente non
+   dipinge più i glifi che stanno in un altro livello, e il nome resta
+   **trasparente su fondo chiaro: invisibile**. Vale per `will-change` e vale per
+   una `transform` attiva, che promuove allo stesso modo: è il motivo per cui
+   l'animazione qui sotto è fatta a due tempi. */
+.lm-lettera {
+  display: inline-block;
+}
+.lm-saluto[data-anima='attesa'] .lm-lettera {
+  opacity: 0;
+}
+
+/* **Due tempi**: prima le lettere salgono in nero, poi il nome si accende nel
+   gradiente.
+   Non è un vezzo, è l'unico modo di avere tutte e due le cose. Mentre una lettera
+   ha una `transform` addosso il gradiente del genitore non la raggiunge, quindi
+   durante la salita ogni lettera porta il proprio inchiostro (`lm-accendi` col
+   riempimento `backwards` glielo tiene fino a che non parte). A 1.25s l'ultima
+   lettera è atterrata: lì l'inchiostro sfuma verso `transparent` e sotto compare
+   il gradiente, che nel frattempo il genitore ha ripreso a dipingere perché
+   nessuna `transform` è più attiva — `backwards` e non `both` proprio per questo,
+   `both` lascerebbe applicata la trasformazione finale e la promozione con lei.
+   L'effetto che si vede è che il nome **atterra e poi si accende**, che è meglio
+   di quello che si voleva all'inizio. */
+.lm-saluto[data-anima='si'] .lm-lettera {
+  animation: lm-sali 0.66s var(--ease) backwards;
+  animation-delay: calc(var(--l, 0) * 26ms);
+}
+.lm-saluto[data-anima='si'] .lm-saluto-h1 em .lm-lettera {
+  animation:
+    lm-sali 0.66s var(--ease) calc(var(--l, 0) * 26ms) backwards,
+    lm-accendi 0.55s ease 1.25s backwards;
+}
+@keyframes lm-sali {
+  from {
+    opacity: 0;
+    transform: translateY(0.52em) scaleY(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lm-accendi {
+  from {
+    color: var(--ink);
+  }
+  to {
+    color: transparent;
+  }
+}
+
+.lm-saluto-sub {
+  margin-top: 0.55rem;
+  font-size: 0.95rem;
+  color: var(--ink-2);
+  max-width: 52ch;
+  /* Lo spazio è riservato: la frase in base all'ora si scrive dopo il montaggio
+     (il server sta su UTC e direbbe l'ora sbagliata), e senza questo la riga
+     sotto salterebbe di venti pixel appena arriva. */
+  min-height: 1.4em;
+}
+.lm-saluto[data-anima='si'] .lm-saluto-sub {
+  animation: lm-sali-riga 0.7s var(--ease) 0.42s both;
+}
+.lm-saluto-meta {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+.lm-saluto[data-anima='si'] .lm-saluto-meta {
+  animation: lm-sali-riga 0.7s var(--ease) 0.52s both;
+}
+@keyframes lm-sali-riga {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* L'anteprima del saluto, nella pagina delle proprie impostazioni. */
+.lm-anteprima-saluto {
+  margin-top: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--line);
+  font-size: 1.5rem;
+  font-weight: 200;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.lm-anteprima-saluto em {
+  font-style: normal;
+  font-weight: 400;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lm-anteprima-saluto small {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   La foto profilo: scegli, inquadra, salva
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-avatar-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+/* Il riquadro del ritaglio. Quadrato, con dentro il canvas dell'anteprima e
+   sopra una maschera ad anello: si vede anche quello che resta FUORI dal cerchio,
+   che è l'unico modo di capire dove si sta trascinando. Un cerchio pieno
+   mostrerebbe solo il risultato e non l'inquadratura. */
+.lm-crop {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: rgba(23, 19, 15, 0.06);
+  cursor: grab;
+  touch-action: none;
+}
+.lm-crop:active {
+  cursor: grabbing;
+}
+.lm-crop canvas {
+  display: block;
+  width: 240px;
+  height: 240px;
+}
+.lm-crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Un solo `box-shadow` interno grande come il riquadro fa l'anello: il buco è
+     il cerchio, tutto il resto è velato. Costa una sola composizione, contro i
+     due elementi sovrapposti che servirebbero a disegnarlo a mano. */
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.62);
+  outline: 1px solid rgba(23, 19, 15, 0.14);
+  outline-offset: -1px;
+}
+
+.lm-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 240px;
+  color: var(--ink-2);
+}
+.lm-crop-zoom svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.lm-crop-zoom input[type='range'] {
+  flex: 1;
+  accent-color: var(--violet);
+}
+.lm-crop-azioni {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.lm-field-hint[data-errore='true'] {
+  color: var(--red);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IL PROMEMORIA DELLA PREGHIERA
+
+   Vive nella shell, quindi si vede da ogni pagina. È montato UNA volta sola e
+   spostato dal CSS: in alto a destra sopra il pannello sul desktop, pill in cima
+   sul telefono. Due istanze nascoste a vicenda da un media query sembrerebbero
+   la strada ovvia e sarebbero due conti alla rovescia che battono insieme e due
+   notifiche per ogni orario.
+
+   Chiuso è una pill: preghiera prossima, quanto manca, a che ora. Sono le tre
+   cose che si guardano di sfuggita mentre si lavora, e stanno in trentotto pixel
+   di altezza. Aperto diventa un pannello con i cinque orari, la città, un'ayah
+   e le impostazioni.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-shell-salat {
+  /* Sul telefono sta nella riga della testata, alla sinistra dell'avatar. La
+     posizione assoluta invece di un posto nel flex della testata: il widget è
+     figlio della shell e non della testata, perché sul desktop quella testata non
+     esiste (è `display: none`) e un figlio di un elemento nascosto non si
+     sposta con nessuna regola. */
+  position: absolute;
+  top: 0.95rem;
+  right: 3.4rem;
+  z-index: 45;
+}
+@media (min-width: 1040px) {
+  .lm-shell-salat {
+    top: 3.15rem;
+    right: 3.1rem;
+  }
+}
+
+.lm-salat {
+  position: relative;
+}
+
+/* La pill chiusa. Vetro come il dock del telefono (ref1) e non nera: galleggia
+   sopra il contenuto e deve lasciarlo intravedere. Il blur c'è perché questo è
+   uno strato che COPRE — è la regola: il blur sta sul pannello e sugli strati che
+   coprono, e su nient'altro. */
+.lm-salat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  max-width: 62vw;
+  padding: 0 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 14px 30px -16px rgba(28, 22, 18, 0.42);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.22s var(--ease),
+    background-color 0.25s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-salat-pill:hover {
+    background: rgba(255, 255, 255, 0.82);
+  }
+}
+.lm-salat-pill:active {
+  transform: scale(0.97);
+}
+.lm-salat-pill > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--ink-2);
+}
+.lm-salat-pill-testo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.15;
+}
+.lm-salat-pill-testo b {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.lm-salat-pill-testo small {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+  /* Le cifre non ballano mentre il conto scende: senza questo, «1h 09m» e
+     «1h 11m» hanno larghezze diverse e la pill trema una volta al secondo. */
+  font-variant-numeric: tabular-nums;
+}
+.lm-salat-ora {
+  flex: none;
+  padding-left: 0.5rem;
+  margin-left: 0.1rem;
+  border-left: 1px solid var(--line);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 460px) {
+  /* Su uno schermo stretto l'ora esatta sparisce e resta il conto alla rovescia:
+     fra le due, quella che serve al volo è «fra 12m». */
+  .lm-salat-ora {
+    display: none;
+  }
+}
+
+/* Il punto verde della preghiera in corso: pulsa piano, come il «live» della
+   home. È l'unica cosa che si muove da sola nella pill. */
+.lm-salat-punto {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.45);
+  animation: lm-salat-batte 2.6s ease-in-out infinite;
+}
+@keyframes lm-salat-batte {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.42);
+  }
+  55% {
+    box-shadow: 0 0 0 5px rgba(31, 157, 99, 0);
+  }
+}
+
+/* ── il pannello ─────────────────────────────────────────────────────────── */
+.lm-salat-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 60;
+  width: min(330px, calc(100vw - 2rem));
+  max-height: min(78dvh, 640px);
+  overflow-y: auto;
+  padding: 0.95rem 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 34px 70px -28px rgba(28, 22, 18, 0.55);
+  scrollbar-width: thin;
+  animation: lm-salat-entra 0.32s var(--ease) both;
+}
+@keyframes lm-salat-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lm-salat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+.lm-salat-head .lm-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-width: 0;
+}
+.lm-salat-head .lm-label svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--violet-2);
+}
+.lm-salat-head-azioni {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex: none;
+}
+.lm-salat-icona {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.lm-salat-icona svg {
+  width: 15px;
+  height: 15px;
+}
+.lm-salat-icona:hover {
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink);
+}
+.lm-salat-icona[aria-pressed='true'] {
+  background: var(--violet);
+  color: #fff;
+}
+
+.lm-salat-adesso {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  margin-bottom: 0.6rem;
+}
+.lm-salat-adesso b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.lm-salat-ar {
+  margin-left: 0.4rem;
+  font-family: var(--font-ar), serif;
+  font-size: 0.92rem;
+  color: var(--ink-3);
+}
+
+/* I cinque orari. Quattro stati e quattro trattamenti diversi, perché sono
+   quattro informazioni diverse: passata (spenta), attuale (nera piena, è dove
+   siamo), prossima (viola, è la selezione), futura (normale). Il viola sulla
+   prossima non è decorazione: in quest'area vuol dire selezione, e la prossima
+   preghiera è l'unica riga su cui il widget sta puntando. */
+.lm-salat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  list-style: none;
+  margin: 0 -0.35rem;
+  padding: 0;
+}
+.lm-salat-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.44rem 0.55rem;
+  border-radius: var(--r-sm);
+  font-size: 0.86rem;
+  transition: background-color 0.25s;
+}
+.lm-salat-nome {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.38rem;
+  font-weight: 500;
+}
+.lm-salat-nome small {
+  font-family: var(--font-ar), serif;
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+.lm-salat-t {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.lm-salat-lista li[data-stato='passata'] {
+  opacity: 0.44;
+}
+.lm-salat-lista li[data-stato='attuale'] {
+  background: var(--black);
+  color: #fff;
+}
+.lm-salat-lista li[data-stato='attuale'] .lm-salat-t,
+.lm-salat-lista li[data-stato='attuale'] .lm-salat-nome small {
+  color: rgba(255, 255, 255, 0.7);
+}
+.lm-salat-lista li[data-stato='prossima'] {
+  background: rgba(139, 92, 246, 0.13);
+  color: var(--violet-2);
+}
+.lm-salat-lista li[data-stato='prossima'] .lm-salat-t {
+  color: var(--violet-2);
+  font-weight: 600;
+}
+
+/* ── «dove siamo?» e la ricerca della città ─────────────────────────────── */
+.lm-salat-dove {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.lm-salat-dove .lm-btn {
+  align-self: flex-start;
+}
+.lm-salat-cerca {
+  margin-top: 0.5rem;
+}
+.lm-salat-input {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.7);
+  transition: border-color 0.22s;
+}
+.lm-salat-input:focus-within {
+  border-color: var(--violet);
+}
+.lm-salat-input svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--ink-3);
+}
+.lm-salat-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+.lm-salat-input input:focus {
+  outline: none;
+}
+.lm-salat-input em {
+  flex: none;
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+.lm-salat-esiti {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+.lm-salat-esiti button {
+  width: 100%;
+  padding: 0.46rem 0.6rem;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s;
+}
+.lm-salat-esiti button:hover {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--violet-2);
+}
+
+/* ── le impostazioni del widget ─────────────────────────────────────────── */
+.lm-salat-imp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.lm-salat-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.86rem;
+}
+.lm-salat-riga > span:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 500;
+}
+.lm-salat-riga small {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.lm-salat-switch {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    border-color 0.22s,
+    color 0.22s;
+}
+.lm-salat-switch svg {
+  width: 16px;
+  height: 16px;
+}
+.lm-salat-switch[aria-checked='true'] {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-salat-switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lm-salat-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Le ayat
+
+   Arabo in Noto Naskh, servito dal nostro dominio, e la traduzione italiana
+   sotto in piccolo col riferimento esatto. La dimensione è contenuta di
+   proposito: un versetto a corpo di titolo in una dashboard di vendite sarebbe
+   fuori posto due volte — nella gerarchia della pagina e nel tono.
+
+   La dissolvenza è sull'opacità e su nient'altro: 0.84s in tutto, con il cambio
+   di testo a metà, quando il testo è del tutto invisibile.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-ayah {
+  margin: 0.9rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  opacity: 1;
+  transition: opacity 0.42s ease;
+}
+.lm-ayah[data-fade='true'] {
+  opacity: 0;
+}
+.lm-ayah-ar {
+  font-family: var(--font-ar), serif;
+  font-size: 1.06rem;
+  font-weight: 400;
+  /* L'arabo vocalizzato ha bisogno d'aria fra le righe: i segni stanno sopra e
+     sotto la linea di base, e a interlinea normale si toccano. */
+  line-height: 2.05;
+  color: var(--ink);
+  text-align: right;
+}
+.lm-ayah-it {
+  margin: 0.5rem 0 0;
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.lm-ayah figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+/* La card della home: perla, senza bordo colorato, senza icona, senza titolo. Chi
+   la vuole leggere la legge, chi sta guardando i numeri non la incontra. */
+.lm-ayah-card {
+  gap: 0;
+}
+.lm-ayah-card .lm-ayah-ar {
+  border-top: 0;
+  font-size: 1.16rem;
+}
+.lm-ayah-card .lm-ayah-it {
+  max-width: 76ch;
+}
+@media (min-width: 900px) {
+  /* Sul largo l'arabo va a destra e l'italiano a sinistra, su due colonne: sono
+     due versi della stessa cosa, non un testo e la sua didascalia. */
+  .lm-ayah-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  .lm-ayah-card .lm-ayah-ar {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .lm-ayah-card .lm-ayah-it {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .lm-ayah-card figcaption {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Con il movimento ridotto la dissolvenza sparisce (la regola generale azzera le
+   transizioni) e il punto della preghiera in corso smette di pulsare. */
+@media (prefers-reduced-motion: reduce) {
+  .lm-salat-punto {
+    animation: none !important;
+  }
 }

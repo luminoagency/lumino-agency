@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from './auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { COOKIE_DEMO_NOME } from './demo'
+import { BUCKET_AVATAR } from './avatar'
 import { BUCKET_CAMPO } from './storage'
 import {
   SETTORI,
@@ -603,4 +604,142 @@ function riassunto(dati: DatiVisita): string {
     pezzi.push(dati.trascrizione_vocale.trim().slice(0, 300))
   }
   return pezzi.join(' · ').slice(0, 2000) || 'Visita registrata dal campo.'
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Il proprio profilo: titolo, saluto, foto.
+ *
+ * **Passa dal service-role e non dalla sessione, ed è la parte che conta.** La
+ * RLS della 0030 dà l'update su `staff_profiles` al solo admin. Aprirla a
+ * «ognuno può modificare la propria riga» sembra la cosa naturale e invece è un
+ * buco: la RLS decide per *righe*, non per colonne, quindi quella stessa policy
+ * lascerebbe a un venditore anche `role`, `attivo` e `obiettivo_mensile` — cioè
+ * gli darebbe modo di promuoversi ad admin e di leggere i margini.
+ *
+ * L'unico modo di permettere tre colonne e non le altre è scriverle da qui, con
+ * un elenco fisso di campi e l'id preso da `requireStaff()` e **non** dal
+ * chiamante. Chi chiama non può nemmeno nominare la riga su cui scrive.
+ */
+export async function aggiornaProfilo(dati: {
+  ruolo_titolo?: string
+  saluto_custom?: string
+  foto_url?: string | null
+}): Promise<Esito> {
+  const me = await requireStaff()
+
+  const titolo = (dati.ruolo_titolo ?? '').trim()
+  const saluto = (dati.saluto_custom ?? '').trim()
+
+  if (titolo.length > 40) return { ok: false, error: 'Il ruolo sta in quaranta caratteri.' }
+  if (saluto.length > 160) return { ok: false, error: 'Il saluto sta in centosessanta caratteri.' }
+
+  /* Il campo svuotato torna `null` e non stringa vuota: il check constraint
+     della 0033 rifiuta la stringa vuota proprio perché l'interfaccia deve poter
+     fare un solo controllo (`is null`) invece di due. */
+  const patch: Record<string, string | null> = {
+    ruolo_titolo: titolo || null,
+    saluto_custom: saluto || null,
+  }
+  if (dati.foto_url !== undefined) patch.foto_url = dati.foto_url || null
+
+  const { error } = await createAdminClient()
+    .from('staff_profiles')
+    .update(patch)
+    .eq('id', me.id)
+
+  if (error) {
+    /* 42703: colonna inesistente. È l'unico errore che vale la pena raccontare
+       per nome, perché lo incontra chiunque provi questa pagina prima di aver
+       incollato la 0033. */
+    if (error.code === '42703') {
+      return { ok: false, error: 'Manca la migration 0033: esegui l’SQL e riprova.' }
+    }
+    return { ok: false, error: error.message }
+  }
+
+  /* L'avatar e il saluto stanno nel layout, che avvolge tutta l'area: senza
+     questo il rail mostrerebbe la foto vecchia fino al prossimo hard reload. */
+  revalidatePath('/staff', 'layout')
+  return { ok: true }
+}
+
+/**
+ * La foto profilo dentro il bucket.
+ *
+ * Il percorso è `{id}/{uuid}.jpg` con l'id preso dalla sessione: una foto non
+ * può finire nella cartella di un collega perché il chiamante non decide dove
+ * va.
+ *
+ * **Quella vecchia si cancella subito dopo**, e non è pulizia opzionale: un
+ * bucket privato su un piano gratuito è un giga, e una persona che prova cinque
+ * foto prima di scegliere ne lascerebbe quattro là dentro per sempre senza
+ * nessuna riga che le nomini. Si cancella *dopo* aver scritto la nuova, così un
+ * errore a metà lascia una foto in più e non zero.
+ */
+export async function caricaAvatar(form: FormData): Promise<Esito & { path?: string }> {
+  const me = await requireStaff()
+
+  const file = form.get('file')
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Nessuna foto.' }
+  /* Il browser ritaglia e ridimensiona a 512px prima di inviare: se arriva
+     qualcosa di più grande di due mega, non è passato da lì. */
+  if (file.size > 2_000_000) return { ok: false, error: 'Foto troppo pesante.' }
+  if (!['image/jpeg', 'image/webp', 'image/png'].includes(file.type)) {
+    return { ok: false, error: 'Servono JPEG, WebP o PNG.' }
+  }
+
+  const admin = createAdminClient()
+  const est = file.type === 'image/webp' ? 'webp' : file.type === 'image/png' ? 'png' : 'jpg'
+  const path = `${me.id}/${crypto.randomUUID()}.${est}`
+
+  const { error } = await admin.storage
+    .from(BUCKET_AVATAR)
+    .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false })
+  if (error) return { ok: false, error: `Foto non caricata: ${error.message}` }
+
+  const esito = await aggiornaProfiloFoto(me.id, path)
+  if (!esito.ok) {
+    /* La riga non si è aggiornata: la foto appena caricata non la nominerà
+       nessuno, quindi se ne va subito invece di restare orfana. */
+    await admin.storage.from(BUCKET_AVATAR).remove([path])
+    return esito
+  }
+
+  if (me.foto_url && me.foto_url !== path) {
+    await admin.storage.from(BUCKET_AVATAR).remove([me.foto_url])
+  }
+
+  revalidatePath('/staff', 'layout')
+  return { ok: true, path }
+}
+
+/** La foto togliata: si torna alle iniziali, e il file se ne va dal bucket. */
+export async function togliAvatar(): Promise<Esito> {
+  const me = await requireStaff()
+  if (!me.foto_url) return { ok: true }
+
+  const esito = await aggiornaProfiloFoto(me.id, null)
+  if (!esito.ok) return esito
+
+  await createAdminClient().storage.from(BUCKET_AVATAR).remove([me.foto_url])
+  revalidatePath('/staff', 'layout')
+  return { ok: true }
+}
+
+/** La sola colonna della foto, scritta a parte da titolo e saluto. */
+async function aggiornaProfiloFoto(id: string, path: string | null): Promise<Esito> {
+  const { error } = await createAdminClient()
+    .from('staff_profiles')
+    .update({ foto_url: path })
+    .eq('id', id)
+
+  if (error) {
+    if (error.code === '42703') {
+      return { ok: false, error: 'Manca la migration 0033: esegui l’SQL e riprova.' }
+    }
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
 }

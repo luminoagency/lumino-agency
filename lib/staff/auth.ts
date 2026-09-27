@@ -29,11 +29,26 @@ export async function requireStaff(): Promise<StaffProfile> {
 
   const { data: profile } = await supabase
     .from('staff_profiles')
-    .select('id, nome, email, telefono, role, attivo, obiettivo_mensile, provvigione_pct')
+    /* `*` e non l'elenco delle colonne: `ruolo_titolo`, `saluto_custom` e
+       `foto_url` arrivano con la migration 0033, e nominarle esplicitamente
+       farebbe fallire *ogni* pagina di /staff su un database dove quella non è
+       ancora passata — cioè chiuderebbe l'area invece di mostrarla senza foto.
+       È la stessa scelta della home per `is_demo`. */
+    .select('*')
     .eq('id', auth.user.id)
     .maybeSingle()
 
   if (!profile || !profile.attivo) redirect('/staff/login?motivo=non-autorizzato')
 
-  return profile as StaffProfile
+  /* Le tre colonne della 0033 si normalizzano a `null`: con `select('*')` su un
+     database dove la migration non è passata arriverebbero `undefined`, e
+     `undefined` in un attributo React stampa la stringa vuota invece di far
+     scattare il fallback delle iniziali. */
+  const riga = profile as Record<string, unknown>
+  return {
+    ...(profile as StaffProfile),
+    ruolo_titolo: (riga.ruolo_titolo as string | null) ?? null,
+    saluto_custom: (riga.saluto_custom as string | null) ?? null,
+    foto_url: (riga.foto_url as string | null) ?? null,
+  }
 }

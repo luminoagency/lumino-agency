@@ -19,6 +19,7 @@ const PAGINE = [
     nome: 'Statistiche',
     cosa: 'tassi di chiusura, mappa Leaflet, obiezioni',
   },
+  { href: '/staff/io', nome: 'Le mie cose', cosa: 'foto profilo col ritaglio, ruolo, saluto, salat' },
   { href: '/staff/login', nome: 'Accesso', cosa: 'il pannello di vetro sulla scena' },
 ]
 

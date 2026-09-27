@@ -186,6 +186,13 @@ export const PROFILO_DEMO = {
   attivo: true,
   obiettivo_mensile: 12000,
   provvigione_pct: 15,
+  /* Il titolo c'è anche in anteprima: il saluto della home va guardato con un
+     ruolo davanti al nome, che è come lo vedranno i co-founder. La foto no —
+     `null` è il caso da verificare più spesso, perché è quello di chi non l'ha
+     ancora caricata. */
+  ruolo_titolo: 'CEO',
+  saluto_custom: null,
+  foto_url: null,
 }
 
 const COLLEGA_DEMO = {
@@ -197,6 +204,9 @@ const COLLEGA_DEMO = {
   attivo: true,
   obiettivo_mensile: 8000,
   provvigione_pct: 12,
+  ruolo_titolo: 'Area manager',
+  saluto_custom: null,
+  foto_url: null,
 }
 
 const GESTIONI_DEMO = [

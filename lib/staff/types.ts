@@ -58,6 +58,23 @@ export interface StaffProfile {
   attivo: boolean
   obiettivo_mensile: number | null
   provvigione_pct: number | null
+  /* ── migration 0033 ──
+     `ruolo_titolo` NON è `role`, ed è il motivo per cui sono due campi: `role`
+     vale 'admin' | 'sales' e decide cosa si vede (lo legge la RLS), mentre
+     questo è il biglietto da visita — «CCO», «Head of Sales» — e non decide
+     niente. Con una colonna sola, rinominare un ruolo in azienda toglierebbe a
+     qualcuno l'accesso ai margini. */
+  ruolo_titolo: string | null
+  /** La riga sotto il saluto. Se manca, la scrive l'ora del giorno. */
+  saluto_custom: string | null
+  /** Un **percorso** dentro il bucket privato `staff-avatars`, non un URL. */
+  foto_url: string | null
+}
+
+/** Il nome con il titolo davanti: «CCO Ratib». Senza titolo, solo il nome. */
+export function nomeConTitolo(p: Pick<StaffProfile, 'nome' | 'ruolo_titolo'>): string {
+  const primo = p.nome.trim().split(/\s+/)[0] ?? p.nome
+  return p.ruolo_titolo ? `${p.ruolo_titolo} ${primo}` : primo
 }
 
 /**

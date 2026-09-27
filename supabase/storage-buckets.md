@@ -38,3 +38,21 @@ await supabase.storage.createBucket('staff-field', {
 })
 ```
 Già creato sul progetto di produzione attuale.
+
+## `staff-avatars`
+- **Uso:** foto profilo dei membri dello staff (`staff_profiles.foto_url`), area interna `/staff`.
+- **Public:** no. Sono le facce di chi lavora qui: un bucket pubblico renderebbe ogni indirizzo indovinabile e valido per sempre, e la foto di una persona non è un logo. Si mostrano con URL firmati da `lib/staff/avatar.ts`, **validi sei ore** e non una — un avatar sta nel rail di ogni pagina, e una firma che scade a metà giornata farebbe diventare la propria faccia un'iniziale senza che nessuno abbia fatto niente.
+- **Limite file:** 2MB, ma il browser ritaglia e ridimensiona a 512px/JPEG prima di inviare (`components/staff/AvatarUpload.tsx`): in pratica arrivano circa 40KB.
+- **Mime ammessi:** `image/jpeg`, `image/png`, `image/webp`.
+- **Struttura path:** `{staff_profile_id}/{uuid}.jpg`.
+- **Scrittura:** solo via server action (`caricaAvatar` / `togliAvatar` in `lib/staff/actions.ts`) con service-role. L'id della cartella viene da `requireStaff()` e **non** dal chiamante, quindi una foto non può finire nella cartella di un collega. La precedente si cancella dopo che la nuova è stata scritta: un errore a metà lascia una foto in più, non zero.
+
+### Ricreazione (service-role)
+```js
+await supabase.storage.createBucket('staff-avatars', {
+  public: false,
+  fileSizeLimit: '2MB',
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+})
+```
+Già creato sul progetto di produzione attuale (lo crea da sé `node scripts/staff-avatar.mjs`, se manca).

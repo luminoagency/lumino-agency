@@ -110,12 +110,47 @@ una.
 
 ### Navigazione
 
-- **Desktop:** rail nero stretto (74px) **dentro** il pannello, sole icone, con
-  il nome al passaggio. La voce attiva è bianca piena.
+- **Desktop:** rail nero **dentro** il pannello, che **si apre al passaggio del
+  mouse** (74 → 214px) e mostra le etichette accanto alle icone. Chi la vuole
+  sempre aperta la blocca col bottone in alto, e la scelta resta in
+  `localStorage` (è del dispositivo: sul portatile da 13" la si tiene chiusa,
+  sul monitor grande aperta). La voce attiva è bianca piena.
+- **L'apertura non sposta il contenuto.** Il pannello nero è assoluto dentro un
+  segnaposto da 74px: allargandosi passa *sopra* la pagina. Due guadagni in uno
+  — il testo che si sta leggendo non scappa da sotto gli occhi mentre il
+  puntatore attraversa la barra, e la larghezza che cresce non rimette in coda
+  il layout delle dodici card accanto a ogni fotogramma. `width` non si anima
+  gratis: l'unica difesa è limitare cosa c'è dentro il rettangolo che cambia.
+  Solo il caso «bloccata» allarga il segnaposto per davvero, e succede al clic.
+- **Undici voci in tre blocchi**, separati da un filo sottile e, a barra aperta,
+  da un titolino. La divisione non è per argomento ma per momento della
+  giornata: *ogni giorno* (Oggi, Pipeline, Clienti, Campo) è quello che si apre
+  entrando e si usa in strada, *gestione* (Soldi, Progetti, Statistiche, Team)
+  è quello che si guarda una volta la settimana stando fermi, *risorse*
+  (Risorse, Lab AI, Ricerca Agent) è quello che si apre quando serve qualcosa.
+  Sta in `GRUPPI` / `navPerGruppi()` in `lib/staff/nav.ts`, e i blocchi vuoti
+  non disegnano un separatore con niente sotto.
+- **Un'icona per voce, tutte diverse.** Erano doppie in tre punti — Clienti e
+  Team avevano la stessa `Users`, Lab AI e Ricerca Agent lo stesso `Bot`, e
+  «Oggi» era un sole, che vuol dire «giorno» e non «cosa devo fare». Due icone
+  uguali in una barra di undici rendono inutili tutte e undici.
+- **Il tooltip resta**, e ha ancora un compito: l'apertura ha 150ms di ritardo,
+  quindi puntando un'icona il nome compare *prima* che la barra si apra e tace
+  quando l'etichetta vera prende il suo posto. Fuori da quella finestra serve
+  dove l'apertura al passaggio non c'è — sotto le dita e da tastiera.
 - **Le sezioni non ancora costruite non fanno una lista.** Stanno dietro
   un'unica icona in fondo che le elenca in un tooltip. `lib/staff/nav.ts`
   esporta `FASE_VIVA`: a fine fase si alza di uno.
-- **Mobile:** pill flottante in basso, in vetro (ref1), dove arriva il pollice.
+- **Mobile:** pill flottante in basso, in vetro (ref1), dove arriva il pollice,
+  con **l'etichetta sotto l'icona** e non accanto. Di fianco, cinque voci su uno
+  schermo da 375px stavano solo perché la barra scorreva in orizzontale: la
+  quinta esisteva e non si vedeva. In colonna ci stanno tutte, e su un telefono
+  non c'è un passaggio del mouse a cui chiedere cosa vuol dire un'icona.
+- `/staff/io` (le proprie impostazioni) **non è nel rail**: si apre dal proprio
+  nome in fondo alla barra, che è dove tutti la cercano. `activeHref()` fa
+  combaciare `/staff` solo in modo esatto — come prefisso è il prefisso di tutta
+  l'area, e su una pagina fuori elenco accenderebbe «Oggi», cioè indicherebbe
+  una pagina su cui non si è.
 
 ### Componenti
 
@@ -223,7 +258,10 @@ Sono le cose che facevano sembrare la versione precedente un pannello generato:
 - blocco viola pieno usato come decorazione;
 - sidebar con l'elenco delle sezioni «in arrivo»;
 - eyebrow con ✦ e numerazioni 01/02/03;
-- gradiente come maschera del testo (l'eccezione storica è la I del wordmark).
+- gradiente come maschera del testo. Le eccezioni sono **due e sole due**: la I
+  del wordmark, e il **nome nel saluto della home** — è il nome della persona
+  appena entrata, compare una volta per schermata e si spegne nella versione
+  compatta di tutti i giorni. Su un'etichetta qualsiasi resta vietato.
 
 Pill e card bento restano: qui sono volute.
 
@@ -298,6 +336,10 @@ Migration SQL in `supabase/migrations/`.
 - `staff_ai_insights` (ai_insights): tipo (pattern | errore | segmento |
   idea_startup | report_mensile), titolo, contenuto, dati_supporto jsonb.
 - `staff_resources` (resources): titolo, tipo, file_url, settore.
+- `staff_profiles`: dalla **0033** anche `ruolo_titolo` (il biglietto da visita
+  — «CCO» — che **non** ha effetti sui permessi: quelli stanno in `role`),
+  `saluto_custom` (la riga sotto il saluto della home) e `foto_url` (un
+  percorso dentro il bucket privato `staff-avatars`, non un URL).
 
 ## Pagine (`/staff/...`)
 
@@ -509,3 +551,207 @@ La F4 **non ha aggiunto tabelle**: `staff_deals`, `staff_deal_margins`,
 leggeva quella tabella, e senza la colonna gli extra finti finirebbero nei totali
 veri a interruttore spento. La stessa migration porta tre indici di lettura per
 le pagine nuove.
+
+### Cosa è già in piedi (F5-bis · la persona e la preghiera)
+
+Non è una fase del piano: è il giro che rende l'area *di qualcuno*. Prima
+funzionava e non diceva con quale account fosse aperta, e il rail era una
+colonna di undici pittogrammi.
+
+Ha aggiunto la migration **0033** — tre colonne su `staff_profiles` — e un
+secondo bucket Storage. Niente tabelle nuove.
+
+#### Il rail che si apre
+
+Vedi la sezione **Navigazione**: barra che si allarga al passaggio, blocco
+salvato in `localStorage`, tre gruppi separati, un'icona diversa per voce,
+etichette sotto le icone sul telefono.
+
+#### Il profilo è una persona
+
+- `staff_profiles` guadagna `ruolo_titolo`, `saluto_custom` e `foto_url`
+  (migration **0033**).
+- **`ruolo_titolo` non è `role`, ed è il motivo per cui sono due colonne.**
+  `role` vale `admin | sales`, lo legge la RLS e decide *cosa si vede*;
+  `ruolo_titolo` è il biglietto da visita («CCO», «Head of Sales») e non decide
+  niente. Con una colonna sola, rinominare un ruolo in azienda toglierebbe a
+  qualcuno l'accesso ai margini.
+- `foto_url` è un **percorso dentro il bucket**, non un URL: `staff-avatars` è
+  privato e l'indirizzo guardabile è una firma che scade. Il nome resta
+  `foto_url` per coerenza con `staff_field_reports.foto`, che contiene percorsi
+  per la stessa ragione.
+- **Nessuna policy di scrittura in più**, ed è la parte che conta. La 0030 dà
+  l'update su `staff_profiles` al solo admin; aprirla a «ognuno può modificare
+  la propria riga» sembra naturale ed è un buco, perché la RLS decide per
+  *righe* e non per colonne: quella stessa policy darebbe a un venditore anche
+  `role`, `attivo` e `obiettivo_mensile`, cioè il modo di promuoversi ad admin.
+  Le tre colonne le scrive `aggiornaProfilo()` con il service-role su un elenco
+  fisso di campi, con l'id preso da `requireStaff()` e mai dal chiamante. È
+  l'unico modo di limitare una scrittura a una colonna.
+- `requireStaff()` legge ora con `select('*')`: nominare le colonne nuove
+  farebbe fallire *ogni* pagina di /staff su un database dove la 0033 non è
+  passata — cioè chiuderebbe l'area invece di mostrarla senza foto. È la stessa
+  scelta della home per `is_demo`. Le tre colonne si normalizzano a `null`
+  all'uscita, perché `undefined` in un attributo React stampa la stringa vuota
+  invece di far scattare il fallback delle iniziali.
+
+#### La foto
+
+- Bucket privato **`staff-avatars`**, firme da **sei ore** (non una, come le foto
+  di campo: un avatar sta nel rail di *tutte* le pagine, e una firma scaduta a
+  metà giornata farebbe diventare la propria faccia un'iniziale senza che
+  nessuno abbia fatto niente). `lib/staff/avatar.ts`, documentato in
+  `supabase/storage-buckets.md`.
+- `components/staff/AvatarUpload.tsx` — **il ritaglio è vero, non un
+  `object-fit: cover`.** La scorciatoia sarebbe lasciar tagliare al cerchio, ma
+  il taglio automatico prende il centro geometrico dell'immagine, e in una foto
+  di una persona il centro geometrico è quasi sempre il petto: il risultato è
+  una galleria di avatar decapitati. Qui si trascina e si stringe, e quel che si
+  vede nel cerchio è quel che viene salvato. Il canvas esporta 512px JPEG prima
+  di inviare: allo Storage gratuito arrivano ~40KB invece di tre mega, e sul
+  server non c'è niente da ridimensionare.
+- La maschera dell'anteprima è un **anello** e non un cerchio pieno: si vede
+  anche quello che resta fuori dal taglio, ed è l'unico modo di capire dove si
+  sta trascinando.
+- La foto precedente si cancella **dopo** che la nuova è stata scritta: un
+  errore a metà lascia una foto in più, non zero. Se la riga non si aggiorna, la
+  foto appena caricata se ne va subito invece di restare orfana.
+- `scripts/staff-avatar.mjs` — carica la foto di un collega dal terminale, prima
+  che abbia fatto il primo login: crea il bucket se manca, risolve l'id
+  dall'email in `auth.users`, taglia al centro con sharp, carica e scrive
+  `foto_url`. Il taglio al centro è il meglio che si possa fare senza qualcuno
+  che trascini; se viene male si rifà da `/staff/io` in dieci secondi.
+
+#### Il saluto
+
+`components/staff/Saluto.tsx`, al posto del «Ciao, Marco» a corpo di titolo.
+Faccia grande, ruolo davanti al nome, lettere che salgono.
+
+- **Il saluto lungo vale una volta al giorno.** Un'animazione che si rifà a ogni
+  navigazione sulla home diventa un pedaggio: la prima volta è bella, la
+  quindicesima è un ritardo fra sé e il lavoro. Dal secondo passaggio resta la
+  stessa intestazione, in scala ridotta e ferma.
+- **La decisione sta in una variabile di modulo, non dentro l'effetto.** Dentro
+  l'effetto era «leggo il registro e subito lo firmo», cioè una funzione che
+  cambia ciò che sta misurando: in sviluppo React monta ogni componente due
+  volte di proposito, quindi la prima esecuzione firmava e la seconda trovava la
+  firma — il saluto lungo non compariva **mai**, e lo stesso sarebbe successo a
+  ogni Fast Refresh o rimontaggio.
+- **Le parole sono le stesse nelle due versioni**, cambia la scala e cosa è
+  visibile: è così che il server disegna un markup valido per entrambe senza
+  errori di idratazione. La riga in base all'ora si scrive dopo il montaggio (il
+  server sta su UTC e direbbe l'ora sbagliata) e il suo spazio è riservato, così
+  la riga sotto non salta.
+- **Le lettere salgono in due tempi, e non per gusto.** Mentre una lettera ha
+  una `transform` addosso esce dal livello di disegno del genitore, e il
+  genitore è l'`em` che porta il gradiente in `background-clip: text`: il
+  gradiente non raggiunge più quei glifi e il nome resta **trasparente su fondo
+  chiaro, cioè invisibile**. Vale per `will-change: transform` allo stesso modo,
+  che infatti è stato tolto. Quindi: durante la salita ogni lettera porta il
+  proprio inchiostro, e a 1.25s — atterrata l'ultima — l'inchiostro sfuma verso
+  `transparent` e sotto compare il gradiente. Il nome **atterra e poi si
+  accende**, che è meglio di quel che si voleva all'inizio. Il riempimento
+  dell'animazione è `backwards` e non `both`: `both` lascerebbe applicata la
+  trasformazione finale, e con lei la promozione a livello.
+
+#### Il promemoria della preghiera
+
+Widget nella shell, quindi visibile da ogni pagina. Chiuso è una pill (preghiera
+prossima, quanto manca, a che ora); aperto è un pannello con i cinque orari, la
+città, un'ayah e le impostazioni.
+
+- **Montato una volta sola e spostato dal CSS** — in alto a destra sul pannello,
+  pill in cima sul telefono. Due istanze nascoste a vicenda da un media query
+  sembrerebbero la strada ovvia e sarebbero due conti alla rovescia che battono
+  insieme e **due notifiche per ogni orario**.
+- **`adhan`, non un'API.** Sono formule astronomiche, non dati: il calcolo è
+  offline, istantaneo, senza chiavi e senza un servizio che possa spegnersi.
+  Un'API degli orari vorrebbe dire una chiamata di rete per aprire una
+  dashboard e un widget che si rompe in viaggio, cioè proprio quando serve.
+  Metodo e madhab si scelgono, default Muslim World League.
+- **Si calcolano tre giorni, non uno.** Fra Isha e il Fajr del giorno dopo,
+  «attuale» è Isha di *ieri* e «prossima» è Fajr di *domani*: col solo giorno
+  corrente si otterrebbe un conto alla rovescia negativo di venti ore, che è il
+  bug classico di questi widget.
+- **Non chiede il GPS all'apertura della pagina.** Stessa decisione della nuova
+  visita in F3 e per la stessa ragione: il permesso è una finestra che copre
+  tutto, e chiederlo mentre qualcuno apre la pipeline vuol dire vederlo negare
+  per sempre. Al primo avvio il widget chiede *dove siamo* con un bottone e un
+  campo città, e il permesso arriva dopo che lo si è premuto. Se il permesso c'è
+  già, la posizione si rinfresca in silenzio — è così che la città cambia da
+  sola cambiando posto.
+- **Il nome della città passa da una route nostra** (`/api/staff/geo`) e non da
+  Nominatim diretto, per tre ragioni in ordine di importanza: (1) la policy
+  d'uso chiede un `User-Agent` che identifichi l'applicazione, e `User-Agent` è
+  un *forbidden header name* che `fetch` nel browser non può impostare — una
+  chiamata diretta violerebbe la policy senza modo di rimediare; (2) dal browser
+  ogni dispositivo comparirebbe nei log di Nominatim col proprio IP e la propria
+  posizione, da qui compare un server solo; (3) la cache, con le coordinate
+  arrotondate al chilometro e la risposta tenuta un giorno. La route è dietro
+  `requireStaff()`: un proxy di geocoding aperto è un proxy di geocoding di
+  qualcun altro.
+- Il nome si pesca da `city || town || village || municipality`: Jesolo è
+  `town` e Cavallino-Treporti è `village`, quindi guardare solo `city` vorrebbe
+  dire non sapere dove si sta proprio dove lavoriamo.
+- **Il timer batte solo quando serve**: si spegne col widget spento, senza
+  posizione, e quando la scheda va in secondo piano. Legge l'orologio e non un
+  contatore, quindi al ritorno si rimette a posto da sé.
+- **Notifica all'entrata dell'orario, nessun suono.** Il permesso si chiede una
+  volta, da un bottone nel pannello. La memoria di «già avvisato» sta in
+  `localStorage` con l'istante esatto della preghiera come chiave: un
+  ricaricamento due minuti dopo Dhuhr non riavvisa, e oltre dieci minuti
+  dall'entrata non si notifica affatto — aprendo la dashboard alle quattro non
+  deve arrivare la notifica di Dhuhr.
+- **Le preferenze stanno in `localStorage`, non nel database**: sono del
+  dispositivo (posizione, metodo, notifiche), e una colonna in più su
+  `staff_profiles` per l'intervallo delle ayat sarebbe una query a ogni apertura
+  per un numero che si cambia una volta nella vita. In lettura sono validate
+  contro l'elenco vero: un `metodo` che non esiste più farebbe lanciare
+  `CalculationMethod[...]` e porterebbe giù tutto il widget.
+
+#### Le ayat
+
+`lib/staff/ayat.ts` — venticinque versetti sulla preghiera e sul ricordo di
+Allah, **in un file del repo**. Niente API: sarebbero tre righe di codice e
+metterebbero una chiamata di rete fra l'apertura della dashboard e la comparsa
+del testo, più un giorno di downtime del servizio dentro il widget.
+
+- **Il riferimento è esatto o il versetto non c'è.** Qualche ayah molto
+  pertinente è rimasta fuori — Al-A'raf 7:205 fra le altre — perché non si era
+  certi di una parola della vocalizzazione: un versetto storto in un'area
+  interna resta storto per anni, e nessuno lo va a controllare.
+- Dove il testo è una parte di un versetto più lungo, `parziale` è vero e
+  l'interfaccia lo segna con un'ellissi: citare mezzo versetto senza dirlo è un
+  errore anche quando la metà è esatta.
+- Arabo in **Noto Naskh** via `next/font`, cioè servito dal nostro dominio:
+  nessuna richiesta a Google a runtime e nessun mezzo secondo di testo
+  invisibile. Interlinea a 2.05 perché l'arabo vocalizzato ha i segni sopra e
+  sotto la linea di base, e a interlinea normale si toccano.
+- La rotazione è **deterministica** (indice dal numero del giro, niente
+  `Math.random()`): server e browser devono disegnare la stessa ayah al primo
+  dipinto, o React segnala un errore di idratazione e il testo lampeggia.
+- L'ayah della home sta **in fondo** alla pagina e non in cima: chi entra qui
+  entra per i numeri, e mettere un testo da leggere davanti a quello che si è
+  venuti a vedere è il modo di far chiudere entrambi. In fondo la trova chi
+  scorre, cioè chi ha finito.
+- La dissolvenza cambia il testo **a metà**, quando è del tutto invisibile:
+  cambiare stringa e trasparenza nello stesso fotogramma si vede come un lampo,
+  non come una dissolvenza.
+
+#### `/staff/io`
+
+Le proprie impostazioni: foto, ruolo, saluto, promemoria. Si chiama così e non
+«impostazioni» perché qui non c'è niente dell'applicazione — non c'è nulla che
+riguardi clienti, prezzi o permessi. Ci sono la propria faccia e i propri
+promemoria; chiamarla «impostazioni» farebbe cercare qui, un giorno, la
+configurazione di qualcosa.
+
+Le due metà della pagina vivono in due posti diversi ed è voluto: foto, ruolo e
+saluto nel database perché li vedono gli altri; orari e ayat in `localStorage`
+perché sono di *questo* dispositivo. **L'interruttore generale del widget sta
+qui e non nel widget**: un pannello che contiene il bottone per farlo sparire è
+un bottone che si preme per errore e poi non si ritrova più.
+
+Il nome non si modifica da qui: è la stessa colonna che firma lo storico
+attività di ogni cliente e le statistiche per venditore. Lo cambia un admin dalla
+pagina Team.

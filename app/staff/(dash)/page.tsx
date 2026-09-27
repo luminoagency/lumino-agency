@@ -1,17 +1,19 @@
 import Link from 'next/link'
 import { Plus, Sparkles } from 'lucide-react'
 import AreaChart, { type AreaPoint } from '@/components/staff/AreaChart'
+import AyahCard from '@/components/staff/AyahCard'
 import { Lollipop, Progress } from '@/components/staff/Bars'
 import Cascade from '@/components/staff/Cascade'
 import Counter from '@/components/staff/Counter'
 import FlussoTeam from '@/components/staff/FlussoTeam'
 import Mappa, { type PuntoZona } from '@/components/staff/Mappa'
-import PageHead from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
+import Saluto from '@/components/staff/Saluto'
 import Settimana, { type EventoSettimana } from '@/components/staff/Settimana'
 import Spark from '@/components/staff/Spark'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { firmaAvatar } from '@/lib/staff/avatar'
 import { staffDb } from '@/lib/staff/db'
 import { demoAttivo, senzaDemo } from '@/lib/staff/demo'
 import { flussoTeam } from '@/lib/staff/queries'
@@ -50,6 +52,7 @@ export default async function StaffHome() {
   const me = await requireStaff()
   const demo = demoAttivo(me.role)
   const supabase = staffDb()
+  const foto = await firmaAvatar(me.foto_url)
 
   const oggi = new Date()
   const iso = (d: Date) => d.toISOString().slice(0, 10)
@@ -160,28 +163,34 @@ export default async function StaffHome() {
 
   return (
     <>
-      <PageHead
-        title={
-          <>
-            Ciao, <em>{me.nome.split(' ')[0]}</em>
-          </>
-        }
-        sub={`${new Intl.DateTimeFormat('it-IT', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        }).format(oggi)}${
-          me.obiettivo_mensile ? ` · obiettivo del mese ${euro(me.obiettivo_mensile)}` : ''
-        }`}
-      >
-        <Link href="/staff/campo/nuova" className="lm-btn" data-variant="dark">
-          Registra una visita
-        </Link>
-        <Link href="/staff/clienti/nuovo" className="lm-btn">
-          <Plus aria-hidden="true" />
-          Nuovo cliente
-        </Link>
-      </PageHead>
+      {/* Non è più un'intestazione di pagina con dentro un nome: è la prima
+          cosa della giornata. La faccia di chi è entrato, il ruolo davanti al
+          nome, le lettere che salgono. Il PageHead resta per tutte le altre
+          pagine — quelle non hanno bisogno di dire chi sei, l'hanno detto qui. */}
+      <div className="lm-head-saluto">
+        <Saluto
+          nome={me.nome}
+          titolo={me.ruolo_titolo}
+          saluto={me.saluto_custom}
+          foto={foto}
+          sotto={`${new Intl.DateTimeFormat('it-IT', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          }).format(oggi)}${
+            me.obiettivo_mensile ? ` · obiettivo del mese ${euro(me.obiettivo_mensile)}` : ''
+          }`}
+        />
+        <div className="lm-head-actions">
+          <Link href="/staff/campo/nuova" className="lm-btn" data-variant="dark">
+            Registra una visita
+          </Link>
+          <Link href="/staff/clienti/nuovo" className="lm-btn">
+            <Plus aria-hidden="true" />
+            Nuovo cliente
+          </Link>
+        </div>
+      </div>
 
       {/* La barra dell'AI c'è dal primo giorno ma non finge: senza chiave è
           spenta e lo dice, invece di raccogliere una domanda e non rispondere. */}
@@ -391,6 +400,13 @@ export default async function StaffHome() {
               <p className="lm-empty">Nessun follow-up in scadenza. Buon segno.</p>
             )}
           </article>
+
+          {/* L'ayah sta **in fondo** e non in cima, ed è una scelta e non un
+              ripiego: chi entra in questa pagina entra per i numeri, e mettere
+              un testo da leggere davanti a quello che si è venuti a vedere è il
+              modo di far chiudere entrambi. In fondo la trova chi scorre, cioè
+              chi ha finito. Si spegne dalle proprie impostazioni. */}
+          <AyahCard />
         </Cascade>
       </Tilt>
     </>

@@ -1,4 +1,5 @@
 import { requireStaff } from '@/lib/staff/auth'
+import { firmaAvatar } from '@/lib/staff/avatar'
 import { ANTEPRIMA } from '@/lib/staff/db'
 import { demoAttivo } from '@/lib/staff/demo'
 import StaffShell from './StaffShell'
@@ -15,9 +16,14 @@ import StaffShell from './StaffShell'
  */
 export default async function StaffDashLayout({ children }: { children: React.ReactNode }) {
   const me = await requireStaff()
+  /* La firma dell'avatar si fa qui, una volta per navigazione, e non dentro il
+     rail: il rail è un componente client e non può toccare il service-role.
+     Sei ore di validità e le pagine tutte `force-dynamic`, quindi la firma si
+     rifà da sola prima di scadere. */
+  const foto = await firmaAvatar(me.foto_url)
 
   return (
-    <StaffShell me={me} demo={demoAttivo(me.role)} anteprima={ANTEPRIMA}>
+    <StaffShell me={me} foto={foto} demo={demoAttivo(me.role)} anteprima={ANTEPRIMA}>
       {children}
     </StaffShell>
   )
