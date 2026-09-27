@@ -17,20 +17,72 @@ la apre il titolare: **niente merge su `main`**.
 
 ## Design
 
-Stesso DNA di bylumino.com: moderno, professionale e divertente.
+Il linguaggio dell'area interna è fissato dai tre riferimenti in
+`docs/design-refs/` (`ref1.png`, `ref2.png`, `ref3.png`). **Valgono per tutte le
+fasi** e sostituiscono le regole di design precedenti di questo file: le pill e
+le card bento qui sono volute, non un ripiego da template.
 
-- Palette: `--void #171210`, `--cream #F4EEE4`, `--red #E5342A`,
-  `--violet #8B5CF6`, gradiente firma `linear-gradient(100deg, #E5342A, #EC6A9C 46%, #8B5CF6)`.
-- Tipografia: Fraunces (display) + Inter (interfaccia), **Anton solo per i
-  numeri/KPI grandi**.
-- Logo: wordmark `LUMINO` con la I nel gradiente (`components/home/Wordmark.tsx`).
-- Motion con GSAP + Lenis già in dipendenza: transizioni tra pagine, KPI che
-  contano, card del kanban con inerzia e drag fluido, micro-interazioni e
-  cursore custom come sul sito.
-- **Vietato**: look da template admin, griglie di card generiche, eyebrow con ✦,
-  numerazioni 01/02/03, pill button ovunque, gradiente usato come maschera del
-  testo. Deve sembrare un prodotto Lumino, non un pannello.
-- **Mobile-first**: i venditori la usano per strada dal telefono.
+### Impianto
+
+- **Bento**: griglia di card, raggio grande (24–32px), spaziature ampie.
+  Gerarchia tipografica per contrasto di scala — numero molto grande, etichetta
+  molto piccola in maiuscoletto (ref1).
+- **Base scura, contrasto chiaro**: pagina `#0E0B0A`, card scure su `--void
+  #171210` con bordo sottile semi-trasparente. Alcune card in `--cream #F4EEE4`
+  per contrasto, come la colonna chiara di ref1/ref2. Il chiaro è un accento:
+  una o due card per schermata, non metà.
+- **Glow**: alone radiale sfumato viola/rosa fisso sullo sfondo (ref3), e un
+  glow morbido dietro le card che contano. Il gradiente firma
+  `linear-gradient(100deg, #E5342A, #EC6A9C 46%, #8B5CF6)` si usa **solo** per
+  questi aloni, per la voce di menù attiva e per le evidenziazioni — mai come
+  maschera sul testo (l'eccezione storica è la I del wordmark).
+
+### Colore
+
+- `--violet #8B5CF6` è il colore di selezione e dell'azione principale (ref3):
+  bottone primario, pill attiva, riga selezionata, focus.
+- `--red #E5342A` resta per il ritardo, l'errore e il rifiuto.
+- `--cream #F4EEE4` per il testo, `--cream-dim #B9AEA1` per il secondario.
+- Il **pannello di dettaglio** dell'elemento selezionato è in gradiente viola
+  pieno, con sotto-card interne traslucide (ref3).
+
+### Componenti
+
+- **Pill**: tab, filtri e range di tempo sono pill — attiva piena in viola,
+  inattive in outline (ref3). La barra dei filtri mostra un contatore
+  "Filtri attivi · N" e un azzeramento.
+- **Glass**: blur + trasparenza su navigazioni flottanti, modali e overlay
+  (ref2).
+- **Navigazione**: desktop = sidebar a sinistra, voce attiva in gradiente
+  morbido (ref3); mobile = nav a pill flottante in basso, in glass (ref2).
+- **Grafici**: area chart con linea morbida, tooltip e punto luminoso (ref3);
+  anelli di progresso circolari con la percentuale al centro (ref1, ref2);
+  barre lollipop o arrotondate (ref2); barre orizzontali di progresso (ref2).
+- **Header di pagina**: titolo grande + sottotitolo piccolo + azione principale
+  a destra. La home apre con "Ciao, [nome]" col nome in viola (ref3) e la barra
+  "Chiedi a Lumino AI" (ref3), disabilitata finché manca la chiave.
+
+### Tipografia
+
+- **Manrope** (Google Fonts) per tutta l'interfaccia e per i numeri: i pesi
+  700/800 reggono i numeri grandi senza bisogno di un secondo carattere.
+- Il logo resta il wordmark `LUMINO` attuale, con la I nel gradiente
+  (`components/home/Wordmark.tsx`).
+
+### Movimento (GSAP)
+
+- Card che entrano a cascata (stagger corto, 40–60ms).
+- Numeri che contano.
+- Hover: leggero lift + glow.
+- Transizioni morbide tra pagine.
+- Tutto si spegne con `prefers-reduced-motion`.
+
+### Regole ferme
+
+- **Mobile-first**: i venditori la usano per strada, con una mano.
+- Vietato: eyebrow con ✦, numerazioni 01/02/03, gradiente come maschera del
+  testo, card generiche senza gerarchia (una card è tale se ha un numero o un
+  grafico, non se contiene solo una riga di testo).
 
 ## Auth e ruoli
 
@@ -115,7 +167,7 @@ Migration SQL in `supabase/migrations/`.
 | Fase | Contenuto | Stato |
 | --- | --- | --- |
 | F1 | schema + RLS + auth + layout/nav | fatta |
-| F2 | pipeline + scheda cliente + import CSV dei lead | da fare |
+| F2 | pipeline + scheda cliente + import CSV dei lead | fatta |
 | F3 | campo + follow-up | da fare |
 | F4 | soldi + progetti + statistiche | da fare |
 | F5 | lab AI + risorse + placeholder agent | da fare |
@@ -145,3 +197,39 @@ A fine di ogni fase: build pulita, commit, una riga su cosa si è fatto.
    values ('<uuid-utente>', 'Nome Cognome', 'email@…', 'admin');
    ```
 3. `bylumino.com/staff` → login.
+
+### Cosa è già in piedi (F2)
+
+Stesso branch, stesso stile: la F1 è stata rifatta con il linguaggio dei
+riferimenti (bento, viola, pill, glass) prima di aggiungere le pagine nuove.
+
+- `components/staff/` — i pezzi del sistema, riusabili dalle fasi successive:
+  `Cascade` (entrata a cascata GSAP), `Counter` (numeri che contano), `Ring`
+  (anello con la percentuale), `Bars` (`Progress` e `Lollipop`), `AreaChart`
+  (curva morbida con tooltip e punto luminoso), `Filters` (barra a pill con
+  contatore), `Modal` (glass, Esc, fuoco restituito), `MotivoRifiuto`,
+  `PageHead` + `StatoPill`, `ClienteCardBody`, `fonts.ts` (Manrope).
+- `app/staff/staff.css` — riscritto: token, bento, pill, glass, kanban, split
+  view, tabella di anteprima, campi.
+- `app/staff/(dash)/pipeline` — KPI per stato (cliccabili come filtro), barra
+  filtri (settore, zona, assegnato a, stato) con ricerca, kanban con drag &
+  drop HTML5 nativo su desktop e tab a pill + lista su telefono. Lo spostamento
+  è ottimista e torna indietro se la RLS rifiuta.
+- `app/staff/(dash)/clienti` — vista a lista: elenco a sinistra (selezionato in
+  viola), pannello di dettaglio a destra in gradiente con sotto-card
+  traslucide.
+- `app/staff/(dash)/clienti/[id]` — scheda cliente: anagrafica, trattativa con
+  l'anello 30/70, abbonamento, progetto con la barra di fase, timeline delle
+  attività.
+- `app/staff/(dash)/clienti/nuovo` — modulo nuovo cliente (solo il nome è
+  obbligatorio).
+- `app/staff/(dash)/clienti/importa` + `lib/staff/csv.ts` — import CSV in tre
+  passi: file, mappatura delle colonne indovinata dalle intestazioni e
+  correggibile, anteprima delle righe già mappate.
+- `lib/staff/actions.ts` — `cambiaStato`, `creaCliente`, `importaClienti`.
+  Il motivo del rifiuto è obbligatorio qui e nel check constraint.
+- `lib/staff/queries.ts` — `caricaClienti()`, la lettura condivisa fra pipeline
+  e vista a lista.
+
+Non c'è ancora: modifica dei dati di un cliente dalla scheda, inserimento di
+attività a mano (arriva con la F3, dal Campo) e gestione delle trattative.

@@ -85,3 +85,87 @@ export function euro(value: number | null | undefined): string {
     useGrouping: true,
   }).format(value ?? 0)
 }
+
+export const SITI = ['nessuno', 'solo_social', 'vecchio', 'ok'] as const
+export type SitoAttuale = (typeof SITI)[number]
+
+export const SITO_LABEL: Record<SitoAttuale, string> = {
+  nessuno: 'Nessun sito',
+  solo_social: 'Solo social',
+  vecchio: 'Sito vecchio',
+  ok: 'Sito a posto',
+}
+
+export const TIPI_ATTIVITA = ['visita', 'chiamata', 'messaggio', 'nota'] as const
+export type TipoAttivita = (typeof TIPI_ATTIVITA)[number]
+
+export const ATTIVITA_LABEL: Record<TipoAttivita, string> = {
+  visita: 'Visita',
+  chiamata: 'Chiamata',
+  messaggio: 'Messaggio',
+  nota: 'Nota',
+}
+
+export const PACCHETTO_LABEL: Record<Pacchetto, string> = {
+  basic: 'Basic',
+  pro: 'Pro',
+  premium: 'Premium',
+}
+
+export const FASE_LABEL: Record<FaseProgetto, string> = {
+  brief: 'Brief',
+  design: 'Design',
+  sviluppo: 'Sviluppo',
+  revisione: 'Revisione',
+  online: 'Online',
+}
+
+/**
+ * Gli stati nell'ordine in cui compaiono sul kanban.
+ *
+ * È l'ordine del funnel, non l'alfabetico: `rifiutato` e `in_pausa` stanno in
+ * fondo perché sono uscite, non tappe. STATI resta la fonte dei valori validi
+ * (è allineato al check constraint), questo è solo come si dispongono.
+ */
+export const STATI_BOARD = STATI
+
+/** Data breve all'italiana: 4 set, 12 dic. */
+export function dataBreve(value: string | null | undefined): string {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' }).format(
+    new Date(value),
+  )
+}
+
+/** Data lunga: 4 settembre 2026. */
+export function dataLunga(value: string | null | undefined): string {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('it-IT', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+
+/** La riga di cliente come la leggono pipeline, lista e scheda. */
+export interface ClienteRiga {
+  id: string
+  nome: string
+  settore: Settore
+  citta: string | null
+  zona: string | null
+  indirizzo: string | null
+  referente: string | null
+  telefono: string | null
+  email: string | null
+  instagram: string | null
+  sito_attuale: SitoAttuale | null
+  note_sito: string | null
+  stato: Stato
+  motivo_rifiuto: string | null
+  assegnato_a: string | null
+  prezzo_consigliato: number | null
+  voto_sito: number | null
+  fonte: string
+  created_at: string
+}

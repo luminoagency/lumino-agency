@@ -42,7 +42,7 @@ export default function LoginForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <div className="lm-staff-field">
+      <div className="lm-field">
         <label htmlFor="staff-email">Email</label>
         <input
           id="staff-email"
@@ -56,7 +56,7 @@ export default function LoginForm({ next }: { next: string }) {
         />
       </div>
 
-      <div className="lm-staff-field">
+      <div className="lm-field">
         <label htmlFor="staff-password">Password</label>
         <input
           id="staff-password"
@@ -70,12 +70,12 @@ export default function LoginForm({ next }: { next: string }) {
       </div>
 
       {error && (
-        <p className="lm-staff-error" role="alert">
+        <p className="lm-error" role="alert">
           {error}
         </p>
       )}
 
-      <button type="submit" className="lm-staff-submit" disabled={busy}>
+      <button type="submit" className="lm-btn" disabled={busy}>
         {busy ? 'Un attimo…' : 'Entra'}
       </button>
     </form>

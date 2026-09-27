@@ -34,16 +34,16 @@ export default async function StaffLoginPage({
 
   return (
     <div className="lm-staff-login">
-      <div className="lm-staff-login-box">
+      <div className="lm-login-card">
         <span className="lm-staff-brand">
           <Wordmark animated={false} />
           <span className="lm-staff-tag">Staff</span>
         </span>
 
-        <h1 className="lm-staff-h1" style={{ marginTop: '1.4rem' }}>
+        <h1 className="lm-h1" style={{ marginTop: '1.3rem' }}>
           Bentornato.
         </h1>
-        <p className="lm-staff-sub">
+        <p className="lm-sub">
           {searchParams.motivo === 'non-autorizzato'
             ? 'Questo account esiste ma non è un account dello staff. Entra con le credenziali dello staff.'
             : 'Area interna. Clienti, trattative, visite e incassi.'}

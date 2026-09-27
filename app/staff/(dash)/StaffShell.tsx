@@ -3,9 +3,23 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Euro, Layers, MapPin, Menu, Sun, X } from 'lucide-react'
+import {
+  Banknote,
+  Bot,
+  BookOpen,
+  Folder,
+  LayoutGrid,
+  MapPin,
+  Menu,
+  PieChart,
+  Sparkles,
+  Sun,
+  Users,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import Wordmark from '@/components/home/Wordmark'
-import { gsap, lerp, onMouseEffectsChange, pointer, prefersReducedMotion, trackPointer } from '@/components/home/useMotion'
+import { gsap, prefersReducedMotion } from '@/components/home/useMotion'
 import { activeHref, visibleNav, type StaffNavItem } from '@/lib/staff/nav'
 import type { StaffProfile } from '@/lib/staff/types'
 
@@ -13,22 +27,29 @@ import type { StaffProfile } from '@/lib/staff/types'
  * La struttura dell'area staff: dove sei, dove puoi andare, chi sei.
  *
  * Due navigazioni per lo stesso elenco, non due elenchi:
- *  · da 900px in su un rail fisso a sinistra — un indice tipografico, perché
- *    su un monitor c'è spazio per leggere le parole invece di indovinare icone;
- *  · sotto, una barra in basso con quattro voci e un pannello per le altre.
- *    In basso e non in alto perché la dashboard si usa camminando, con una
- *    mano, e il pollice non arriva in cima allo schermo.
+ *  · da 960px in su una sidebar in glass a sinistra, con la voce attiva su un
+ *    gradiente morbido (ref3);
+ *  · sotto, una pill flottante in basso, in glass (ref2). In basso e non in
+ *    alto perché la dashboard si usa camminando, con una mano, e il pollice
+ *    non arriva in cima allo schermo.
  *
  * Il movimento qui fa una cosa sola: dire che la pagina è cambiata. Niente
  * scroll animato (in una lista di lavoro è un intralcio) e niente entrate
  * lunghe: 0.4s e via.
  */
 
-const ICONS: Record<string, typeof Sun> = {
+const ICONS: Record<string, LucideIcon> = {
   '/staff': Sun,
-  '/staff/pipeline': Layers,
+  '/staff/pipeline': LayoutGrid,
+  '/staff/clienti': Users,
   '/staff/campo': MapPin,
-  '/staff/soldi': Euro,
+  '/staff/soldi': Banknote,
+  '/staff/progetti': Folder,
+  '/staff/statistiche': PieChart,
+  '/staff/team': Users,
+  '/staff/risorse': BookOpen,
+  '/staff/lab-ai': Sparkles,
+  '/staff/agent': Bot,
 }
 
 export default function StaffShell({
@@ -50,15 +71,13 @@ export default function StaffShell({
 
   return (
     <div className="lm-staff-shell">
-      <StaffCursor />
-
       <header className="lm-staff-top">
         <Link href="/staff" className="lm-staff-brand" aria-label="Lumino Staff">
           <Wordmark animated={false} />
           <span className="lm-staff-tag">Staff</span>
         </Link>
-        <span className="lm-staff-initial" aria-hidden="true">
-          {me.nome.trim().charAt(0).toUpperCase()}
+        <span className="lm-staff-avatar" aria-hidden="true">
+          {iniziale(me.nome)}
         </span>
       </header>
 
@@ -75,8 +94,13 @@ export default function StaffShell({
         </div>
 
         <div className="lm-staff-me">
-          <strong>{me.nome}</strong>
-          {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+          <span className="lm-staff-avatar" aria-hidden="true">
+            {iniziale(me.nome)}
+          </span>
+          <span>
+            <strong>{me.nome}</strong>
+            {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+          </span>
           <LogoutButton />
         </div>
       </nav>
@@ -87,7 +111,7 @@ export default function StaffShell({
 
       <nav className="lm-staff-dock" aria-label="Sezioni">
         {tabs.map((item) => {
-          const Icon = ICONS[item.href] ?? Layers
+          const Icon = ICONS[item.href] ?? LayoutGrid
           return (
             <Link
               key={item.href}
@@ -120,7 +144,7 @@ export default function StaffShell({
           onClick={() => setSheetOpen(false)}
         >
           <div className="lm-staff-sheet-inner" onClick={(event) => event.stopPropagation()}>
-            <span className="lm-staff-label">Tutte le sezioni</span>
+            <span className="lm-label">Tutte le sezioni</span>
             <div className="lm-staff-nav">
               {items
                 .filter((item) => !item.mobile)
@@ -129,8 +153,13 @@ export default function StaffShell({
                 ))}
             </div>
             <div className="lm-staff-me">
-              <strong>{me.nome}</strong>
-              {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+              <span className="lm-staff-avatar" aria-hidden="true">
+                {iniziale(me.nome)}
+              </span>
+              <span>
+                <strong>{me.nome}</strong>
+                {me.role === 'admin' ? 'Amministratore' : 'Venditore'}
+              </span>
               <LogoutButton />
             </div>
           </div>
@@ -142,14 +171,15 @@ export default function StaffShell({
 
 function NavLink({ item, active }: { item: StaffNavItem; active: string }) {
   const soon = item.fase > 1
+  const Icon = ICONS[item.href] ?? LayoutGrid
   return (
     <Link
       href={item.href}
       className="lm-staff-link"
       data-soon={soon}
       aria-current={active === item.href ? 'page' : undefined}
-      data-cursor="grow"
     >
+      <Icon aria-hidden="true" />
       {item.label}
       {soon && <span className="lm-staff-soon">in arrivo</span>}
     </Link>
@@ -165,6 +195,10 @@ function LogoutButton() {
       </button>
     </form>
   )
+}
+
+function iniziale(nome: string): string {
+  return nome.trim().charAt(0).toUpperCase()
 }
 
 /**
@@ -189,8 +223,8 @@ function PageEnter({ children }: { children: React.ReactNode }) {
 
     const tween = gsap.fromTo(
       el,
-      { opacity: 0, y: 14 },
-      { opacity: 1, y: 0, duration: 0.42, ease: 'power2.out', clearProps: 'transform' },
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out', clearProps: 'transform' },
     )
     return () => {
       tween.kill()
@@ -201,67 +235,5 @@ function PageEnter({ children }: { children: React.ReactNode }) {
     <div ref={ref} className="lm-staff-enter">
       {children}
     </div>
-  )
-}
-
-/**
- * Il cursore della vetrina, ridotto all'osso: il punto che segue e l'anello che
- * insegue. Nessun alone, nessuna parola dentro un disco — lì serviva a invitare
- * al clic, qui si sta lavorando.
- *
- * Solo con un mouse vero (onMouseEffectsChange): col dito un anello che
- * inseguisce il tocco è solo un ritardo visibile.
- */
-function StaffCursor() {
-  const dotRef = useRef<HTMLDivElement>(null)
-  const ringRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const dot = dotRef.current
-    const ring = ringRef.current
-    if (!dot || !ring) return
-
-    let raf = 0
-    let stop: (() => void) | null = null
-    const at = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
-
-    const tick = () => {
-      dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`
-      at.x = lerp(at.x, pointer.x, 0.18)
-      at.y = lerp(at.y, pointer.y, 0.18)
-      ring.style.transform = `translate3d(${at.x}px, ${at.y}px, 0)`
-      raf = requestAnimationFrame(tick)
-    }
-
-    /* Lo stato sta sul contenitore e non sul body: è quello che nasconde il
-       cursore di sistema, e deve smettere di valere appena si esce da /staff. */
-    const shell = dot.closest('.lm-staff') as HTMLElement | null
-
-    const unsubscribe = onMouseEffectsChange((enabled) => {
-      if (enabled && !stop) {
-        stop = trackPointer()
-        shell?.setAttribute('data-cursor-on', 'true')
-        raf = requestAnimationFrame(tick)
-      } else if (!enabled && stop) {
-        cancelAnimationFrame(raf)
-        stop()
-        stop = null
-        shell?.removeAttribute('data-cursor-on')
-      }
-    })
-
-    return () => {
-      unsubscribe()
-      cancelAnimationFrame(raf)
-      stop?.()
-      shell?.removeAttribute('data-cursor-on')
-    }
-  }, [])
-
-  return (
-    <>
-      <div className="lm-staff-cur" ref={dotRef} aria-hidden="true" />
-      <div className="lm-staff-cur-ring" ref={ringRef} aria-hidden="true" />
-    </>
   )
 }

@@ -18,7 +18,6 @@ export default async function Page() {
 
   return (
     <Soon
-      sezione="Team"
       titolo="La squadra"
       testo="Chi c'è, con che ruolo, con quale obiettivo mensile e quale provvigione. Gli account si creano da Supabase, qui si gestisce il resto."
       fase={4}

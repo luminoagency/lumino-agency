@@ -21,10 +21,10 @@ export interface StaffNavItem {
 
 export const STAFF_NAV: StaffNavItem[] = [
   { href: '/staff', label: 'Oggi', short: 'Oggi', fase: 1, mobile: true },
-  { href: '/staff/pipeline', label: 'Pipeline', short: 'Pipeline', fase: 2, mobile: true },
-  { href: '/staff/clienti', label: 'Clienti', short: 'Clienti', fase: 2 },
+  { href: '/staff/pipeline', label: 'Pipeline', short: 'Pipeline', fase: 1, mobile: true },
+  { href: '/staff/clienti', label: 'Clienti', short: 'Clienti', fase: 1, mobile: true },
   { href: '/staff/campo', label: 'Campo', short: 'Campo', fase: 3, mobile: true },
-  { href: '/staff/soldi', label: 'Soldi', short: 'Soldi', fase: 4, mobile: true },
+  { href: '/staff/soldi', label: 'Soldi', short: 'Soldi', fase: 4 },
   { href: '/staff/progetti', label: 'Progetti', short: 'Progetti', fase: 4 },
   { href: '/staff/statistiche', label: 'Statistiche', short: 'Stats', fase: 4 },
   { href: '/staff/team', label: 'Team', short: 'Team', fase: 4, adminOnly: true },
