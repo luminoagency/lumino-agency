@@ -64,10 +64,32 @@ function fraOre(giorni: number, ora = 10): string {
   return d.toISOString()
 }
 
-/** Un uuid stabile e leggibile: demo-0001-… si riconosce a colpo d'occhio. */
+/**
+ * Un uuid stabile e riconoscibile: comincia sempre per `de` — demo.
+ *
+ * Deve essere un uuid **valido**, non solo somigliargli: Postgres rifiuta
+ * `dec0001-…` perché il primo gruppo vuole otto cifre esadecimali e `s`, `p`,
+ * `r` non sono cifre esadecimali. Quindi la lettera che distingue la tabella
+ * non entra nel testo dell'uuid: diventa un codice nel secondo gruppo.
+ *
+ * Stabile perché il seed deve poter essere rilanciato senza duplicare niente,
+ * e perché in anteprima i link devono restare gli stessi fra un render e
+ * l'altro.
+ */
+const CODICI: Record<string, string> = {
+  c: '0001', // clienti
+  d: '0002', // trattative
+  s: '0003', // abbonamenti
+  p: '0004', // progetti
+  a: '0005', // attività (la visita)
+  b: '0006', // attività (chiamata, messaggio, nota)
+  f: '0007', // follow-up
+  r: '0008', // report di campo
+}
+
 function id(prefisso: string, n: number): string {
-  const s = String(n).padStart(4, '0')
-  return `de${prefisso}${s}-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const h = n.toString(16).padStart(6, '0')
+  return `de${h}-${CODICI[prefisso]}-4000-8000-${h.padStart(12, '0')}`
 }
 
 /* Le coordinate dei capoluoghi in cui si vende: servono alla mappa delle
@@ -152,7 +174,7 @@ export interface RigheDemo {
 }
 
 export const PROFILO_DEMO = {
-  id: 'de0000-0000-4000-8000-000000000000',
+  id: 'de000000-0000-4000-8000-000000000000',
   nome: 'Marco Bianchi',
   email: 'demo@bylumino.com',
   telefono: null,
@@ -163,7 +185,7 @@ export const PROFILO_DEMO = {
 }
 
 const COLLEGA_DEMO = {
-  id: 'de0000-0000-4000-8000-000000000001',
+  id: 'de000000-0000-4000-8000-000000000001',
   nome: 'Sofia Rinaldi',
   email: 'sofia@bylumino.com',
   telefono: null,
@@ -293,7 +315,9 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
       subs.push({
         id: id('s', i + 1),
         client_id: clientId,
-        tipo: i % 3 === 0 ? 'manutenzione' : i % 3 === 1 ? 'hosting + dominio' : 'social',
+        /* I quattro tipi del check constraint della tabella, a rotazione:
+           un valore inventato qui fa fallire tutto il seed. */
+        tipo: ['manutenzione', 'hosting', 'social', 'seo'][i % 4],
         importo_mensile: 39 + (i % 4) * 20,
         data_inizio: fra(-(35 - i)),
         data_rinnovo: fra((i % 5) * 7 - 4),
