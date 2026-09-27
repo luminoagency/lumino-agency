@@ -1998,9 +1998,16 @@
 /* ───────────────────────────────────────────────────────────────────────────
    Il modulo della visita
    ─────────────────────────────────────────────────────────────────────────── */
+/* Sul telefono la barra delle azioni è fissa e copre il fondo della pagina:
+   il modulo si lascia sotto tanto spazio quanto la barra occupa, altrimenti
+   l'ultimo campo resta irraggiungibile proprio mentre lo si compila. */
 .lm-visita {
-  /* Lo spazio per la barra in fondo, che è fissa sul telefono. */
-  padding-bottom: 1.2rem;
+  margin-bottom: 4.2rem;
+}
+@media (min-width: 960px) {
+  .lm-visita {
+    margin-bottom: 0;
+  }
 }
 .lm-visita-blocchi {
   display: flex;
