@@ -154,9 +154,9 @@ export default function PhotoPicker({
 /**
  * La foto rimpicciolita, in JPEG.
  *
- * `createImageBitmap` invece di un <img> con onload: è più veloce, non tocca
- * il DOM e sui telefoni recenti decodifica fuori dal thread principale —
- * cioè l'interfaccia non si blocca mentre si carica.
+ * `createImageBitmap` invece di un elemento immagine con onload: è più veloce,
+ * non tocca il DOM e sui telefoni recenti decodifica fuori dal thread
+ * principale — cioè l'interfaccia non si blocca mentre si carica.
  *
  * Sempre JPEG in uscita, anche partendo da PNG: una foto non ha trasparenza
  * da difendere, e un PNG di una vetrina pesa il triplo.
