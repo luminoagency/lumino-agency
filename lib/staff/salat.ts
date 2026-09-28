@@ -88,6 +88,31 @@ export interface Posizione {
   citta: string
   /** Quando è stata rilevata: serve a sapere quando vale la pena richiederla. */
   at: number
+  /**
+   * Da dove viene, e quindi quanto fidarsi.
+   *
+   * `gps` è precisa al metro, `scelta` è quella che ha detto l'utente (che è la
+   * verità per definizione), `ip` è il comune visto dal bordo della rete —
+   * giusto in città, sbagliato di venti chilometri con un operatore mobile — e
+   * `ripiego` è la costante del server, cioè «non lo sappiamo».
+   *
+   * Non è un'informazione di servizio: decide **se si può sovrascrivere**. Una
+   * posizione da `ip` la rimpiazza il GPS appena arriva; una `scelta` no, perché
+   * chi ha scritto «Padova» non vuole vedersi correggere dal telefono che è a
+   * Ponte di Brenta. E decide se l'interfaccia deve dire da dove viene: sotto un
+   * orario di preghiera, «circa, da Venezia» e «Jesolo» non sono la stessa
+   * promessa.
+   *
+   * Opzionale perché nel `localStorage` di chi usa la dashboard da prima non
+   * c'è: chi la legge tratta l'assenza come `scelta`, che è il caso in cui non
+   * si sovrascrive niente — l'ipotesi prudente.
+   */
+  fonte?: 'gps' | 'scelta' | 'ip' | 'ripiego'
+}
+
+/** Una posizione che il GPS ha il diritto di correggere. */
+export function eApprossimativa(p: Posizione | null): boolean {
+  return p?.fonte === 'ip' || p?.fonte === 'ripiego'
 }
 
 export interface ImpostazioniSalat {
@@ -114,6 +139,62 @@ export const IMPOSTAZIONI_DEFAULT: ImpostazioniSalat = {
 
 const CHIAVE_IMPOSTAZIONI = 'lm_salat'
 const CHIAVE_POSIZIONE = 'lm_salat_pos'
+/**
+ * «Il permesso me l'hanno già negato».
+ *
+ * `navigator.permissions.query({name:'geolocation'})` sarebbe il posto giusto per
+ * saperlo, ma su Safari non esiste e su Firefox il rifiuto «solo per questa
+ * volta» torna a `prompt`: chiedere di nuovo fa ricomparire la finestra a ogni
+ * apertura della dashboard, che è il modo più sicuro di farsi negare il permesso
+ * per sempre. Segnato qui, la richiesta automatica si fa **una volta** e poi si
+ * chiede la città a parole. Il bottone «usa la mia posizione» nelle impostazioni
+ * continua a funzionare: quello è un gesto, e a un gesto si risponde sempre.
+ */
+const CHIAVE_NEGATO = 'lm_salat_negato'
+
+export function permessoNegato(): boolean {
+  try {
+    return localStorage.getItem(CHIAVE_NEGATO) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function segnaNegato(negato: boolean): void {
+  try {
+    if (negato) localStorage.setItem(CHIAVE_NEGATO, '1')
+    else localStorage.removeItem(CHIAVE_NEGATO)
+  } catch {
+    /* Finestra privata: si richiederà la prossima volta. Pazienza. */
+  }
+}
+
+/**
+ * La posizione vista dal server, dalle intestazioni di Vercel.
+ *
+ * Non costa una chiamata a un servizio di geolocalizzazione: l'IP l'ha già
+ * risolto il bordo della rete, la route legge un'intestazione. Serve a **non
+ * restare mai** sul messaggio «dove siamo?»: parte insieme alla richiesta del
+ * permesso, e se il permesso tarda o non arriva gli orari ci sono comunque, con
+ * scritto accanto da dove vengono.
+ */
+export async function posizioneDaIp(): Promise<Posizione | null> {
+  try {
+    const r = await fetch('/api/staff/geo?ip=1')
+    if (!r.ok) return null
+    const d = (await r.json()) as { citta?: string; lat?: number; lng?: number; fonte?: string }
+    if (!Number.isFinite(d.lat) || !Number.isFinite(d.lng)) return null
+    return {
+      lat: d.lat as number,
+      lng: d.lng as number,
+      citta: d.citta ?? '',
+      at: Date.now(),
+      fonte: d.fonte === 'ip' ? 'ip' : 'ripiego',
+    }
+  } catch {
+    return null
+  }
+}
 
 /**
  * Legge le preferenze, e non si fida di quello che trova.

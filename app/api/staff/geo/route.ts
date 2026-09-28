@@ -31,6 +31,20 @@ const UA = 'LuminoStaffDashboard/1.0 (+https://bylumino.com; staff@bylumino.com)
 const TTL = 86_400_000
 
 /**
+ * La città di ripiego, quando non si sa proprio niente.
+ *
+ * Serve perché un widget di orari di preghiera che dice «dove siamo?» non serve
+ * a nulla: meglio gli orari di Venezia — che a Jesolo, Mestre o Padova sbagliano
+ * di un paio di minuti — scritti accanto al nome della città da cui vengono, così
+ * si vede subito che è un ripiego e si può correggerlo. Il territorio di Lumino è
+ * il Veneto: il centro geografico giusto è la laguna, non Roma né Greenwich.
+ *
+ * Un ripiego dichiarato è meglio di un vuoto in due modi: gli orari ci sono, e si
+ * sa che vanno confermati.
+ */
+const RIPIEGO = { citta: 'Venezia', lat: 45.4408, lng: 12.3155 } as const
+
+/**
  * La cache è in memoria del processo, non in Redis e non in un cookie.
  *
  * Su Vercel free ogni istanza fredda riparte vuota, e va benissimo: non è una
@@ -70,6 +84,36 @@ export async function GET(req: Request) {
   const lat = Number(url.searchParams.get('lat'))
   const lng = Number(url.searchParams.get('lng'))
   const q = (url.searchParams.get('q') ?? '').trim()
+
+  /* ── il ripiego immediato, prima di chiedere il GPS ──────────────────────
+     Il widget lo chiama al primo caricamento, in parallelo alla richiesta del
+     permesso di geolocalizzazione, e non in alternativa: il permesso è una
+     finestra che qualcuno può lasciare aperta per un minuto, e in quel minuto
+     gli orari ci sono comunque. Quando il GPS risponde, la posizione precisa
+     prende il posto di questa.
+
+     Le coordinate arrivano dalle intestazioni che Vercel mette su ogni
+     richiesta — nessun servizio esterno, nessuna chiave, nessuna chiamata, e
+     quindi nessun ritardo: l'IP l'ha già risolto il bordo della rete prima che
+     questa funzione partisse. In locale quelle intestazioni non ci sono e si
+     usa RIPIEGO. */
+  if (url.searchParams.get('ip') === '1') {
+    const h = req.headers
+    const hlat = Number(h.get('x-vercel-ip-latitude'))
+    const hlng = Number(h.get('x-vercel-ip-longitude'))
+    /* La città arriva codificata in percentuale: «Reggio%20Emilia». */
+    const hcitta = decodeURIComponent(h.get('x-vercel-ip-city') ?? '').trim()
+
+    if (Number.isFinite(hlat) && Number.isFinite(hlng) && hlat !== 0 && hlng !== 0) {
+      return NextResponse.json({
+        citta: hcitta || '',
+        lat: hlat,
+        lng: hlng,
+        fonte: 'ip' as const,
+      })
+    }
+    return NextResponse.json({ ...RIPIEGO, fonte: 'ripiego' as const })
+  }
 
   const chiave = q ? `q:${q.toLowerCase()}` : `r:${lat.toFixed(2)},${lng.toFixed(2)}`
   const pronta = dallaCache(chiave)

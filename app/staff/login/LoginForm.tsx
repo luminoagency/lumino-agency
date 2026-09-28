@@ -26,7 +26,17 @@ export default function LoginForm({ next }: { next: string }) {
     setError(null)
 
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    /* L'email si normalizza prima di partire. Il riempimento automatico del
+       browser restituisce quello che l'utente ha salvato la prima volta, spazio
+       finale e maiuscole comprese — «RATIB.LUMINO@gmail.com» è esattamente il
+       caso visto — e la parte prima della @ è, per lo standard, sensibile alle
+       maiuscole: chi confronta le due stringhe decide se sono lo stesso
+       indirizzo, e quel chi non siamo noi. Qui l'ambiguità si toglie prima di
+       chiederlo, che costa una riga. */
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
 
     if (authError) {
       /* Il messaggio non dice MAI quale dei due è sbagliato: distinguerli

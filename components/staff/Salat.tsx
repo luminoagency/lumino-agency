@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, BellOff, Check, Clock, MapPin, Search, Settings2, X } from 'lucide-react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Bell, BellOff, Check, Clock, MapPin, Moon, Search, Settings2, X } from 'lucide-react'
 import { ayahDelGiro } from '@/lib/staff/ayat'
 import {
   IMPOSTAZIONI_DEFAULT,
@@ -13,10 +14,14 @@ import {
   chiediPosizione,
   cittaDaCoordinate,
   contoAllaRovescia,
+  eApprossimativa,
   leggiImpostazioni,
   leggiPosizione,
+  permessoNegato,
+  posizioneDaIp,
   scriviImpostazioni,
   scriviPosizione,
+  segnaNegato,
   stato as calcolaStato,
   type CittaTrovata,
   type ImpostazioniSalat,
@@ -36,13 +41,21 @@ import {
  * dati, quindi funziona offline e non ha un servizio che possa spegnersi. Vedi
  * `lib/staff/salat.ts`.
  *
- * **Non chiede il GPS all'apertura della pagina.** È la stessa decisione della
- * nuova visita in F3, per la stessa ragione: il permesso del browser è una
- * finestra che copre tutto, e chiederlo mentre qualcuno sta aprendo la pipeline
- * vuol dire vederlo negare per sempre. Al primo avvio il widget chiede *dove
- * siamo* con due bottoni, e il permesso arriva dopo che lo si è premuto. Se il
- * permesso c'è già da un'altra volta, la posizione si rinfresca in silenzio: è
- * così che la città cambia da sola cambiando posto.
+ * **La posizione la prende da sé, e non resta mai su «dove siamo?».** Al primo
+ * caricamento partono due cose insieme:
+ *   · il ripiego dal server, che legge l'IP dalle intestazioni di Vercel e
+ *     costa zero chiamate — gli orari ci sono entro il primo fotogramma utile,
+ *     con scritto accanto da dove vengono;
+ *   · la richiesta del permesso vera, con una riga di spiegazione sotto la pill
+ *     mentre la finestra del browser è aperta.
+ * Quando il GPS risponde, la sua posizione **sostituisce** il ripiego; se il
+ * ripiego fosse arrivato dopo, non lo sovrascrive (`eApprossimativa`).
+ *
+ * La richiesta automatica si fa **una volta per dispositivo**: un rifiuto resta
+ * segnato e da lì in poi si chiede la città a parole. Chiedere di nuovo a ogni
+ * apertura è il modo più sicuro di farsi negare il permesso per sempre — che era
+ * la ragione per cui prima non si chiedeva affatto. Il compromesso vero non è
+ * «mai» ma «una volta, e poi si ricorda».
  */
 export default function Salat() {
   const [imp, setImp] = useState<ImpostazioniSalat | null>(null)
@@ -57,8 +70,46 @@ export default function Salat() {
   const [giro, setGiro] = useState(0)
   const [dissolve, setDissolve] = useState(false)
   const [inCorso, setInCorso] = useState(false)
+  /* La finestra del permesso è aperta in questo momento: sotto la pill compare
+     una riga che dice perché. Dura quanto la finestra e non un millisecondo di
+     più — una spiegazione che resta dopo la risposta è un avviso. */
+  const [chiedendo, setChiedendo] = useState(false)
+
+  const pillRef = useRef<HTMLButtonElement>(null)
+  const pannelloRef = useRef<HTMLDivElement>(null)
+  /* `document` non esiste sul server, e `createPortal` lo pretende: si disegna
+     solo dopo il primo montaggio. Il pannello è chiuso al primo render in ogni
+     caso, quindi non si perde niente. */
+  const montato = usaMontato()
+  const ancora = usaAncora(aperto, pillRef)
+  /* Stabile, non una lambda nuova a ogni render: sta nelle dipendenze di un
+     effetto che aggiunge due ascoltatori al `document`, e una funzione nuova a
+     ogni fotogramma del conto alla rovescia vorrebbe dire staccarli e
+     riattaccarli una volta al secondo. */
+  const chiudiPannello = useCallback(() => setAperto(false), [])
+  usaChiusura(aperto, chiudiPannello, pillRef, pannelloRef)
 
   /* ── avvio ─────────────────────────────────────────────────────────────── */
+  /**
+   * Due strade in parallelo, e la più precisa vince.
+   *
+   * Il vecchio avvio faceva una cosa sola: se il permesso era **già** concesso
+   * rinfrescava la posizione, altrimenti restava sul messaggio «dove siamo?»
+   * finché qualcuno non apriva il pannello e premeva un bottone. Il risultato
+   * era un widget che per la maggior parte delle persone non diceva mai un
+   * orario.
+   *
+   * Adesso:
+   *   · il ripiego dal server parte subito e solo se non c'è niente di salvato —
+   *     non è una chiamata a un servizio di geolocalizzazione, è un'intestazione
+   *     HTTP che Vercel ha già riempito, quindi arriva in una ventina di
+   *     millisecondi e gli orari compaiono di fatto insieme alla pagina;
+   *   · il permesso si chiede una volta, con la spiegazione sotto la pill.
+   *
+   * L'ordine di arrivo non è garantito, quindi nessuno dei due sovrascrive alla
+   * cieca: `eApprossimativa` dice quali posizioni si possono rimpiazzare (quelle
+   * da IP e il ripiego) e quali no (il GPS e la città scelta a mano).
+   */
   useEffect(() => {
     const impostazioni = leggiImpostazioni()
     const salvata = leggiPosizione()
@@ -68,18 +119,62 @@ export default function Salat() {
 
     if (!impostazioni.attivo) return
 
-    /* Il permesso già concesso si riusa senza chiedere niente: `permissions`
-       non esiste su Safari vecchio, e in quel caso semplicemente non si
-       rinfresca da sola — la posizione salvata resta buona. */
     let annullato = false
+
+    /* 1. Il ripiego, solo a mani vuote. Con una posizione salvata — anche
+          approssimativa — rifarlo a ogni apertura sarebbe una richiesta al
+          nostro server per un dato che è già nel localStorage. */
+    if (!salvata) {
+      void posizioneDaIp().then((ip) => {
+        if (annullato || !ip) return
+        setPos((prima) => {
+          if (prima && !eApprossimativa(prima)) return prima
+          scriviPosizione(ip)
+          return ip
+        })
+      })
+    }
+
+    /* 2. Il GPS. */
     void (async () => {
+      let stato: PermissionState | 'sconosciuto' = 'sconosciuto'
       try {
         const p = await navigator.permissions?.query({ name: 'geolocation' as PermissionName })
-        if (annullato || p?.state !== 'granted') return
-        await rilevaPosizione(true)
+        stato = p?.state ?? 'sconosciuto'
       } catch {
-        /* niente: si resta con quella salvata */
+        /* Safari vecchio non ha `permissions`: si prosegue come se fosse la
+           prima volta, ed è il ramo `sconosciuto` qui sotto a decidere. */
       }
+      if (annullato) return
+
+      if (stato === 'denied') {
+        /* Il browser lo sa già: non si chiede, e si segna per non riprovare
+           nemmeno dopo che l'utente ha ripulito i permessi per sbaglio. */
+        segnaNegato(true)
+        return
+      }
+
+      if (stato === 'granted') {
+        /* Permesso già dato: nessuna finestra, nessuna spiegazione, la
+           posizione si rinfresca in silenzio. È così che la città cambia da sé
+           cambiando posto. */
+        await rilevaPosizione(true)
+        return
+      }
+
+      /* Da qui è `prompt` o `sconosciuto`: la finestra comparirà. Si chiede una
+         volta sola nella vita di questo dispositivo. */
+      if (permessoNegato()) return
+      if (salvata && !eApprossimativa(salvata)) return
+
+      setChiedendo(true)
+      const ok = await rilevaPosizione(true)
+      if (annullato) return
+      setChiedendo(false)
+      /* Un rifiuto e un timeout arrivano identici da `getCurrentPosition`, e
+         vanno trattati identici: in entrambi i casi non si insiste. Chi ha solo
+         avuto una brutta connessione ha il bottone nelle impostazioni. */
+      if (!ok) segnaNegato(true)
     })()
 
     return () => {
@@ -210,13 +305,19 @@ export default function Salat() {
       setInCorso(false)
       return false
     }
-    /* La città arriva dopo le coordinate e non insieme: gli orari sono già
-       giusti senza il nome, e far aspettare Nominatim per un'etichetta vorrebbe
-       dire un widget vuoto per mezzo secondo. */
-    const salvata: Posizione = { ...coord, citta: leggiPosizione()?.citta ?? '', at: Date.now() }
+    /* Il nome della città vecchia non si porta dietro: con il ripiego da IP
+       quel nome è «Venezia» mentre le coordinate nuove sono di Jesolo, e
+       tenerlo vorrebbe dire scrivere sotto gli orari una città in cui non si è.
+       Meglio nessun nome per il mezzo secondo che serve a Nominatim: gli orari,
+       che sono la cosa che conta, sono già giusti. */
+    const salvata: Posizione = { ...coord, citta: '', at: Date.now(), fonte: 'gps' }
     setPos(salvata)
     scriviPosizione(salvata)
     setInCorso(false)
+    /* Il permesso c'è: se era stato negato in passato, quella memoria non vale
+       più. Senza questa riga chi lo concede dopo averlo negato non si vedrebbe
+       più rinfrescare la posizione da sé. */
+    segnaNegato(false)
 
     const citta = await cittaDaCoordinate(coord.lat, coord.lng)
     if (citta) {
@@ -228,7 +329,15 @@ export default function Salat() {
   }, [])
 
   const scegliCitta = useCallback((c: CittaTrovata) => {
-    const salvata: Posizione = { lat: c.lat, lng: c.lng, citta: c.nome, at: Date.now() }
+    /* `scelta` è la fonte che nessuno sovrascrive: chi ha scritto «Padova» non
+       vuole vedersi correggere dal telefono che è a Ponte di Brenta. */
+    const salvata: Posizione = {
+      lat: c.lat,
+      lng: c.lng,
+      citta: c.nome,
+      at: Date.now(),
+      fonte: 'scelta',
+    }
     setPos(salvata)
     scriviPosizione(salvata)
   }, [])
@@ -249,42 +358,32 @@ export default function Salat() {
   if (!pronto || !imp?.attivo) return null
 
   const ayah = ayahDelGiro(giro)
+  /* Quindici minuti: la soglia oltre la quale la pill diventa nera. Non è
+     decorazione — è l'unico momento in cui quel widget ha qualcosa di urgente da
+     dire, e il nero è l'accento di questa interfaccia. Il resto del tempo resta
+     vetro, come gli altri controlli. */
+  const vicina = Boolean(st && st.mancano <= 900)
 
-  return (
-    <div className="lm-salat" data-aperto={aperto}>
-      <button
-        type="button"
-        className="lm-salat-pill"
-        aria-expanded={aperto}
-        onClick={() => setAperto((v) => !v)}
-      >
-        {st ? (
-          <>
-            <span className="lm-salat-punto" aria-hidden="true" />
-            <span className="lm-salat-pill-testo">
-              <b>{NOME_PREGHIERA[st.prossima.chiave]}</b>
-              <small>fra {contoAllaRovescia(st.mancano)}</small>
-            </span>
-            <span className="lm-salat-ora">{st.prossima.ora}</span>
-          </>
-        ) : (
-          <>
-            <Clock aria-hidden="true" />
-            <span className="lm-salat-pill-testo">
-              <b>Orari preghiera</b>
-              <small>dove siamo?</small>
-            </span>
-          </>
-        )}
-      </button>
-
-      {aperto && (
-        <div className="lm-salat-panel" role="dialog" aria-label="Orari della preghiera">
+  const corpo = (
+    <div
+      className="lm-salat-panel"
+      role="dialog"
+      aria-label="Orari della preghiera"
+      ref={pannelloRef}
+      style={ancora ? { top: ancora.top, right: ancora.right } : undefined}
+    >
           <div className="lm-salat-head">
             <span className="lm-label">
               {pos?.citta ? (
                 <>
                   <MapPin aria-hidden="true" /> {pos.citta}
+                  {/* Da dove viene la posizione, quando non è precisa. Un orario
+                      di preghiera con due minuti di errore e un orario esatto si
+                      scrivono uguali: se non si dice quale dei due è, si finisce
+                      per fidarsi di quello sbagliato. «circa» è tutto lo spazio
+                      che serve per dirlo, e il bottone per correggerlo è nelle
+                      impostazioni accanto. */}
+                  {eApprossimativa(pos) && <em className="lm-salat-circa">circa</em>}
                 </>
               ) : (
                 'Orari della preghiera'
@@ -375,15 +474,169 @@ export default function Salat() {
               rileva={() => rilevaPosizione()}
               scegliCitta={scegliCitta}
               inCorso={inCorso}
+              negato={permessoNegato()}
             />
           )}
-        </div>
+    </div>
+  )
+
+  return (
+    <div className="lm-salat" data-aperto={aperto}>
+      <button
+        ref={pillRef}
+        type="button"
+        className="lm-salat-pill"
+        data-vicina={vicina || undefined}
+        aria-expanded={aperto}
+        onClick={() => setAperto((v) => !v)}
+      >
+        {st ? (
+          <>
+            {/* Il punto pulsa solo quando la preghiera è vicina. Un indicatore
+                che batte sempre non indica più niente: è l'animazione di fondo
+                di un pannello, cioè esattamente ciò che questa interfaccia non
+                vuole essere. Il resto del tempo è una luna ferma. */}
+            {vicina ? (
+              <span className="lm-salat-punto" aria-hidden="true" />
+            ) : (
+              <Moon aria-hidden="true" />
+            )}
+            <span className="lm-salat-pill-testo">
+              <b>{NOME_PREGHIERA[st.prossima.chiave]}</b>
+              <small>fra {contoAllaRovescia(st.mancano)}</small>
+            </span>
+            <span className="lm-salat-ora">{st.prossima.ora}</span>
+          </>
+        ) : (
+          <>
+            <Clock aria-hidden="true" />
+            <span className="lm-salat-pill-testo">
+              <b>Orari preghiera</b>
+              {/* Tre stati diversi, tre frasi diverse. «dove siamo?» era una
+                  domanda a cui l'utente non poteva rispondere da lì, e restava
+                  scritta anche mentre il widget stava già cercando. */}
+              <small>{chiedendo ? 'consenti la posizione' : inCorso ? 'cerco…' : 'scegli la città'}</small>
+            </span>
+          </>
+        )}
+      </button>
+
+      {/* La spiegazione breve, sotto la pill e solo mentre la finestra del
+          permesso è aperta. Sta qui e non dentro il pannello perché il pannello
+          in quel momento è chiuso, e una spiegazione che compare dopo la
+          risposta non spiega niente. */}
+      {chiedendo && (
+        <p className="lm-salat-spiega" role="status">
+          Serve la posizione per calcolare gli orari esatti. Resta sul dispositivo.
+        </p>
       )}
+
+      {/* Il pannello esce dal flusso e va in fondo al body.
+          Non è un vezzo: il pannello di vetro della shell ha `overflow-y: auto`
+          sulla colonna del contenuto, e un elemento in posizione assoluta dentro
+          un contenitore che scorre viene **tagliato** dal suo bordo — il menù si
+          sarebbe aperto a metà. Portato sul body e messo in posizione fissa
+          rispetto alla pill, si apre dove deve e non allunga l'area di
+          scorrimento della pagina sotto. */}
+      {aperto && montato && createPortal(corpo, document.body)}
     </div>
   )
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
+
+/** Il primo montaggio è avvenuto: da qui `document` esiste. */
+function usaMontato(): boolean {
+  const [montato, setMontato] = useState(false)
+  useEffect(() => setMontato(true), [])
+  return montato
+}
+
+/**
+ * Dove disegnare il pannello, in coordinate di finestra.
+ *
+ * Il pannello è figlio del `body` (vedi il commento sul portale) quindi la sua
+ * posizione non può venire dal CSS: la si misura dalla pill. `useLayoutEffect` e
+ * non `useEffect` perché la misura deve essere pronta **prima** che il browser
+ * disegni, altrimenti il pannello compare per un fotogramma in alto a sinistra e
+ * poi salta al suo posto.
+ *
+ * Si riallinea allo scorrimento e al ridimensionamento. Il `true` in
+ * `addEventListener('scroll', …)` è la fase di cattura, e serve: la colonna del
+ * contenuto scorre per conto suo e i suoi eventi di scorrimento **non salgono**
+ * fino a `window`. Senza quel terzo argomento il pannello resterebbe appeso in
+ * aria mentre la pagina sotto scorre.
+ *
+ * Si ancora al bordo destro e non al sinistro perché la pill sta a destra: con
+ * `left` un pannello più largo della pill uscirebbe dallo schermo, con `right`
+ * cresce verso l'interno. Gli 8px di minimo sono il margine oltre il quale non
+ * si va, per il caso in cui la pill sia quasi a filo del bordo.
+ */
+function usaAncora(aperto: boolean, rif: React.RefObject<HTMLElement>) {
+  const [ancora, setAncora] = useState<{ top: number; right: number } | null>(null)
+
+  useLayoutEffect(() => {
+    if (!aperto) {
+      setAncora(null)
+      return
+    }
+    const misura = () => {
+      const el = rif.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      setAncora({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) })
+    }
+    misura()
+    window.addEventListener('resize', misura)
+    window.addEventListener('scroll', misura, true)
+    return () => {
+      window.removeEventListener('resize', misura)
+      window.removeEventListener('scroll', misura, true)
+    }
+  }, [aperto, rif])
+
+  return ancora
+}
+
+/**
+ * Si chiude cliccando fuori e con Esc.
+ *
+ * Prima si chiudeva solo con la ✕, e un pannello che resta aperto mentre si
+ * clicca altrove è un pannello che copre la pagina su cui si sta lavorando —
+ * tanto più adesso che sta in fondo al body, cioè sopra tutto.
+ *
+ * `pointerdown` e non `click`: il clic arriva dopo il rilascio, e nel frattempo
+ * l'elemento sotto ha già ricevuto il focus. La pill si esclude a mano perché il
+ * suo `onClick` fa già da interruttore: senza questa esclusione un clic sulla
+ * pill aperta la chiuderebbe due volte, cioè la riaprirebbe.
+ */
+function usaChiusura(
+  aperto: boolean,
+  chiudi: () => void,
+  pill: React.RefObject<HTMLElement>,
+  pannello: React.RefObject<HTMLElement>,
+) {
+  useEffect(() => {
+    if (!aperto) return
+
+    const fuori = (e: PointerEvent) => {
+      const t = e.target as Node | null
+      if (!t) return
+      if (pill.current?.contains(t) || pannello.current?.contains(t)) return
+      chiudi()
+    }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') chiudi()
+    }
+
+    document.addEventListener('pointerdown', fuori)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', fuori)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [aperto, chiudi, pill, pannello])
+}
 
 /**
  * «Dove siamo?»
@@ -396,18 +649,28 @@ function Dove({
   rileva,
   scegliCitta,
   inCorso,
+  negato: negatoPrima,
 }: {
   rileva: () => Promise<boolean>
   scegliCitta: (c: CittaTrovata) => void
   inCorso: boolean
+  /** Il permesso era già stato negato in una visita precedente. */
+  negato: boolean
 }) {
-  const [negato, setNegato] = useState(false)
+  /* Due sorgenti per lo stesso fatto: il rifiuto appena avvenuto in questo
+     pannello, e quello ricordato dalle volte prima. La seconda serve perché ora
+     il permesso lo chiede l'avvio del widget, non questo bottone: senza, chi ha
+     detto no all'apertura della dashboard aprirebbe il pannello e troverebbe un
+     bottone che sembra non aver mai provato niente. */
+  const [negatoOra, setNegatoOra] = useState(false)
+  const negato = negatoOra || negatoPrima
 
   return (
     <div className="lm-salat-dove">
       <p className="lm-sub">
-        Gli orari si calcolano sul posto, senza chiamare nessun servizio. Serve solo sapere dove
-        siamo.
+        {negato
+          ? 'Il browser non dà la posizione. Scrivi la città: gli orari si calcolano qui sul dispositivo, senza chiamare nessun servizio.'
+          : 'Gli orari si calcolano sul posto, senza chiamare nessun servizio. Serve solo sapere dove siamo.'}
       </p>
       <button
         type="button"
@@ -416,15 +679,15 @@ function Dove({
         disabled={inCorso}
         onClick={async () => {
           const ok = await rileva()
-          if (!ok) setNegato(true)
+          if (!ok) setNegatoOra(true)
         }}
       >
         <MapPin aria-hidden="true" />
-        {inCorso ? 'Cerco…' : 'Usa la mia posizione'}
+        {inCorso ? 'Cerco…' : negato ? 'Riprova con la posizione' : 'Usa la mia posizione'}
       </button>
-      {negato && (
+      {negatoOra && (
         <p className="lm-field-hint">
-          Il browser non l’ha data. Scrivi la città qui sotto: funziona uguale.
+          Niente da fare. Se l’hai bloccata, il lucchetto accanto all’indirizzo la rimette.
         </p>
       )}
       <CercaCitta scegliCitta={scegliCitta} />
