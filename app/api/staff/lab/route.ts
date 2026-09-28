@@ -85,6 +85,21 @@ export async function POST(req: Request) {
     { role: 'user', parts: [{ text: domanda }] },
   ]
 
+  /**
+   * Il tempo massimo per **aprire** la connessione, non per riceverla tutta.
+   *
+   * `AbortSignal.timeout(25_000)` sembrava la scelta ovvia e era un bug: quel
+   * segnale non smette di contare quando arrivano le intestazioni, quindi a
+   * venticinque secondi abortiva il **corpo che stava ancora scorrendo**. Fuori
+   * dal `try`, che a quel punto era già finito, l'abort diventava una
+   * `unhandledRejection` nei log del server e una risposta troncata a metà
+   * frase per chi leggeva. Con un controller esplicito il timer si cancella nel
+   * momento in cui la risposta comincia: da lì in poi lo stream può durare
+   * quanto vuole, ed è `maxDuration` a metterci un tetto.
+   */
+  const controller = new AbortController()
+  const scadenza = setTimeout(() => controller.abort(), 20_000)
+
   let risposta: Response
   try {
     risposta = await fetch(
@@ -99,21 +114,37 @@ export async function POST(req: Request) {
           systemInstruction: { parts: [{ text: ISTRUZIONI }] },
           generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
         }),
-        signal: AbortSignal.timeout(25_000),
+        signal: controller.signal,
       },
     )
   } catch {
     return NextResponse.json({ error: 'Il servizio non ha risposto. Riprova fra poco.' }, { status: 502 })
+  } finally {
+    clearTimeout(scadenza)
   }
 
   if (!risposta.ok || !risposta.body) {
-    /* Il piano gratuito ha un tetto al minuto, e quando lo si supera risponde
-       429. È l'unico errore che vale la pena distinguere: dice «aspetta», non
-       «è rotto», e sono due cose che l'utente gestisce in modo diverso. */
+    /* Il corpo dell'errore finisce nei log del server e **non** nella risposta:
+       contiene il nome del modello, la quota e a volte un pezzo della richiesta,
+       cioè roba che non deve arrivare a un browser. Ma senza di esso un 404 di
+       Gemini — «questo modello non è più disponibile, usa il successore» — si
+       legge in dashboard come «il servizio ha risposto male», che manda a
+       cercare un guasto di rete per un nome da cambiare in una variabile. */
+    console.error('[lab] Gemini ha risposto', risposta.status, await risposta.text().catch(() => ''))
+    /* Tre errori distinti, perché chiedono tre cose diverse a chi legge. 429 e
+       503 dicono «aspetta» (tetto del piano gratuito, modello sovraccarico); il
+       404 dice «cambia una variabile», ed è capitato davvero — Google ritira i
+       modelli e risponde 404 indicando il successore. Con un messaggio unico,
+       quel 404 si legge come un guasto di rete e si va a cercarlo nel posto
+       sbagliato per mezz'ora. */
     const messaggio =
       risposta.status === 429
         ? 'Troppe domande in poco tempo. Il piano gratuito si riprende fra un minuto.'
-        : 'Il servizio ha risposto male. Riprova fra poco.'
+        : risposta.status === 503
+          ? 'Il modello è sovraccarico in questo momento. Riprova fra un minuto.'
+          : risposta.status === 404
+            ? 'Il modello configurato non esiste più. Va cambiato GEMINI_MODEL nelle variabili d’ambiente.'
+            : 'Il servizio ha risposto male. Riprova fra poco.'
     return NextResponse.json({ error: messaggio }, { status: 502 })
   }
 

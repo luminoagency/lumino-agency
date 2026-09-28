@@ -38,8 +38,23 @@ import { SETTORE_LABEL, STATO_LABEL, euro, type Stato } from './types'
  * nome del locale**: la frase serve, chi l'ha detta no.
  */
 
-/** Il modello, e il modo di cambiarlo senza toccare il codice. */
-export const MODELLO = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+/**
+ * Il modello, e il modo di cambiarlo senza toccare il codice.
+ *
+ * Legge una variabile d'ambiente **perché l'elenco dei modelli disponibili si
+ * accorcia da solo**. Il codice diceva `gemini-2.0-flash`; alla prima chiamata
+ * vera l'API ha risposto 404 con «no longer available to new users» e ha indicato
+ * il successore — e lo stesso vale ormai per la 2.5. Non è una cosa che si può
+ * prevenire scrivendo il nome giusto una volta: si previene facendo sì che
+ * cambiarlo non richieda un deploy. `GEMINI_MODEL` su Vercel e il Lab riparte.
+ *
+ * Non si usa l'alias `gemini-flash-latest`, che pure esiste, per due ragioni: si
+ * sposta da solo — una mattina le risposte cambiano tono senza che nessuno abbia
+ * toccato niente, e le regole in `ISTRUZIONI` sono calibrate su un modello
+ * preciso — e in prova rispondeva 503 per carico mentre il modello nominato
+ * rispondeva subito.
+ */
+export const MODELLO = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
 
 /** La chiave c'è? È l'unica cosa che decide se la sezione è viva o spenta. */
 export function labAttivo(): boolean {
