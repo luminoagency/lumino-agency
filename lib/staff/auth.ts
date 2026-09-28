@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ANTEPRIMA } from './db'
@@ -11,13 +12,24 @@ import type { StaffProfile } from './types'
  * ottimistico, non una verifica. Qui si verifica davvero, e si verifica una
  * cosa in più — che quell'utente abbia una riga in staff_profiles.
  *
+ * **`cache()` non è un'ottimizzazione facoltativa: è la metà del tempo di
+ * apertura di ogni pagina.** Il layout di `(dash)` chiama questa funzione, e la
+ * chiama anche ogni `page.tsx` sotto di lui — sono due componenti server
+ * distinti, quindi senza memoria ogni navigazione fa **due** `auth.getUser()`
+ * (che è una richiesta HTTP al server di autenticazione Supabase, non una
+ * lettura di cookie) e **due** select su `staff_profiles`, in serie, prima che
+ * il primo byte parta. `cache()` di React memorizza per singola richiesta: la
+ * seconda chiamata nello stesso render restituisce il risultato della prima, e
+ * fra due richieste diverse non condivide niente — che è esattamente la
+ * garanzia che serve su un dato che dice *chi sei*.
+ *
  * Serve perché la stessa istanza Supabase autentica anche i titolari dei
  * ristoranti: un cliente con un account valido ha una sessione valida, e senza
  * questo controllo /staff gli si aprirebbe. Non essere staff non è un errore
  * di autenticazione, quindi non si rimanda al login (ci si tornerebbe in
  * cerchio): si dice che non è roba sua.
  */
-export async function requireStaff(): Promise<StaffProfile> {
+export const requireStaff = cache(async function requireStaff(): Promise<StaffProfile> {
   /* In anteprima di sviluppo non c'è nessuna sessione da verificare: il
      profilo è finto come i dati. I due lucchetti stanno in db.ts. */
   if (ANTEPRIMA) return PROFILO_DEMO
@@ -38,7 +50,11 @@ export async function requireStaff(): Promise<StaffProfile> {
     .eq('id', auth.user.id)
     .maybeSingle()
 
-  if (!profile || !profile.attivo) redirect('/staff/login?motivo=non-autorizzato')
+  /* Niente `?motivo=` nell'indirizzo: la pagina di login rifà questo stesso
+     controllo e sa distinguere «non è nello staff» da «è sospeso», mentre un
+     parametro nell'URL è una cosa che si può riscrivere a mano e che mostrerebbe
+     un messaggio scelto da chi passa per il link. */
+  if (!profile || !profile.attivo) redirect('/staff/login')
 
   /* Le tre colonne della 0033 si normalizzano a `null`: con `select('*')` su un
      database dove la migration non è passata arriverebbero `undefined`, e
@@ -51,4 +67,4 @@ export async function requireStaff(): Promise<StaffProfile> {
     saluto_custom: (riga.saluto_custom as string | null) ?? null,
     foto_url: (riga.foto_url as string | null) ?? null,
   }
-}
+})

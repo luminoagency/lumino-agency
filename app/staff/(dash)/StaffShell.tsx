@@ -115,6 +115,7 @@ export default function StaffShell({
   const tabs = vive.filter((i) => i.mobile)
   const [sheetOpen, setSheetOpen] = useState(false)
   const { fisso, blocca, aperto, apri, chiudi } = useRail()
+  const { attesa, parti } = useAttesa(pathname)
 
   /* Il pannello si chiude da sé al cambio pagina: lasciarlo aperto sopra la
      pagina appena aperta è il classico modo di sembrare rotti. */
@@ -133,16 +134,6 @@ export default function StaffShell({
           <Avatar nome={me.nome} foto={foto} size="sm" />
         </Link>
       </header>
-
-      {/* Il widget della preghiera vive nella shell e non in una pagina: si deve
-          vedere da tutta l'area. Ed è **montato una volta sola**, spostato dal
-          CSS — in alto a destra del pannello sul desktop, pill in cima sul
-          telefono. Due istanze nascoste a vicenda da un media query sembrerebbero
-          la soluzione ovvia e sarebbero due conti alla rovescia che battono
-          insieme e due notifiche per ogni orario. */}
-      <div className="lm-shell-salat">
-        <Salat />
-      </div>
 
       <div className="lm-glass">
         <nav
@@ -189,7 +180,9 @@ export default function StaffShell({
                       key={item.href}
                       item={item}
                       attiva={active === item.href}
+                      attesa={attesa === item.href}
                       indice={i}
+                      parti={parti}
                     />
                   ))}
                 </div>
@@ -241,10 +234,36 @@ export default function StaffShell({
           </div>
         </nav>
 
+        {/* Il filo parte al clic e muore quando la pagina è arrivata. Sta qui
+            dentro e non nella testata perché il pannello di vetro è il pezzo che
+            cambia contenuto: l'avanzamento deve stare sul bordo di ciò che si
+            sta sostituendo. */}
+        {attesa && <span className="lm-nav-filo" aria-hidden="true" />}
+
         <main className="lm-staff-main">
           {anteprima && (
             <p className="lm-anteprima">Anteprima di sviluppo · dati finti · sola lettura</p>
           )}
+
+          {/* Il widget della preghiera vive nella shell e non in una pagina: si
+              deve vedere da tutta l'area, ed è **montato una volta sola** — due
+              istanze nascoste a vicenda da un media query sarebbero due conti
+              alla rovescia che battono insieme e due notifiche per ogni orario.
+              Sta **fuori** da `PageEnter`, che ha `key={pathname}` e quindi si
+              rimonta a ogni navigazione: dentro, il widget si ricostruirebbe da
+              zero a ogni cambio pagina e ricomincerebbe a cercare la posizione.
+
+              Ed è **nel flusso**, prima possibile nella colonna del contenuto.
+              Prima era in posizione assoluta in alto a destra della shell, cioè
+              sopra il titolo della pagina e sopra i bottoni della testata: un
+              elemento che galleggia sopra gli altri senza appartenere a niente.
+              Qui occupa una riga sua, allineata al bordo destro del contenuto —
+              la stessa riga su cui stanno le azioni delle pagine — e non copre
+              nulla, su nessuna larghezza. */}
+          <div className="lm-shell-salat">
+            <Salat />
+          </div>
+
           <PageEnter key={pathname}>{children}</PageEnter>
         </main>
       </div>
@@ -258,6 +277,8 @@ export default function StaffShell({
               href={item.href}
               className="lm-staff-tab"
               aria-current={active === item.href ? 'page' : undefined}
+              data-attesa={attesa === item.href || undefined}
+              onClick={() => parti(item.href)}
             >
               <Icon aria-hidden="true" />
               <span>{item.short}</span>
@@ -389,14 +410,76 @@ function useRail() {
   return { fisso, blocca, aperto, apri, chiudi }
 }
 
+/**
+ * La navigazione in corso.
+ *
+ * Next 14 non ha un modo di chiedere al router «stai andando da qualche parte?»
+ * — `useLinkStatus` arriva dopo — quindi la destinazione la si segna da sé al
+ * clic e la si cancella quando `pathname` diventa quella. Non è una stima: il
+ * clic è l'inizio vero e il cambio di `pathname` è la fine vera.
+ *
+ * Serve perché senza di lui, per tutti i millisecondi che il server passa a
+ * interrogare Supabase, l'unica voce accesa è quella che si sta **lasciando**:
+ * lo schermo continua a dire di essere sulla pagina di prima, che è il motivo
+ * per cui si riclicca. Con questo, la voce puntata si accende nel fotogramma
+ * del clic.
+ *
+ * Il timeout di sicurezza non è pignoleria: se una navigazione fallisce — rete
+ * caduta, `redirect()` verso il login — `pathname` non cambia mai e la voce
+ * resterebbe accesa per sempre su una pagina dove non si è andati. Dopo otto
+ * secondi si spegne e lo schermo torna a dire il vero.
+ */
+function useAttesa(pathname: string) {
+  const [attesa, setAttesa] = useState<string | null>(null)
+  const timer = useRef<number | null>(null)
+
+  useEffect(() => {
+    setAttesa(null)
+  }, [pathname])
+
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current)
+    },
+    [],
+  )
+
+  const parti = useCallback(
+    (href: string) => {
+      if (href === pathname) return
+      setAttesa(href)
+      if (timer.current) window.clearTimeout(timer.current)
+      timer.current = window.setTimeout(() => setAttesa(null), 8000)
+    },
+    [pathname],
+  )
+
+  return { attesa, parti }
+}
+
 /** Una voce del rail: icona, etichetta che entra, tooltip per quando è chiusa. */
-function Voce({ item, attiva, indice }: { item: StaffNavItem; attiva: boolean; indice: number }) {
+function Voce({
+  item,
+  attiva,
+  attesa,
+  indice,
+  parti,
+}: {
+  item: StaffNavItem
+  attiva: boolean
+  /** Il clic è partito e la pagina non è ancora arrivata. */
+  attesa: boolean
+  indice: number
+  parti: (href: string) => void
+}) {
   const Icon = ICONS[item.href] ?? Kanban
   return (
     <Link
       href={item.href}
       className="lm-staff-link"
       aria-current={attiva ? 'page' : undefined}
+      data-attesa={attesa || undefined}
+      onClick={() => parti(item.href)}
     >
       <Icon aria-hidden="true" />
       <span className="lm-rail-label" style={sfasa(indice)}>

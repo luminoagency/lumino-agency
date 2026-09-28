@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -29,15 +30,24 @@ const DURATA_FIRMA = 21_600
 /**
  * Da percorso a URL guardabile. Una sola foto, una sola chiamata.
  *
+ * `cache()` per la stessa ragione di `requireStaff`: il layout firma l'avatar
+ * per il rail e la home lo rifirma per il saluto, quindi senza memoria ogni
+ * apertura della home paga **due** chiamate a Storage per la stessa faccia. Con
+ * la memoria di richiesta la seconda è gratis, e due firme diverse dello stesso
+ * file — che sono due URL diversi per la stessa immagine, cioè due download —
+ * diventano una.
+ *
  * Se la firma non riesce — file cancellato, bucket rifatto — torna `null` e
  * l'interfaccia mostra le iniziali. Un avatar mancante non deve poter impedire
  * l'apertura di una pagina: è la decorazione più sostituibile che ci sia.
  */
-export async function firmaAvatar(path: string | null | undefined): Promise<string | null> {
+export const firmaAvatar = cache(async function firmaAvatar(
+  path: string | null | undefined,
+): Promise<string | null> {
   if (!path) return null
   const mappa = await firmaAvatars([path])
   return mappa[path] ?? null
-}
+})
 
 /** Più avatar in un viaggio solo: la pagina Team ne mostra uno per riga. */
 export async function firmaAvatars(paths: (string | null | undefined)[]): Promise<Record<string, string>> {
