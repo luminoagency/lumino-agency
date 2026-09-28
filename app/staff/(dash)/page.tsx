@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import AreaChart, { type AreaPoint } from '@/components/staff/AreaChart'
 import AyahCard from '@/components/staff/AyahCard'
 import { Lollipop, Progress } from '@/components/staff/Bars'
@@ -17,6 +17,8 @@ import { firmaAvatar } from '@/lib/staff/avatar'
 import { staffDb } from '@/lib/staff/db'
 import { demoAttivo, senzaDemo } from '@/lib/staff/demo'
 import { flussoTeam } from '@/lib/staff/queries'
+import ChiediALumino from '@/components/staff/ChiediALumino'
+import { costruisciSaluto, datiDaRighe } from '@/lib/staff/saluto'
 import {
   STAFF_COUNTRY,
   STATI,
@@ -60,7 +62,7 @@ export default async function StaffHome() {
   const inizioMeseScorso = iso(new Date(oggi.getFullYear(), oggi.getMonth() - 1, 1))
   const fra30Giorni = iso(new Date(oggi.getTime() + 30 * 86_400_000))
 
-  const [clienti, deals, abbonamenti, followup, rinnovi, flusso] = await Promise.all([
+  const [clienti, deals, abbonamenti, followup, rinnovi, flusso, visite] = await Promise.all([
     /* `*` e non l'elenco delle colonne: serve `is_demo`, che arriva con la
        migration 0031, e nominarla esplicitamente farebbe fallire ogni query
        su un database dove non è ancora passata. Con `*` la colonna c'è se
@@ -84,6 +86,18 @@ export default async function StaffHome() {
       .order('data_rinnovo', { ascending: true })
       .limit(6),
     flussoTeam(demo),
+    /* Le visite degli ultimi giorni: servono **solo al saluto**, per poter dire
+       «ieri hai girato tre locali». Entra nel `Promise.all` e non in una
+       chiamata a parte proprio perché è accessoria: una riga in più di saluto
+       non deve aggiungere un viaggio in serie al tempo di apertura della home.
+       Due giorni di finestra e trenta righe di tetto: oltre non serve a
+       nessuna delle frasi. */
+    supabase
+      .from('staff_field_reports')
+      .select('*')
+      .gte('created_at', new Date(oggi.getTime() - 2 * 86_400_000).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(30),
   ])
 
   /* Se la migration 0030 non è ancora passata, Postgres risponde 42P01
@@ -99,6 +113,10 @@ export default async function StaffHome() {
   )
   const righeDeal = senzaDemo(
     (deals.data ?? []) as {
+      /* `client_id` serve solo al saluto — «ieri ha firmato Osteria del Ponte»
+         vuole risalire dalla trattativa al locale. Costa zero: la query usa già
+         `select('*')`, qui si dichiara una colonna che stava arrivando comunque. */
+      client_id: string
       prezzo_chiuso: number | null
       acconto_30_pagato: boolean
       saldo_70_pagato: boolean
@@ -112,6 +130,31 @@ export default async function StaffHome() {
   )
   const richiami = senzaDemo((followup.data ?? []) as FollowupRiga[], demo)
   const righeRinnovo = senzaDemo((rinnovi.data ?? []) as RinnovoRiga[], demo)
+
+  /* Il saluto si costruisce **dalle righe già caricate**, non da query sue: le
+     chiusure, i richiami e i rinnovi sono gli stessi numeri che la pagina sta
+     per disegnare, e leggerli due volte vorrebbe dire una home che può dire due
+     cose diverse sullo stesso giorno. */
+  const saluto = costruisciSaluto(
+    datiDaRighe({
+      nome: me.nome,
+      titolo: me.ruolo_titolo,
+      role: me.role,
+      salutoCustom: me.saluto_custom,
+      obiettivoMensile: me.obiettivo_mensile,
+      adesso: oggi,
+      ioSono: me.id,
+      clienti: senzaDemo((clienti.data ?? []) as RigaSaluto[], demo),
+      deals: righeDeal,
+      /* `staff_clients` arriva da PostgREST come oggetto o come array di uno, a
+         seconda della relazione: `nomeCliente` lo normalizza in tutta la pagina,
+         e qui si fa lo stesso prima di passarlo invece di insegnare al saluto
+         due forme diverse della stessa cosa. */
+      followup: richiami.map((f) => ({ data: f.data, staff_clients: { nome: nomeCliente(f.staff_clients) } })),
+      rinnovi: righeRinnovo,
+      visite: senzaDemo((visite.data ?? []) as { created_at: string; user_id: string | null }[], demo),
+    }),
+  )
 
   const perStato = new Map<Stato, number>()
   for (const riga of righeCliente) perStato.set(riga.stato, (perStato.get(riga.stato) ?? 0) + 1)
@@ -168,19 +211,7 @@ export default async function StaffHome() {
           nome, le lettere che salgono. Il PageHead resta per tutte le altre
           pagine — quelle non hanno bisogno di dire chi sei, l'hanno detto qui. */}
       <div className="lm-head-saluto">
-        <Saluto
-          nome={me.nome}
-          titolo={me.ruolo_titolo}
-          saluto={me.saluto_custom}
-          foto={foto}
-          sotto={`${new Intl.DateTimeFormat('it-IT', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          }).format(oggi)}${
-            me.obiettivo_mensile ? ` · obiettivo del mese ${euro(me.obiettivo_mensile)}` : ''
-          }`}
-        />
+        <Saluto nome={me.nome} titolo={me.ruolo_titolo} foto={foto} saluto={saluto} />
         <div className="lm-head-actions">
           <Link href="/staff/campo/nuova" className="lm-btn" data-variant="dark">
             Registra una visita
@@ -194,18 +225,7 @@ export default async function StaffHome() {
 
       {/* La barra dell'AI c'è dal primo giorno ma non finge: senza chiave è
           spenta e lo dice, invece di raccogliere una domanda e non rispondere. */}
-      <div className="lm-ask">
-        <span className="lm-ask-spark" aria-hidden="true">
-          <Sparkles />
-        </span>
-        <input
-          type="text"
-          disabled={!chiaveAI}
-          placeholder="Chiedi a Lumino — «quali settori chiudono meglio?»"
-          aria-label="Chiedi a Lumino"
-        />
-        <span className="lm-ask-note">{chiaveAI ? 'Fase 5' : 'Da attivare'}</span>
-      </div>
+      <ChiediALumino attivo={chiaveAI} />
 
       {mancaSchema && (
         <p className="lm-warn">
@@ -470,6 +490,22 @@ function zone(
    chiave esterna punta a una riga sola. Il tipo ammette anche l'array perché
    supabase-js, che non conosce i vincoli del database, la dichiara così. */
 type ClienteEmbed = { nome: string } | { nome: string }[] | null
+
+/**
+ * Le colonne del cliente che il saluto legge.
+ *
+ * `updated_at` non compare da nessun'altra parte in questa pagina ed è l'unica
+ * ragione per cui esiste questo tipo: serve a sapere quali trattative sono
+ * **ferme**, e una trattativa ferma non si riconosce dallo stato — «in
+ * trattativa» da ieri e «in trattativa» da un mese si scrivono uguali.
+ */
+interface RigaSaluto {
+  id: string
+  nome: string
+  citta: string | null
+  stato: Stato
+  updated_at: string | null
+}
 
 interface FollowupRiga {
   id: string

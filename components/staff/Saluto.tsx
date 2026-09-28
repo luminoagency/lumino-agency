@@ -2,61 +2,65 @@
 
 import { useEffect, useState } from 'react'
 import { iniziali } from '@/lib/staff/avatar'
+import type { Saluto as DatiSaluto } from '@/lib/staff/saluto'
 
 /**
  * Il benvenuto della home.
  *
- * Era «Ciao, Marco» a corpo di titolo, cioè un'intestazione di pagina con dentro
- * un nome. Qui diventa la prima cosa della giornata: la faccia di chi è entrato,
- * grande, e il nome col ruolo davanti — «Bentornato, CCO Ratib» — con le lettere
- * che salgono una dopo l'altra.
+ * Non è un'intestazione di pagina con dentro un nome: è la prima cosa della
+ * giornata, e deve dare la sensazione di entrare in casa propria. La faccia di
+ * chi è entrato, grande; il nome enorme nel gradiente Lumino; e **sotto, la riga
+ * che parla davvero** — costruita sui suoi dati veri da `lib/staff/saluto.ts`,
+ * non dall'ora e basta.
  *
- * **Il saluto lungo vale una volta al giorno.** Un'animazione che si rifà a ogni
- * navigazione sulla home diventa un pedaggio: la prima volta è bella, la
- * quindicesima è un ritardo fra sé e il lavoro. Dal secondo passaggio la stessa
- * intestazione resta, in scala ridotta e ferma. La memoria è la data di oggi in
- * `localStorage`: è del dispositivo, non dell'account, e questo è giusto — chi
- * apre la dashboard sul telefono alle otto e sul portatile alle nove ha aperto
- * due giornate, una per schermo.
+ * La gerarchia è voluta e va letta in quest'ordine: **faccia → nome → riga
+ * personale → data**. La riga personale è la seconda cosa più grande della
+ * schermata, più dei numeri delle card: è quella che dice «so chi sei e cosa hai
+ * fatto ieri», e messa in piccolo accanto alla data sarebbe una didascalia.
  *
- * **Le parole sono le stesse nelle due versioni, e non è un caso.** Cambiando i
- * testi fra server e browser si avrebbe un errore di idratazione; cambiando solo
- * la scala e cosa è visibile, il server disegna un markup che vale per entrambe e
- * il browser decide dopo, senza che niente lampeggi. Le lettere partono
- * invisibili dal CSS proprio per questo: se il JS tarda, non si vede un titolo
- * già a posto che poi rifà l'entrata.
+ * ## Il saluto lungo vale una volta al giorno
+ *
+ * Un'animazione che si rifà a ogni navigazione sulla home diventa un pedaggio:
+ * la prima volta è bella, la quindicesima è un ritardo fra sé e il lavoro. Dal
+ * secondo passaggio la stessa intestazione resta, in scala ridotta e ferma. La
+ * memoria è la data di oggi in `localStorage`: è del dispositivo, non
+ * dell'account, e questo è giusto — chi apre la dashboard sul telefono alle otto
+ * e sul portatile alle nove ha aperto due giornate, una per schermo.
+ *
+ * **La riga cambia fra le due versioni, il resto no.** Il server manda entrambe
+ * (`prima` e `rientro`), il browser sceglie dentro un effetto: così il markup
+ * che il server disegna vale per tutti e due i casi e non c'è niente da
+ * riconciliare. Le lettere partono invisibili dal CSS proprio per questo — se il
+ * JS tarda, non si vede un titolo già a posto che poi rifà l'entrata.
  */
 export default function Saluto({
   nome,
   titolo,
-  saluto,
   foto,
-  sotto,
+  saluto,
 }: {
   nome: string
   /** «CCO», «Head of Sales». Sta davanti al nome, se c'è. */
   titolo: string | null
-  /** La riga personale scelta dall'utente. Se manca, la scrive l'ora. */
-  saluto: string | null
   /** L'URL firmato della foto profilo. */
   foto: string | null
-  /** La riga di servizio: la data di oggi, e l'obiettivo del mese se c'è. */
-  sotto: string
+  saluto: DatiSaluto
 }) {
   /* `null` = non si è ancora guardato il registro: il server disegna la versione
      lunga (ferma e invisibile), il browser decide subito dopo. */
   const [lungo, setLungo] = useState<boolean | null>(null)
-  const [frase, setFrase] = useState(saluto ?? 'Buon lavoro.')
   const [rotta, setRotta] = useState(false)
 
   useEffect(() => {
-    if (!saluto) setFrase(fraseDellOra(new Date()))
     setLungo(primaVoltaOggi())
-  }, [saluto])
+  }, [])
 
   const primo = nome.trim().split(/\s+/)[0] || nome
   const etichetta = titolo ? `${titolo} ${primo}` : primo
   const mostraFoto = foto && !rotta
+  /* Finché non si sa, si mostra la riga del primo accesso: è quella scritta per
+     essere letta con attenzione, ed è il caso in cui sbagliare costa meno. */
+  const riga = lungo === false ? saluto.rientro : saluto.prima
 
   return (
     <header
@@ -79,17 +83,24 @@ export default function Saluto({
 
       <div className="lm-saluto-testo">
         <h1 className="lm-saluto-h1">
-          {/* La parola di benvenuto è l'unica cosa che la versione compatta
-              nasconde: senza di lei resta «CCO Ratib», che è un'intestazione. */}
+          {/* L'apertura è l'unica cosa che la versione compatta nasconde: senza
+              di lei resta «CCO Ratib», che è un'intestazione e basta. */}
           <span className="lm-saluto-ben">
-            <Lettere testo="Bentornato," da={0} />{' '}
+            <Lettere testo={saluto.apertura} da={0} />{' '}
           </span>
           <em>
-            <Lettere testo={etichetta} da={12} />
+            <Lettere testo={etichetta} da={saluto.apertura.length + 1} />
           </em>
         </h1>
-        <p className="lm-saluto-sub">{frase}</p>
-        <p className="lm-saluto-meta">{sotto}</p>
+
+        {/* La riga personale. `key` sul testo la fa rientrare quando cambia da
+            `prima` a `rientro`: senza, il testo si sostituirebbe a metà
+            animazione e si vedrebbe come uno scatto. */}
+        <p className="lm-saluto-riga" key={riga}>
+          {riga}
+        </p>
+
+        <p className="lm-saluto-meta">{saluto.meta}</p>
       </div>
     </header>
   )
@@ -142,12 +153,12 @@ function primaVoltaOggi(): boolean {
  * in una regola sola invece di dover ricalcolare qui. Si animano `transform` e
  * `opacity` e nient'altro, come tutto il resto dell'area.
  *
- * Gli spazi restano spazi veri (` ` dentro uno span non andrebbe a capo dove
+ * Gli spazi restano spazi veri (` ` dentro uno span non andrebbe a capo dove
  * deve): ognuno diventa una `<span>` col suo ritardo, e il testo resta
  * selezionabile e leggibile da uno screen reader perché i caratteri sono in
  * ordine e senza niente in mezzo.
  *
- * `da` sfasa il secondo blocco: il nome deve partire *dopo* che «Bentornato,» ha
+ * `da` sfasa il secondo blocco: il nome deve partire *dopo* che l'apertura ha
  * finito, o le due metà salirebbero sovrapposte.
  */
 function Lettere({ testo, da }: { testo: string; da: number }) {
@@ -159,24 +170,16 @@ function Lettere({ testo, da }: { testo: string; da: number }) {
           className="lm-lettera"
           style={{ '--l': i + da } as React.CSSProperties}
         >
-          {c === ' ' ? ' ' : c}
+          {/* Uno spazio unificatore e non uno spazio normale. `.lm-lettera` è
+              `inline-block`, e uno spazio dentro un inline-block collassa a
+              larghezza zero: «CEO Marco» si leggeva «CEOMarco». La riga che
+              c'era qui — `c === ' ' ? ' ' : c` — sostituiva uno spazio con sé
+              stesso, cioè non faceva niente. Non impedisce l'a capo dove serve:
+              l'unico spazio in gioco è quello fra il titolo e il nome, che deve
+              restare unito comunque. */}
+          {c === ' ' ? '\u00A0' : c}
         </span>
       ))}
     </>
   )
-}
-
-/**
- * La frase di riserva, quando non c'è un saluto scritto a mano.
- *
- * Quattro fasce e non ventiquattro: sono le fasce in cui si lavora
- * diversamente. Alle sei di sera si esce dalle visite, a mezzanotte si sta
- * ancora dietro a un preventivo, e le due frasi non possono essere la stessa.
- */
-function fraseDellOra(d: Date): string {
-  const h = d.getHours()
-  if (h < 6) return 'Notte fonda. Qui c’è tutto quello che serve.'
-  if (h < 12) return 'Buongiorno. La giornata è ancora tutta da scrivere.'
-  if (h < 18) return 'Buon pomeriggio. Le ore buone per una visita sono queste.'
-  return 'Buonasera. Si chiude la giornata.'
 }

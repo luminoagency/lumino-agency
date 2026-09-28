@@ -34,12 +34,19 @@ const COOKIE_DEMO = 'lm_demo'
  * e peggio, è un numero sbagliato nel suo obiettivo del mese.
  */
 export function demoAttivo(role: StaffRole): boolean {
-  /* Nell'anteprima di sviluppo i dati finti sono gli unici che esistono:
-     chiedere anche di accendere l'interruttore vorrebbe dire aprire una
-     dashboard vuota e non capire perché. La condizione è ripetuta qui invece
-     di importare ANTEPRIMA da db.ts, che importa questo file: sarebbe un
-     ciclo, e per due `process.env` non vale la pena. */
-  if (process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1') return true
+  /* Nell'anteprima di sviluppo i dati finti sono gli unici che esistono, quindi
+     partono **accesi**: chiedere anche di accendere l'interruttore vorrebbe dire
+     aprire una dashboard vuota e non capire perché.
+     Ma si possono spegnere, e serve: le schermate a zero clienti — quelle che
+     vede chi entra il primo giorno — altrimenti non si potrebbero guardare senza
+     un database vuoto, e sono proprio quelle che restano indietro. Acceso di
+     default, spento solo se l'interruttore dice esplicitamente `0`.
+     La condizione è ripetuta qui invece di importare ANTEPRIMA da db.ts, che
+     importa questo file: sarebbe un ciclo, e per due `process.env` non vale la
+     pena. */
+  if (process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1') {
+    return cookies().get(COOKIE_DEMO)?.value !== '0'
+  }
   if (role !== 'admin') return false
   return cookies().get(COOKIE_DEMO)?.value === '1'
 }
@@ -472,6 +479,30 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
       })
     }
   })
+
+  /* ── una chiusura e una visita **ieri** ────────────────────────────────────
+     I dati finti esistono per far vedere la dashboard piena, e il caso migliore
+     del saluto della home — «Ieri hai chiuso il tuo terzo locale a Treviso» — si
+     accende solo se **ieri** è successo qualcosa. Con le date generate a
+     intervalli regolari, ieri cade fra due passi e quella frase non si vedrebbe
+     mai: la funzione esisterebbe e nessuno saprebbe che c'è.
+
+     Si sposta l'ultima chiusura, non se ne aggiunge una: i totali di incassato e
+     tasso di chiusura restano quelli, cambia solo la data. */
+  const chiuseOrdinate = deals
+    .filter((d) => d.data_chiusura)
+    .sort((a, b) => String(a.data_chiusura).localeCompare(String(b.data_chiusura)))
+  const ultima = chiuseOrdinate[chiuseOrdinate.length - 1]
+  if (ultima) {
+    ultima.data_chiusura = fra(-1)
+    /* Anche il cliente risulta toccato ieri, o la scheda direbbe che la
+       trattativa è ferma da un mese mentre la home la festeggia. */
+    const suo = clients.find((c) => c.id === ultima.client_id)
+    if (suo) suo.updated_at = fraOre(-1, 17)
+  }
+
+  /* Due visite ieri, così anche «Ieri hai girato due locali» esiste in demo. */
+  for (const r of reports.slice(0, 2)) r.created_at = fraOre(-1, 11)
 
   return {
     staff_clients: clients,

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { ArrowUp, Bookmark, Square, Trash2 } from 'lucide-react'
+import { CHIAVE_DOMANDA } from '@/components/staff/ChiediALumino'
 import Modal from '@/components/staff/Modal'
 import { eliminaInsight, salvaInsight } from '@/lib/staff/azioni-f5'
 import { TIPI_INSIGHT, type Insight, type TipoInsight } from '@/lib/staff/lab-tipi'
@@ -79,6 +80,27 @@ export default function LabView({
   }, [turni])
 
   useEffect(() => () => abort.current?.abort(), [])
+
+  /**
+   * La domanda lasciata dalla riga «Chiedi a Lumino» della home.
+   *
+   * Si legge **e si cancella** nello stesso gesto: senza, tornando qui da
+   * un'altra pagina la stessa domanda ripartirebbe da sola, e una schermata che
+   * si rimette a chiedere ciò che ha già chiesto sembra rotta. `chiedi` non sta
+   * nelle dipendenze di proposito — questo effetto deve girare al montaggio e
+   * mai più, mentre `chiedi` cambia a ogni turno della conversazione. */
+  useEffect(() => {
+    if (!attivo) return
+    let q: string | null = null
+    try {
+      q = sessionStorage.getItem(CHIAVE_DOMANDA)
+      if (q) sessionStorage.removeItem(CHIAVE_DOMANDA)
+    } catch {
+      /* storage negato: si batte la domanda qui */
+    }
+    if (q) void chiedi(q)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attivo])
 
   const ferma = useCallback(() => {
     abort.current?.abort()
