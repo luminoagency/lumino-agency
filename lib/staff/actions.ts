@@ -501,7 +501,12 @@ export async function caricaFoto(
 
   const file = form.get('file')
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Nessuna foto.' }
-  if (file.size > 6_000_000) return { ok: false, error: 'Foto troppo pesante.' }
+  /* Il messaggio dice il limite e cosa fare, non solo che è troppo: «Foto
+     troppo pesante» da solo lascia a indovinare se il problema sono i mega o i
+     pixel, e chi è in piedi davanti a un locale non ha voglia di indovinare. */
+  if (file.size > 6_000_000) {
+    return { ok: false, error: 'Foto troppo pesante: il massimo è 6 MB. Rifalla con meno risoluzione.' }
+  }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     return { ok: false, error: 'Servono JPEG, PNG o WebP.' }
   }
@@ -685,7 +690,9 @@ export async function caricaAvatar(form: FormData): Promise<Esito & { path?: str
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Nessuna foto.' }
   /* Il browser ritaglia e ridimensiona a 512px prima di inviare: se arriva
      qualcosa di più grande di due mega, non è passato da lì. */
-  if (file.size > 2_000_000) return { ok: false, error: 'Foto troppo pesante.' }
+  if (file.size > 2_000_000) {
+    return { ok: false, error: 'Foto troppo pesante: il massimo è 2 MB dopo il ritaglio.' }
+  }
   if (!['image/jpeg', 'image/webp', 'image/png'].includes(file.type)) {
     return { ok: false, error: 'Servono JPEG, WebP o PNG.' }
   }

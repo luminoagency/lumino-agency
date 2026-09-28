@@ -190,7 +190,7 @@ function Nuova({ chiudi }: { chiudi: () => void }) {
           avvia(async () => {
             const esito = await creaRisorsa(form)
             if (esito.ok) chiudi()
-            else setErrore(esito.error ?? 'Non è andata.')
+            else setErrore(esito.error ?? 'La risorsa non è stata aggiunta. Riprova.')
           })
         }}
       >

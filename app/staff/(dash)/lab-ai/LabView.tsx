@@ -385,7 +385,7 @@ function Salva({ testo, chiudi }: { testo: string; chiudi: () => void }) {
             avvia(async () => {
               const esito = await salvaInsight({ tipo, titolo, contenuto: testo })
               if (esito.ok) chiudi()
-              else setErrore(esito.error ?? 'Non è andata.')
+              else setErrore(esito.error ?? 'L’insight non è stato salvato. Riprova.')
             })
           }
         >
