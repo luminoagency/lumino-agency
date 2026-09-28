@@ -56,3 +56,27 @@ await supabase.storage.createBucket('staff-avatars', {
 })
 ```
 Già creato sul progetto di produzione attuale (lo crea da sé `node scripts/staff-avatar.mjs`, se manca).
+
+## `staff-resources`
+- **Uso:** il materiale di vendita (`staff_resources.file_path`), area interna `/staff/risorse`: listino, manuale, demo per settore.
+- **Public:** no. Sono i prezzi e il manuale di vendita: un bucket pubblico vorrebbe dire che il listino ha un indirizzo indovinabile e valido per sempre. Si aprono con URL firmati da `lib/staff/f5.ts`, **validi un giorno** — un listino si apre, si guarda e si rimanda a un titolare nel giro di una giornata di lavoro, e una firma più corta lo farebbe scadere fra il momento in cui lo si cerca e quello in cui lo si mostra.
+- **Limite file:** 10MB. Oltre, si usa un link esterno: `staff_resources` accetta `file_path` **oppure** `file_url`, e il vincolo `staff_resources_ha_qualcosa` (migration 0034) impone che ce ne sia almeno uno.
+- **Mime ammessi:** `application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `video/mp4`, `…presentationml.presentation` (pptx), `…wordprocessingml.document` (docx). È un elenco di inclusione e non un controllo sull'estensione: l'estensione la sceglie chi carica, e senza un elenco chiuso questa sarebbe la via per mettere un eseguibile su un dominio nostro e mandarne il link in giro.
+- **Struttura path:** `{uuid}.{est}` in radice. Niente cartella per persona come in `staff-avatars`: il materiale è dell'azienda, non di chi l'ha caricato, e una gerarchia per autore renderebbe più difficile trovarlo senza rendere niente più sicuro.
+- **Scrittura:** solo via server action (`creaRisorsa` / `eliminaRisorsa` in `lib/staff/azioni-f5.ts`) con service-role, dopo il controllo `role === 'admin'`. La riga in tabella la scrive invece il client con i cookie, sotto la policy `staff_resources_write` della 0030. Se l'insert fallisce, il file appena caricato viene rimosso: senza quella pulizia resterebbe nel bucket senza nessuna riga che lo nomini, cioè invisibile e incancellabile dall'interfaccia.
+
+### Ricreazione (service-role)
+```js
+await supabase.storage.createBucket('staff-resources', {
+  public: false,
+  fileSizeLimit: '10MB',
+  allowedMimeTypes: [
+    'application/pdf',
+    'image/jpeg', 'image/png', 'image/webp',
+    'video/mp4',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
+})
+```
+Già creato sul progetto di produzione attuale (28 settembre 2026).

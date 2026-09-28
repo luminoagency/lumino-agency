@@ -373,9 +373,14 @@ Migration SQL in `supabase/migrations/`.
 | F2 | pipeline + scheda cliente + import CSV dei lead | fatta |
 | F3 | campo + follow-up | fatta |
 | F4 | soldi + progetti + statistiche | fatta |
-| F5 | lab AI + risorse + team + placeholder agent | da fare |
+| F5 | lab AI + risorse + team + placeholder agent | fatta |
 
 A fine di ogni fase: build pulita, commit, una riga su cosa si è fatto.
+
+Quello che la F5 ha aggiunto — Lab AI, Risorse, Team, la 0034, il rimedio al lag
+e il widget della preghiera che si trova da sé — sta in
+[`STAFF_DASHBOARD_F5.md`](./STAFF_DASHBOARD_F5.md), insieme al motivo per cui
+**le migration non si incollano più a mano**.
 
 ## Cosa è già in piedi (F1)
 
