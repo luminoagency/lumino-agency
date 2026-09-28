@@ -11,7 +11,7 @@
  */
 
 /** L'ultima fase costruita. Si alza a fine fase, non prima. */
-export const FASE_VIVA = 4
+export const FASE_VIVA = 5
 
 /**
  * I tre blocchi del rail.
