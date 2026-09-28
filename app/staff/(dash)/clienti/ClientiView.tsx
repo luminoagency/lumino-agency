@@ -146,7 +146,28 @@ export default function ClientiView({
               <ClienteCardBody cliente={cliente} prezzo={prezzi[cliente.id]} stato />
             </button>
           ))}
-          {!visibili.length && (
+          {/* Due vuoti diversi, e confonderli è il difetto che si vedeva: con
+              l'archivio a zero la colonna diceva «Nessun cliente con questi
+              filtri» mentre il contatore accanto diceva «Filtri attivi 0». Chi
+              legge va a cercare un filtro che non c'è, invece di aggiungere il
+              primo cliente. Il vuoto di partenza è una porta, non un esito. */}
+          {!visibili.length && clienti.length === 0 && (
+            <div className="lm-vuoto-porta">
+              <p>L’archivio è vuoto.</p>
+              <p className="lm-sub">
+                Il primo locale si aggiunge a mano, oppure si importa un elenco da un file CSV.
+              </p>
+              <div className="lm-vuoto-azioni">
+                <Link href="/staff/clienti/nuovo" className="lm-btn">
+                  Nuovo cliente
+                </Link>
+                <Link href="/staff/clienti/importa" className="lm-btn" data-variant="ghost">
+                  Importa CSV
+                </Link>
+              </div>
+            </div>
+          )}
+          {!visibili.length && clienti.length > 0 && (
             <p className="lm-col-empty">Nessun cliente con questi filtri.</p>
           )}
         </div>

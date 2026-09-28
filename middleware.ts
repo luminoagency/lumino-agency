@@ -50,6 +50,19 @@ export function middleware(request: NextRequest) {
      app/staff/(dash)/layout.tsx. */
   if (pathname === '/staff' || pathname.startsWith('/staff/')) {
     if (pathname === '/staff/login' || pathname === '/staff/logout') return NextResponse.next()
+
+    /* L'anteprima di sviluppo non esiste in produzione, e lo si decide **qui**,
+       prima di qualsiasi altra cosa. La pagina ha già il suo `notFound()` e i
+       due lucchetti di `ANTEPRIMA`: questo è il terzo, e non è ridondanza
+       inutile. Gli altri due stanno dentro il rendering, cioè dopo che Next ha
+       risolto la rotta e caricato il modulo dei dati finti; questo taglia la
+       richiesta al bordo, dove NODE_ENV in produzione vale 'production' e non
+       c'è nessuna variabile che qualcuno possa impostare per sbaglio su Vercel
+       per cambiarne l'esito. Una porta su un'area riservata merita di essere
+       chiusa nel punto più esterno che si ha. */
+    if (pathname.startsWith('/staff/anteprima') && process.env.NODE_ENV === 'production') {
+      return new NextResponse(null, { status: 404 })
+    }
     /* Anteprima di sviluppo: le stesse pagine senza sessione, coi dati finti.
        I due lucchetti sono ripetuti qui alla lettera invece di importarli da
        lib/staff/db.ts, che tira dentro next/headers e il client Supabase —

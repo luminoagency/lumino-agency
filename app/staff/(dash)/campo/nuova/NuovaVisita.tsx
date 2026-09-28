@@ -376,21 +376,28 @@ export default function NuovaVisita({
           {passo === 0 ? 'Annulla' : 'Indietro'}
         </button>
 
-        {!ultimo && (
+        {/* **Due bottoni alla volta, non tre.** Prima «Salva visita» stava lì
+            dal primo passo, disabilitato: su uno schermo da 390px erano tre
+            bottoni da 110px e l'etichetta principale andava a capo in mezzo alla
+            pill. Ed era anche un invito sbagliato — al primo passo non c'è
+            niente da salvare, e un'azione principale spenta per due schermate su
+            tre insegna a non guardarla.
+            Adesso l'azione principale è sempre una sola e cambia con il passo:
+            «Avanti» finché ce n'è uno dopo, «Salva visita» sull'ultimo. */}
+        {ultimo ? (
+          <button type="button" className="lm-btn" onClick={salva} disabled={!puoSalvare}>
+            {busy ? 'Salvo…' : 'Salva visita'}
+          </button>
+        ) : (
           <button
             type="button"
             className="lm-btn"
-            data-variant="ghost"
             onClick={() => setPasso(passo + 1)}
             disabled={!scelto || busy}
           >
             Avanti
           </button>
         )}
-
-        <button type="button" className="lm-btn" onClick={salva} disabled={!puoSalvare}>
-          {busy ? 'Salvo…' : 'Salva visita'}
-        </button>
       </div>
     </>
   )

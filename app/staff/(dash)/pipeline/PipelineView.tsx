@@ -226,6 +226,31 @@ export default function PipelineView({
         </p>
       )}
 
+      {/* Con l'archivio a zero il tabellone era sette colonne vuote e sette
+          zeri: una schermata che sembra rotta e non dice niente. Qui il
+          tabellone non si disegna affatto e al suo posto c'è il perché e la
+          porta. Il controllo è su `clienti` e non su `visibili`: con dei filtri
+          addosso il tabellone vuoto è un'informazione giusta — vuol dire che
+          quel taglio non ha nessuno — e va lasciato in piedi. */}
+      {clienti.length === 0 ? (
+        <div className="lm-vuoto-porta" data-grande="true">
+          <p>Non c’è ancora nessuno in pipeline.</p>
+          <p className="lm-sub">
+            La pipeline si riempie dai clienti: ogni locale in archivio compare in una di queste
+            sette colonne, e si sposta trascinandolo.
+          </p>
+          <div className="lm-vuoto-azioni">
+            <Link href="/staff/clienti/nuovo" className="lm-btn">
+              Nuovo cliente
+            </Link>
+            <Link href="/staff/clienti/importa" className="lm-btn" data-variant="ghost">
+              Importa un elenco
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
+
       {/* ── Kanban (desktop) ─────────────────────────────────────────────── */}
       <div className="lm-desk">
         <div className="lm-kanban">
@@ -308,6 +333,9 @@ export default function PipelineView({
           )}
         </div>
       </div>
+
+        </>
+      )}
 
       {rifiuto && (
         <MotivoRifiuto

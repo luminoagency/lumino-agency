@@ -451,3 +451,77 @@
   height: 13px;
   flex: none;
 }
+
+/* Il bottone della riga «Chiedi a Lumino».
+   Era una scritta «Fase 5» accanto a un campo spento: un'etichetta di stato in
+   un posto dove ci si aspetta un'azione. Adesso che il Lab risponde, lì c'è la
+   freccia che ci porta — stessa misura del bottone di invio del Lab, così i due
+   campi che fanno la stessa cosa si somigliano. */
+.lm-ask-vai {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    opacity 0.2s;
+}
+.lm-ask-vai:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.lm-ask-vai:not(:disabled):active {
+  transform: scale(0.92);
+}
+.lm-ask-vai svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Il vuoto che è una porta
+
+   Distinto da `.lm-empty`, che è il vuoto di un riquadro dentro una schermata
+   piena («nessun abbonamento attivo»): questo è il vuoto di **tutta** la
+   schermata, quello del primo giorno. La differenza non è di dimensione ma di
+   compito — un riquadro vuoto informa, una schermata vuota deve dire cosa fare
+   e dare il bottone per farlo, altrimenti è una pagina morta.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-vuoto-porta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1.6rem 1.4rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.5);
+}
+.lm-vuoto-porta[data-grande='true'] {
+  padding: 3rem 1.6rem;
+  align-items: center;
+  text-align: center;
+}
+.lm-vuoto-porta > p:first-child {
+  font-size: 1.15rem;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.lm-vuoto-porta .lm-sub {
+  max-width: 46ch;
+  font-size: 0.85rem;
+}
+.lm-vuoto-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}

@@ -3409,6 +3409,18 @@
 .lm-visita-bar .lm-btn {
   flex: 1;
   height: 44px;
+  /* Nessuna etichetta va a capo dentro una pill alta 44px: andando a capo il
+     testo esce dal bottone invece di farlo crescere. Se lo spazio non basta, il
+     bottone si stringe e il testo si taglia — che si vede, e quindi si corregge
+     — invece di accartocciarsi in silenzio. */
+  white-space: nowrap;
+  padding: 0 0.9rem;
+}
+/* L'azione principale è l'ultima e pesa di più: due terzi contro un terzo. Con
+   `flex: 1` su entrambe, «Annulla» e «Salva visita» avevano la stessa
+   importanza visiva, e non ce l'hanno. */
+.lm-visita-bar .lm-btn:last-child {
+  flex: 1.8;
 }
 @media (min-width: 1040px) {
   .lm-visita-bar {
@@ -3987,19 +3999,40 @@
    due versioni, cambia la scala e cosa è visibile: è così che il server può
    disegnare un markup valido per entrambe senza errori di idratazione.
    ─────────────────────────────────────────────────────────────────────────── */
+/* LA TESTATA DELLA HOME: il saluto, e sotto le due azioni.
+   Erano affiancati con `justify-content: space-between`, e finché il saluto era
+   «Buonasera. Si chiude la giornata.» ci stavano. Con la riga personale — che è
+   una frase vera e lunga una trentina di parole — i bottoni le finivano **sopra**
+   a metà: la frase più personale della schermata tagliata da un bottone.
+
+   Le azioni vanno a capo sempre, e si allineano a destra. Non è un ripiego per
+   lo spazio: «Registra una visita» e «Nuovo cliente» sono quello che si fa
+   *dopo* aver letto cosa c'è oggi, e metterle in fondo al blocco è anche
+   l'ordine in cui si leggono. Il saluto prende tutta la riga e la frase può
+   respirare fino ai suoi 46 caratteri. */
 .lm-head-saluto {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.2rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.1rem;
   margin-bottom: 1.4rem;
+}
+.lm-head-saluto .lm-head-actions {
+  justify-content: flex-start;
+}
+@media (min-width: 760px) {
+  .lm-head-saluto .lm-head-actions {
+    justify-content: flex-end;
+  }
 }
 
 .lm-saluto {
   display: flex;
   align-items: center;
   gap: 1rem;
+  /* `min-width: 0` sul contenitore **e** sul testo: senza il secondo, una parola
+     lunga (il nome di un locale) allarga il blocco oltre la colonna invece di
+     andare a capo. È il comportamento di default dei figli di un flex. */
   min-width: 0;
 }
 @media (min-width: 720px) {
@@ -4052,6 +4085,7 @@
 }
 
 .lm-saluto-testo {
+  min-width: 0;
   min-width: 0;
 }
 
@@ -4159,18 +4193,46 @@
   }
 }
 
-.lm-saluto-sub {
-  margin-top: 0.55rem;
-  font-size: 0.95rem;
-  color: var(--ink-2);
-  max-width: 52ch;
-  /* Lo spazio è riservato: la frase in base all'ora si scrive dopo il montaggio
-     (il server sta su UTC e direbbe l'ora sbagliata), e senza questo la riga
-     sotto salterebbe di venti pixel appena arriva. */
-  min-height: 1.4em;
+/* LA RIGA PERSONALE.
+   È la seconda cosa più grande della schermata, più dei numeri delle card, e
+   deve esserlo: è quella che dice «so chi sei e cosa hai fatto ieri». Prima era
+   una `.lm-sub` da 0.95rem sotto il titolo — cioè una didascalia, e una
+   didascalia non la legge nessuno.
+
+   Sta su una riga sua con un filo viola a sinistra: non è decorazione, è ciò
+   che la separa dalla data che le sta sotto. Senza, le due righe si leggono
+   come un blocco unico di servizio e la frase personale ci si perde dentro. */
+.lm-saluto-riga {
+  margin-top: 0.75rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--violet);
+  font-size: 1.12rem;
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  max-width: 46ch;
+  /* Lo spazio è riservato: la riga cambia da «primo accesso» a «rientro» dopo il
+     montaggio, e senza questo la data sotto salterebbe di venti pixel. */
+  min-height: 1.45em;
 }
-.lm-saluto[data-anima='si'] .lm-saluto-sub {
+@media (min-width: 760px) {
+  .lm-saluto[data-lungo='true'] .lm-saluto-riga {
+    font-size: 1.32rem;
+    padding-left: 1.05rem;
+  }
+}
+/* Rientra quando cambia testo: il `key` sul paragrafo la rimonta, questa regola
+   le dà l'entrata. Vale sempre, non solo col saluto lungo — è l'unica animazione
+   della schermata che risponde a un cambio di contenuto e non all'arrivo. */
+.lm-saluto-riga {
+  animation: lm-sali-riga 0.55s var(--ease) both;
+}
+.lm-saluto[data-anima='si'] .lm-saluto-riga {
   animation: lm-sali-riga 0.7s var(--ease) 0.42s both;
+}
+.lm-saluto[data-anima='attesa'] .lm-saluto-riga {
+  animation: none;
 }
 .lm-saluto-meta {
   margin-top: 0.3rem;
