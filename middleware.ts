@@ -42,6 +42,43 @@ function isLocalised(path: string): boolean {
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  /* ── 0. L'area staff, che ha un suo login ──────────────────────────────── */
+  /* Non entra in PROTECTED_PREFIXES perché quel ramo rimanda a /login, che è il
+     login dei clienti: uno dello staff ci finirebbe dentro e non troverebbe la
+     sua porta. Anche qui la presenza del cookie è solo un gate ottimistico —
+     la verifica vera, compreso il "questo utente è davvero staff", la fa
+     app/staff/(dash)/layout.tsx. */
+  if (pathname === '/staff' || pathname.startsWith('/staff/')) {
+    if (pathname === '/staff/login' || pathname === '/staff/logout') return NextResponse.next()
+
+    /* L'anteprima di sviluppo non esiste in produzione, e lo si decide **qui**,
+       prima di qualsiasi altra cosa. La pagina ha già il suo `notFound()` e i
+       due lucchetti di `ANTEPRIMA`: questo è il terzo, e non è ridondanza
+       inutile. Gli altri due stanno dentro il rendering, cioè dopo che Next ha
+       risolto la rotta e caricato il modulo dei dati finti; questo taglia la
+       richiesta al bordo, dove NODE_ENV in produzione vale 'production' e non
+       c'è nessuna variabile che qualcuno possa impostare per sbaglio su Vercel
+       per cambiarne l'esito. Una porta su un'area riservata merita di essere
+       chiusa nel punto più esterno che si ha. */
+    if (pathname.startsWith('/staff/anteprima') && process.env.NODE_ENV === 'production') {
+      return new NextResponse(null, { status: 404 })
+    }
+    /* Anteprima di sviluppo: le stesse pagine senza sessione, coi dati finti.
+       I due lucchetti sono ripetuti qui alla lettera invece di importarli da
+       lib/staff/db.ts, che tira dentro next/headers e il client Supabase —
+       roba che nell'edge runtime del middleware non deve entrare. */
+    if (process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1') {
+      return NextResponse.next()
+    }
+    if (hasSessionCookie(request)) return NextResponse.next()
+
+    const url = request.nextUrl.clone()
+    url.pathname = '/staff/login'
+    url.search = ''
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
+  }
+
   /* ── 1. Il gate dell'area riservata, invariato ─────────────────────────── */
   let isProtected = false
   for (const p of PROTECTED_PREFIXES) {
@@ -49,14 +86,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isProtected) {
-    let hasSession = false
-    const all = request.cookies.getAll()
-    for (let i = 0; i < all.length; i++) {
-      const n = all[i].name
-      if (n.indexOf('sb-') === 0 && n.indexOf('auth-token') >= 0) { hasSession = true; break }
-    }
-
-    if (!hasSession) {
+    if (!hasSessionCookie(request)) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       url.search = ''
@@ -175,6 +205,16 @@ function withGeoHeaders(response: NextResponse, geo: GeoRead, decidedBy: string)
   response.headers.set('x-lumino-geo', `${geo.country ?? 'none'}/${geo.source}/${decidedBy}`)
   response.headers.set('Cache-Control', 'private, no-store')
   return response
+}
+
+/** C'è un cookie di sessione Supabase? Non se sia valido: solo se c'è. */
+function hasSessionCookie(request: NextRequest): boolean {
+  const all = request.cookies.getAll()
+  for (let i = 0; i < all.length; i++) {
+    const n = all[i].name
+    if (n.indexOf('sb-') === 0 && n.indexOf('auth-token') >= 0) return true
+  }
+  return false
 }
 
 export const config = {

@@ -1,0 +1,5132 @@
+@import './f5.css';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LUMINO STAFF — la scena e l'oggetto
+
+   Il modello mentale, preso da ref1 e ref4: la dashboard non è una pagina, è
+   un OGGETTO DI VETRO appoggiato dentro una stanza. Dietro c'è un ambiente
+   vero che si muove piano; davanti un pannello smerigliato con dentro card
+   bianche, nere e una sola viola.
+
+   Le tre regole da cui discende tutto il resto:
+
+   1. BASE CHIARA. Il fondo dell'interfaccia è la stanza, non un colore.
+      Le card sono bianche o grigio perla traslucido; il NERO PIENO è un
+      accento raro (ref4 "Living room", ref1 "Геометрия хаоса") e il viola
+      Lumino è riservato a due cose sole — l'azione principale e la selezione.
+
+   2. GERARCHIA PER SCALA, non per colore. Il titolo di pagina è enorme e
+      sottile come il "Dashboard" di ref1 (Manrope 200/300). Le etichette sono
+      in tondo minuscolo: nessun maiuscoletto spaziato, da nessuna parte.
+
+   3. DENSITÀ VERA. Ogni card porta qualcosa da guardare — un grafico, una
+      foto, un oggetto, un calendario. Una card con dentro solo un numero
+      grosso è il segno che manca il contenuto, non che il design è pulito.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-staff {
+  /* Struttura */
+  --rail: 74px;
+  /* La barra aperta: 214px non è un numero tondo a caso, è la larghezza in cui
+     «Statistiche» e «Ricerca Agent» stanno su una riga sola accanto all'icona.
+     Un'etichetta che va a capo dentro un rail è peggio di un'etichetta che non
+     c'è. */
+  --rail-aperto: 214px;
+  --dock: 84px;
+
+  /* Inchiostro e superfici. Il bianco delle card non è mai opaco al 100%:
+     deve lasciare intuire la stanza sotto, o il vetro non è vetro. */
+  --ink: #17130f;
+  --ink-2: rgba(23, 19, 15, 0.58);
+  --ink-3: rgba(23, 19, 15, 0.38);
+  --line: rgba(23, 19, 15, 0.09);
+  --line-2: rgba(23, 19, 15, 0.16);
+
+  --white: rgba(255, 255, 255, 0.82);
+  --pearl: rgba(244, 242, 238, 0.58);
+  --black: #14120f;
+
+  --violet: #8b5cf6;
+  --violet-2: #6d3fe0;
+  --red: #e5342a;
+  --green: #1f9d63;
+
+  /* Raggi generosi, come in ref1/ref4. */
+  --r-xl: 30px;
+  --r-lg: 22px;
+  --r-md: 15px;
+  --r-sm: 10px;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  position: relative;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: var(--font-ui), system-ui, sans-serif;
+  font-feature-settings: 'ss01';
+  -webkit-font-smoothing: antialiased;
+  isolation: isolate;
+}
+
+.lm-staff ::selection {
+  background: rgba(139, 92, 246, 0.28);
+  color: var(--ink);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   La scena
+
+   Quattro macchie di colore che si muovono piano e non si fermano mai. Hanno
+   preso il posto di un video da 1.8MB, e il guadagno non è solo di peso: un
+   `<video>` sotto un `backdrop-filter` obbliga il compositore a rifare la
+   sfocatura a ogni fotogramma del filmato, cioè venticinque volte al secondo
+   su tutta la larghezza del pannello.
+
+   Qui si anima **solo `transform`**. Ogni macchia diventa una texture sulla
+   GPU una volta sola e poi viene spostata: per il browser costa come far
+   scorrere la pagina. Le durate (48s, 61s, 73s, 89s) non hanno divisori in
+   comune, quindi la composizione non torna mai esattamente la stessa.
+
+   La sfumatura la fa la forma del gradiente, non un filtro: quattro
+   `blur(80px)` grandi come la finestra sarebbero la cosa più costosa della
+   pagina, e si vedrebbero uguali.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  /* Il fondo fermo: crema in alto, perla scura in basso. È anche ciò che si
+     vede con `prefers-reduced-motion`, quindi da solo deve già stare in piedi.
+     Scende fino a #ded6cb e non al bianco: sopra ci va un pannello di vetro
+     bianco al 50%, e un vetro bianco su un fondo bianco non è vetro, è carta. */
+  background:
+    radial-gradient(120vw 80vh at 50% -6%, #fffdf9, transparent 66%),
+    linear-gradient(166deg, #f2ede4 0%, #e8e0d5 48%, #ded6cb 100%);
+}
+
+.lm-blob {
+  position: absolute;
+  /* Più larghe della finestra: una macchia che entra e esce dal bordo si
+     leggerebbe come un oggetto che passa, e questo deve essere un ambiente. */
+  width: 78vmax;
+  height: 78vmax;
+  border-radius: 50%;
+  /* La promozione a livello GPU è chiesta una volta e resta: questi quattro
+     elementi si muovono per tutta la vita della pagina, e togliere e rimettere
+     `will-change` costerebbe più di lasciarlo. */
+  will-change: transform;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+}
+
+/* Perla fredda, in alto a sinistra. */
+.lm-blob[data-b='1'] {
+  top: -26vmax;
+  left: -20vmax;
+  background: radial-gradient(closest-side, rgba(203, 214, 232, 0.92), transparent 72%);
+  animation-name: lm-b1;
+  animation-duration: 48s;
+}
+/* Crema calda, il punto più luminoso della stanza. */
+.lm-blob[data-b='2'] {
+  top: -18vmax;
+  right: -24vmax;
+  background: radial-gradient(closest-side, rgba(255, 240, 206, 0.95), transparent 72%);
+  animation-name: lm-b2;
+  animation-duration: 61s;
+}
+/* Il filo di rosa: basso a sinistra, dove scalda senza colorare le card. */
+.lm-blob[data-b='3'] {
+  bottom: -32vmax;
+  left: -14vmax;
+  background: radial-gradient(closest-side, rgba(243, 206, 209, 0.88), transparent 72%);
+  animation-name: lm-b3;
+  animation-duration: 73s;
+}
+/* Il filo di viola: l'unico accento di marchio, e tenuto comunque il più basso
+   dei quattro — qui dentro il viola pieno vale solo per l'azione e la
+   selezione, e uno sfondo che lo urla toglie forza a quelle due cose. */
+.lm-blob[data-b='4'] {
+  right: -22vmax;
+  bottom: -28vmax;
+  background: radial-gradient(closest-side, rgba(199, 183, 240, 0.78), transparent 72%);
+  animation-name: lm-b4;
+  animation-duration: 89s;
+}
+
+@keyframes lm-b1 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(14vmax, 9vmax, 0) scale(1.18);
+  }
+}
+@keyframes lm-b2 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  to {
+    transform: translate3d(-12vmax, 12vmax, 0) scale(0.92);
+  }
+}
+@keyframes lm-b3 {
+  from {
+    transform: translate3d(0, 0, 0) scale(0.95);
+  }
+  to {
+    transform: translate3d(18vmax, -14vmax, 0) scale(1.2);
+  }
+}
+@keyframes lm-b4 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.14);
+  }
+  to {
+    transform: translate3d(-16vmax, -10vmax, 0) scale(0.9);
+  }
+}
+
+/* Il velo: una vignettatura appena accennata, che tiene il centro luminoso e
+   scurisce di un soffio gli angoli. Serve a dare un bordo alla stanza — senza,
+   quattro macchie su fondo chiaro sembrano una texture, non un ambiente. */
+.lm-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130vw 100vh at 50% 32%, transparent 38%, rgba(56, 45, 37, 0.2));
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il pannello di vetro
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-shell {
+  position: relative;
+  min-height: 100dvh;
+}
+
+@media (min-width: 1040px) {
+  .lm-staff-shell {
+    display: flex;
+    max-width: 1660px;
+    margin: 0 auto;
+    padding: 2.2rem 2rem 2.6rem;
+  }
+}
+
+/* Il vetro vero e proprio: un solo bordo chiaro sottile, un'ombra lunga e
+   morbida, e il blur. Niente bordi doppi, niente inner glow: in ref1 e ref4
+   il pannello si stacca dalla stanza per l'ombra, non per il contorno.
+
+   **Il blur sta solo nel media query da 1040px**, e non è un vezzo: sotto quella
+   soglia il pannello occupa tutta la finestra, quindi sfocare il suo sfondo
+   vuol dire ricalcolare una sfocatura grande come lo schermo di un telefono, a
+   ogni fotogramma, sul dispositivo che ha meno banda di memoria per farlo. Su
+   mobile resta un bianco più coprente: l'effetto è indistinguibile, il costo no.
+
+   Il raggio è sceso da 34 a 22px. Sopra i venti pixel l'occhio non distingue
+   più *quanto* è sfocato, ma il tempo di calcolo continua a crescere col
+   raggio: sono dodici pixel pagati e non visti. */
+.lm-glass {
+  position: relative;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 50px 120px -48px rgba(28, 22, 18, 0.62);
+}
+@media (min-width: 1040px) {
+  .lm-glass {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(22px) saturate(1.22);
+    -webkit-backdrop-filter: blur(22px) saturate(1.22);
+    flex: 1;
+    /* `min-width: 0` non è cosmetico: senza, il pannello si allarga fino al
+       contenuto più largo che ha dentro (il kanban, la riga dei KPI) e sfonda
+       lo schermo invece di far scorrere quel contenuto. È il comportamento di
+       default dei figli di un flex, e qui non va bene. */
+    min-width: 0;
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-radius: 34px;
+  }
+}
+
+.lm-staff-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem 1rem calc(var(--dock) + 1.6rem);
+}
+@media (min-width: 1040px) {
+  .lm-staff-main {
+    padding: 1.4rem 1.6rem 1.6rem;
+    max-height: calc(100dvh - 6.4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(23, 19, 15, 0.22) transparent;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Marchio
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--ink);
+  text-decoration: none;
+  --wm-size: 1.15rem;
+}
+.lm-staff-brand .lm-staff-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il rail nero (ref4), che ora si apre
+
+   Era una colonna di sole icone, e undici pittogrammi senza etichetta sono
+   leggibili per chi li ha disegnati e un rebus per tutti gli altri. Adesso la
+   barra si apre al passaggio del mouse e dice i nomi; chi la vuole sempre
+   aperta la blocca, e la preferenza resta in localStorage.
+
+   LA COSA IMPORTANTE È **COME** SI APRE. Il pannello nero è posizionato in modo
+   assoluto dentro un segnaposto largo 74px: allargandosi passa SOPRA la pagina
+   invece di spingerla. Sono due guadagni in uno.
+     · Il testo che si stava leggendo non scappa da sotto gli occhi mentre il
+       puntatore attraversa la barra per andare altrove.
+     · La larghezza che cresce non rimette in coda il layout delle dodici card
+       accanto, a ogni fotogramma. `width` è una proprietà che non si può
+       animare gratis — il compositore non la sa muovere da solo, la deve
+       ricalcolare — quindi l'unica difesa è limitare cosa c'è dentro il
+       rettangolo che cambia: qui dodici link e niente altro, invece di mezza
+       dashboard.
+   Il caso «bloccata» è l'unico in cui il segnaposto si allarga per davvero e il
+   contenuto si sposta: succede al clic, una volta, e un layout al clic non lo
+   vede nessuno.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-rail {
+  display: none;
+}
+@media (min-width: 1040px) {
+  .lm-staff-rail {
+    /* Il segnaposto: tiene il posto nel flex del pannello di vetro e non ha
+       colore. Il nero è tutto nel figlio. */
+    display: block;
+    position: relative;
+    flex: none;
+    width: var(--rail);
+    transition: width 0.42s var(--ease);
+  }
+  .lm-staff-rail[data-fisso='true'] {
+    width: var(--rail-aperto);
+  }
+  .lm-rail-inner {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: var(--rail);
+    /* 16px per lato: 74 - 32 = 42, cioè esattamente la gabbia dell'icona. È
+       quello che fa sì che da chiusa la voce attiva resti un quadrato e non un
+       rettangolo con dodici pixel di bianco a destra. */
+    padding: 0.9rem 16px;
+    border-radius: 26px;
+    background: var(--black);
+    color: rgba(255, 255, 255, 0.62);
+    overflow: hidden;
+    /* Il ritardo in apertura è il ritardo dello stato in JS (150ms): qui la
+       transizione parte già al valore nuovo, quindi non ne serve un secondo.
+       L'ombra compare solo da aperta: da chiusa la barra è dentro il vetro e
+       non deve staccarsene, da aperta sta sopra il contenuto e deve dire che è
+       un piano più alto. */
+    transition:
+      width 0.42s var(--ease),
+      box-shadow 0.42s var(--ease);
+  }
+  .lm-staff-rail[data-esp='true'] .lm-rail-inner {
+    width: var(--rail-aperto);
+    box-shadow: 18px 0 44px -26px rgba(20, 16, 12, 0.6);
+  }
+}
+
+/* Testa del rail: il marchio, e il bottone del blocco che compare da aperta. */
+.lm-rail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+}
+.lm-rail-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  margin-left: 2px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+/* Il bottone del blocco esiste solo a barra aperta: a barra chiusa sarebbe una
+   dodicesima icona da interpretare, e per premerla bisogna comunque avere il
+   puntatore lì sopra — cioè averla già aperta. */
+.lm-rail-pin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.28s var(--ease),
+    background-color 0.22s,
+    color 0.22s;
+}
+.lm-rail-pin svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-pin {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0.16s;
+}
+.lm-rail-pin:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.lm-rail-pin[aria-pressed='true'] {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Il corpo prende lo spazio che avanza e, se non basta, scorre.
+   Serve davvero: aperta, la barra guadagna tre titolini di gruppo, e su un
+   portatile basso undici voci più il piede non ci stanno. Senza questo l'ultima
+   riga — che è «Esci» — finirebbe tagliata dal bordo del rail, cioè sparirebbe
+   un comando invece di scorrere. La barra dello scorrimento è nascosta: su una
+   colonna di undici icone sarebbe più larga del contenuto.
+   `min-height: 0` non è ornamentale — senza, un figlio flex non scende mai sotto
+   la propria altezza naturale e l'`overflow` non si attiva mai. */
+.lm-rail-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0.3rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.lm-rail-body::-webkit-scrollbar {
+  display: none;
+}
+/* I tre blocchi: lavoro quotidiano, gestione, risorse. Undici voci in fila sono
+   un elenco; undici voci in tre gruppi sono un menù. */
+.lm-rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+/* Il titolino del blocco vive solo a barra aperta, e a barra chiusa non lascia
+   nemmeno lo spazio: `height: 0` e non `opacity: 0`, altrimenti la colonna di
+   icone avrebbe tre buchi da undici pixel senza niente dentro. */
+.lm-rail-group-label {
+  height: 0;
+  overflow: hidden;
+  padding-left: 0.62rem;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition:
+    height 0.3s var(--ease),
+    opacity 0.28s,
+    margin 0.3s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-group-label {
+  height: 1.05rem;
+  margin: 0.3rem 0 0.1rem;
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+.lm-rail-mark span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* **Una sola misura per ogni cosa che sta nel rail**: 42 di altezza, raggio 13,
+   icona 18. Vale per le voci, per l'interruttore dei dati demo, per l'avatar e
+   per il logout — prima erano 42, 34, 32 e 32, con tre forme diverse, e una
+   colonna di quadrati con due cerchi in fondo si vede subito che è cresciuta a
+   pezzi.
+
+   Da `grid place-items:center` è diventata una **riga**: l'icona resta larga 42
+   e ancorata a sinistra, e accanto c'è il posto per l'etichetta. Così l'icona
+   non si sposta di un pixel quando la barra si apre — se si muovesse, aprendo
+   il rail si vedrebbero undici pittogrammi scivolare, e nessuno riconoscerebbe
+   più quello che stava cercando. */
+.lm-staff-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    transform 0.22s var(--ease);
+}
+/* L'icona sta dentro una gabbia larga 42 (18 di glifo + 12 di aria per lato): è
+   la gabbia a non muoversi, non l'icona a essere larga. 42 è anche la larghezza
+   utile del rail chiuso, quindi da chiuso la voce attiva è un quadrato perfetto
+   come prima. */
+.lm-staff-link > svg {
+  flex: none;
+  box-sizing: content-box;
+  width: 18px;
+  height: 18px;
+  padding: 0 12px;
+  stroke-width: 1.7;
+}
+.lm-staff-link > .lm-avatar {
+  flex: none;
+  margin: 0 6px;
+}
+.lm-staff-link svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+
+/* L'etichetta. Non usa `display:none` — una proprietà che non si anima — ma
+   larghezza zero e opacità: così entra insieme alla barra invece di comparire
+   quando ha finito.
+
+   Il ritardo per lettera è nella variabile `--i`, scritta dal componente: dodici
+   parole che appaiono nello stesso fotogramma sono un blocco che lampeggia, le
+   stesse sfasate di 18ms sono una barra che si apre. Sta in una custom property
+   e non in uno stile inline perché `prefers-reduced-motion` la può azzerare da
+   qui, in una regola sola. */
+.lm-rail-label {
+  min-width: 0;
+  padding-right: 0.7rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.26s ease,
+    transform 0.34s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-label {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(0.12s + var(--i, 0) * 18ms);
+}
+/* Il piede: nome sopra, ruolo sotto, in due righe dentro la stessa altezza. */
+.lm-rail-me {
+  height: 46px;
+}
+.lm-rail-me .lm-rail-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.lm-rail-me .lm-rail-label b {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-rail-me .lm-rail-label small {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+/* Sulla propria pagina la riga diventa la pill bianca come ogni voce attiva, e
+   il bianco scritto a mano qui sopra sparirebbe dentro di essa: nome e ruolo
+   devono girarsi insieme al fondo. Era bianco su bianco — una riga vuota al
+   posto del proprio nome, che è l'unico posto in cui si guarda per capire con
+   quale account si è entrati. */
+.lm-rail-me[aria-current='page'] .lm-rail-label b {
+  color: var(--black);
+}
+.lm-rail-me[aria-current='page'] .lm-rail-label small {
+  color: rgba(23, 19, 15, 0.52);
+}
+.lm-rail-foot .lm-rail-me[aria-current='page'] .lm-avatar[data-foto='false'] {
+  background: rgba(23, 19, 15, 0.1);
+  color: var(--black);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-staff-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+/* L'affondamento al clic: un pannello che non risponde al dito sembra lento
+   anche quando è istantaneo. */
+.lm-staff-link:active:not([data-static]):not(:disabled) {
+  transform: scale(0.93);
+}
+.lm-staff-link[aria-current='page'] {
+  background: #fff;
+  color: var(--black);
+}
+/* Acceso ma non "sei qui": i dati demo accesi sono uno stato, non una pagina,
+   e il viola è la lingua dello stato attivo in tutta l'area. */
+.lm-staff-link[data-on='true'] {
+  background: var(--violet);
+  color: #fff;
+}
+.lm-staff-link:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+/* L'avatar non è un bottone e non deve fingere di esserlo: nessun hover, nessun
+   affondamento, ma il fuoco da tastiera sì — è lì che si legge chi si è. */
+.lm-staff-link[data-static] {
+  cursor: default;
+}
+/* Lo spazio che separa le voci dal piede lo fa `.lm-rail-body` con `flex: 1`.
+   Questo resta solo perché il markup lo nomina, e non deve prendersi una seconda
+   porzione di spazio contendendola al corpo. */
+.lm-rail-spacer {
+  flex: 0 0 0.35rem;
+}
+
+/* Il tooltip: il rail dice cosa fa solo quando glielo si chiede. */
+.lm-tip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 0.35rem 0.6rem;
+  border-radius: 9px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.3s var(--ease);
+  z-index: 20;
+}
+.lm-staff-link:hover .lm-tip,
+.lm-staff-link:focus-visible .lm-tip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+/* **A barra aperta il tooltip tace.** Ha ancora un compito, e non è un residuo:
+   l'apertura ha 150ms di ritardo, quindi puntando un'icona il nome compare
+   PRIMA che la barra si apra e sparisce quando l'etichetta vera prende il suo
+   posto. Fuori da quella finestra serve dove l'apertura al passaggio non c'è —
+   sotto le dita e da tastiera. Ripetere due volte la stessa parola, una accanto
+   all'icona e una in un fumetto sopra, sarebbe solo rumore. */
+.lm-staff-rail[data-esp='true'] .lm-staff-link:hover .lm-tip,
+.lm-staff-rail[data-esp='true'] .lm-staff-link:focus-visible .lm-tip {
+  opacity: 0;
+}
+.lm-tip[data-multi='true'] {
+  white-space: normal;
+  width: 190px;
+  line-height: 1.55;
+}
+.lm-tip b {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+/* I tooltip del piede salgono invece di centrarsi: centrati sull'ultima icona
+   finirebbero mezzi sotto il bordo del pannello. */
+.lm-rail-foot .lm-tip {
+  top: auto;
+  bottom: 0;
+  transform: translateY(0) translateX(-4px);
+}
+.lm-rail-foot .lm-staff-link:hover .lm-tip,
+.lm-rail-foot .lm-staff-link:focus-visible .lm-tip {
+  transform: translateY(0) translateX(0);
+}
+
+.lm-rail-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+}
+/* Il `<form>` del logout non deve diventare un oggetto di layout: senza questo
+   il bottone dentro starebbe larghezza-contenuto e l'unica riga del rail fuori
+   colonna sarebbe l'ultima. */
+.lm-rail-foot form {
+  display: contents;
+}
+/* Il filo di separazione non corre da bordo a bordo: un divisore che tocca i due
+   lati taglia la barra in due, e la barra è un oggetto solo. Da chiusa è larga
+   come l'icona e sta sotto di lei; aprendosi si allunga con la barra, perché a
+   quel punto deve separare due righe di testo e non due pittogrammi. */
+.lm-rail-sep {
+  width: 22px;
+  height: 1px;
+  margin: 0.4rem 0 0.4rem 10px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: width 0.42s var(--ease);
+}
+.lm-staff-rail[data-esp='true'] .lm-rail-sep {
+  width: calc(100% - 20px);
+}
+/* L'avatar nel rail è **neutro, non viola**.
+   Lo era: un cerchio viola pieno, appoggiato sotto l'interruttore dei dati demo
+   che quando è acceso è anch'esso viola — due macchie dello stesso colore una
+   sull'altra, e il viola in quest'area vuol dire una cosa sola (azione o
+   selezione). Un'identità non è né l'una né l'altra: è un fatto, e sta bene in
+   bianco trasparente come il resto della barra.
+   Nel `<header>` del telefono, dove è l'unico elemento colorato di una riga
+   chiara, resta viola: lì il viola non compete con niente. */
+.lm-staff-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.lm-rail-foot .lm-staff-avatar {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+.lm-rail-foot .lm-staff-link:hover .lm-staff-avatar,
+.lm-rail-foot .lm-staff-link:focus-visible .lm-staff-avatar {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Testa e dock su telefono
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem 0;
+}
+@media (min-width: 1040px) {
+  .lm-staff-top {
+    display: none;
+  }
+}
+
+/* La pill flottante in basso (ref1): vetro, non nero — sul telefono galleggia
+   sopra il contenuto e deve lasciarlo intravedere. */
+.lm-staff-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 0.9rem;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 20px 44px -18px rgba(28, 22, 18, 0.5);
+  max-width: calc(100vw - 1.4rem);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lm-staff-dock::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 1040px) {
+  .lm-staff-dock {
+    display: none;
+  }
+}
+/* **L'etichetta sta sotto l'icona, non accanto.** Di fianco, cinque voci su uno
+   schermo da 375px stavano solo perché la barra scorreva in orizzontale: la
+   quinta esisteva e non si vedeva, cioè c'era una sezione raggiungibile solo per
+   chi indovinava che si potesse trascinare la barra. In colonna ci stanno tutte
+   e cinque, con il nome sempre leggibile — che è il punto: su telefono non c'è
+   un passaggio del mouse a cui chiedere cosa vuol dire un'icona. */
+.lm-staff-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.16rem;
+  flex: none;
+  min-height: 52px;
+  padding: 0.3rem 0.62rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    transform 0.2s var(--ease);
+}
+.lm-staff-tab svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.7;
+}
+.lm-staff-tab > span {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.002em;
+  line-height: 1;
+}
+.lm-staff-tab:active {
+  transform: scale(0.95);
+}
+.lm-staff-tab[aria-current='page'] {
+  background: var(--black);
+  color: #fff;
+}
+/* La barra in basso è l'unica navigazione del telefono: il bersaglio è alto 52 e
+   largo almeno 52, cioè sopra i 44 di minimo anche per la voce col nome più
+   corto. */
+@media (pointer: coarse) {
+  .lm-staff-tab {
+    min-width: 52px;
+  }
+}
+
+.lm-staff-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+  background: rgba(30, 24, 20, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.lm-staff-sheet-inner {
+  width: 100%;
+  margin-bottom: calc(var(--dock) - 1rem);
+  padding: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(30px) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) saturate(1.4);
+  box-shadow: 0 30px 70px -30px rgba(28, 22, 18, 0.6);
+}
+.lm-sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.lm-sheet-item {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+.lm-sheet-item svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+.lm-sheet-item {
+  min-height: 62px;
+  transition:
+    background-color 0.2s,
+    transform 0.2s var(--ease);
+}
+.lm-sheet-item:active {
+  transform: scale(0.96);
+  background: #fff;
+}
+.lm-sheet-item[data-soon='true'] {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Titoli
+
+   Il "Dashboard" di ref1: grande, sottilissimo, quasi senza spaziatura. È la
+   sola cosa gridata della pagina, e proprio per questo tutto il resto può
+   parlare a voce bassa.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+}
+.lm-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.lm-h1 {
+  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
+  font-weight: 200;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+.lm-h1 em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--violet);
+}
+.lm-sub {
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  max-width: 54ch;
+}
+
+/* L'etichetta di una card. Tondo minuscolo, nessuna spaziatura forzata:
+   il maiuscoletto spaziato è la firma del pannello generico. */
+.lm-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lm-card[data-tone='black'] .lm-label,
+.lm-card[data-tone='violet'] .lm-label {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.lm-section {
+  margin-top: 1.5rem;
+}
+.lm-section > .lm-label {
+  display: block;
+  margin-bottom: 0.7rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Bento
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-bento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+@media (min-width: 760px) {
+  .lm-bento {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.72rem;
+  }
+}
+.lm-bento > [data-span] {
+  grid-column: span 2;
+}
+@media (min-width: 760px) {
+  .lm-bento > [data-span='1'] {
+    grid-column: span 2;
+  }
+  .lm-bento > [data-span='3'] {
+    grid-column: span 3;
+  }
+  .lm-bento > [data-span='4'] {
+    grid-column: span 4;
+  }
+  .lm-bento > [data-span='5'] {
+    grid-column: span 5;
+  }
+  .lm-bento > [data-span='6'] {
+    grid-column: span 6;
+  }
+  .lm-bento > [data-span='7'] {
+    grid-column: span 7;
+  }
+  .lm-bento > [data-span='8'] {
+    grid-column: span 8;
+  }
+  .lm-bento > [data-span='9'] {
+    grid-column: span 9;
+  }
+  .lm-bento > [data-span='12'] {
+    grid-column: span 12;
+  }
+}
+
+.lm-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-lg);
+  background: var(--white);
+  color: var(--ink);
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    box-shadow 0.45s var(--ease),
+    border-color 0.3s;
+}
+@media (min-width: 760px) {
+  .lm-card {
+    padding: 1.15rem 1.25rem;
+    border-radius: var(--r-xl);
+  }
+}
+
+.lm-card[data-tone='pearl'] {
+  background: var(--pearl);
+  border-color: rgba(255, 255, 255, 0.48);
+}
+
+/* Il nero pieno: uno o due per schermata, mai di più. È l'accento che tiene
+   in piedi tutta la composizione chiara (ref4 "Living room"). */
+.lm-card[data-tone='black'] {
+  background: var(--black);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.lm-card[data-tone='black'] .lm-muted,
+.lm-card[data-tone='black'] .lm-kpi-name,
+.lm-card[data-tone='black'] .lm-sub,
+.lm-card[data-tone='black'] .lm-empty {
+  color: rgba(255, 255, 255, 0.58);
+}
+.lm-card[data-tone='black'] .lm-num {
+  color: #fff;
+}
+
+/* Il viola: solo l'elemento selezionato (ref3). Uno per schermata. */
+.lm-card[data-tone='violet'] {
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+.lm-card[data-tone='violet'] .lm-muted,
+.lm-card[data-tone='violet'] .lm-kpi-name,
+.lm-card[data-tone='violet'] .lm-sub,
+.lm-card[data-tone='violet'] .lm-empty {
+  color: rgba(255, 255, 255, 0.76);
+}
+.lm-card[data-tone='violet'] .lm-num {
+  color: #fff;
+}
+
+/* Il riflesso che segue il puntatore: due variabili scritte dal JS (Tilt), e
+   niente se il mouse non ci è mai passato. */
+.lm-card[data-hover]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    22rem 22rem at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.5),
+    transparent 62%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.lm-card[data-tone='black'][data-hover]::after,
+.lm-card[data-tone='violet'][data-hover]::after {
+  background: radial-gradient(
+    22rem 22rem at var(--mx, 50%) var(--my, 0%),
+    rgba(255, 255, 255, 0.22),
+    transparent 60%
+  );
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-card[data-hover]:hover {
+    box-shadow: 0 26px 54px -30px rgba(28, 22, 18, 0.55);
+  }
+  .lm-card[data-hover]:hover::after {
+    opacity: 1;
+  }
+}
+
+.lm-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+}
+
+/* Sotto-card traslucide dentro il pannello viola (ref3). */
+.lm-sub-card {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+}
+
+.lm-muted {
+  color: var(--ink-2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Numeri
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-num {
+  display: block;
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.lm-num-sm {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.lm-num-md {
+  font-size: clamp(1.7rem, 4.6vw, 2.3rem);
+}
+.lm-num-lg {
+  font-size: clamp(2.4rem, 7vw, 3.2rem);
+}
+.lm-num-xl {
+  font-size: clamp(3.2rem, 10vw, 4.6rem);
+}
+
+.lm-kpi-name {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.lm-delta {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.lm-delta[data-dir='up'] {
+  color: var(--green);
+}
+.lm-delta[data-dir='down'] {
+  color: var(--red);
+}
+
+/* Il punto "live" di ref4. */
+.lm-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.lm-live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.5);
+  animation: lm-live 2.4s ease-out infinite;
+}
+@keyframes lm-live {
+  60%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(31, 157, 99, 0);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Pill e bottoni
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  height: 34px;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    border-color 0.22s;
+}
+.lm-pill svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.9;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-pill:hover {
+    color: var(--ink);
+    background: #fff;
+    border-color: var(--line-2);
+  }
+}
+.lm-pill:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.lm-pill[data-on='true'] {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-pill[data-on='true']:hover {
+  background: var(--violet-2);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-pill:disabled,
+.lm-pill[aria-disabled='true'] {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.lm-pill[data-size='sm'] {
+  height: 27px;
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+}
+/* Col pollice le pill diventano bersagli veri.
+   L'area sensibile cresce **fuori** dalla pill, con uno pseudo-elemento
+   invisibile: portare l'altezza a 44px cambierebbe il disegno di ogni filtro e
+   di ogni tab, e la regola dei 44px dice dove si deve poter premere, non quanto
+   deve essere grosso quello che si vede. */
+@media (pointer: coarse) {
+  .lm-pill {
+    height: 38px;
+  }
+  .lm-pill[data-size='sm'] {
+    height: 32px;
+  }
+  .lm-pill::before {
+    content: '';
+    position: absolute;
+    inset: 50% 0 auto;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+}
+.lm-card[data-tone='black'] .lm-pill,
+.lm-card[data-tone='violet'] .lm-pill {
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.lm-pill-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 0.32rem;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.1);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.lm-pill[data-on='true'] .lm-pill-n {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.lm-card[data-tone='black'] .lm-pill-n,
+.lm-card[data-tone='violet'] .lm-pill-n {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.lm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 40px;
+  padding: 0 1.05rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--violet);
+  color: #fff;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.3s var(--ease),
+    box-shadow 0.3s var(--ease),
+    filter 0.2s;
+}
+.lm-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px -14px rgba(139, 92, 246, 0.8);
+  }
+}
+/* Premuto: torna in piano e perde l'ombra. Un bottone che si solleva al
+   passaggio e non si abbassa al clic risponde solo a metà. */
+.lm-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+  box-shadow: none;
+}
+.lm-btn:disabled,
+.lm-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+/* La misura piccola: serve nelle righe del pannello della preghiera, dove un
+   bottone dell'altezza normale sfonderebbe la riga. */
+.lm-btn[data-size='sm'] {
+  height: 32px;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+}
+.lm-btn[data-size='sm'] svg {
+  width: 14px;
+  height: 14px;
+}
+.lm-btn[data-variant='ghost'] {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.lm-btn[data-variant='ghost']:hover:not(:disabled) {
+  background: #fff;
+  border-color: rgba(23, 19, 15, 0.24);
+  box-shadow: none;
+}
+/* Il bottone nero di ref4 ("+ ADD ROOM"): azione neutra ma decisa. */
+.lm-btn[data-variant='dark'] {
+  background: var(--black);
+}
+.lm-btn[data-variant='dark']:hover:not(:disabled) {
+  box-shadow: 0 14px 28px -14px rgba(20, 16, 12, 0.7);
+}
+.lm-btn[data-variant='danger'] {
+  background: var(--red);
+}
+.lm-btn[data-variant='danger']:hover:not(:disabled) {
+  box-shadow: 0 14px 28px -14px rgba(229, 52, 42, 0.7);
+}
+.lm-btn[data-variant='light'] {
+  background: #fff;
+  color: var(--ink);
+}
+.lm-btn[data-variant='light']:hover:not(:disabled) {
+  box-shadow: 0 14px 28px -14px rgba(20, 16, 12, 0.45);
+}
+/* Col pollice: 44px pieni, la misura sotto la quale si sbaglia bersaglio. Qui
+   l'altezza cresce davvero, e non con uno pseudo-elemento come nelle pill — un
+   bottone d'azione più alto sul telefono è anche più giusto da guardare. */
+@media (pointer: coarse) {
+  .lm-btn {
+    height: 44px;
+    padding: 0 1.2rem;
+  }
+}
+
+.lm-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    border-color 0.22s,
+    transform 0.22s var(--ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-icon-btn:hover:not(:disabled) {
+    background: #fff;
+    border-color: rgba(23, 19, 15, 0.24);
+  }
+}
+.lm-icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.lm-icon-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.lm-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+@media (pointer: coarse) {
+  .lm-icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.lm-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.lm-back:hover {
+  color: var(--ink);
+}
+.lm-back svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Controlli veri (ref4): interruttore, cursore, stepper, segmentata
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: inherit;
+}
+.lm-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+/* Pista e pallino discendono da **tre variabili**, non da sei numeri scritti a
+   mano: diametro, margine e corsa si ricavano l'uno dall'altro. È il motivo per
+   cui il formato piccolo non può più sbagliare — prima la pista veniva
+   rimpicciolita da uno `style` inline mentre il pallino restava quello grande,
+   e usciva dal binario. */
+.lm-toggle-track {
+  --tg-h: 27px;
+  --tg-w: 46px;
+  --tg-pad: 3px;
+  position: relative;
+  flex: none;
+  width: var(--tg-w);
+  height: var(--tg-h);
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.16);
+  transition: background-color 0.3s var(--ease);
+}
+.lm-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: var(--tg-pad);
+  left: var(--tg-pad);
+  width: calc(var(--tg-h) - var(--tg-pad) * 2);
+  height: calc(var(--tg-h) - var(--tg-pad) * 2);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(20, 16, 12, 0.3);
+  transition: transform 0.34s var(--ease);
+}
+.lm-toggle input:checked + .lm-toggle-track {
+  background: var(--violet);
+}
+.lm-toggle input:checked + .lm-toggle-track::after {
+  transform: translateX(calc(var(--tg-w) - var(--tg-h)));
+}
+.lm-toggle[data-size='sm'] .lm-toggle-track {
+  --tg-h: 20px;
+  --tg-w: 34px;
+  --tg-pad: 2px;
+}
+/* Il fuoco si vede sulla pista, non sull'input: l'input è nascosto, e un
+   contorno su un elemento invisibile non lo si vede da nessuna parte. */
+.lm-toggle input:focus-visible + .lm-toggle-track {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+.lm-toggle input:disabled + .lm-toggle-track {
+  opacity: 0.45;
+}
+.lm-toggle:has(input:disabled) {
+  cursor: progress;
+}
+.lm-card[data-tone='black'] .lm-toggle-track {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Il cursore bianco di ref4. */
+.lm-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+}
+.lm-slider input {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.14);
+  outline: none;
+}
+.lm-slider input::-webkit-slider-thumb {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 1px 5px rgba(20, 16, 12, 0.32);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.lm-slider input::-webkit-slider-thumb:hover {
+  transform: scale(1.14);
+}
+.lm-slider input::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violet);
+  cursor: pointer;
+}
+.lm-slider b {
+  min-width: 3.4ch;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.lm-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.18rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.lm-stepper button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.2s var(--ease);
+}
+.lm-stepper button:hover {
+  background: rgba(23, 19, 15, 0.07);
+}
+.lm-stepper button:active {
+  transform: scale(0.9);
+  background: rgba(23, 19, 15, 0.12);
+}
+@media (pointer: coarse) {
+  .lm-stepper button {
+    width: 40px;
+    height: 40px;
+  }
+}
+.lm-stepper button svg {
+  width: 14px;
+  height: 14px;
+}
+.lm-stepper b {
+  min-width: 2.6ch;
+  text-align: center;
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Segmentata con la pill che scivola (ref3/ref4). */
+.lm-seg {
+  position: relative;
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.lm-seg-ind {
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  border-radius: 999px;
+  background: var(--black);
+  transition:
+    transform 0.42s var(--ease),
+    width 0.42s var(--ease);
+  pointer-events: none;
+}
+.lm-seg button {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  padding: 0 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.79rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.lm-seg button[data-on='true'] {
+  color: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Stati del cliente
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.2rem 0.58rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.lm-state::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lm-state[data-stato='contattato'] {
+  color: #2f6dd0;
+}
+.lm-state[data-stato='in_trattativa'] {
+  color: var(--violet-2);
+}
+.lm-state[data-stato='preventivo_inviato'] {
+  color: #c2417f;
+}
+.lm-state[data-stato='accettato'] {
+  color: var(--green);
+}
+.lm-state[data-stato='rifiutato'] {
+  color: var(--red);
+}
+.lm-state[data-stato='in_pausa'] {
+  color: #a5791f;
+}
+.lm-card[data-tone='violet'] .lm-state,
+.lm-card[data-tone='black'] .lm-state {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Filtri e ricerca
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  padding-bottom: 0.2rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lm-filters::-webkit-scrollbar {
+  display: none;
+}
+.lm-filters-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 34px;
+  padding-right: 0.7rem;
+  margin-right: 0.15rem;
+  border-right: 1px solid var(--line);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lm-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.lm-select select {
+  appearance: none;
+  height: 34px;
+  padding: 0 1.9rem 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.lm-select[data-on='true'] select {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-select svg {
+  position: absolute;
+  right: 0.65rem;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+.lm-select[data-on='true'] svg {
+  color: #fff;
+  opacity: 1;
+}
+
+.lm-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 190px;
+  flex: 1;
+}
+.lm-search svg {
+  position: absolute;
+  left: 0.72rem;
+  width: 15px;
+  height: 15px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.lm-search input {
+  width: 100%;
+  height: 34px;
+  padding: 0 0.9rem 0 2.05rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+}
+.lm-search input::placeholder {
+  color: var(--ink-3);
+}
+.lm-search input:focus {
+  outline: none;
+  border-color: var(--violet);
+  background: #fff;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Visualizzazioni
+
+   Sottili e in bianco/nero come ref1: il colore lo porta il dato, non il
+   grafico. Il viola compare solo quando qualcosa è selezionato.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Anello sottile con la percentuale al centro (ref1). */
+.lm-ring {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+}
+.lm-ring svg {
+  transform: rotate(-90deg);
+}
+.lm-ring-track {
+  fill: none;
+  stroke: rgba(23, 19, 15, 0.11);
+}
+.lm-ring-arc {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.1s var(--ease);
+}
+.lm-card[data-tone='black'] .lm-ring-track,
+.lm-card[data-tone='violet'] .lm-ring-track {
+  stroke: rgba(255, 255, 255, 0.2);
+}
+.lm-card[data-tone='black'] .lm-ring-arc,
+.lm-card[data-tone='violet'] .lm-ring-arc {
+  stroke: #fff;
+}
+.lm-ring-mid {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.lm-ring-n {
+  font-size: 1.45rem;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.lm-ring-cap {
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: var(--ink-2);
+}
+.lm-card[data-tone='black'] .lm-ring-cap,
+.lm-card[data-tone='violet'] .lm-ring-cap {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Barra orizzontale con la percentuale a destra (ref1). */
+.lm-prog + .lm-prog {
+  margin-top: 0.55rem;
+}
+.lm-prog-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.79rem;
+}
+.lm-prog-top b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.lm-prog-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.1);
+  overflow: hidden;
+}
+.lm-prog-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+  transform-origin: left center;
+  animation: lm-grow 1s var(--ease) both;
+}
+.lm-prog-fill[data-tone='violet'] {
+  background: var(--violet);
+}
+.lm-card[data-tone='black'] .lm-prog-track,
+.lm-card[data-tone='violet'] .lm-prog-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+.lm-card[data-tone='black'] .lm-prog-fill,
+.lm-card[data-tone='violet'] .lm-prog-fill {
+  background: #fff;
+}
+@keyframes lm-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Lollipop: gambo sottile, pallino in cima (ref1). */
+.lm-lolli {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  height: 126px;
+  margin-top: 0.5rem;
+}
+.lm-lolli-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  height: 100%;
+  min-width: 0;
+}
+/* Il gambo cresce in `scaleY` e non in `height`: animare l'altezza rimette in
+   coda il layout di tutta la colonna a ogni fotogramma, moltiplicato per sette
+   gambi. Lo `scaleY` è una trasformazione, non tocca il layout, e il pallino in
+   cima resta rotondo perché sta su uno pseudo-elemento fuori dalla scala. */
+.lm-lolli-stem {
+  position: relative;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.2);
+  transform-origin: bottom center;
+  animation: lm-stem 0.9s var(--ease) both;
+}
+.lm-lolli-stem::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(23, 19, 15, 0.2);
+}
+.lm-lolli-stem[data-on='true'],
+.lm-lolli-stem[data-on='true']::after {
+  background: var(--ink);
+}
+.lm-lolli-col[data-sel='true'] .lm-lolli-stem,
+.lm-lolli-col[data-sel='true'] .lm-lolli-stem::after {
+  background: var(--violet);
+}
+@keyframes lm-stem {
+  from {
+    transform: scaleY(0);
+  }
+}
+/* Il lollipop su fondo scuro.
+   I gambi nascono color inchiostro e le etichette pure: su una card nera
+   sparivano entrambi e restavano i soli numeri a mezz'aria. Succedeva sulle
+   obiezioni in Statistiche, che è il grafico più utile della pagina. */
+.lm-card[data-tone='black'] .lm-lolli-stem,
+.lm-card[data-tone='black'] .lm-lolli-stem::after {
+  background: rgba(255, 255, 255, 0.28);
+}
+.lm-card[data-tone='black'] .lm-lolli-stem[data-on='true'],
+.lm-card[data-tone='black'] .lm-lolli-stem[data-on='true']::after {
+  background: #fff;
+}
+.lm-card[data-tone='black'] .lm-lolli-n {
+  color: #fff;
+}
+.lm-lolli-cap {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.lm-card[data-tone='black'] .lm-lolli-cap {
+  color: rgba(255, 255, 255, 0.58);
+}
+.lm-lolli-n {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Area chart in bianco e nero, linea morbida e punto luminoso (ref1/ref3). */
+.lm-area {
+  position: relative;
+  width: 100%;
+}
+.lm-area svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.lm-area-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lm-area-dot {
+  fill: var(--ink);
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.lm-area-rule {
+  stroke: rgba(23, 19, 15, 0.12);
+  stroke-dasharray: 2 4;
+}
+.lm-area-x {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+/* Il cartellino del punto attivo.
+   Le quattro combinazioni di `data-lato` e `data-sotto` le decide il componente,
+   che è l'unico a sapere dove cade il punto: qui ci sono solo le traslazioni.
+   Senza, sul massimo dell'ultimo mese il cartellino usciva dalla card. */
+.lm-area-tip {
+  position: absolute;
+  transform: translate(-50%, -125%);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.lm-area-tip[data-lato='sx'] {
+  transform: translate(0, -125%);
+}
+.lm-area-tip[data-lato='dx'] {
+  transform: translate(-100%, -125%);
+}
+.lm-area-tip[data-sotto='true'] {
+  transform: translate(-50%, 34%);
+}
+.lm-area-tip[data-sotto='true'][data-lato='sx'] {
+  transform: translate(0, 34%);
+}
+.lm-area-tip[data-sotto='true'][data-lato='dx'] {
+  transform: translate(-100%, 34%);
+}
+.lm-area-hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+/* Sparkline dentro le card KPI (ref3). */
+.lm-spark {
+  display: block;
+  width: 100%;
+  height: 38px;
+  margin-top: 0.6rem;
+  overflow: visible;
+}
+.lm-spark path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lm-spark rect {
+  fill: rgba(23, 19, 15, 0.16);
+}
+.lm-spark rect[data-last='true'] {
+  fill: var(--violet);
+}
+/* Su fondo nero l'inchiostro non si vede: le barre e la linea passano al
+   bianco, come già fanno anelli e barre di progresso. */
+.lm-card[data-tone='black'] .lm-spark rect,
+.lm-card[data-tone='violet'] .lm-spark rect {
+  fill: rgba(255, 255, 255, 0.34);
+}
+.lm-card[data-tone='black'] .lm-spark rect[data-last='true'],
+.lm-card[data-tone='violet'] .lm-spark rect[data-last='true'] {
+  fill: #fff;
+}
+.lm-card[data-tone='black'] .lm-spark path,
+.lm-card[data-tone='violet'] .lm-spark path {
+  stroke: #fff;
+}
+
+/* Calendario della settimana con gli eventi in pill nere (ref1). */
+.lm-cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+.lm-cal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.26rem;
+  min-height: 112px;
+  padding: 0.45rem 0.32rem;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid transparent;
+}
+.lm-cal-day[data-oggi='true'] {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+.lm-cal-dow {
+  font-size: 0.66rem;
+  color: var(--ink-3);
+  text-align: center;
+}
+.lm-cal-n {
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.1rem;
+}
+.lm-cal-ev {
+  display: block;
+  padding: 0.24rem 0.4rem;
+  border-radius: 7px;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+.lm-cal-ev[data-late='true'] {
+  background: var(--red);
+}
+.lm-cal-ev:hover {
+  background: var(--violet);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   La mappa (Leaflet + OpenStreetMap)
+
+   Prima qui c'era un piano cartesiano con dei cerchi: i punti si sovrapponevano,
+   le etichette si coprivano fra loro e la sagoma della costa era una diagonale
+   disegnata a mano. Ora è una mappa vera, e le tre cose si risolvono da sé — le
+   tile danno il contesto, il cluster somma i punti vicini, il popup dice il
+   resto.
+
+   **Lo stile chiaro lo fa questo foglio, non il fornitore delle tile.** Il piano
+   era usare CartoDB Positron, che nasce già grigio perla; oggi però quelle tile
+   vogliono una chiave (vedi il commento in MappaLeaflet.tsx). Le tile standard
+   di OpenStreetMap non ne vogliono, ma sono colorate: qui sotto perdono quasi
+   tutta la saturazione e guadagnano luce, e il risultato è la mappa grigio
+   chiarissima che serviva.
+
+   Tutto il CSS di Leaflet lo riscriviamo: i suoi bianchi pieni, i bordi grigi e
+   i pulsanti quadrati sono di un'altra epoca e di un altro progetto.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-map {
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: rgba(23, 19, 15, 0.04);
+}
+.lm-map[data-h='sm'] {
+  height: 210px;
+}
+.lm-map[data-h='md'] {
+  height: 320px;
+}
+.lm-map[data-h='lg'] {
+  height: 420px;
+}
+.lm-map-canvas {
+  position: absolute;
+  inset: 0;
+  /* Leaflet mette il proprio sfondo bianco: qui sotto c'è il vetro, e un bianco
+     pieno spegnerebbe la stanza proprio nel riquadro della mappa. */
+  background: transparent;
+}
+/* Da OpenStreetMap a Positron in una riga.
+   La saturazione scende quasi a zero (i verdi dei parchi e i gialli delle
+   statali sono la cosa che più fa litigare una mappa con un'interfaccia perla),
+   la luminosità sale e il contrasto scende: restano le strade come linee grigie
+   chiare e i nomi leggibili, che è tutto ciò che serve a capire dove si è.
+
+   È un filtro **statico** su un elemento che non si anima: il browser lo applica
+   una volta per tile quando la disegna, non a ogni fotogramma. */
+.lm-map-canvas .leaflet-tile-pane {
+  filter: saturate(0.08) brightness(1.08) contrast(0.92);
+}
+.lm-map-vuota {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+/* Il marker: un punto d'inchiostro con l'alone viola, lo stesso linguaggio dei
+   pallini del lollipop. */
+.lm-pin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.lm-pin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.2);
+}
+.lm-pin::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* Il cluster: un disco nero col numero dentro, grande quanto i punti che
+   contiene ma con la **radice quadrata** — l'occhio confronta le aree, e un
+   raggio proporzionale farebbe sembrare quattro clienti dove ce ne sono due. */
+.lm-cluster {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--black);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 0 0 6px rgba(139, 92, 246, 0.18),
+    0 8px 18px -8px rgba(20, 16, 12, 0.6);
+}
+
+/* Il popup, rifatto: vetro chiaro, raggio Lumino, niente freccia grigia. */
+.lm-map-canvas .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 44px -20px rgba(28, 22, 18, 0.6);
+}
+.lm-map-canvas .leaflet-popup-content {
+  margin: 0.7rem 0.85rem;
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.lm-map-canvas .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+}
+.lm-map-canvas .leaflet-popup-close-button {
+  color: var(--ink-3) !important;
+}
+.lm-pop-nome {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+.lm-pop-n {
+  color: var(--ink-2);
+}
+
+/* I comandi e l'attribuzione: piccoli, tondi, dello stesso colore di tutto il
+   resto. L'attribuzione non si tocca nel contenuto — è la licenza — ma può
+   smettere di sembrare un residuo di un altro sito. */
+.lm-map-canvas .leaflet-bar {
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px -8px rgba(20, 16, 12, 0.5);
+}
+.lm-map-canvas .leaflet-bar a {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-weight: 500;
+}
+.lm-map-canvas .leaflet-bar a:hover {
+  background: #fff;
+  color: var(--violet-2);
+}
+.lm-map-canvas .leaflet-control-attribution {
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px 0 0 0;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 0.62rem;
+  color: var(--ink-3);
+}
+.lm-map-canvas .leaflet-control-attribution a {
+  color: var(--ink-2);
+}
+
+/* Il callout con la linea che punta al dettaglio (ref4, l'aspirapolvere). */
+.lm-callout {
+  position: absolute;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.28rem 0.58rem;
+  border-radius: 999px;
+  /* Niente `backdrop-filter` qui: il callout vive *dentro* una card, e un
+     secondo strato sfocato sopra quello del pannello costa due sfocature per
+     leggere tre parole. Il bianco al 94% fa lo stesso lavoro. */
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6px 18px -8px rgba(20, 16, 12, 0.55);
+  font-size: 0.7rem;
+  white-space: nowrap;
+  z-index: 2;
+}
+.lm-callout b {
+  font-weight: 700;
+}
+.lm-callout span {
+  color: var(--ink-2);
+}
+.lm-callout::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  height: 1px;
+  width: var(--len, 34px);
+  background: rgba(255, 255, 255, 0.8);
+}
+.lm-callout::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+.lm-callout[data-dir='right']::before {
+  left: 100%;
+}
+.lm-callout[data-dir='right']::after {
+  left: calc(100% + var(--len, 34px));
+  transform: translate(-50%, -50%);
+}
+.lm-callout[data-dir='left']::before {
+  right: 100%;
+}
+.lm-callout[data-dir='left']::after {
+  right: calc(100% + var(--len, 34px));
+  transform: translate(50%, -50%);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il flusso del team (la card nera della home)
+
+   Sta dentro la card nera, che è il punto più guardato della schermata. Prima lì
+   c'era una sfera cromata che girava: qui invece ci sono le ultime cose fatte.
+   Righe basse, iniziali in un pallino, l'ora a destra — la forma di una lista di
+   messaggi, perché è quello che è.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-flusso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lm-flusso-riga {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.55rem;
+  margin: 0 -0.55rem;
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-flusso-riga:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+.lm-flusso-riga:active {
+  background: rgba(255, 255, 255, 0.13);
+}
+/* Le iniziali di chi ha fatto la cosa. Non un'immagine: in un team di due o tre
+   persone una lettera si riconosce più in fretta di una foto da 24 pixel, e non
+   costa una richiesta di rete per riga. */
+.lm-flusso-chi {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.lm-flusso-testo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.lm-flusso-testo b {
+  font-weight: 600;
+  color: #fff;
+}
+/* Una riga sola, tagliata coi puntini: le note di campo sono lunghe quanto
+   vogliono, e una card che cresce col testo che ci finisce dentro sfonda la
+   griglia bento al primo racconto lungo. */
+.lm-flusso-testo span {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lm-flusso-quando {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex: none;
+  font-size: 0.71rem;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+.lm-flusso-quando svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 1.8;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Kanban e card cliente
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-desk {
+  display: none;
+}
+.lm-mob {
+  display: block;
+}
+@media (min-width: 1040px) {
+  .lm-desk {
+    display: block;
+  }
+  .lm-mob {
+    display: none;
+  }
+}
+
+.lm-kanban {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(208px, 1fr);
+  gap: 0.55rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+.lm-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 190px;
+  padding: 0.7rem 0.6rem;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid transparent;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s;
+}
+.lm-col[data-over='true'] {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+.lm-col-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding: 0 0.25rem;
+}
+.lm-col-top .lm-label {
+  font-size: 0.78rem;
+}
+.lm-col-n {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.lm-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.lm-col-empty {
+  padding: 0.7rem 0.3rem;
+  font-size: 0.76rem;
+  color: var(--ink-3);
+}
+
+.lm-ccard {
+  display: block;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.78);
+  color: inherit;
+  text-decoration: none;
+  cursor: grab;
+  transition:
+    transform 0.32s var(--ease),
+    box-shadow 0.32s var(--ease),
+    opacity 0.2s,
+    background-color 0.25s;
+}
+.lm-ccard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px -20px rgba(28, 22, 18, 0.6);
+}
+/* Il trascinamento: la card che parte resta come un'ombra e si inclina. */
+.lm-ccard[data-dragging='true'] {
+  opacity: 0.32;
+  cursor: grabbing;
+  transform: scale(0.97) rotate(-1.4deg);
+}
+.lm-ccard[data-selected='true'] {
+  border-color: transparent;
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+  color: #fff;
+  box-shadow: 0 18px 34px -18px rgba(109, 63, 224, 0.75);
+}
+.lm-ccard.lm-pick {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.lm-ccard-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+/* Le iniziali al posto dell'avatar (ref3): un cerchio con due lettere è
+   riconoscibile in un elenco molto più di un'icona uguale per tutti. */
+.lm-avatar-i {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(23, 19, 15, 0.08);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.lm-ccard[data-selected='true'] .lm-avatar-i {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.lm-ccard-name {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+.lm-ccard-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+.lm-ccard[data-selected='true'] .lm-ccard-meta {
+  color: rgba(255, 255, 255, 0.78);
+}
+.lm-ccard-foot {
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.73rem;
+}
+.lm-ccard[data-selected='true'] .lm-ccard-foot {
+  border-top-color: rgba(255, 255, 255, 0.26);
+}
+.lm-ccard-price {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex: none;
+}
+.lm-dot[data-settore='ristorante'] {
+  background: #d0772f;
+}
+.lm-dot[data-settore='bar'] {
+  background: #2f8fd0;
+}
+.lm-dot[data-settore='hotel'] {
+  background: var(--violet);
+}
+.lm-dot[data-settore='estetista'] {
+  background: #c2417f;
+}
+.lm-dot[data-settore='barbiere'] {
+  background: #4b4540;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   KPI cliccabili della pipeline (ref3: card bianche con mini grafico)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+@media (min-width: 680px) {
+  .lm-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1240px) {
+  .lm-kpis {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+.lm-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-lg);
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.3s var(--ease),
+    box-shadow 0.3s var(--ease),
+    background-color 0.25s;
+}
+.lm-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px -22px rgba(28, 22, 18, 0.55);
+}
+.lm-kpi[data-on='true'] {
+  background: var(--black);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-kpi[data-on='true'] .lm-kpi-name,
+.lm-kpi[data-on='true'] .lm-num {
+  color: #fff;
+}
+.lm-kpi[data-on='true'] .lm-spark path {
+  stroke: #fff;
+}
+.lm-kpi[data-on='true'] .lm-spark rect {
+  fill: rgba(255, 255, 255, 0.3);
+}
+.lm-kpi .lm-num {
+  font-size: 1.9rem;
+}
+.lm-kpi .lm-kpi-name {
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Lista + dettaglio (ref3)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-split {
+  display: grid;
+  gap: 0.7rem;
+}
+@media (min-width: 1100px) {
+  .lm-split {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+}
+/* La colonna della lista è scura (ref3): fa da contrappeso al pannello viola
+   accanto, e fa risaltare la riga selezionata. */
+.lm-listbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 0.6rem;
+  border-radius: var(--r-xl);
+  background: var(--black);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.lm-listbox .lm-ccard {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.94);
+}
+.lm-listbox .lm-ccard:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+.lm-listbox .lm-ccard[data-selected='true'] {
+  background: linear-gradient(152deg, #7f4bf2, #8b5cf6 45%, #6636d6);
+}
+.lm-listbox .lm-ccard-meta {
+  color: rgba(255, 255, 255, 0.55);
+}
+.lm-listbox .lm-ccard-foot {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+.lm-listbox .lm-avatar-i {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.lm-listbox .lm-state {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+}
+.lm-listbox .lm-col-empty {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.lm-detail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.lm-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 620px) {
+  .lm-detail-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.lm-detail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
+}
+.lm-card[data-tone='violet'] .lm-select select {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.lm-card[data-tone='violet'] .lm-select svg {
+  color: #fff;
+}
+.lm-card[data-tone='violet'] .lm-row {
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Righe, timeline
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-rows {
+  display: flex;
+  flex-direction: column;
+}
+.lm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.58rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.84rem;
+  color: inherit;
+  text-decoration: none;
+}
+.lm-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.lm-row-note {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.74rem;
+  color: var(--ink-2);
+}
+.lm-card[data-tone='violet'] .lm-row-note,
+.lm-card[data-tone='black'] .lm-row-note {
+  color: rgba(255, 255, 255, 0.7);
+}
+.lm-row-v {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lm-when {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.lm-when[data-late='true'] {
+  color: var(--red);
+  font-weight: 600;
+}
+/* Su fondo scuro `--ink-2` è inchiostro all'58%: su nero non si legge affatto.
+   Succedeva sui domini in scadenza e sui solleciti, cioè nelle due card nere
+   della F4 — la data spariva e restava una riga muta. Il ritardo resta rosso:
+   sul nero il rosso tiene benissimo. */
+.lm-card[data-tone='black'] .lm-when,
+.lm-card[data-tone='violet'] .lm-when {
+  color: rgba(255, 255, 255, 0.58);
+}
+.lm-card[data-tone='black'] .lm-when[data-late='true'],
+.lm-card[data-tone='violet'] .lm-when[data-late='true'] {
+  color: #ff8079;
+}
+.lm-empty {
+  padding: 1rem 0.2rem;
+  font-size: 0.84rem;
+  color: var(--ink-3);
+}
+
+.lm-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid var(--line);
+}
+.lm-time-item {
+  position: relative;
+  font-size: 0.85rem;
+}
+.lm-time-item::before {
+  content: '';
+  position: absolute;
+  left: calc(-0.9rem - 4px);
+  top: 0.4rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+.lm-time-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.lm-time-tipo {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--violet-2);
+}
+.lm-time-body {
+  margin-top: 0.15rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Barra «Chiedi a Lumino»
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-ask {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+}
+.lm-ask-spark {
+  display: grid;
+  place-items: center;
+  color: var(--violet);
+}
+.lm-ask-spark svg {
+  width: 17px;
+  height: 17px;
+}
+.lm-ask input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.86rem;
+}
+.lm-ask input:focus {
+  outline: none;
+}
+.lm-ask input::placeholder {
+  color: var(--ink-3);
+}
+.lm-ask-note {
+  flex: none;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.07);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Avvisi
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-warn {
+  margin: 0.9rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(229, 52, 42, 0.3);
+  border-radius: var(--r-md);
+  background: rgba(229, 52, 42, 0.07);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.lm-warn code {
+  font-size: 0.88em;
+  color: var(--red);
+}
+.lm-error {
+  font-size: 0.82rem;
+  color: var(--red);
+}
+
+/* La fascia dell'anteprima: deve essere impossibile scambiarla per il vero. */
+.lm-anteprima {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(23, 19, 15, 0.92) 0 12px,
+    rgba(23, 19, 15, 0.76) 12px 24px
+  );
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Modale
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(34, 27, 22, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: lm-fade 0.22s ease both;
+}
+@keyframes lm-fade {
+  from {
+    opacity: 0;
+  }
+}
+.lm-modal-box {
+  width: 100%;
+  max-width: 440px;
+  padding: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(30px) saturate(1.3);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  box-shadow: 0 50px 100px -40px rgba(28, 22, 18, 0.7);
+  animation: lm-pop 0.34s var(--ease) both;
+}
+.lm-modal-box:has(.lm-modal-form) {
+  max-width: 680px;
+  max-height: 88vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.lm-modal-box h2 {
+  margin-top: 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: -0.035em;
+}
+.lm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.2rem;
+}
+@keyframes lm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Campi
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-form {
+  display: grid;
+  gap: 0.85rem;
+}
+@media (min-width: 640px) {
+  .lm-form[data-cols='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lm-form .lm-field[data-wide='true'] {
+    grid-column: 1 / -1;
+  }
+}
+.lm-field label,
+.lm-field > .lm-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.lm-field input,
+.lm-field textarea,
+.lm-field select {
+  width: 100%;
+  padding: 0.62rem 0.82rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  transition:
+    border-color 0.22s,
+    background-color 0.22s;
+}
+.lm-field textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.lm-field select {
+  appearance: none;
+  cursor: pointer;
+}
+.lm-field input:focus,
+.lm-field textarea:focus,
+.lm-field select:focus {
+  outline: none;
+  border-color: var(--violet);
+  background: #fff;
+}
+.lm-field input::placeholder,
+.lm-field textarea::placeholder {
+  color: var(--ink-3);
+}
+.lm-field-hint {
+  margin-top: 0.28rem;
+  font-size: 0.76rem;
+  color: var(--ink-3);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Tabella di anteprima (import CSV)
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.5);
+  scrollbar-width: thin;
+}
+.lm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.lm-table th,
+.lm-table td {
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.lm-table th {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.6);
+  position: sticky;
+  top: 0;
+}
+.lm-table tr:last-child td {
+  border-bottom: 0;
+}
+.lm-table td[data-skip='true'] {
+  color: var(--ink-3);
+}
+
+.lm-drop {
+  display: grid;
+  place-items: center;
+  gap: 0.45rem;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.25s,
+    background-color 0.25s;
+}
+.lm-drop:hover,
+.lm-drop[data-over='true'] {
+  border-color: var(--violet);
+  background: rgba(139, 92, 246, 0.07);
+}
+.lm-drop svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.5;
+  color: var(--violet);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Pagine in arrivo
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-soon-page {
+  max-width: 46ch;
+  padding-top: 7vh;
+}
+.lm-thread {
+  margin-top: 1.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--grad);
+  transform-origin: left center;
+  animation: lm-thread 2.6s var(--ease) infinite;
+}
+@keyframes lm-thread {
+  0% {
+    transform: scaleX(0.04);
+    opacity: 0.5;
+  }
+  55% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Login
+
+   La stessa scena, e sopra un solo pannello di vetro. È la prima cosa che si
+   vede dell'area: se qui il linguaggio non è già tutto, dentro non ci si
+   crede.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff-login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.1rem;
+}
+.lm-login-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 1.9rem 1.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(34px) saturate(1.35);
+  -webkit-backdrop-filter: blur(34px) saturate(1.35);
+  box-shadow: 0 50px 110px -45px rgba(28, 22, 18, 0.7);
+}
+.lm-login-card .lm-h1 {
+  margin-top: 1.2rem;
+  font-size: clamp(2.2rem, 9vw, 2.9rem);
+}
+.lm-login-card form {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 0.85rem;
+}
+.lm-login-card .lm-btn {
+  margin-top: 0.3rem;
+  width: 100%;
+  height: 46px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Campo — chip, passi, visita, follow-up
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-chips-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.lm-chips-hint {
+  margin-top: 0.12rem;
+}
+.lm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+  margin-top: 0.5rem;
+}
+/* Un chip si tocca col pollice: 38px, e nessuna troncatura. */
+.lm-chips .lm-pill {
+  height: 38px;
+  padding: 0 0.92rem;
+  font-size: 0.82rem;
+}
+
+.lm-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.lm-steps {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lm-steps::-webkit-scrollbar {
+  display: none;
+}
+.lm-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  height: 38px;
+  padding: 0 0.85rem 0 0.35rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    border-color 0.22s;
+}
+.lm-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.lm-step[data-on='true'] {
+  background: var(--black);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-step[data-done='true'] {
+  color: var(--ink);
+  border-color: rgba(139, 92, 246, 0.45);
+}
+.lm-step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: rgba(23, 19, 15, 0.08);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+.lm-step[data-on='true'] .lm-step-n {
+  background: rgba(255, 255, 255, 0.2);
+}
+.lm-step[data-done='true'] .lm-step-n {
+  background: rgba(139, 92, 246, 0.16);
+  color: var(--violet-2);
+}
+.lm-step-n svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.6;
+}
+
+.lm-visita {
+  margin-bottom: 4.2rem;
+}
+@media (min-width: 1040px) {
+  .lm-visita {
+    margin-bottom: 0;
+  }
+}
+.lm-visita-blocchi {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.lm-visita .lm-listbox {
+  max-height: 48vh;
+}
+
+.lm-visita-bar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--dock) + 0.4rem);
+  z-index: 40;
+  display: flex;
+  gap: 0.45rem;
+  width: calc(100% - 1.6rem);
+  padding: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  box-shadow: 0 20px 44px -20px rgba(28, 22, 18, 0.55);
+}
+.lm-visita-bar .lm-btn {
+  flex: 1;
+  height: 44px;
+  /* Nessuna etichetta va a capo dentro una pill alta 44px: andando a capo il
+     testo esce dal bottone invece di farlo crescere. Se lo spazio non basta, il
+     bottone si stringe e il testo si taglia — che si vede, e quindi si corregge
+     — invece di accartocciarsi in silenzio. */
+  white-space: nowrap;
+  padding: 0 0.9rem;
+}
+/* L'azione principale è l'ultima e pesa di più: due terzi contro un terzo. Con
+   `flex: 1` su entrambe, «Annulla» e «Salva visita» avevano la stessa
+   importanza visiva, e non ce l'hanno. */
+.lm-visita-bar .lm-btn:last-child {
+  flex: 1.8;
+}
+@media (min-width: 1040px) {
+  .lm-visita-bar {
+    position: static;
+    transform: none;
+    justify-content: flex-end;
+    width: auto;
+    padding: 1.1rem 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+  .lm-visita-bar .lm-btn {
+    flex: 0 0 auto;
+    min-width: 150px;
+  }
+}
+
+.lm-gps {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.45);
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+.lm-gps svg {
+  width: 16px;
+  height: 16px;
+  color: var(--violet);
+  flex: none;
+}
+.lm-gps span {
+  flex: 1;
+}
+
+.lm-voice-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+.lm-voice-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  animation: lm-pulse 1.1s ease-in-out infinite;
+}
+@keyframes lm-pulse {
+  50% {
+    opacity: 0.25;
+    transform: scale(0.72);
+  }
+}
+
+.lm-shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+.lm-shot {
+  position: relative;
+  display: block;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.5);
+}
+.lm-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-shot-x {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 16, 12, 0.72);
+  color: #fff;
+  cursor: pointer;
+}
+.lm-shot-x svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
+}
+.lm-shot-add {
+  display: grid;
+  place-items: center;
+  gap: 0.2rem;
+  width: 84px;
+  height: 84px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.25s,
+    background-color 0.25s;
+}
+.lm-shot-add:hover:not(:disabled) {
+  border-color: var(--violet);
+  background: rgba(139, 92, 246, 0.07);
+}
+.lm-shot-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lm-shot-add svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.6;
+  color: var(--violet);
+}
+
+.lm-visit-name {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+}
+.lm-visit-name:hover {
+  color: var(--violet-2);
+}
+.lm-visit-map {
+  align-self: flex-start;
+  margin-top: 0.85rem;
+}
+
+/* La reazione è l'unico posto in cui un colore esprime un giudizio. */
+.lm-react {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.58rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.lm-react[data-r='entusiasta'] {
+  color: var(--green);
+  border-color: rgba(31, 157, 99, 0.4);
+  background: rgba(31, 157, 99, 0.09);
+}
+.lm-react[data-r='interessato'] {
+  color: var(--violet-2);
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.09);
+}
+.lm-react[data-r='tiepido'] {
+  color: #a5791f;
+  border-color: rgba(165, 121, 31, 0.35);
+}
+.lm-react[data-r='diffidente'] {
+  color: #c2417f;
+  border-color: rgba(194, 65, 127, 0.35);
+}
+.lm-react[data-r='chiuso'] {
+  color: var(--red);
+  border-color: rgba(229, 52, 42, 0.4);
+}
+
+.lm-quote {
+  margin: 0.75rem 0 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--violet);
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: -0.015em;
+}
+
+.lm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  margin-top: 0.8rem;
+}
+.lm-tag {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.lm-tag[data-kind='strumento'] {
+  border-color: rgba(139, 92, 246, 0.3);
+  color: var(--violet-2);
+}
+.lm-tag[data-kind='lingua'] {
+  border-color: rgba(194, 65, 127, 0.28);
+  color: #c2417f;
+}
+
+.lm-dictated {
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-sm);
+  background: rgba(23, 19, 15, 0.045);
+  font-size: 0.82rem;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.lm-reports {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.lm-report + .lm-report {
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.lm-follow {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  transition: opacity 0.2s;
+}
+.lm-follow[data-busy='true'] {
+  opacity: 0.5;
+}
+.lm-follow-who {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.lm-follow-who a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+.lm-follow-who a:hover {
+  color: var(--violet-2);
+}
+.lm-follow-do {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+}
+.lm-follow-do .lm-icon-btn {
+  width: 31px;
+  height: 31px;
+}
+.lm-follow-do .lm-icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Progetti (F4)
+
+   Una riga per progetto: chi, a che punto è, cosa c'è da fare. Non è una tabella
+   — una tabella avrebbe quattro colonne di cui tre quasi sempre vuote, e su un
+   telefono si leggerebbe di traverso. È una riga che su schermo largo si dispone
+   su tre blocchi e sul telefono li impila.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-prog-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lm-prog-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.lm-prog-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0.2rem;
+}
+@media (min-width: 880px) {
+  .lm-prog-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.1rem;
+  }
+}
+.lm-prog-nome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+@media (min-width: 880px) {
+  .lm-prog-nome {
+    flex: 0 0 26%;
+  }
+}
+.lm-prog-nome b {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.lm-prog-nome span {
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+.lm-prog-nome:hover b {
+  color: var(--violet-2);
+}
+.lm-prog-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+@media (min-width: 880px) {
+  .lm-prog-meta {
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+}
+
+/* Le cinque tacche del percorso: brief, design, sviluppo, revisione, online.
+   Tacche e non una barra continua perché le fasi sono **discrete** — un sito non
+   è «al 62% del design», è in design. Una barra continua prometterebbe una
+   precisione che il dato non ha.
+   La tacca corrente è viola e più larga: è l'unica informazione che si cerca
+   davvero, e il viola qui vale come selezione, coerente con tutto il resto. */
+.lm-fasi {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+}
+.lm-fasi > span {
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.13);
+  transition:
+    background-color 0.3s,
+    width 0.3s var(--ease);
+}
+.lm-fasi > span[data-fatta='true'] {
+  background: var(--ink);
+}
+.lm-fasi > span[data-ora='true'] {
+  width: 26px;
+  background: var(--violet);
+}
+.lm-fasi b {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Le frasi dei titolari (F4)
+
+   Testuali, dentro la card nera delle obiezioni. Il virgolettato è la caporale
+   italiana e lo mette il CSS, non il testo: chi registra una visita scrive la
+   frase, non la punteggiatura che la circonda.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-frasi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  margin-top: 1rem;
+}
+.lm-frase {
+  margin: 0;
+  padding-top: 0.7rem;
+}
+.lm-frase p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.86);
+}
+.lm-frase p::before {
+  content: '«';
+}
+.lm-frase p::after {
+  content: '»';
+}
+.lm-frase cite {
+  display: block;
+  margin-top: 0.22rem;
+  font-style: normal;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Accessibilità e movimento
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff a:focus-visible,
+.lm-staff button:focus-visible,
+.lm-staff input:focus-visible,
+.lm-staff select:focus-visible,
+.lm-staff textarea:focus-visible,
+.lm-staff [tabindex]:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+
+.lm-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Lo stato di partenza lo scrive il CSS: se GSAP arriva un attimo dopo, il
+   contenuto non lampeggia già in posizione per poi rifare l'entrata. */
+.lm-staff-enter,
+.lm-in {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-staff-enter,
+  .lm-in {
+    opacity: 1;
+  }
+  .lm-blob,
+  .lm-thread,
+  .lm-live::before,
+  .lm-prog-fill,
+  .lm-lolli-stem {
+    animation: none !important;
+  }
+  .lm-staff *,
+  .lm-staff *::before,
+  .lm-staff *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Wordmark
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff .lm-wm {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: var(--wm-size, 1.2rem);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.lm-staff .lm-wm b {
+  font-weight: 400;
+  display: inline-block;
+  color: currentColor;
+}
+.lm-staff .lm-wm .lm-wm-i {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA PERSONA — avatar, saluto
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* L'avatar: una foto o due iniziali, sempre nella stessa forma.
+   Tre misure e non una scala libera: `sm` nella testata del telefono, `rail`
+   nella barra, `lg` nella pagina delle impostazioni. Una quarta la porta il
+   saluto della home, che è un caso suo perché lì la foto è il soggetto. */
+.lm-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.lm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-avatar[data-size='sm'] {
+  width: 32px;
+  height: 32px;
+  font-size: 0.74rem;
+}
+.lm-avatar[data-size='rail'] {
+  width: 30px;
+  height: 30px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.lm-avatar[data-size='lg'] {
+  width: 104px;
+  height: 104px;
+  font-size: 2rem;
+  font-weight: 300;
+}
+/* Con una foto dentro, il fondo viola non si vede mai: toglierlo evita il lampo
+   di colore fra il montaggio e il caricamento dell'immagine. Con le sole
+   iniziali il viola resta, ed è l'unico posto dove il viola vuol dire
+   identità — vedi la nota sull'avatar del rail. */
+.lm-avatar[data-foto='true'] {
+  background: rgba(23, 19, 15, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+/* Nel rail l'avatar è neutro: sotto c'è l'interruttore dei dati demo, che acceso
+   è viola, e due macchie dello stesso colore una sull'altra direbbero che sono
+   la stessa cosa. */
+.lm-rail-foot .lm-avatar[data-foto='false'] {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+}
+.lm-rail-me:hover .lm-avatar[data-foto='false'] {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
+.lm-staff-top-end {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Il saluto della home
+
+   La prima cosa della giornata: la faccia, grande, e il nome col ruolo davanti.
+   La versione lunga vale una volta al giorno — dal secondo passaggio la stessa
+   intestazione resta, in scala ridotta e ferma. Le parole sono le stesse nelle
+   due versioni, cambia la scala e cosa è visibile: è così che il server può
+   disegnare un markup valido per entrambe senza errori di idratazione.
+   ─────────────────────────────────────────────────────────────────────────── */
+/* LA TESTATA DELLA HOME: il saluto, e sotto le due azioni.
+   Erano affiancati con `justify-content: space-between`, e finché il saluto era
+   «Buonasera. Si chiude la giornata.» ci stavano. Con la riga personale — che è
+   una frase vera e lunga una trentina di parole — i bottoni le finivano **sopra**
+   a metà: la frase più personale della schermata tagliata da un bottone.
+
+   Le azioni vanno a capo sempre, e si allineano a destra. Non è un ripiego per
+   lo spazio: «Registra una visita» e «Nuovo cliente» sono quello che si fa
+   *dopo* aver letto cosa c'è oggi, e metterle in fondo al blocco è anche
+   l'ordine in cui si leggono. Il saluto prende tutta la riga e la frase può
+   respirare fino ai suoi 46 caratteri. */
+.lm-head-saluto {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.1rem;
+  margin-bottom: 1.4rem;
+}
+.lm-head-saluto .lm-head-actions {
+  justify-content: flex-start;
+}
+@media (min-width: 760px) {
+  .lm-head-saluto .lm-head-actions {
+    justify-content: flex-end;
+  }
+}
+
+.lm-saluto {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  /* `min-width: 0` sul contenitore **e** sul testo: senza il secondo, una parola
+     lunga (il nome di un locale) allarga il blocco oltre la colonna invece di
+     andare a capo. È il comportamento di default dei figli di un flex. */
+  min-width: 0;
+}
+@media (min-width: 720px) {
+  .lm-saluto {
+    gap: 1.4rem;
+  }
+}
+
+/* La foto del saluto: cerchio, bordo sottile, e un alone Lumino appena
+   accennato. L'alone è due ombre — una bianca stretta che fa il bordo e una
+   viola larga e trasparentissima — e non un `filter: drop-shadow`, che
+   obbligherebbe a rasterizzare di nuovo l'elemento a ogni fotogramma
+   dell'entrata. Un `box-shadow` lo compone il compositore. */
+.lm-saluto-foto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-weight: 300;
+  line-height: 1;
+  width: 68px;
+  height: 68px;
+  font-size: 1.5rem;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 0 0 5px rgba(139, 92, 246, 0.1),
+    0 16px 34px -18px rgba(70, 40, 130, 0.5);
+  transition:
+    width 0.5s var(--ease),
+    height 0.5s var(--ease),
+    font-size 0.5s var(--ease);
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-foto {
+  width: 96px;
+  height: 96px;
+  font-size: 2rem;
+}
+.lm-saluto-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lm-saluto-foto[data-foto='true'] {
+  background: rgba(23, 19, 15, 0.08);
+}
+
+.lm-saluto-testo {
+  min-width: 0;
+  min-width: 0;
+}
+
+/* Il titolo: la scala di `.lm-h1`, ridotta nella versione compatta. È la
+   gerarchia per scala della regola 2 — fra le due versioni non cambia un colore,
+   cambia una misura. */
+.lm-saluto-h1 {
+  font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  font-weight: 200;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  transition: font-size 0.5s var(--ease);
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-h1 {
+  font-size: clamp(2.3rem, 5.6vw, 4rem);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+/* «Bentornato,» è l'unica cosa che la versione compatta nasconde: senza di lei
+   resta «CCO Ratib», che è un'intestazione di pagina. `display: none` e non
+   opacità — nascosta deve smettere di occupare la riga. */
+.lm-saluto-ben {
+  display: none;
+}
+.lm-saluto[data-lungo='true'] .lm-saluto-ben {
+  display: inline;
+}
+
+/* Il nome nel gradiente Lumino.
+   **È la seconda eccezione alla regola che vieta il gradiente come maschera del
+   testo**, dopo la I del wordmark, ed è annotata nel piano: è il nome della
+   persona appena entrata, compare una volta per schermata e si spegne nella
+   versione compatta di tutti i giorni. Su un'etichetta qualsiasi il gradiente
+   resta vietato — è quello che fa sembrare un pannello generato. */
+.lm-saluto-h1 em {
+  font-style: normal;
+  font-weight: 400;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Le lettere che salgono.
+   Il ritardo è per carattere, in `--l`, scritto dal componente. Si animano solo
+   `transform` e `opacity`: le due proprietà che il compositore muove senza
+   ridisegnare niente.
+   Lo stato di partenza è `attesa`: finché il browser non ha letto se il saluto
+   lungo tocca a oggi, le lettere sono invisibili. È la convenzione di `.lm-in` e
+   `.lm-staff-enter` — meglio non disegnare che disegnare e correggere.
+
+   **Niente `will-change: transform` qui, e la ragione è precisa.** C'era, ed era
+   la cosa giusta da scrivere in qualunque altro punto di questo foglio: promuove
+   la lettera a livello suo e la fa muovere senza ridisegnarla. Ma una lettera
+   promossa esce dal livello di disegno del suo genitore, e il genitore è l'`em`
+   che porta il gradiente in `background-clip: text` — cioè il gradiente non
+   dipinge più i glifi che stanno in un altro livello, e il nome resta
+   **trasparente su fondo chiaro: invisibile**. Vale per `will-change` e vale per
+   una `transform` attiva, che promuove allo stesso modo: è il motivo per cui
+   l'animazione qui sotto è fatta a due tempi. */
+.lm-lettera {
+  display: inline-block;
+}
+.lm-saluto[data-anima='attesa'] .lm-lettera {
+  opacity: 0;
+}
+
+/* **Due tempi**: prima le lettere salgono in nero, poi il nome si accende nel
+   gradiente.
+   Non è un vezzo, è l'unico modo di avere tutte e due le cose. Mentre una lettera
+   ha una `transform` addosso il gradiente del genitore non la raggiunge, quindi
+   durante la salita ogni lettera porta il proprio inchiostro (`lm-accendi` col
+   riempimento `backwards` glielo tiene fino a che non parte). A 1.25s l'ultima
+   lettera è atterrata: lì l'inchiostro sfuma verso `transparent` e sotto compare
+   il gradiente, che nel frattempo il genitore ha ripreso a dipingere perché
+   nessuna `transform` è più attiva — `backwards` e non `both` proprio per questo,
+   `both` lascerebbe applicata la trasformazione finale e la promozione con lei.
+   L'effetto che si vede è che il nome **atterra e poi si accende**, che è meglio
+   di quello che si voleva all'inizio. */
+.lm-saluto[data-anima='si'] .lm-lettera {
+  animation: lm-sali 0.66s var(--ease) backwards;
+  animation-delay: calc(var(--l, 0) * 26ms);
+}
+.lm-saluto[data-anima='si'] .lm-saluto-h1 em .lm-lettera {
+  animation:
+    lm-sali 0.66s var(--ease) calc(var(--l, 0) * 26ms) backwards,
+    lm-accendi 0.55s ease 1.25s backwards;
+}
+@keyframes lm-sali {
+  from {
+    opacity: 0;
+    transform: translateY(0.52em) scaleY(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes lm-accendi {
+  from {
+    color: var(--ink);
+  }
+  to {
+    color: transparent;
+  }
+}
+
+/* LA RIGA PERSONALE.
+   È la seconda cosa più grande della schermata, più dei numeri delle card, e
+   deve esserlo: è quella che dice «so chi sei e cosa hai fatto ieri». Prima era
+   una `.lm-sub` da 0.95rem sotto il titolo — cioè una didascalia, e una
+   didascalia non la legge nessuno.
+
+   Sta su una riga sua con un filo viola a sinistra: non è decorazione, è ciò
+   che la separa dalla data che le sta sotto. Senza, le due righe si leggono
+   come un blocco unico di servizio e la frase personale ci si perde dentro. */
+.lm-saluto-riga {
+  margin-top: 0.75rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--violet);
+  font-size: 1.12rem;
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  max-width: 46ch;
+  /* Lo spazio è riservato: la riga cambia da «primo accesso» a «rientro» dopo il
+     montaggio, e senza questo la data sotto salterebbe di venti pixel. */
+  min-height: 1.45em;
+}
+@media (min-width: 760px) {
+  .lm-saluto[data-lungo='true'] .lm-saluto-riga {
+    font-size: 1.32rem;
+    padding-left: 1.05rem;
+  }
+}
+/* Rientra quando cambia testo: il `key` sul paragrafo la rimonta, questa regola
+   le dà l'entrata. Vale sempre, non solo col saluto lungo — è l'unica animazione
+   della schermata che risponde a un cambio di contenuto e non all'arrivo. */
+.lm-saluto-riga {
+  animation: lm-sali-riga 0.55s var(--ease) both;
+}
+.lm-saluto[data-anima='si'] .lm-saluto-riga {
+  animation: lm-sali-riga 0.7s var(--ease) 0.42s both;
+}
+.lm-saluto[data-anima='attesa'] .lm-saluto-riga {
+  animation: none;
+}
+.lm-saluto-meta {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--ink-3);
+}
+.lm-saluto[data-anima='si'] .lm-saluto-meta {
+  animation: lm-sali-riga 0.7s var(--ease) 0.52s both;
+}
+@keyframes lm-sali-riga {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* L'anteprima del saluto, nella pagina delle proprie impostazioni. */
+.lm-anteprima-saluto {
+  margin-top: 0.2rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--line);
+  font-size: 1.5rem;
+  font-weight: 200;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.lm-anteprima-saluto em {
+  font-style: normal;
+  font-weight: 400;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lm-anteprima-saluto small {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   La foto profilo: scegli, inquadra, salva
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-avatar-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+/* Il riquadro del ritaglio. Quadrato, con dentro il canvas dell'anteprima e
+   sopra una maschera ad anello: si vede anche quello che resta FUORI dal cerchio,
+   che è l'unico modo di capire dove si sta trascinando. Un cerchio pieno
+   mostrerebbe solo il risultato e non l'inquadratura. */
+.lm-crop {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: rgba(23, 19, 15, 0.06);
+  cursor: grab;
+  touch-action: none;
+}
+.lm-crop:active {
+  cursor: grabbing;
+}
+.lm-crop canvas {
+  display: block;
+  width: 240px;
+  height: 240px;
+}
+.lm-crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Un solo `box-shadow` interno grande come il riquadro fa l'anello: il buco è
+     il cerchio, tutto il resto è velato. Costa una sola composizione, contro i
+     due elementi sovrapposti che servirebbero a disegnarlo a mano. */
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(255, 255, 255, 0.62);
+  outline: 1px solid rgba(23, 19, 15, 0.14);
+  outline-offset: -1px;
+}
+
+.lm-crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 240px;
+  color: var(--ink-2);
+}
+.lm-crop-zoom svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.lm-crop-zoom input[type='range'] {
+  flex: 1;
+  accent-color: var(--violet);
+}
+.lm-crop-azioni {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.lm-field-hint[data-errore='true'] {
+  color: var(--red);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IL PROMEMORIA DELLA PREGHIERA
+
+   Vive nella shell, quindi si vede da ogni pagina. È montato UNA volta sola e
+   spostato dal CSS: in alto a destra sopra il pannello sul desktop, pill in cima
+   sul telefono. Due istanze nascoste a vicenda da un media query sembrerebbero
+   la strada ovvia e sarebbero due conti alla rovescia che battono insieme e due
+   notifiche per ogni orario.
+
+   Chiuso è una pill: preghiera prossima, quanto manca, a che ora. Sono le tre
+   cose che si guardano di sfuggita mentre si lavora, e stanno in trentotto pixel
+   di altezza. Aperto diventa un pannello con i cinque orari, la città, un'ayah
+   e le impostazioni.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* DOV'È.
+   Era in posizione assoluta in alto a destra della shell: galleggiava sopra il
+   titolo della pagina e sopra i bottoni della testata, con un z-index che lo
+   metteva davanti a tutto e nessuna relazione col resto. Su una schermata con
+   un'azione principale a destra — cioè quasi tutte — ci finiva sopra.
+
+   Adesso è **la prima riga della colonna del contenuto**, allineata a destra:
+   occupa il suo spazio, non copre niente su nessuna larghezza, e sta sullo
+   stesso asse verticale delle azioni delle pagine. Una riga alta 38 pixel più il
+   margine, ed è l'unico costo. */
+.lm-shell-salat {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.55rem;
+}
+@media (min-width: 1040px) {
+  .lm-shell-salat {
+    /* Si aggancia in cima alla colonna mentre il contenuto scorre: il conto alla
+       rovescia è l'unica cosa di questa dashboard che serva **sempre**, e
+       scorrendo la pipeline non deve andarsene in alto. Lo sfondo negativo del
+       margine chiude il buco che lo `sticky` lascerebbe sotto. */
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.4rem;
+    /* Il contenuto che scorre sotto non deve trasparire dietro la pill: due
+       righe di sfumatura invece di un rettangolo pieno, così il bordo non si
+       vede come una linea. */
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.62),
+      rgba(255, 255, 255, 0.24) 62%,
+      rgba(255, 255, 255, 0)
+    );
+  }
+}
+
+.lm-salat {
+  position: relative;
+}
+
+/* La pill chiusa. Vetro come il dock del telefono (ref1) e non nera: galleggia
+   sopra il contenuto e deve lasciarlo intravedere. Il blur c'è perché questo è
+   uno strato che COPRE — è la regola: il blur sta sul pannello e sugli strati che
+   coprono, e su nient'altro. */
+.lm-salat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* 40px, come `.lm-btn` e come i bottoni della testata delle pagine. Erano 38 e
+     si vedeva: accanto a un'azione primaria la pill era due pixel più bassa, che
+     è la differenza che fa sembrare un elemento incollato da un'altra
+     interfaccia. */
+  height: 40px;
+  max-width: 62vw;
+  padding: 0 0.8rem 0 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: 0 14px 30px -16px rgba(28, 22, 18, 0.42);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.22s var(--ease),
+    background-color 0.25s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-salat-pill:hover {
+    background: rgba(255, 255, 255, 0.82);
+  }
+}
+.lm-salat-pill:active {
+  transform: scale(0.97);
+}
+.lm-salat-pill:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+/* Il quarto d'ora prima dell'orario: la pill diventa nera.
+   È l'unico momento in cui ha qualcosa di urgente da dire, e in questa
+   interfaccia il nero è l'accento — una o due superfici per schermata. Il resto
+   del tempo resta vetro come gli altri controlli, che è il motivo per cui questo
+   nero si nota. */
+.lm-salat-pill[data-vicina] {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--black);
+  color: #fff;
+}
+.lm-salat-pill[data-vicina] .lm-salat-pill-testo small,
+.lm-salat-pill[data-vicina] .lm-salat-ora {
+  color: rgba(255, 255, 255, 0.64);
+}
+.lm-salat-pill[data-vicina] .lm-salat-ora {
+  border-left-color: rgba(255, 255, 255, 0.2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-salat-pill[data-vicina]:hover {
+    background: #241f1a;
+  }
+}
+
+/* La spiegazione, mentre la finestra del permesso è aperta.
+   Sotto la pill e in posizione assoluta: se occupasse spazio nel flusso, tutta la
+   pagina scenderebbe di una riga per il secondo in cui è visibile e risalirebbe
+   dopo. */
+.lm-salat-spiega {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 46;
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -22px rgba(28, 22, 18, 0.5);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--ink-2);
+  animation: lm-salat-entra 0.28s var(--ease) both;
+}
+.lm-salat-pill > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--ink-2);
+}
+.lm-salat-pill-testo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.15;
+}
+.lm-salat-pill-testo b {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.lm-salat-pill-testo small {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+  /* Le cifre non ballano mentre il conto scende: senza questo, «1h 09m» e
+     «1h 11m» hanno larghezze diverse e la pill trema una volta al secondo. */
+  font-variant-numeric: tabular-nums;
+}
+.lm-salat-ora {
+  flex: none;
+  padding-left: 0.5rem;
+  margin-left: 0.1rem;
+  border-left: 1px solid var(--line);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 460px) {
+  /* Su uno schermo stretto l'ora esatta sparisce e resta il conto alla rovescia:
+     fra le due, quella che serve al volo è «fra 12m». */
+  .lm-salat-ora {
+    display: none;
+  }
+}
+
+/* Il punto verde della preghiera in corso: pulsa piano, come il «live» della
+   home. È l'unica cosa che si muove da sola nella pill. */
+.lm-salat-punto {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.45);
+  animation: lm-salat-batte 2.6s ease-in-out infinite;
+}
+@keyframes lm-salat-batte {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 99, 0.42);
+  }
+  55% {
+    box-shadow: 0 0 0 5px rgba(31, 157, 99, 0);
+  }
+}
+
+/* ── il pannello ─────────────────────────────────────────────────────────── */
+/* **Posizione fissa, e figlio del body.** Non era una scelta libera: la colonna
+   del contenuto ha `overflow-y: auto`, e un elemento in posizione assoluta dentro
+   un contenitore che scorre viene tagliato dal suo bordo — il pannello si sarebbe
+   aperto a metà, o avrebbe allungato l'area di scorrimento della pagina sotto.
+   `top` e `right` li calcola il JS dalla posizione della pill (`usaAncora` in
+   Salat.tsx) e si riallineano a ogni scorrimento. */
+.lm-salat-panel {
+  position: fixed;
+  z-index: 60;
+  width: min(330px, calc(100vw - 2rem));
+  max-height: min(78dvh, 640px);
+  overflow-y: auto;
+  padding: 0.95rem 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 34px 70px -28px rgba(28, 22, 18, 0.55);
+  scrollbar-width: thin;
+  animation: lm-salat-entra 0.32s var(--ease) both;
+}
+@keyframes lm-salat-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lm-salat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+.lm-salat-head .lm-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  min-width: 0;
+}
+.lm-salat-circa {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.07);
+  font-style: normal;
+  font-size: 0.64rem;
+  color: var(--ink-3);
+}
+
+.lm-salat-head .lm-label svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--violet-2);
+}
+.lm-salat-head-azioni {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex: none;
+}
+.lm-salat-icona {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.lm-salat-icona svg {
+  width: 15px;
+  height: 15px;
+}
+.lm-salat-icona:hover {
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink);
+}
+.lm-salat-icona[aria-pressed='true'] {
+  background: var(--violet);
+  color: #fff;
+}
+
+.lm-salat-adesso {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  margin-bottom: 0.6rem;
+}
+.lm-salat-adesso b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.lm-salat-ar {
+  margin-left: 0.4rem;
+  font-family: var(--font-ar), serif;
+  font-size: 0.92rem;
+  color: var(--ink-3);
+}
+
+/* I cinque orari. Quattro stati e quattro trattamenti diversi, perché sono
+   quattro informazioni diverse: passata (spenta), attuale (nera piena, è dove
+   siamo), prossima (viola, è la selezione), futura (normale). Il viola sulla
+   prossima non è decorazione: in quest'area vuol dire selezione, e la prossima
+   preghiera è l'unica riga su cui il widget sta puntando. */
+.lm-salat-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  list-style: none;
+  margin: 0 -0.35rem;
+  padding: 0;
+}
+.lm-salat-lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.44rem 0.55rem;
+  border-radius: var(--r-sm);
+  font-size: 0.86rem;
+  transition: background-color 0.25s;
+}
+.lm-salat-nome {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.38rem;
+  font-weight: 500;
+}
+.lm-salat-nome small {
+  font-family: var(--font-ar), serif;
+  font-size: 0.82rem;
+  color: var(--ink-3);
+}
+.lm-salat-t {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.lm-salat-lista li[data-stato='passata'] {
+  opacity: 0.44;
+}
+.lm-salat-lista li[data-stato='attuale'] {
+  background: var(--black);
+  color: #fff;
+}
+.lm-salat-lista li[data-stato='attuale'] .lm-salat-t,
+.lm-salat-lista li[data-stato='attuale'] .lm-salat-nome small {
+  color: rgba(255, 255, 255, 0.7);
+}
+.lm-salat-lista li[data-stato='prossima'] {
+  background: rgba(139, 92, 246, 0.13);
+  color: var(--violet-2);
+}
+.lm-salat-lista li[data-stato='prossima'] .lm-salat-t {
+  color: var(--violet-2);
+  font-weight: 600;
+}
+
+/* ── «dove siamo?» e la ricerca della città ─────────────────────────────── */
+.lm-salat-dove {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.lm-salat-dove .lm-btn {
+  align-self: flex-start;
+}
+.lm-salat-cerca {
+  margin-top: 0.5rem;
+}
+.lm-salat-input {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.7);
+  transition: border-color 0.22s;
+}
+.lm-salat-input:focus-within {
+  border-color: var(--violet);
+}
+.lm-salat-input svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--ink-3);
+}
+.lm-salat-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+.lm-salat-input input:focus {
+  outline: none;
+}
+.lm-salat-input em {
+  flex: none;
+  font-style: normal;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+.lm-salat-esiti {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+.lm-salat-esiti button {
+  width: 100%;
+  padding: 0.46rem 0.6rem;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s;
+}
+.lm-salat-esiti button:hover {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--violet-2);
+}
+
+/* ── le impostazioni del widget ─────────────────────────────────────────── */
+.lm-salat-imp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.lm-salat-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.86rem;
+}
+.lm-salat-riga > span:first-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 500;
+}
+.lm-salat-riga small {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.lm-salat-switch {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    border-color 0.22s,
+    color 0.22s;
+}
+.lm-salat-switch svg {
+  width: 16px;
+  height: 16px;
+}
+.lm-salat-switch[aria-checked='true'] {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+}
+.lm-salat-switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lm-salat-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Le ayat
+
+   Arabo in Noto Naskh, servito dal nostro dominio, e la traduzione italiana
+   sotto in piccolo col riferimento esatto. La dimensione è contenuta di
+   proposito: un versetto a corpo di titolo in una dashboard di vendite sarebbe
+   fuori posto due volte — nella gerarchia della pagina e nel tono.
+
+   La dissolvenza è sull'opacità e su nient'altro: 0.84s in tutto, con il cambio
+   di testo a metà, quando il testo è del tutto invisibile.
+   ─────────────────────────────────────────────────────────────────────────── */
+.lm-ayah {
+  margin: 0.9rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  opacity: 1;
+  transition: opacity 0.42s ease;
+}
+.lm-ayah[data-fade='true'] {
+  opacity: 0;
+}
+.lm-ayah-ar {
+  font-family: var(--font-ar), serif;
+  font-size: 1.06rem;
+  font-weight: 400;
+  /* L'arabo vocalizzato ha bisogno d'aria fra le righe: i segni stanno sopra e
+     sotto la linea di base, e a interlinea normale si toccano. */
+  line-height: 2.05;
+  color: var(--ink);
+  text-align: right;
+}
+.lm-ayah-it {
+  margin: 0.5rem 0 0;
+  font-size: 0.79rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.lm-ayah figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+/* La card della home: perla, senza bordo colorato, senza icona, senza titolo. Chi
+   la vuole leggere la legge, chi sta guardando i numeri non la incontra. */
+.lm-ayah-card {
+  gap: 0;
+}
+.lm-ayah-card .lm-ayah-ar {
+  border-top: 0;
+  font-size: 1.16rem;
+}
+.lm-ayah-card .lm-ayah-it {
+  max-width: 76ch;
+}
+@media (min-width: 900px) {
+  /* Sul largo l'arabo va a destra e l'italiano a sinistra, su due colonne: sono
+     due versi della stessa cosa, non un testo e la sua didascalia. */
+  .lm-ayah-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  .lm-ayah-card .lm-ayah-ar {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+  .lm-ayah-card .lm-ayah-it {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .lm-ayah-card figcaption {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Con il movimento ridotto la dissolvenza sparisce (la regola generale azzera le
+   transizioni) e il punto della preghiera in corso smette di pulsare. */
+@media (prefers-reduced-motion: reduce) {
+  .lm-salat-punto {
+    animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Lo scheletro, e la barra che risponde al clic
+
+   Il problema era misurabile: chiedendo al router il prefetch di /staff/soldi
+   tornavano **170 byte**. In Next 14 una rotta `force-dynamic` senza
+   `loading.tsx` non è prefetchabile — il router non ha niente da mettere da
+   parte — quindi al clic non c'era nessuna schermata da mostrare finché il
+   server non aveva finito con Supabase. Due o tre secondi in cui la pagina è
+   quella di prima: il clic sembra non essere arrivato, e si riclicca.
+
+   La cura è in tre pezzi, e nessuno dei tre è un'animazione di consolazione:
+     1. un `loading.tsx` per rotta → la rotta diventa prefetchabile e il guscio
+        è già nel browser prima del clic;
+     2. la voce del rail si accende **al clic**, non all'arrivo della pagina;
+     3. un filo di avanzamento in cima al pannello, che parte subito.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* La sagoma. Un gradiente che scorre, e nient'altro: niente ombre, niente
+   bordi, niente blur. Ne compaiono venti per schermata, e ognuna deve costare
+   quanto un rettangolo grigio. */
+.lm-sk {
+  display: block;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(23, 19, 15, 0.055) 20%,
+      rgba(23, 19, 15, 0.1) 42%,
+      rgba(23, 19, 15, 0.055) 64%
+    )
+    0 0 / 280% 100%;
+  border-radius: 10px;
+  /* `background-position` e non `transform` su un figlio: il gradiente scorre
+     senza un secondo elemento e senza `overflow: hidden` su ogni sagoma. */
+  animation: lm-sk-luce 1.45s linear infinite;
+  animation-delay: calc(var(--d, 0) * 70ms);
+}
+
+@keyframes lm-sk-luce {
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -80% 0;
+  }
+}
+
+/* Una card in sagoma tiene la forma della card vera — bordo, raggio, padding —
+   così quando i dati arrivano cambia il contenuto e non il rettangolo. */
+.lm-sk-card {
+  gap: 0.8rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.lm-sk-righe {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* Lo scheletro entra con un filo di ritardo: se il server risponde in 120ms non
+   deve comparire affatto, perché una sagoma che lampeggia per un decimo di
+   secondo si legge come un difetto e non come un caricamento. 90ms è sotto la
+   soglia in cui si nota un'attesa e sopra quella in cui si nota un lampo. */
+.lm-sk-page {
+  animation: lm-sk-entra 0.18s var(--ease) 0.09s both;
+}
+@keyframes lm-sk-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── la voce che si accende al clic ──────────────────────────────────────── */
+/* `data-attesa` è la destinazione del clic, messa dal JS prima che il router
+   abbia finito. Si disegna come la voce attiva ma un gradino più tenue: dice
+   «ci sto andando», non «ci sei». Senza questo, per tutta la durata della
+   navigazione l'unica voce accesa è quella che si sta lasciando — cioè lo
+   schermo continua a dire di essere sulla pagina di prima. */
+.lm-staff-link[data-attesa='true'] {
+  background: rgba(255, 255, 255, 0.11);
+  color: rgba(255, 255, 255, 0.92);
+}
+.lm-staff-tab[data-attesa='true'] {
+  color: var(--ink);
+}
+
+/* Il filo di avanzamento: due pixel in cima al pannello di vetro. Non è una
+   percentuale — non la conosciamo — ma un movimento che accelera e poi aspetta
+   al 90%, che è il modo onesto di dire «sta arrivando» senza mentire su quanto
+   manca. */
+.lm-nav-filo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 70;
+  overflow: hidden;
+  border-radius: 34px 34px 0 0;
+  pointer-events: none;
+}
+.lm-nav-filo::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--violet), #c4b5fd);
+  transform-origin: left center;
+  animation: lm-nav-avanza 1.1s cubic-bezier(0.16, 0.84, 0.28, 1) both;
+}
+@keyframes lm-nav-avanza {
+  from {
+    transform: scaleX(0.02);
+  }
+  to {
+    transform: scaleX(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-sk {
+    animation: none;
+    background: rgba(23, 19, 15, 0.075);
+  }
+  .lm-sk-page {
+    animation: none;
+  }
+  .lm-nav-filo::after {
+    animation: none;
+    transform: scaleX(0.9);
+  }
+}
+
+/* Chi è entrato, quando entrare non è bastato.
+   Compare solo con una sessione valida che però non apre l'area: dice con quale
+   indirizzo si è entrati — l'informazione che manca sempre in questi casi — e dà
+   il modo di uscirne. Senza il bottone si resta in trappola: rifare il login
+   con lo stesso account riporta qui, e il cookie non si cancella da sé. */
+.lm-login-chi {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+  margin: -0.4rem 0 1.1rem;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.lm-login-chi b {
+  font-weight: 600;
+  color: var(--ink);
+  /* Un'email è una stringa lunga senza spazi: senza questo sfonda la card su
+     uno schermo stretto invece di andare a capo. */
+  overflow-wrap: anywhere;
+}
+.lm-login-chi form {
+  display: contents;
+}
+.lm-login-chi button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--violet);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}

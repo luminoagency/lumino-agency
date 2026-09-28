@@ -1,0 +1,527 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   F5 — il laboratorio, il materiale, la squadra
+
+   Un file a parte da staff.css, che è a cinquemila righe. Lo importa staff.css
+   in cima: sono le stesse variabili e le stesse convenzioni, solo tenute dove si
+   ritrovano.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Il Lab: la conversazione a sinistra, lo scaffale a destra. Su telefono uno
+   sotto l'altro, e la conversazione **prima** — lo scaffale si consulta, la
+   conversazione si usa. */
+.lm-lab {
+  display: grid;
+  gap: 0.72rem;
+}
+@media (min-width: 1040px) {
+  .lm-lab {
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.lm-lab-chat {
+  min-height: 24rem;
+  gap: 0.7rem;
+}
+
+/* Un'altezza massima e non una libera: senza, una risposta lunga spinge la barra
+   della domanda fuori dallo schermo proprio mentre si vuole scrivere la domanda
+   dopo. */
+.lm-lab-flusso {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 0.2rem;
+}
+
+.lm-lab-vuoto p {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.74);
+}
+.lm-lab-esempi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.8rem;
+}
+.lm-lab-esempi button {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.lm-lab-esempi button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.13);
+}
+.lm-lab-esempi button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* I due turni si distinguono per allineamento e peso, non per due bolle
+   colorate: dentro una card nera due bolle sono due rettangoli in più. */
+.lm-lab-turno[data-ruolo='io'] {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 0.5rem 0.8rem;
+  border-radius: 16px 16px 4px 16px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.lm-lab-turno[data-ruolo='io'] p {
+  font-size: 0.84rem;
+  color: #fff;
+}
+.lm-lab-turno[data-ruolo='lab'] p {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: pre-wrap;
+}
+
+/* Il cursore mentre il testo arriva: è l'unico modo di distinguere «sta ancora
+   scrivendo» da «ha finito e la risposta è corta». */
+.lm-lab-cursore {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--violet);
+  animation: lm-lab-batte 1s steps(2) infinite;
+}
+@keyframes lm-lab-batte {
+  50% {
+    opacity: 0;
+  }
+}
+
+.lm-lab-salva,
+.lm-lab-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: none;
+  color: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.lm-lab-salva:hover,
+.lm-lab-stop:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.lm-lab-salva svg,
+.lm-lab-stop svg {
+  width: 13px;
+  height: 13px;
+}
+
+.lm-lab-barra {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.lm-lab-barra input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font: inherit;
+  font-size: 0.84rem;
+}
+.lm-lab-barra input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+.lm-lab-barra input:focus {
+  outline: none;
+  border-color: var(--violet);
+}
+.lm-lab-barra button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    opacity 0.2s;
+}
+.lm-lab-barra button:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+.lm-lab-barra button:not(:disabled):active {
+  transform: scale(0.93);
+}
+.lm-lab-barra button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lm-lab-foglio summary {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+}
+.lm-lab-foglio pre {
+  max-height: 16rem;
+  overflow: auto;
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ── Lo scaffale ─────────────────────────────────────────────────────────── */
+.lm-lab-scaffale {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.lm-lab-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  list-style: none;
+}
+.lm-lab-voce {
+  gap: 0.45rem;
+  padding: 0.75rem 0.9rem;
+}
+.lm-lab-voce-testa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lm-lab-voce-testa b {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.lm-lab-voce-testo {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+.lm-lab-voce footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+}
+.lm-lab-cestino {
+  flex: none;
+  display: inline-flex;
+  padding: 0.3rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+.lm-lab-cestino:hover:not(:disabled) {
+  color: #b4231f;
+  background: rgba(180, 35, 31, 0.08);
+}
+.lm-lab-cestino svg {
+  width: 15px;
+  height: 15px;
+}
+
+.lm-lab-anteprima {
+  max-height: 11rem;
+  overflow-y: auto;
+  margin: 0.2rem 0 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  background: var(--pearl);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+}
+
+/* La sezione spenta: una spiegazione, non un errore. */
+.lm-lab-spento {
+  flex-direction: row;
+  gap: 0.9rem;
+  align-items: flex-start;
+  margin-bottom: 0.72rem;
+}
+.lm-lab-chiave {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--violet);
+}
+.lm-lab-chiave svg {
+  width: 18px;
+  height: 18px;
+}
+.lm-nowrap {
+  white-space: nowrap;
+}
+
+/* ── Risorse ─────────────────────────────────────────────────────────────── */
+.lm-risorse-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+.lm-risorsa {
+  gap: 0.45rem;
+}
+.lm-risorsa-icona {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 0.2rem;
+  border-radius: 11px;
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink-2);
+}
+.lm-risorsa-icona svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Il bersaglio è il riquadro, non quattro parole: questa pagina si usa su un
+   telefono, in piedi, davanti a un titolare che aspetta. Lo pseudo-elemento
+   copre tutta la card senza annidare un link attorno al contenuto. */
+.lm-risorsa-titolo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+.lm-risorsa-titolo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.lm-risorsa-titolo[data-spento='true'] {
+  color: var(--ink-3);
+}
+.lm-risorsa-titolo[data-spento='true']::after {
+  content: none;
+}
+.lm-risorsa-titolo svg {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-3);
+}
+.lm-risorsa-piede {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+  font-size: 0.72rem;
+}
+/* Il cestino deve stare sopra il link che copre la card, altrimenti non si può
+   premere: è il prezzo di quello pseudo-elemento, e si paga qui. */
+.lm-risorsa-piede .lm-lab-cestino {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Team ────────────────────────────────────────────────────────────────── */
+.lm-persona-cella {
+  display: flex;
+}
+.lm-persona {
+  gap: 0.7rem;
+  width: 100%;
+  height: 100%;
+}
+.lm-persona-testa {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.lm-persona-chi {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lm-persona-chi b {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.lm-persona-chi small {
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+.lm-persona-numeri {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.lm-persona-numeri dt {
+  font-size: 0.68rem;
+  color: var(--ink-3);
+}
+.lm-persona-numeri dd {
+  font-size: 0.98rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.lm-persona-obiettivo {
+  margin-top: auto;
+}
+.lm-persona-piede {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.74rem;
+}
+.lm-persona-piede a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-2);
+  text-decoration: none;
+  /* Un'email è una stringa lunga senza spazi: senza questo sfonda la card. */
+  overflow-wrap: anywhere;
+}
+.lm-persona-piede a:hover {
+  color: var(--violet);
+}
+.lm-persona-piede svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* Il bottone della riga «Chiedi a Lumino».
+   Era una scritta «Fase 5» accanto a un campo spento: un'etichetta di stato in
+   un posto dove ci si aspetta un'azione. Adesso che il Lab risponde, lì c'è la
+   freccia che ci porta — stessa misura del bottone di invio del Lab, così i due
+   campi che fanno la stessa cosa si somigliano. */
+.lm-ask-vai {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    opacity 0.2s;
+}
+.lm-ask-vai:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.lm-ask-vai:not(:disabled):active {
+  transform: scale(0.92);
+}
+.lm-ask-vai svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Il vuoto che è una porta
+
+   Distinto da `.lm-empty`, che è il vuoto di un riquadro dentro una schermata
+   piena («nessun abbonamento attivo»): questo è il vuoto di **tutta** la
+   schermata, quello del primo giorno. La differenza non è di dimensione ma di
+   compito — un riquadro vuoto informa, una schermata vuota deve dire cosa fare
+   e dare il bottone per farlo, altrimenti è una pagina morta.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.lm-vuoto-porta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 1.6rem 1.4rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.5);
+}
+.lm-vuoto-porta[data-grande='true'] {
+  padding: 3rem 1.6rem;
+  align-items: center;
+  text-align: center;
+}
+.lm-vuoto-porta > p:first-child {
+  font-size: 1.15rem;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.lm-vuoto-porta .lm-sub {
+  max-width: 46ch;
+  font-size: 0.85rem;
+}
+.lm-vuoto-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
