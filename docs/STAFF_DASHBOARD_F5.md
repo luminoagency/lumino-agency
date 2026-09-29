@@ -23,7 +23,9 @@ Authorization: Bearer <SUPABASE_ACCESS_TOKEN>
 finirci. Non sta su Vercel e non serve a runtime — è uno strumento di
 manutenzione, non una dipendenza dell'applicazione.
 
-**Stato al 28 settembre 2026:** 0030, 0031, 0032, **0033 e 0034 eseguite**.
+**Stato al 29 settembre 2026:** dalla 0030 alla **0035 eseguite**. Da questa
+sessione c’è anche `node scripts/supabase-sql.mjs <file.sql>`, che fa la stessa
+chiamata senza doverla comporre a mano.
 
 ---
 
@@ -126,7 +128,8 @@ righe di un database e non hanno niente a che fare con Gemini.
 
 Per accenderlo: chiave gratuita su `aistudio.google.com` → `GEMINI_API_KEY` in
 `.env.local` e nelle variabili d'ambiente di Vercel. `GEMINI_MODEL` cambia il
-modello senza toccare il codice (default `gemini-2.0-flash`).
+modello senza toccare il codice. Il default non è più `gemini-2.0-flash`:
+vedi `STAFF_DASHBOARD_F6.md`, sezione «Il modello Gemini».
 
 ---
 

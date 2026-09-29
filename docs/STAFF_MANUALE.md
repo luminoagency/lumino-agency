@@ -26,8 +26,9 @@ il mouse si apre e dice i nomi; il bottone in alto la tiene aperta.
 | **Progetti** | A che punto è ogni sito, e quali domini stanno scadendo. |
 | **Statistiche** | Quanto chiudi, dove, a che prezzo, e cosa ti dicono quelli che non comprano. |
 | **Team** | Solo per gli amministratori: chi c'è e come sta andando. |
+| **Archivio** | Dove butti dentro tutto il resto: PDF, foto, note, vocali, link. Cercabile, e il Lab AI lo sa leggere. |
 | **Risorse** | Listino, manuale di vendita, demo per settore. |
-| **Lab AI** | Domande in italiano sui numeri della dashboard. |
+| **Lab AI** | Domande in italiano sui numeri della dashboard, o sul materiale dell'Archivio. |
 
 ---
 
@@ -199,11 +200,86 @@ npm run staff:seed:clean
 
 ---
 
+## L'Archivio
+
+È il posto dove butti dentro qualunque cosa, anche se non c'entra con nessun
+cliente: il PDF che ti ha mandato un fornitore, lo screenshot di una chat, la
+foto di un menù, la nota detta in macchina uscendo da un locale.
+
+Non sono le Risorse. Le Risorse sono roba da **mostrare** a un titolare, e le
+carica solo un amministratore. Qui dentro carichi tu, tutto quello che vuoi.
+
+### Come si butta dentro
+
+**Aggiungi**, e scegli cosa stai archiviando: un file, una nota scritta, una
+vocale, un link. L'unica cosa obbligatoria è il **titolo** — scrivilo come lo
+cercherai fra sei mesi, non come si chiama il file.
+
+Tutto il resto è facoltativo e serve a ritrovarlo: i **tag** (separati da
+virgola: `prezzi, menù, obiezioni`), **da dove arriva**, il **cliente** se ce
+n'è uno, e **quand'è successo** — che non è quando lo carichi: la foto la carichi
+la sera, la visita era la mattina.
+
+### Il testo lo tira fuori da sé
+
+Appena scegli un file, il testo dentro comincia a uscire da solo, mentre stai
+ancora scrivendo il titolo:
+
+- dai **PDF** legge il testo (se il PDF è una scansione non c'è niente da
+  leggere, e te lo dice);
+- dalle **foto e dagli screenshot** lo riconosce — la prima volta ci mette
+  qualche secondo in più perché scarica di cosa ha bisogno;
+- dalle **vocali** esce la trascrizione mentre parli. **L'audio non si salva da
+  nessuna parte**: resta solo il testo.
+
+Quel testo finisce in un campo che puoi correggere, adesso o dopo aprendo la
+voce. **Correggilo**: il riconoscimento sbaglia i nomi propri e le cifre, che è
+esattamente quello per cui avevi archiviato quella foto. Una voce corretta a
+mano porta il bollino **riletto** invece di **estratto**, e quando il Lab AI la
+cita si sa che dietro c'è una persona.
+
+### Come si ritrova
+
+La barra di ricerca in alto cerca **dentro tutto**: titoli, note e testo
+estratto. Funziona come sei abituato altrove: `"frase esatta"` fra virgolette,
+`-parola` per escludere. Sotto ci sono i filtri per tipo e per tag, con quanti
+elementi ha ognuno; «chi, quale cliente, quando» apre gli altri.
+
+Quello che cerchi finisce nell'indirizzo della pagina: puoi tornare indietro col
+tasto del browser, ricaricare, o mandare il link a un collega.
+
+### Cosa puoi cancellare
+
+Le tue voci. Quelle caricate da altri si leggono e non si toccano — un
+amministratore invece può cancellare tutto.
+
+---
+
 ## Il Lab AI
 
-Scrivi una domanda in italiano e risponde sui numeri che questa dashboard ha
-davvero: quali settori chiudono meglio, dove, a che prezzo, cosa dicono quelli
-che non comprano.
+Scrivi una domanda in italiano e risponde. In cima alla conversazione scegli
+**su cosa**:
+
+- **i numeri** — quelli che questa dashboard ha davvero: quali settori chiudono
+  meglio, dove, a che prezzo, cosa dicono quelli che non comprano;
+- **l'archivio** — le note, le trascrizioni e i documenti che avete caricato.
+
+Cambiando fonte la conversazione riparte da zero: sono due materiali diversi e
+mescolarli vorrebbe dire risposte che citano una cosa per dimostrarne un'altra.
+
+### Le due analisi con un bottone
+
+In modalità archivio trovi **«Problemi che tornano»** e **«Idee che ne
+nascono»**. La prima legge tutto e dice cosa si lamentano di più i locali e su
+quante voci l'ha visto; la seconda parte da quei problemi e propone cosa
+potreste costruirci sopra. Come ogni altra risposta, si tengono da parte.
+
+### Le citazioni si aprono
+
+In modalità archivio ogni frase porta un numeretto viola tipo **#3**: è la voce
+da cui l'ha presa, e cliccandolo ci vai sopra. Se un numeretto resta testo nero
+invece di diventare cliccabile, vuol dire che non corrisponde a niente — e in
+quel caso non fidarti di quella frase.
 
 Tre cose da sapere:
 
@@ -217,8 +293,8 @@ Tre cose da sapere:
   dai un titolo e resta nello scaffale a destra con il tuo nome e la data. La
   conversazione invece non si salva — chiudendo la pagina sparisce.
 
-Se i dati demo sono accesi, il Lab lo scrive nel foglio: quei numeri comprendono
-locali inventati.
+Se i dati demo sono accesi, il Lab lo scrive nel foglio: quei numeri e quel
+materiale comprendono locali inventati.
 
 ---
 
@@ -237,6 +313,11 @@ non dal telefono.
 
 **Ho cambiato la foto e nella barra c'è ancora quella vecchia.** Ricarica la
 pagina una volta.
+
+**Nell'Archivio ho caricato una foto e non esce cercando una parola che ci si
+legge dentro.** Apri la voce: se sotto «Il testo che l'AI legge» il campo è
+vuoto, il riconoscimento non ha trovato niente. Scrivi tu due righe lì dentro e
+salva: da quel momento si cerca.
 
 **Quanto vale «incassato».** Solo quello entrato davvero: il 30% se l'acconto è
 segnato pagato, il restante 70% solo col saldo. Una trattativa firmata e non
