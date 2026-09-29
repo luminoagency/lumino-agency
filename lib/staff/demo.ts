@@ -29,26 +29,38 @@ const COOKIE_DEMO = 'lm_demo'
 /**
  * L'interruttore dei dati demo.
  *
- * Spento di default, per tutti. Un venditore non deve poterli accendere né
- * vedere per sbaglio: un cliente finto in pipeline è una telefonata sprecata,
- * e peggio, è un numero sbagliato nel suo obiettivo del mese.
+ * **Per l'amministratore è acceso di default; per un venditore non esiste.**
+ *
+ * La seconda metà è la regola che conta e non è cambiata: un cliente finto
+ * nella pipeline di un venditore è una telefonata sprecata, e peggio, è un
+ * numero sbagliato nel suo obiettivo del mese. Un venditore non deve poterli
+ * accendere né vederli per sbaglio.
+ *
+ * La prima metà sì, ed è una scelta del titolare (29 settembre 2026): finché
+ * i clienti veri non ci sono, un admin che entra deve trovare la dashboard
+ * **piena**, non dodici schermate vuote da cui non si capisce se funziona.
+ * Si spegne col pulsante nel rail, e resta spento perché il cookie dice `0`
+ * — cioè il default vale solo per chi non ha ancora scelto.
+ *
+ * Il giorno che i dati veri arrivano questa riga va rigirata: una dashboard
+ * vera che si apre con dentro venticinque locali inventati è peggio di una
+ * vuota.
  */
 export function demoAttivo(role: StaffRole): boolean {
-  /* Nell'anteprima di sviluppo i dati finti sono gli unici che esistono, quindi
-     partono **accesi**: chiedere anche di accendere l'interruttore vorrebbe dire
-     aprire una dashboard vuota e non capire perché.
-     Ma si possono spegnere, e serve: le schermate a zero clienti — quelle che
-     vede chi entra il primo giorno — altrimenti non si potrebbero guardare senza
-     un database vuoto, e sono proprio quelle che restano indietro. Acceso di
-     default, spento solo se l'interruttore dice esplicitamente `0`.
+  /* Nell'anteprima di sviluppo i dati finti sono gli unici che esistono, e il
+     profilo è finto anch'esso: il ruolo non vuol dire niente, quindi il
+     controllo non si applica.
      La condizione è ripetuta qui invece di importare ANTEPRIMA da db.ts, che
      importa questo file: sarebbe un ciclo, e per due `process.env` non vale la
      pena. */
-  if (process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1') {
-    return cookies().get(COOKIE_DEMO)?.value !== '0'
-  }
-  if (role !== 'admin') return false
-  return cookies().get(COOKIE_DEMO)?.value === '1'
+  const anteprima =
+    process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1'
+
+  if (!anteprima && role !== 'admin') return false
+
+  /* Spento **solo** se l'interruttore lo dice esplicitamente. Senza cookie si
+     è accesi: è il primo accesso, ed è quello che deve vedere pieno. */
+  return cookies().get(COOKIE_DEMO)?.value !== '0'
 }
 
 export const COOKIE_DEMO_NOME = COOKIE_DEMO

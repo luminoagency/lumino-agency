@@ -225,8 +225,15 @@ export async function impostaDemo(acceso: boolean): Promise<Esito> {
     httpOnly: true,
     sameSite: 'lax',
     path: '/staff',
-    /* Di sessione: si spegne da solo chiudendo il browser, che è esattamente
-       quello che serve per non ritrovarsi i clienti finti il lunedì mattina. */
+    /* Sei mesi, e non più un cookie di sessione.
+       Era di sessione perché il default era «spento»: il rischio da coprire era
+       ritrovarsi i clienti finti il lunedì mattina, e scadendo da solo li
+       spegneva. Adesso il default è «acceso», quindi un cookie che scade fa
+       esattamente il danno opposto — spegnere l'interruttore durerebbe fino
+       alla chiusura del browser e poi i locali inventati tornerebbero da soli.
+       Con una scadenza lunga vale la regola che ci si aspetta: il default conta
+       finché non si sceglie, e la scelta resta. */
+    maxAge: 60 * 60 * 24 * 180,
   })
 
   revalidatePath('/staff', 'layout')

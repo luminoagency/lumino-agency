@@ -74,134 +74,298 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   La scena
+   LA SCENA — la stanza dietro il vetro
 
-   Quattro macchie di colore che si muovono piano e non si fermano mai. Hanno
-   preso il posto di un video da 1.8MB, e il guadagno non è solo di peso: un
-   `<video>` sotto un `backdrop-filter` obbliga il compositore a rifare la
-   sfocatura a ogni fotogramma del filmato, cioè venticinque volte al secondo
-   su tutta la larghezza del pannello.
+   Non uno sfondo astratto: una stanza d'angolo con due vetrate a tutta
+   altezza, come in ref1. Quello che la fa funzionare non è il colore, è che
+   abbia un **sopra e un sotto** — un soffitto, la riga dove il muro finisce e
+   comincia il pavimento, la luce che arriva da una parte precisa. Quattro
+   macchie sfumate, che è quello che c'era, non hanno un orizzonte: quindi non
+   hanno profondità, quindi il pannello non galleggiava su niente.
 
-   Qui si anima **solo `transform`**. Ogni macchia diventa una texture sulla
-   GPU una volta sola e poi viene spostata: per il browser costa come far
-   scorrere la pagina. Le durate (48s, 61s, 73s, 89s) non hanno divisori in
-   comune, quindi la composizione non torna mai esattamente la stessa.
+   ## Tutto è grande, e non è una scelta di gusto
 
-   La sfumatura la fa la forma del gradiente, non un filtro: quattro
-   `blur(80px)` grandi come la finestra sarebbero la cosa più costosa della
-   pagina, e si vedrebbero uguali.
+   Questa stanza si guarda quasi tutta **attraverso** il pannello, che è bianco
+   al 50% con venti pixel di sfocatura dietro. Una sfocatura di venti pixel
+   cancella qualunque dettaglio più sottile di venti pixel: montanti, righe,
+   bordi netti spariscono e restano solo campi luminosi larghi. Per questo le
+   vetrate sono due **macchie di luce alte quanto lo schermo** e non due
+   disegni di finestre, e per questo la differenza di tono fra vetro, parete e
+   pavimento è netta invece che delicata — è l'unica cosa che sopravvive alla
+   sfocatura, ed è anche l'unica che serve: la profondità la fa il salto di
+   luminosità, non il disegno.
+
+   I montanti ci sono lo stesso, sottili, e si vedono solo nella cornice di
+   stanza attorno al pannello — cioè esattamente dove non c'è sfocatura.
+
+   ## Costo
+
+   Zero byte: sono gradienti, nessuna immagine da scaricare e nessuna licenza
+   da ricordare fra due anni. Zero lavoro per fotogramma: si animano solo
+   `transform` e `opacity`, quindi ogni livello è una texture sulla GPU che
+   viene spostata, non ridisegnata. Le durate (54s, 67s, 83s, 97s, 113s) non
+   hanno divisori in comune: la composizione non torna mai identica.
+
+   ## La leggibilità viene prima
+
+   Una stanza più luminosa rischia di mangiarsi il pannello: vetro bianco su
+   fondo bianco non è vetro, è carta. Per questo la stanza **non** è chiara e
+   basta — ha un pavimento deciso nell'ultimo quarto e una vignettatura agli
+   angoli, cioè qualcosa di più scuro contro cui il pannello si stacca su
+   qualunque larghezza.
    ─────────────────────────────────────────────────────────────────────────── */
 .lm-scene {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  /* Il fondo fermo: crema in alto, perla scura in basso. È anche ciò che si
-     vede con `prefers-reduced-motion`, quindi da solo deve già stare in piedi.
-     Scende fino a #ded6cb e non al bianco: sopra ci va un pannello di vetro
-     bianco al 50%, e un vetro bianco su un fondo bianco non è vetro, è carta. */
+  /* Il fondo fermo, ed è anche tutto quello che resta con
+     `prefers-reduced-motion`: da solo deve già essere una stanza.
+     Quattro strati, dal davanti al dietro nell'ordine del codice.
+       1. la luce che scende dal soffitto;
+       2. l'angolo: due pareti che si incontrano dietro il pannello, segnato da
+          un filo d'ombra verticale. Senza, le due vetrate sono una fascia sola;
+       3. il pavimento, che comincia al 72% con uno stacco netto — è
+          l'orizzonte, ed è la riga da cui discende tutta la profondità;
+       4. la parete, dal bianco caldo del soffitto al sabbia della base. */
   background:
-    radial-gradient(120vw 80vh at 50% -6%, #fffdf9, transparent 66%),
-    linear-gradient(166deg, #f2ede4 0%, #e8e0d5 48%, #ded6cb 100%);
+    radial-gradient(106vw 44vh at 50% -14%, rgba(255, 255, 255, 0.7), transparent 62%),
+    /* Un velo freddo sul terzo di destra. Senza, la stanza è tutta calda e
+       diventa una cartolina: la luce che entra da una vetrata in ombra è
+       azzurrina, ed è il freddo di qui che fa sembrare vero il caldo di là. */
+    linear-gradient(90deg, transparent 0 54%, rgba(189, 203, 223, 0.22) 100%),
+    linear-gradient(
+      90deg,
+      transparent 0 44%,
+      rgba(112, 92, 70, 0.1) 49.6%,
+      rgba(112, 92, 70, 0.13) 50%,
+      transparent 56%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 71.6%,
+      rgba(138, 113, 84, 0.34) 72%,
+      rgba(246, 236, 220, 0.55) 76.5%,
+      rgba(222, 204, 177, 0.4) 87%,
+      rgba(162, 137, 106, 0.46) 100%
+    ),
+    linear-gradient(180deg, #f4efe4 0%, #e6dcc9 20%, #d7cab1 46%, #c9bb9f 71.6%);
 }
 
-.lm-blob {
+/* ── Le vetrate ──────────────────────────────────────────────────────────── */
+/* Ognuna è un elemento solo con due gradienti sovrapposti: il vetro (una
+   campitura di luce) e i montanti (righe sottili). La maschera radiale le
+   sfuma in tutte e quattro le direzioni insieme: con due maschere lineari
+   servirebbe `mask-composite`, che non è dappertutto, e senza maschera un
+   rettangolo si vede come un rettangolo.
+
+   `skewY` è tutta la prospettiva che serve: inclinate in senso opposto, le due
+   vetrate convergono verso il centro e l'occhio legge un angolo. */
+.lm-vetrata {
   position: absolute;
-  /* Più larghe della finestra: una macchia che entra e esce dal bordo si
-     leggerebbe come un oggetto che passa, e questo deve essere un ambiente. */
-  width: 78vmax;
-  height: 78vmax;
-  border-radius: 50%;
-  /* La promozione a livello GPU è chiesta una volta e resta: questi quattro
-     elementi si muovono per tutta la vita della pagina, e togliere e rimettere
-     `will-change` costerebbe più di lasciarlo. */
-  will-change: transform;
+  top: -12vh;
+  height: 92vh;
+  /* Chiesto una volta e lasciato: questi livelli si muovono per tutta la vita
+     della pagina, e togliere e rimettere `will-change` costa più che tenerlo. */
+  will-change: transform, opacity;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
   animation-direction: alternate;
+  mask-image: radial-gradient(64% 56% at 50% 46%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(64% 56% at 50% 46%, #000 30%, transparent 100%);
 }
 
-/* Perla fredda, in alto a sinistra. */
-.lm-blob[data-b='1'] {
-  top: -26vmax;
-  left: -20vmax;
-  background: radial-gradient(closest-side, rgba(203, 214, 232, 0.92), transparent 72%);
-  animation-name: lm-b1;
-  animation-duration: 48s;
-}
-/* Crema calda, il punto più luminoso della stanza. */
-.lm-blob[data-b='2'] {
-  top: -18vmax;
-  right: -24vmax;
-  background: radial-gradient(closest-side, rgba(255, 240, 206, 0.95), transparent 72%);
-  animation-name: lm-b2;
-  animation-duration: 61s;
-}
-/* Il filo di rosa: basso a sinistra, dove scalda senza colorare le card. */
-.lm-blob[data-b='3'] {
-  bottom: -32vmax;
-  left: -14vmax;
-  background: radial-gradient(closest-side, rgba(243, 206, 209, 0.88), transparent 72%);
-  animation-name: lm-b3;
-  animation-duration: 73s;
-}
-/* Il filo di viola: l'unico accento di marchio, e tenuto comunque il più basso
-   dei quattro — qui dentro il viola pieno vale solo per l'azione e la
-   selezione, e uno sfondo che lo urla toglie forza a quelle due cose. */
-.lm-blob[data-b='4'] {
-  right: -22vmax;
-  bottom: -28vmax;
-  background: radial-gradient(closest-side, rgba(199, 183, 240, 0.78), transparent 72%);
-  animation-name: lm-b4;
-  animation-duration: 89s;
+/* Sinistra: è da qui che entra la luce, quindi è la più accesa e la più larga.
+   Il traverso orizzontale in alto è l'unico dettaglio "da finestra" che si
+   vede senza sfocatura, nella cornice sopra il pannello. */
+.lm-vetrata[data-v='1'] {
+  left: -14vw;
+  width: 54vw;
+  /* Lo skew sta anche qui e non solo nei fotogrammi: con
+     `prefers-reduced-motion` l'animazione si spegne, e senza questa riga le
+     due vetrate tornerebbero dritte — cioè due fasce invece di un angolo. */
+  transform: skewY(3.5deg);
+  background:
+    linear-gradient(180deg, transparent 0 15.5vh, rgba(96, 84, 70, 0.16) 15.5vh 16.1vh, transparent 16.1vh),
+    repeating-linear-gradient(93deg, rgba(96, 84, 70, 0.17) 0 1.5px, transparent 1.5px 8.5vw),
+    linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 1) 32%,
+      rgba(255, 251, 240, 0.95) 66%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  animation-name: lm-vetro-sx;
+  animation-duration: 54s;
 }
 
-@keyframes lm-b1 {
+/* Destra: più fredda e un gradino più bassa di tono. È la parete dell'angolo
+   che prende meno sole, e serve a far capire che sono due piani e non uno. */
+.lm-vetrata[data-v='2'] {
+  right: -16vw;
+  width: 48vw;
+  transform: skewY(-3deg);
+  background:
+    linear-gradient(180deg, transparent 0 13vh, rgba(96, 84, 70, 0.13) 13vh 13.6vh, transparent 13.6vh),
+    repeating-linear-gradient(-93deg, rgba(96, 84, 70, 0.13) 0 1.5px, transparent 1.5px 7.5vw),
+    linear-gradient(
+      78deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(243, 247, 255, 0.92) 36%,
+      rgba(255, 253, 246, 0.8) 72%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  animation-name: lm-vetro-dx;
+  animation-duration: 67s;
+}
+
+/* Su telefono le vetrate spariscono.
+   Il pannello copre tutta la larghezza e li sotto non ha sfocatura dietro
+   (costa troppo su un telefono, vedi il commento del vetro): i montanti non
+   diventano una stanza, diventano righe sottili che attraversano la testata.
+   Restano il fondo — che ha già soffitto, orizzonte e pavimento — e la luce,
+   che si leggono come un ambiente anche senza.
+   `display: none` e non `opacity: 0`: così il browser non li disegna affatto,
+   e su un telefono sono due livelli compositi in meno da tenere in memoria. */
+@media (max-width: 1039px) {
+  .lm-vetrata {
+    display: none;
+  }
+}
+
+/* ── La luce ─────────────────────────────────────────────────────────────── */
+.lm-luce {
+  position: absolute;
+  will-change: transform, opacity;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+  pointer-events: none;
+}
+
+/* L'alone caldo in alto a sinistra: il sole che non si vede, fuori
+   dall'inquadratura. È la sorgente, e tutto il resto ne discende. */
+.lm-luce[data-l='alone'] {
+  top: -32vh;
+  left: -12vw;
+  width: 64vw;
+  height: 70vh;
+  background: radial-gradient(closest-side, rgba(255, 246, 224, 0.78), transparent 66%);
+  animation-name: lm-alone;
+  animation-duration: 83s;
+}
+
+/* Il taglio: la fascia obliqua che attraversa la stanza e cade sul pavimento.
+   È l'elemento che più di ogni altro dice «qui c'è una finestra», perché ha
+   una direzione — e una direzione sopravvive alla sfocatura. */
+.lm-luce[data-l='taglio'] {
+  top: 16vh;
+  left: -16vw;
+  width: 86vw;
+  height: 104vh;
+  transform: skewX(-26deg) rotate(5deg);
+  background: linear-gradient(
+    92deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.86) 40%,
+    rgba(255, 250, 238, 0.52) 64%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(closest-side, #000 22%, transparent 100%);
+  -webkit-mask-image: radial-gradient(closest-side, #000 22%, transparent 100%);
+  animation-name: lm-taglio;
+  animation-duration: 97s;
+}
+
+/* La pozza sul pavimento, sotto il pannello: la luce delle vetrate che rimbalza.
+   È quello che fa sembrare il vetro appoggiato sopra qualcosa invece che
+   incollato allo schermo. */
+.lm-luce[data-l='pozza'] {
+  left: 50%;
+  bottom: -4vh;
+  width: 118vw;
+  height: 42vh;
+  margin-left: -59vw;
+  background: radial-gradient(closest-side, rgba(255, 253, 247, 0.98), transparent 70%);
+  animation-name: lm-pozza;
+  animation-duration: 113s;
+}
+
+/* L'angolo in basso a destra: in ref1 lì c'è un tavolino con una pianta. Qui
+   c'è solo la sua ombra — un mobile disegnato coi gradienti si riconoscerebbe
+   come un disegno, la sua ombra no, e fa lo stesso lavoro: dare un peso a un
+   angolo che altrimenti resta vuoto. */
+.lm-scene::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -8vh;
+  width: 38vw;
+  height: 44vh;
+  background: radial-gradient(closest-side at 56% 62%, rgba(101, 82, 60, 0.26), transparent 66%);
+}
+
+@keyframes lm-vetro-sx {
+  from {
+    transform: skewY(3.5deg) translate3d(0, 0, 0) scale(1);
+    opacity: 0.92;
+  }
+  to {
+    transform: skewY(3.5deg) translate3d(3vw, 1.6vh, 0) scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes lm-vetro-dx {
+  from {
+    transform: skewY(-3deg) translate3d(0, 0, 0) scale(1.04);
+    opacity: 1;
+  }
+  to {
+    transform: skewY(-3deg) translate3d(-2.4vw, 2vh, 0) scale(1);
+    opacity: 0.86;
+  }
+}
+@keyframes lm-alone {
   from {
     transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.88;
   }
   to {
-    transform: translate3d(14vmax, 9vmax, 0) scale(1.18);
+    transform: translate3d(-6vw, 4vh, 0) scale(1.12);
+    opacity: 1;
   }
 }
-@keyframes lm-b2 {
+@keyframes lm-taglio {
   from {
-    transform: translate3d(0, 0, 0) scale(1.1);
+    transform: skewX(-26deg) rotate(5deg) translate3d(0, 0, 0);
+    opacity: 0.68;
   }
   to {
-    transform: translate3d(-12vmax, 12vmax, 0) scale(0.92);
+    transform: skewX(-26deg) rotate(5deg) translate3d(10vw, -3vh, 0);
+    opacity: 1;
   }
 }
-@keyframes lm-b3 {
+@keyframes lm-pozza {
   from {
-    transform: translate3d(0, 0, 0) scale(0.95);
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.82;
   }
   to {
-    transform: translate3d(18vmax, -14vmax, 0) scale(1.2);
-  }
-}
-@keyframes lm-b4 {
-  from {
-    transform: translate3d(0, 0, 0) scale(1.14);
-  }
-  to {
-    transform: translate3d(-16vmax, -10vmax, 0) scale(0.9);
+    transform: translate3d(5vw, -2vh, 0) scale(1.1);
+    opacity: 1;
   }
 }
 
 /* Il velo: una vignettatura appena accennata, che tiene il centro luminoso e
-   scurisce di un soffio gli angoli. Serve a dare un bordo alla stanza — senza,
-   quattro macchie su fondo chiaro sembrano una texture, non un ambiente. */
+   scurisce di un soffio gli angoli. Dà un bordo alla stanza, e garantisce che
+   il pannello abbia sempre qualcosa di più scuro contro cui staccarsi. */
 .lm-scene::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(130vw 100vh at 50% 32%, transparent 38%, rgba(56, 45, 37, 0.2));
+  background: radial-gradient(132vw 100vh at 50% 32%, transparent 40%, rgba(54, 43, 33, 0.22));
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Il pannello di vetro
-   ─────────────────────────────────────────────────────────────────────────── */
 /* ───────────────────────────────────────────────────────────────────────────
    I PIANI, E CHI STA SOPRA CHI
 
@@ -236,7 +400,14 @@
     display: flex;
     max-width: 1660px;
     margin: 0 auto;
-    padding: 2.2rem 2rem 2.6rem;
+    /* Il margine della stanza. Era `2.2rem 2rem 2.6rem`: a 1500px il pannello
+       copriva il 96% dello schermo e della stanza restava un filo di due
+       centimetri — cioè nessuna stanza, e nessun galleggiare. Sedici pixel in
+       più per lato bastano perché l'angolo e il pavimento si vedano; sono il
+       2,5% della larghezza del contenuto, e il contenuto non li sente.
+       Cambiando questi numeri va cambiato anche il `max-height` della colonna
+       del contenuto, che ci è legato. */
+    padding: 2.9rem 3rem 3.2rem;
   }
 }
 
@@ -294,7 +465,9 @@
 @media (min-width: 1040px) {
   .lm-staff-main {
     padding: 1.4rem 1.6rem 1.6rem;
-    max-height: calc(100dvh - 6.4rem);
+    /* 2.9 + 3.2 del guscio, più 1rem per lato del vetro, meno un filo di
+       gioco: è la stessa relazione di prima, coi numeri nuovi. */
+    max-height: calc(100dvh - 8rem);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(23, 19, 15, 0.22) transparent;
@@ -3907,7 +4080,10 @@
   .lm-in {
     opacity: 1;
   }
-  .lm-blob,
+  /* La stanza resta, ferma: il fondo di `.lm-scene` da solo è già una stanza
+     con il suo orizzonte, e le vetrate senza animazione restano dove sono. */
+  .lm-vetrata,
+  .lm-luce,
   .lm-thread,
   .lm-live::before,
   .lm-prog-fill,
