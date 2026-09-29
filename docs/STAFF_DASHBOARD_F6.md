@@ -149,6 +149,13 @@ Due dettagli che costano se si dimenticano:
   **già in minuscolo**: senza stemming, `Prezzi` e `prezzi` sarebbero due
   lessemi diversi e due voci nell'elenco dei filtri.
 
+Un limite dello stemming italiano, trovato collaudando e non risolvibile senza
+un dizionario su misura: «telefono» diventa il lessema `telef`, «telefoni»
+diventa `telefon`, e non si trovano fra loro — lo stemmer legge la desinenza
+`-ono` come una terza persona plurale (`telefonano`). Cercando «telefono» la
+voce esce, cercando «telefoni» no. Vale per i sostantivi in `-ono`, che sono
+pochi, e l'alternativa — togliere lo stemming — costerebbe molto di più.
+
 ### I filtri stanno nell'indirizzo
 
 `?q=…&kind=…&tag=…&autore=…&cliente=…&dal=…&al=…&voce=…`. Con i filtri nella
