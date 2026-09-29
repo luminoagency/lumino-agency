@@ -19,6 +19,8 @@ const PAGINE = [
     nome: 'Statistiche',
     cosa: 'tassi di chiusura, mappa Leaflet, obiezioni',
   },
+  { href: '/staff/archivio', nome: 'Archivio', cosa: 'ricerca, filtri, card per genere e stati vuoti' },
+  { href: '/staff/lab-ai', nome: 'Lab AI', cosa: 'le due fonti, le analisi pronte e le citazioni' },
   { href: '/staff/io', nome: 'Le mie cose', cosa: 'foto profilo col ritaglio, ruolo, saluto, salat' },
   { href: '/staff/login', nome: 'Accesso', cosa: 'il pannello di vetro sulla scena' },
 ]

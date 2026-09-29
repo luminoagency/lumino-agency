@@ -45,9 +45,9 @@ type Riga = Record<string, unknown>
  * Un finto PostgREST, largo quanto basta.
  *
  * Non emula Supabase: emula **le query che questa area scrive davvero** —
- * `eq`, `neq`, `lte`, `not is null`, `order`, `limit`, `maybeSingle`. Un
- * emulatore completo sarebbe una libreria da mantenere, e servirebbe a
- * guardare tre schermate.
+ * `eq`, `neq`, `lte`, `not is null`, `contains`, `textSearch`, `order`,
+ * `limit`, `maybeSingle`. Un emulatore completo sarebbe una libreria da
+ * mantenere, e servirebbe a guardare tre schermate.
  *
  * `select()` ignora l'elenco delle colonne e restituisce la riga intera: le
  * colonne di troppo non fanno danno a nessun componente, e ricalcolare la
@@ -130,6 +130,31 @@ function builder(righe: Riga[], perId: Map<string, Riga>) {
     },
     gte(col: string, valore: string) {
       filtrate = filtrate.filter((r) => typeof r[col] === 'string' && (r[col] as string) >= valore)
+      return api
+    },
+    /* `contains` sui tag: un array che contiene tutti quelli chiesti. */
+    contains(col: string, valori: unknown[]) {
+      filtrate = filtrate.filter((r) => {
+        const dentro = r[col]
+        return Array.isArray(dentro) && valori.every((v) => dentro.includes(v))
+      })
+      return api
+    },
+    /* La ricerca a testo pieno, ridotta all'osso: le parole cercate devono
+       comparire tutte, da qualche parte nella riga. Non è la `tsvector` di
+       Postgres e non deve esserlo — non ci sono né pesi né stemming — ma è
+       abbastanza perché l'anteprima di sviluppo mostri una ricerca che filtra
+       invece di una che ignora quello che si scrive. */
+    textSearch(_col: string, q: string) {
+      const parole = q
+        .toLowerCase()
+        .replace(/["-]/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean)
+      filtrate = filtrate.filter((r) => {
+        const tutto = JSON.stringify(r).toLowerCase()
+        return parole.every((w) => tutto.includes(w))
+      })
       return api
     },
     not(col: string, _op: string, _valore: unknown) {

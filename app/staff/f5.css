@@ -525,3 +525,529 @@
   gap: 0.45rem;
   margin-top: 0.85rem;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   F6 — l'Archivio
+
+   Una sezione che si usa in due momenti opposti, e va disegnata come due cose.
+   **Buttare dentro** succede in piedi, con una mano, subito dopo: il modale ha
+   un campo obbligatorio solo e l'estrazione parte da sé. **Ritrovare** succede
+   al tavolino, mesi dopo: la ricerca è la prima cosa della pagina ed è larga
+   quanto la colonna.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* I chip dei filtri.
+   La regola stava **solo** su `.lm-pill`, e i filtri delle Risorse sono
+   `<button>` nudi dentro `.lm-chips`: erano bottoni di sistema, grigi e
+   squadrati, in mezzo a una pagina di vetro. Si scrive qui una volta e la
+   prendono tutte e due le sezioni. */
+.lm-chips > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 34px;
+  padding: 0 0.8rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.22s,
+    color 0.22s,
+    border-color 0.22s;
+}
+.lm-chips > button:hover {
+  border-color: rgba(23, 19, 15, 0.28);
+  color: var(--ink);
+}
+/* Il selezionato è **nero e non viola**: in questa area il viola vuol dire
+   azione, e un filtro acceso è uno stato. Il viola resta al bottone che
+   aggiunge. */
+.lm-chips > button[data-on='true'] {
+  border-color: var(--black);
+  background: var(--black);
+  color: #fff;
+}
+.lm-chips > button small {
+  font-size: 0.68rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── La barra: cerca, filtra, aggiungi ───────────────────────────────────── */
+.lm-arc-barra {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+}
+.lm-arc-barra > .lm-chips,
+.lm-arc-barra > .lm-arc-altri,
+.lm-arc-barra > .lm-arc-avanzati {
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+
+/* La ricerca è alta 48 e non 38: è la cosa che si tocca per prima su questa
+   pagina, e un campo di ricerca della stessa altezza dei filtri sotto non dice
+   a nessuno da dove si comincia. */
+.lm-arc-cerca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  height: 48px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  transition: border-color 0.22s, box-shadow 0.22s;
+}
+.lm-arc-cerca:focus-within {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.14);
+}
+.lm-arc-cerca > svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  color: var(--ink-3);
+}
+.lm-arc-cerca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  outline: none;
+}
+.lm-arc-cerca input::placeholder {
+  color: var(--ink-3);
+}
+/* La sintassi che il campo accetta, scritta dove la si legge senza cercarla.
+   Sparisce sul telefono: là lo spazio serve alla ricerca, e le virgolette in
+   una tastiera mobile non le usa nessuno. */
+.lm-arc-sintassi {
+  display: none;
+  flex: none;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+@media (min-width: 720px) {
+  .lm-arc-sintassi {
+    display: inline;
+  }
+}
+
+.lm-arc-tag button {
+  text-transform: lowercase;
+}
+
+/* **Sul telefono i filtri stanno su una riga sola che scorre.**
+   A capo, venti tag e sei generi occupavano sette righe, cioè tutto lo schermo
+   di un iPhone prima della prima voce: si apriva l'Archivio e non si vedeva
+   l'archivio. In orizzontale si scorrono col pollice, che è il gesto che si fa
+   comunque, e la sfumatura sul bordo destro dice che continuano.
+   Da 720px in su tornano a capo: là lo spazio c'è e vederli tutti insieme è
+   meglio che doverli scorrere. */
+@media (max-width: 719px) {
+  .lm-arc-barra > .lm-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Il margine negativo e il padding uguale e contrario fanno sì che i chip
+       scorrano fino al bordo dello schermo invece di fermarsi al margine del
+       contenuto: senza, l'ultimo sembra tagliato male invece che continuare. */
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
+  }
+  .lm-arc-barra > .lm-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .lm-arc-barra > .lm-chips > button {
+    flex: none;
+  }
+}
+
+.lm-arc-altri {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.lm-arc-piu,
+.lm-arc-pulisci {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-2);
+  cursor: pointer;
+}
+.lm-arc-piu:hover,
+.lm-arc-pulisci:hover {
+  color: var(--ink);
+}
+.lm-arc-pulisci svg {
+  width: 13px;
+  height: 13px;
+}
+
+.lm-arc-avanzati {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.42);
+}
+.lm-arc-avanzati .lm-field {
+  margin: 0;
+}
+
+@media (max-width: 719px) {
+  .lm-arc-barra {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── La card ─────────────────────────────────────────────────────────────── */
+.lm-arc-card {
+  gap: 0.42rem;
+}
+.lm-arc-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.lm-arc-icona {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink-2);
+}
+.lm-arc-icona svg {
+  width: 15px;
+  height: 15px;
+}
+/* Il genere e lo stato del testo sono l'unica cosa colorata della card, e il
+   colore lo porta l'icona per i generi che hanno un file dietro: serve a
+   distinguere a colpo d'occhio una cosa che si apre da una che si legge. */
+.lm-arc-card[data-genere='vocale'] .lm-arc-icona,
+.lm-arc-card[data-genere='nota'] .lm-arc-icona {
+  background: rgba(139, 92, 246, 0.1);
+  color: var(--violet);
+}
+.lm-arc-genere {
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+.lm-arc-testo-stato {
+  margin-left: auto;
+  padding: 0.14rem 0.46rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink-2);
+}
+/* «Riletto» è un fatto che cambia quanto ci si può fidare di quella voce, e va
+   visto senza leggerlo: verde come il resto dell'area, non viola. */
+.lm-arc-testo-stato[data-stato='corretto'] {
+  background: rgba(31, 157, 99, 0.12);
+  color: var(--green);
+}
+
+.lm-arc-titolo {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+/* Il bersaglio è la card intera, come nelle Risorse: questa pagina si usa anche
+   col pollice. Il cestino e il link esterno tornano sopra più sotto. */
+.lm-arc-titolo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* L'assaggio del testo estratto: due righe, e si vede che è un'altra voce
+   rispetto alla nota scritta da una persona. */
+.lm-arc-assaggio {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--line-2);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.lm-arc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.lm-arc-tags span {
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(23, 19, 15, 0.055);
+  font-size: 0.68rem;
+  color: var(--ink-2);
+}
+
+.lm-arc-piede {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.55rem;
+  font-size: 0.7rem;
+}
+.lm-arc-azioni {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  /* Sopra lo pseudo-elemento del titolo, altrimenti non si premono. */
+  position: relative;
+  z-index: 2;
+}
+.lm-arc-apri {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--ink-3);
+}
+.lm-arc-apri:hover {
+  background: rgba(23, 19, 15, 0.06);
+  color: var(--ink);
+}
+.lm-arc-apri svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Il dettaglio ────────────────────────────────────────────────────────── */
+.lm-arc-dettaglio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.lm-arc-dettaglio > .lm-btn {
+  align-self: flex-start;
+}
+.lm-arc-nota {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-md);
+  background: rgba(23, 19, 15, 0.045);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+/* Il testo estratto si legge in monospazio: è materiale che una macchina ha
+   messo insieme, e vederlo in tondo lo fa sembrare scritto da qualcuno. */
+.lm-arc-dettaglio textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+/* ── Il modale del caricamento ───────────────────────────────────────────── */
+.lm-arc-modi {
+  margin-top: 0;
+  margin-bottom: 0.3rem;
+}
+.lm-arc-riga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0 0.7rem;
+}
+
+/* L'avanzamento dell'estrazione.
+   La barra cresce in `scaleX` e non in `width`: è la stessa ragione dei gambi
+   del lollipop, cioè che animare la larghezza rimette in coda il layout del
+   modale a ogni fotogramma mentre l'OCR sta già occupando il processore. */
+.lm-arc-estrazione {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0.7rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.lm-arc-prog {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.09);
+  overflow: hidden;
+}
+.lm-arc-prog i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--violet);
+  transform-origin: left center;
+  transition: transform 0.3s var(--ease);
+}
+
+/* ── Il Lab, quando legge l'archivio ─────────────────────────────────────── */
+/* L'interruttore vive dentro una card nera, dove `.lm-seg` è disegnato al
+   contrario: fondo chiaro e selezionato bianco su nero.
+
+   I selettori nominano **due classi** e non una. Non è gusto: `staff.css`
+   importa questo file alla prima riga, quindi a parità di specificità vincono
+   sempre le sue regole, e `.lm-lab-fonte { background }` perdeva contro
+   `.lm-seg { background }` scritto duecento righe dopo. Con `.lm-seg.lm-lab-fonte`
+   la specificità sale di un gradino e l'ordine non conta più — che è il modo
+   giusto di risolverlo, invece di un `!important` che poi non si toglie più. */
+.lm-seg.lm-lab-fonte {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+.lm-seg.lm-lab-fonte button {
+  color: rgba(255, 255, 255, 0.62);
+}
+.lm-seg.lm-lab-fonte button[data-on='true'] {
+  background: #fff;
+  color: var(--black);
+}
+.lm-seg.lm-lab-fonte button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Le due analisi pronte: due card e non due righe di testo, perché sono la
+   ragione per cui si apre questa modalità. */
+.lm-lab-analisi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+.lm-lab-analisi button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.lm-lab-analisi button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.lm-lab-analisi button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.lm-lab-analisi svg {
+  width: 16px;
+  height: 16px;
+  margin-bottom: 0.15rem;
+  color: var(--violet);
+}
+.lm-lab-analisi b {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.lm-lab-analisi small {
+  font-size: 0.73rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Il punto elenco dentro una risposta: un trattino e un rientro, non un
+   pallino. Il `white-space: pre-wrap` del turno tiene già gli a capo, quindi
+   qui serve solo che la seconda riga di un punto lungo non torni a filo del
+   trattino. */
+.lm-lab-punto {
+  display: block;
+  padding-left: 0.95rem;
+  text-indent: -0.95rem;
+}
+.lm-lab-punto::before {
+  content: '— ';
+  color: rgba(255, 255, 255, 0.42);
+}
+
+/* La citazione dentro la risposta: piccola, cliccabile, e non un link blu.
+   Deve leggersi come un riferimento a piè di pagina, non come un'interruzione
+   della frase. */
+.lm-lab-cita {
+  display: inline-block;
+  margin: 0 0.12rem;
+  padding: 0 0.3rem;
+  border-radius: 5px;
+  background: rgba(139, 92, 246, 0.22);
+  color: #d9ccff;
+  font-size: 0.74em;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  vertical-align: 0.08em;
+}
+.lm-lab-cita:hover {
+  background: var(--violet);
+  color: #fff;
+}
+
+.lm-lab-fonti {
+  max-height: 16rem;
+  margin: 0.4rem 0 0;
+  padding: 0 0 0 0.2rem;
+  overflow-y: auto;
+  list-style: none;
+  font-size: 0.76rem;
+  line-height: 1.7;
+}
+.lm-lab-fonti a {
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+}
+.lm-lab-fonti a:hover {
+  color: #fff;
+  text-decoration: underline;
+}

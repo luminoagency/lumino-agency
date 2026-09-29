@@ -54,7 +54,7 @@ import { SETTORE_LABEL, STATO_LABEL, euro, type Stato } from './types'
  * preciso — e in prova rispondeva 503 per carico mentre il modello nominato
  * rispondeva subito.
  */
-export const MODELLO = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
+export const MODELLO = process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite'
 
 /** La chiave c'è? È l'unica cosa che decide se la sezione è viva o spenta. */
 export function labAttivo(): boolean {

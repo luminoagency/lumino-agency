@@ -182,6 +182,7 @@ export interface RigheDemo {
   staff_followups: Record<string, unknown>[]
   staff_field_reports: Record<string, unknown>[]
   staff_profiles: Record<string, unknown>[]
+  staff_archive: Record<string, unknown>[]
 }
 
 export const PROFILO_DEMO = {
@@ -518,7 +519,221 @@ export function righeDemo(venditoreId = PROFILO_DEMO.id, collegaId = COLLEGA_DEM
       { ...PROFILO_DEMO, id: venditoreId },
       { ...COLLEGA_DEMO, id: collegaId },
     ],
+    staff_archive: archivioDemo(clients, venditoreId, collegaId),
   }
+}
+
+/**
+ * L'archivio finto.
+ *
+ * Non sono nove righe di riempimento: sono **il materiale su cui si prova
+ * l'analisi**. Le due analisi pronte del Lab AI cercano i problemi che tornano,
+ * e per vedere se funzionano serve che qualcosa torni davvero — qui il
+ * telefono che squilla durante il servizio, le prenotazioni perse, il menu che
+ * cambia ogni settimana. Con dieci note scorrelate l'analisi risponderebbe
+ * «non vedo ricorrenze» e non si saprebbe se è giusta o rotta.
+ *
+ * Ci sono apposta i tre stati del testo (assente, automatico, corretto) e
+ * cinque generi su sei: sono i casi che l'interfaccia deve saper disegnare.
+ */
+function archivioDemo(
+  clients: Record<string, unknown>[],
+  venditoreId: string,
+  collegaId: string,
+): Record<string, unknown>[] {
+  const id = (n: number) => `da${String(n).padStart(6, '0')}-0000-4000-8000-000000000000`
+  const cliente = (i: number) => (clients[i]?.id as string) ?? null
+
+  const voci: {
+    kind: string
+    titolo: string
+    nota: string | null
+    testo: string | null
+    stato: string
+    fonte: string
+    tags: string[]
+    cliente: number | null
+    giorni: number
+    di: 'io' | 'collega'
+    link?: string
+  }[] = [
+    {
+      kind: 'vocale',
+      titolo: 'Uscita dal Bacaro: perche non firma',
+      nota: 'Detta in macchina appena uscito.',
+      testo:
+        'Dice che il sito lo vorrebbe ma che tanto le prenotazioni gli arrivano tutte per telefono e che il telefono durante il servizio non lo puo rispondere nessuno. Ha provato TheFork e dice che gli mangia il margine. Vuole una cosa che prenda le prenotazioni da solo senza che lui debba stare li.',
+      stato: 'corretto',
+      fonte: 'sopralluogo',
+      tags: ['prenotazioni', 'obiezioni', 'telefono'],
+      cliente: 0,
+      giorni: -3,
+      di: 'io',
+    },
+    {
+      kind: 'nota',
+      titolo: 'Pizzeria Tre Archi: il telefono squilla e nessuno risponde',
+      nota:
+        'Sono stato li alle 20:30. In venti minuti il telefono ha suonato sette volte e hanno risposto due. La ragazza dice che succede tutte le sere.',
+      testo: null,
+      stato: 'assente',
+      fonte: 'sopralluogo',
+      tags: ['prenotazioni', 'telefono'],
+      cliente: 1,
+      giorni: -6,
+      di: 'io',
+    },
+    {
+      kind: 'immagine',
+      titolo: 'Menu della Trattoria, foto della lavagna',
+      nota: 'Cambia ogni settimana, scritto a mano. Sul sito non c\u2019e.',
+      testo:
+        'MENU DEL GIORNO Antipasti Sarde in saor 9 Baccala mantecato 10 Primi Bigoli in salsa 12 Risotto di go 14 Secondi Fritto misto 18 Seppie in nero 16 Coperto 2',
+      stato: 'automatico',
+      fonte: 'foto in loco',
+      tags: ['menu', 'prezzi'],
+      cliente: 2,
+      giorni: -9,
+      di: 'collega',
+    },
+    {
+      kind: 'nota',
+      titolo: 'Hotel Cristallo: chi risponde alle recensioni',
+      nota:
+        'La titolare dice che non ha tempo di rispondere alle recensioni e che sa che le fa male. Stessa cosa che mi ha detto il Bacaro.',
+      testo: null,
+      stato: 'assente',
+      fonte: 'telefonata',
+      tags: ['recensioni', 'tempo'],
+      cliente: 3,
+      giorni: -12,
+      di: 'io',
+    },
+    {
+      kind: 'pdf',
+      titolo: 'Preventivo di un concorrente, girato da un cliente',
+      nota: 'Me l\u2019ha mandato lui per farmi vedere quanto gli chiedevano.',
+      testo:
+        'Offerta sito web ristorante. Realizzazione sito vetrina 5 pagine 2.900 euro. Canone manutenzione 89 euro al mese. Modulo prenotazioni non incluso, preventivabile a parte. Consegna 8 settimane.',
+      stato: 'automatico',
+      fonte: 'WhatsApp',
+      tags: ['concorrenza', 'prezzi'],
+      cliente: null,
+      giorni: -15,
+      di: 'io',
+    },
+    {
+      kind: 'vocale',
+      titolo: 'Bar Dune: stagione corta, budget corto',
+      nota: null,
+      testo:
+        'Lavora quattro mesi l\u2019anno e dice che spendere duemila euro per un sito che poi sta fermo da ottobre a maggio non ha senso. Pero mi ha chiesto se esiste una cosa che si accende e si spegne.',
+      stato: 'corretto',
+      fonte: 'sopralluogo',
+      tags: ['prezzi', 'stagionalita', 'obiezioni'],
+      cliente: 4,
+      giorni: -18,
+      di: 'collega',
+    },
+    {
+      kind: 'nota',
+      titolo: 'Tre locali in un giorno, stessa frase',
+      nota:
+        'Oggi tre su tre mi hanno detto la stessa cosa: che il sito lo farebbero ma che poi non hanno nessuno che lo aggiorni. Nessuno mi ha parlato di soldi per primo.',
+      testo: null,
+      stato: 'assente',
+      fonte: 'giro di zona',
+      tags: ['aggiornamenti', 'obiezioni'],
+      cliente: null,
+      giorni: -22,
+      di: 'io',
+    },
+    {
+      kind: 'link',
+      titolo: 'Articolo: quanto pesa Google Business per un ristorante',
+      nota: 'Utile da citare quando dicono che tanto li trovano su Instagram.',
+      testo: null,
+      stato: 'assente',
+      fonte: 'letto online',
+      tags: ['google', 'materiale'],
+      cliente: null,
+      giorni: -26,
+      di: 'collega',
+      link: 'https://www.example.com/google-business-ristoranti',
+    },
+    {
+      kind: 'immagine',
+      titolo: 'Screenshot: recensione sulle prenotazioni perse',
+      nota: 'Recensione a due stelle. Parla esattamente del problema del telefono.',
+      testo:
+        'Ho chiamato tre volte per prenotare e non ha risposto nessuno. Alla fine siamo andati altrove. Peccato perche si mangia benissimo.',
+      stato: 'automatico',
+      fonte: 'Google',
+      tags: ['recensioni', 'prenotazioni'],
+      cliente: 1,
+      giorni: -30,
+      di: 'io',
+    },
+    {
+      kind: 'nota',
+      titolo: 'Idea buttata li da un titolare',
+      nota:
+        'Mi ha detto: se mi fate una cosa che risponde al telefono e prende le prenotazioni mentre servo, ve la pago tutti i mesi. Testuale.',
+      testo: null,
+      stato: 'assente',
+      fonte: 'sopralluogo',
+      tags: ['prenotazioni', 'idee', 'abbonamento'],
+      cliente: 0,
+      giorni: -34,
+      di: 'io',
+    },
+    {
+      kind: 'testo',
+      titolo: 'Obiezioni raccolte a marzo, incollate da un blocco note',
+      nota: null,
+      testo:
+        'Non ho tempo di seguirlo. Ce l\u2019ha gia mio nipote su Instagram. Quanto costa il mantenimento. Se poi cambio menu chi lo cambia. Ho paura che non lo trovi nessuno lo stesso. Mi hanno gia fregato una volta.',
+      stato: 'corretto',
+      fonte: 'blocco note',
+      tags: ['obiezioni', 'aggiornamenti'],
+      cliente: null,
+      giorni: -40,
+      di: 'collega',
+    },
+    {
+      kind: 'pdf',
+      titolo: 'Listino di un fornitore di menu digitali',
+      nota: 'Se mai volessimo rivenderlo invece di rifarlo.',
+      testo:
+        'Menu digitale QR. Piano base 19 euro mese fino a 40 piatti. Piano pro 39 euro mese con allergeni e traduzioni. Attivazione 149 euro una tantum. Nessun modulo prenotazioni.',
+      stato: 'automatico',
+      fonte: 'fiera',
+      tags: ['fornitori', 'menu', 'prezzi'],
+      cliente: null,
+      giorni: -47,
+      di: 'io',
+    },
+  ]
+
+  return voci.map((v, i) => ({
+    id: id(i + 1),
+    kind: v.kind,
+    titolo: v.titolo,
+    nota: v.nota,
+    file_path: null,
+    file_url: v.link ?? null,
+    mime: null,
+    dimensione: null,
+    testo: v.testo,
+    testo_stato: v.stato,
+    fonte: v.fonte,
+    tags: v.tags,
+    client_id: v.cliente === null ? null : cliente(v.cliente),
+    avvenuto_il: fra(v.giorni),
+    created_by: v.di === 'io' ? venditoreId : collegaId,
+    created_at: fraOre(v.giorni, 18),
+    is_demo: true,
+  }))
 }
 
 /**

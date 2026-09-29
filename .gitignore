@@ -50,3 +50,6 @@ next-env.d.ts
 ADMIN_CONFIG.md
 
 .vercel
+
+# Copiato da node_modules a ogni build (scripts/copia-pdf-worker.mjs)
+public/pdfjs/

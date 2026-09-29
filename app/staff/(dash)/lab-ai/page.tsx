@@ -4,6 +4,7 @@ import { requireStaff } from '@/lib/staff/auth'
 import { demoAttivo } from '@/lib/staff/demo'
 import { caricaInsight } from '@/lib/staff/f5'
 import { foglioDati, labAttivo } from '@/lib/staff/lab'
+import { fontiArchivio } from '@/lib/staff/archivio-lab'
 import { AVVISO_SCHEMA } from '@/lib/staff/queries'
 import LabView from './LabView'
 
@@ -32,6 +33,13 @@ export const dynamic = 'force-dynamic'
  * l'unico modo perché qualcuno possa accorgersi che il Lab sta rispondendo su
  * dati vecchi o sui dati finti, e in una dashboard su cui si prendono decisioni
  * quella è un'informazione, non un dettaglio.
+ *
+ * ## Le fonti dell'archivio arrivano già pronte
+ *
+ * In modalità archivio il modello cita `[#7]`, e l'interfaccia deve saperlo
+ * trasformare in un link alla voce. La corrispondenza la dà `fontiArchivio`, che
+ * legge **due colonne** — non rifà il foglio: rifarlo vorrebbe dire rileggere
+ * tutto il testo estratto dell'archivio per disegnare dei link.
  */
 export default async function LabPage() {
   const me = await requireStaff()
@@ -41,9 +49,10 @@ export default async function LabPage() {
   /* Le due letture in parallelo, e il foglio solo se serve: senza chiave il Lab
      non parte, e costruire il foglio vorrebbe dire interrogare tutto il
      database per non mostrarlo a nessuno. */
-  const [{ insight, mancaSchema }, foglio] = await Promise.all([
+  const [{ insight, mancaSchema }, foglio, fonti] = await Promise.all([
     caricaInsight(demo),
     attivo ? foglioDati(demo, me.role === 'admin') : Promise.resolve(''),
+    attivo ? fontiArchivio(demo) : Promise.resolve([]),
   ])
 
   return (
@@ -54,7 +63,7 @@ export default async function LabPage() {
             Il <em>laboratorio</em>
           </>
         }
-        sub="Domande in italiano sui numeri che questa dashboard ha davvero. Quello che vale si tiene da parte."
+        sub="Domande in italiano sui numeri della dashboard o sul materiale dell’Archivio. Quello che vale si tiene da parte."
       />
 
       {mancaSchema && <p className="lm-avviso">{AVVISO_SCHEMA}</p>}
@@ -79,6 +88,7 @@ export default async function LabPage() {
         attivo={attivo}
         insight={insight}
         foglio={foglio}
+        fonti={fonti}
         ioSono={me.nome.split(' ')[0]}
         isAdmin={me.role === 'admin'}
       />

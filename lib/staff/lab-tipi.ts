@@ -28,6 +28,10 @@ export const TIPI_INSIGHT = {
   pattern: 'ricorrenza',
   errore: 'errore da non ripetere',
   segmento: 'segmento',
+  /* Nasce dall'analisi dell'Archivio: non è una «ricorrenza» qualsiasi, è un
+     problema visto ripetersi nelle parole dei locali, con le voci da cui viene.
+     Tenerlo separato da `pattern` serve a poterli rileggere tutti insieme. */
+  problema_ricorrente: 'problema che torna',
   idea_startup: 'idea',
   report_mensile: 'report',
 } as const

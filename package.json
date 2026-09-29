@@ -5,7 +5,9 @@
   "description": "Automated AI agency that builds professional websites for Italian restaurants",
   "scripts": {
     "dev": "next dev",
+    "predev": "node scripts/copia-pdf-worker.mjs",
     "build": "next build",
+    "prebuild": "node scripts/copia-pdf-worker.mjs",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -29,11 +31,13 @@
     "lucide-react": "^0.428.0",
     "next": "^14.2.35",
     "nodemailer": "^9.0.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.79.0",
     "sharp": "^0.35.3",
     "tailwind-merge": "^2.5.2",
+    "tesseract.js": "^5.1.1",
     "three": "^0.184.0",
     "yet-another-react-lightbox": "^3.32.0",
     "zod": "^4.4.3"

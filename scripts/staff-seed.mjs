@@ -33,6 +33,7 @@ const require = createRequire(path.join(radice, 'package.json'))
    seed è andato. `staff_deal_margins` non ha `is_demo` e non le serve: sparisce
    in cascata col deal, che è l'unico modo in cui si legge. */
 const TABELLE = [
+  'staff_archive',
   'staff_extra_changes',
   'staff_field_reports',
   'staff_followups',
@@ -175,6 +176,7 @@ async function semina(sb, venditore, collega) {
     'staff_activities',
     'staff_followups',
     'staff_field_reports',
+    'staff_archive',
   ]
 
   for (const t of ordine) {

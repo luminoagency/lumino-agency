@@ -11,7 +11,7 @@
  */
 
 /** L'ultima fase costruita. Si alza a fine fase, non prima. */
-export const FASE_VIVA = 5
+export const FASE_VIVA = 6
 
 /**
  * I tre blocchi del rail.
@@ -39,7 +39,7 @@ export interface StaffNavItem {
   /** Etichetta corta per la barra in basso sul telefono. */
   short: string
   /** Fase del piano in cui la pagina viene costruita. Vedi FASE_VIVA. */
-  fase: 1 | 2 | 3 | 4 | 5
+  fase: 1 | 2 | 3 | 4 | 5 | 6
   /** Il blocco del rail a cui appartiene. */
   gruppo: Gruppo
   adminOnly?: boolean
@@ -60,6 +60,13 @@ export const STAFF_NAV: StaffNavItem[] = [
      come voce viva alzando FASE_VIVA — cioè un'icona che porta a una pagina
      «in arrivo». Vale 5, come le altre ancora da costruire. */
   { href: '/staff/team', label: 'Team', short: 'Team', fase: 5, gruppo: 'gestione', adminOnly: true },
+  /* L'Archivio sta accanto alle Risorse e non fra le voci del giorno, ed è la
+     collocazione giusta anche se ci si scrive dentro tutti i giorni: il blocco
+     «risorse» è quello che si apre **quando serve qualcosa**, e l'Archivio si
+     apre esattamente così — per buttarci dentro una cosa o per ritrovarla.
+     Sopra le Risorse perché è il più usato dei due: le Risorse si aprono davanti
+     a un titolare, l'Archivio ogni volta che si esce da un locale. */
+  { href: '/staff/archivio', label: 'Archivio', short: 'Archivio', fase: 6, gruppo: 'futuro' },
   { href: '/staff/risorse', label: 'Risorse', short: 'Risorse', fase: 5, gruppo: 'futuro' },
   { href: '/staff/lab-ai', label: 'Lab AI', short: 'Lab', fase: 5, gruppo: 'futuro' },
   { href: '/staff/agent', label: 'Ricerca Agent', short: 'Agent', fase: 5, gruppo: 'futuro' },

@@ -80,3 +80,25 @@ await supabase.storage.createBucket('staff-resources', {
 })
 ```
 Già creato sul progetto di produzione attuale (28 settembre 2026).
+
+## `staff-archive`
+- **Uso:** il materiale grezzo dell'Archivio (`staff_archive.file_path`), area interna `/staff/archivio`: PDF ricevuti, screenshot, foto di menù e vetrine, file di testo. Le note scritte e le vocali **non hanno file**: vivono nelle colonne `nota` e `testo`.
+- **Public:** no, e qui pesa più che altrove: è l'unico posto dell'area dove finisce materiale di cui non si è deciso niente — la foto di una chat, un preventivo di un concorrente, un documento mandato per sbaglio. Si apre con URL firmati da `lib/staff/archivio.ts`, validi un'ora: l'archivio si consulta, non si rimanda a nessuno.
+- **Limite file:** 20MB. Più alto dei 10 delle Risorse perché qui arrivano scansioni e foto non ritoccate, che è esattamente il materiale che nessuno ha voglia di comprimere prima di caricarlo.
+- **Mime ammessi:** `application/pdf`, `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `text/plain`, `text/markdown`, `text/csv`. Niente video e niente audio: il video sta su un link, e **le note vocali non si salvano come file** — si salva la trascrizione, perché l'audio costa Storage e dentro c'è la voce di una persona che non ha acconsentito a essere registrata.
+- **Struttura path:** `{uuid}.{est}` in radice, come le Risorse. Il materiale è dell'azienda; chi l'ha caricato sta in `created_by`.
+- **Scrittura:** solo via server action (`creaVoceArchivio` / `eliminaVoceArchivio` in `lib/staff/azioni-archivio.ts`) con service-role. La riga in tabella la scrive il client con i cookie, sotto le policy della 0035: si scrive il proprio, l'admin scrive tutto. Come nelle Risorse, se l'insert fallisce il file appena caricato viene rimosso.
+
+### Ricreazione (service-role)
+```js
+await supabase.storage.createBucket('staff-archive', {
+  public: false,
+  fileSizeLimit: '20MB',
+  allowedMimeTypes: [
+    'application/pdf',
+    'image/jpeg', 'image/png', 'image/webp', 'image/heic',
+    'text/plain', 'text/markdown', 'text/csv',
+  ],
+})
+```
+Già creato sul progetto di produzione attuale (28 settembre 2026), con un `insert into storage.buckets` eseguito da `node scripts/supabase-sql.mjs`.

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireStaff } from '@/lib/staff/auth'
 import { demoAttivo } from '@/lib/staff/demo'
 import { ISTRUZIONI, MODELLO, foglioDati, labAttivo } from '@/lib/staff/lab'
+import { ISTRUZIONI_ARCHIVIO, foglioArchivio } from '@/lib/staff/archivio-lab'
 
 /**
  * La domanda al Lab.
@@ -24,6 +25,17 @@ import { ISTRUZIONI, MODELLO, foglioDati, labAttivo } from '@/lib/staff/lab'
  * inventati da lui — o, peggio, farsi restituire il taglio per venditore che la
  * RLS non gli mostra. Qui il foglio lo decide `foglioDati` a partire da
  * `requireStaff()`, cioè da chi è davvero connesso.
+ *
+ * ## Due fogli, non uno
+ *
+ * `modalita: 'dati'` manda i totali dell'azienda; `modalita: 'archivio'` manda
+ * il materiale grezzo dell'Archivio. Sono due lavori diversi e hanno due
+ * istruzioni diverse — sui numeri la regola è «non calcolare niente», sul
+ * materiale è «non affermare niente senza dire dove l'hai letto» — e mescolarli
+ * in un foglio solo vorrebbe dire un modello che cita una nota per giustificare
+ * una percentuale letta altrove. La modalità la sceglie il client perché è una
+ * scelta dell'interfaccia e non un permesso: in tutti e due i casi il contenuto
+ * lo costruisce il server da `requireStaff()`.
  */
 
 export const dynamic = 'force-dynamic'
@@ -41,6 +53,8 @@ interface Turno {
   testo: string
 }
 
+type Modalita = 'dati' | 'archivio'
+
 export async function POST(req: Request) {
   const me = await requireStaff()
 
@@ -52,7 +66,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Il Lab non è ancora attivo su questo ambiente.' }, { status: 503 })
   }
 
-  let corpo: { domanda?: unknown; storia?: unknown }
+  let corpo: { domanda?: unknown; storia?: unknown; modalita?: unknown }
   try {
     corpo = await req.json()
   } catch {
@@ -69,15 +83,37 @@ export async function POST(req: Request) {
   }
 
   const storia = leggiStoria(corpo.storia)
-  const foglio = await foglioDati(demoAttivo(me.role), me.role === 'admin')
+  const modalita: Modalita = corpo.modalita === 'archivio' ? 'archivio' : 'dati'
+  const demo = demoAttivo(me.role)
+
+  const { apertura, foglio, istruzioni } =
+    modalita === 'archivio'
+      ? {
+          apertura: 'Ecco l’archivio interno di Lumino.',
+          foglio: (await foglioArchivio(demo)).testo,
+          istruzioni: ISTRUZIONI_ARCHIVIO,
+        }
+      : {
+          apertura: 'Ecco i dati di Lumino, aggiornati adesso.',
+          foglio: await foglioDati(demo, me.role === 'admin'),
+          istruzioni: ISTRUZIONI,
+        }
 
   /* Il foglio va nel **primo turno**, non nelle istruzioni di sistema: Gemini
      tratta `systemInstruction` come regole permanenti e il foglio è invece
      materiale che cambia a ogni richiesta. Messo come contesto della prima
      domanda, il modello lo cita come una fonte e non come una convinzione. */
   const contents = [
-    { role: 'user', parts: [{ text: `Ecco i dati di Lumino, aggiornati adesso.\n\n${foglio}` }] },
-    { role: 'model', parts: [{ text: 'Ho letto i dati. Chiedi pure.' }] },
+    { role: 'user', parts: [{ text: `${apertura}\n\n${foglio}` }] },
+    {
+      role: 'model',
+      parts: [
+        {
+          text:
+            modalita === 'archivio' ? 'Ho letto l’archivio. Chiedi pure.' : 'Ho letto i dati. Chiedi pure.',
+        },
+      ],
+    },
     ...storia.map((t) => ({
       role: t.ruolo === 'io' ? 'user' : 'model',
       parts: [{ text: t.testo }],
@@ -111,8 +147,14 @@ export async function POST(req: Request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
-          systemInstruction: { parts: [{ text: ISTRUZIONI }] },
-          generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
+          systemInstruction: { parts: [{ text: istruzioni }] },
+          /* L'analisi dell'archivio è più lunga di una risposta sui numeri — sei
+             problemi con i loro contrassegni non stanno in ottocento token — e
+             un elenco troncato a metà è peggio di nessuna risposta. */
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: modalita === 'archivio' ? 2000 : 800,
+          },
         }),
         signal: controller.signal,
       },
