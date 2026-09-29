@@ -202,8 +202,32 @@
 /* ───────────────────────────────────────────────────────────────────────────
    Il pannello di vetro
    ─────────────────────────────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────────────────
+   I PIANI, E CHI STA SOPRA CHI
+
+   Tutta l'area staff ha **quattro piani soltanto**, e sono dichiarati qui una
+   volta per tutte invece di essere contrattati da ogni componente con un numero
+   sempre più grande del precedente:
+
+     shell      isola     ← niente di /staff litiga col sito pubblico
+       vetro    isola     ← le due colonne, e niente esce da qui
+         1  contenuto     ← la colonna bianca, e tutto ciò che disegna
+         2  rail          ← la barra nera, sempre sopra il contenuto
+         3  filo          ← l'avanzamento, sopra entrambi
+       50 dock  60 sheet  ← telefono
+     body  ← modale e pannello della preghiera, gli unici sopra la shell
+
+   Il punto non è il valore dei numeri, è che il contenuto è **isolato**: una
+   card che si desse `z-index: 900` resterebbe comunque dentro il piano 1 e non
+   potrebbe salire sopra il rail. Senza questo isolamento — era così — la fascia
+   appiccicosa del widget della preghiera (`z-index: 45`) si trovava nello stesso
+   mucchio del rail (`z-index: 30`) e gli passava davanti: a barra aperta
+   disegnava un rettangolo chiaro attraverso la colonna nera, e la voce attiva
+   sembrava uscita dal rail e appoggiata sulla pagina.
+   ─────────────────────────────────────────────────────────────────────────── */
 .lm-staff-shell {
   position: relative;
+  isolation: isolate;
   min-height: 100dvh;
 }
 
@@ -231,6 +255,8 @@
    raggio: sono dodici pixel pagati e non visti. */
 .lm-glass {
   position: relative;
+  /* Le due colonne si confrontano solo fra loro: vedi «I piani» più sopra. */
+  isolation: isolate;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 50px 120px -48px rgba(28, 22, 18, 0.62);
 }
@@ -254,6 +280,13 @@
 }
 
 .lm-staff-main {
+  /* Piano 1, **isolato**: qualunque numero si scriva dentro una pagina resta
+     dentro questo piano. È la sola riga che impedisce a un elemento del
+     contenuto di finire sopra il rail, ed è per questo che sta qui e non in
+     una correzione a valle su chi l'ha fatto per primo. */
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   flex: 1;
   min-width: 0;
   padding: 1rem 1rem calc(var(--dock) + 1.6rem);
@@ -317,6 +350,10 @@
        colore. Il nero è tutto nel figlio. */
     display: block;
     position: relative;
+    /* Piano 2: sopra il contenuto, e il numero sta sul segnaposto e non sul
+       pannello nero, così è il rail *intero* a salire — pannello, etichette e
+       ombra insieme. */
+    z-index: 2;
     flex: none;
     width: var(--rail);
     transition: width 0.42s var(--ease);
@@ -327,7 +364,6 @@
   .lm-rail-inner {
     position: absolute;
     inset: 0 auto 0 0;
-    z-index: 30;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -630,62 +666,12 @@
   flex: 0 0 0.35rem;
 }
 
-/* Il tooltip: il rail dice cosa fa solo quando glielo si chiede. */
-.lm-tip {
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-4px);
-  padding: 0.35rem 0.6rem;
-  border-radius: 9px;
-  background: var(--black);
-  color: #fff;
-  font-size: 0.74rem;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.2s,
-    transform 0.3s var(--ease);
-  z-index: 20;
-}
-.lm-staff-link:hover .lm-tip,
-.lm-staff-link:focus-visible .lm-tip {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-/* **A barra aperta il tooltip tace.** Ha ancora un compito, e non è un residuo:
-   l'apertura ha 150ms di ritardo, quindi puntando un'icona il nome compare
-   PRIMA che la barra si apra e sparisce quando l'etichetta vera prende il suo
-   posto. Fuori da quella finestra serve dove l'apertura al passaggio non c'è —
-   sotto le dita e da tastiera. Ripetere due volte la stessa parola, una accanto
-   all'icona e una in un fumetto sopra, sarebbe solo rumore. */
-.lm-staff-rail[data-esp='true'] .lm-staff-link:hover .lm-tip,
-.lm-staff-rail[data-esp='true'] .lm-staff-link:focus-visible .lm-tip {
-  opacity: 0;
-}
-.lm-tip[data-multi='true'] {
-  white-space: normal;
-  width: 190px;
-  line-height: 1.55;
-}
-.lm-tip b {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.15rem;
-}
-/* I tooltip del piede salgono invece di centrarsi: centrati sull'ultima icona
-   finirebbero mezzi sotto il bordo del pannello. */
-.lm-rail-foot .lm-tip {
-  top: auto;
-  bottom: 0;
-  transform: translateY(0) translateX(-4px);
-}
-.lm-rail-foot .lm-staff-link:hover .lm-tip,
-.lm-rail-foot .lm-staff-link:focus-visible .lm-tip {
-  transform: translateY(0) translateX(0);
-}
+/* Il fumetto del rail non c'è più: era posizionato fuori dal proprio link
+   (`left: calc(100% + 10px)`) dentro tre antenati che ritagliano — il link, il
+   corpo scorrevole della barra e il pannello nero — quindi non si è mai visto
+   da quando esiste. Il suo compito se lo dividono l'apertura col fuoco da
+   tastiera (in `StaffShell.tsx`) e il `title` nativo, che il browser disegna
+   fuori dalla pagina e nessun `overflow` può tagliare. */
 
 .lm-rail-foot {
   display: flex;
@@ -1998,9 +1984,33 @@
   font-size: 0.68rem;
   color: var(--ink-2);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 100%;
+}
+/* **Sette colonne in una card da un terzo di riga fanno 25px l'una**, e in 25px
+   non ci sta nessuna parola: «Contattati» diventava «C…», cioè sette fasi
+   ridotte a sette puntini. Sopra le cinque voci l'etichetta si gira e si legge
+   dal basso — come le ascisse fitte di qualunque grafico stampato — e in 62px
+   di altezza ci sta per intero anche la più lunga che usiamo.
+
+   L'altezza è **fissa e uguale per tutte**: le colonne appoggiano il gambo sul
+   bordo superiore dell'etichetta, e una più alta della vicina alzerebbe il suo
+   gambo di qualche pixel, cioè il grafico direbbe un numero che non è il suo.
+
+   `flex: none` non è di contorno, è quello che rende vera la frase qui sopra.
+   La colonna è un flex verticale, quindi `height` da sola è un desiderio: la
+   voce più corta si lasciava stringere a 40px e la più lunga a 47, e
+   «Contattati» tornava tagliata — con in più i sette gambi a sette altezze
+   diverse, che è il modo di far dire a un grafico un numero che non è il suo. */
+.lm-lolli[data-fitte='true'] .lm-lolli-cap {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  flex: none;
+  height: 62px;
+  line-height: 1;
+  overflow: hidden;
+}
+.lm-lolli[data-fitte='true'] {
+  height: 188px;
 }
 .lm-card[data-tone='black'] .lm-lolli-cap {
   color: rgba(255, 255, 255, 0.58);
@@ -5059,7 +5069,9 @@
   left: 0;
   right: 0;
   height: 2px;
-  z-index: 70;
+  /* Piano 3: sopra il contenuto e sopra il rail, perché corre sul bordo del
+     vetro che li contiene entrambi. */
+  z-index: 3;
   overflow: hidden;
   border-radius: 34px 34px 0 0;
   pointer-events: none;

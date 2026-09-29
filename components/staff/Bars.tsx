@@ -63,7 +63,9 @@ export function Lollipop({
   const max = Math.max(1, ...items.map((i) => i.value))
 
   return (
-    <div className="lm-lolli">
+    /* Sopra le cinque voci le colonne scendono sotto i trenta pixel e nessuna
+       etichetta ci sta più in orizzontale: da lì in poi si girano. */
+    <div className="lm-lolli" data-fitte={items.length > 5}>
       {items.map((item) => {
         /* Una colonna a zero resta un moncone visibile: farla sparire fa
            perdere il conto delle posizioni, ed è proprio la categoria vuota

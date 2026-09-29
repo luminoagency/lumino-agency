@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { ospitePortale } from '@/lib/staff/portale'
 import { Bell, BellOff, Check, Clock, MapPin, Moon, Search, Settings2, X } from 'lucide-react'
 import { ayahDelGiro } from '@/lib/staff/ayat'
 import {
@@ -80,14 +81,14 @@ export default function Salat() {
   /* `document` non esiste sul server, e `createPortal` lo pretende: si disegna
      solo dopo il primo montaggio. Il pannello è chiuso al primo render in ogni
      caso, quindi non si perde niente. */
-  const montato = usaMontato()
-  const ancora = usaAncora(aperto, pillRef)
+  const montato = useMontato()
+  const ancora = useAncora(aperto, pillRef)
   /* Stabile, non una lambda nuova a ogni render: sta nelle dipendenze di un
      effetto che aggiunge due ascoltatori al `document`, e una funzione nuova a
      ogni fotogramma del conto alla rovescia vorrebbe dire staccarli e
      riattaccarli una volta al secondo. */
   const chiudiPannello = useCallback(() => setAperto(false), [])
-  usaChiusura(aperto, chiudiPannello, pillRef, pannelloRef)
+  useChiusura(aperto, chiudiPannello, pillRef, pannelloRef)
 
   /* ── avvio ─────────────────────────────────────────────────────────────── */
   /**
@@ -538,7 +539,7 @@ export default function Salat() {
           sarebbe aperto a metà. Portato sul body e messo in posizione fissa
           rispetto alla pill, si apre dove deve e non allunga l'area di
           scorrimento della pagina sotto. */}
-      {aperto && montato && createPortal(corpo, document.body)}
+      {aperto && montato && createPortal(corpo, ospitePortale() ?? document.body)}
     </div>
   )
 }
@@ -546,7 +547,7 @@ export default function Salat() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 /** Il primo montaggio è avvenuto: da qui `document` esiste. */
-function usaMontato(): boolean {
+function useMontato(): boolean {
   const [montato, setMontato] = useState(false)
   useEffect(() => setMontato(true), [])
   return montato
@@ -572,7 +573,7 @@ function usaMontato(): boolean {
  * cresce verso l'interno. Gli 8px di minimo sono il margine oltre il quale non
  * si va, per il caso in cui la pill sia quasi a filo del bordo.
  */
-function usaAncora(aperto: boolean, rif: React.RefObject<HTMLElement>) {
+function useAncora(aperto: boolean, rif: React.RefObject<HTMLElement>) {
   const [ancora, setAncora] = useState<{ top: number; right: number } | null>(null)
 
   useLayoutEffect(() => {
@@ -610,7 +611,7 @@ function usaAncora(aperto: boolean, rif: React.RefObject<HTMLElement>) {
  * suo `onClick` fa già da interruttore: senza questa esclusione un clic sulla
  * pill aperta la chiuderebbe due volte, cioè la riaprirebbe.
  */
-function usaChiusura(
+function useChiusura(
   aperto: boolean,
   chiudi: () => void,
   pill: React.RefObject<HTMLElement>,

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import {
+  Archive,
   BarChart3,
   Bot,
   BookOpen,
@@ -57,10 +58,14 @@ import type { StaffProfile } from '@/lib/staff/types'
  * contenuto, è l'unico in cui il segnaposto si allarga davvero: succede una
  * volta, al clic, e un layout al clic non lo vede nessuno.
  *
- * **Il tooltip resta**, e ha ancora un compito: l'apertura ha 150ms di ritardo,
- * quindi puntando un'icona il nome compare *prima* che la barra si apra, e sotto
- * le dita o da tastiera — dove l'apertura al passaggio non c'è — è l'unica cosa
- * che dice a cosa serve quell'icona.
+ * **Il fumetto non c'è più.** Era un `<span>` posizionato fuori dal proprio
+ * link, dentro due antenati che ritagliano — il link stesso e il corpo della
+ * barra, che scorre — quindi non si è mai visto: undici fumetti disegnati e
+ * ritagliati via a ogni passaggio del mouse. Al suo posto due cose che
+ * funzionano davvero: **la barra si apre anche col fuoco da tastiera**, così chi
+ * naviga con Tab legge i nomi veri invece di una parola in un riquadro, e resta
+ * il `title` nativo, che lo disegna il browser fuori dalla pagina e quindi
+ * nessun `overflow` lo può tagliare.
  *
  * Su telefono niente rail: la pill flottante in basso di ref1, in vetro, con
  * **l'etichetta sotto l'icona** e non accanto — di fianco stavano in cinque su
@@ -82,6 +87,7 @@ const ICONS: Record<string, LucideIcon> = {
   '/staff/progetti': FolderKanban,
   '/staff/statistiche': BarChart3,
   '/staff/team': Users,
+  '/staff/archivio': Archive,
   '/staff/risorse': BookOpen,
   '/staff/lab-ai': Sparkles,
   '/staff/agent': Bot,
@@ -114,7 +120,7 @@ export default function StaffShell({
   const gruppi = navPerGruppi(vive)
   const tabs = vive.filter((i) => i.mobile)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const { fisso, blocca, aperto, apri, chiudi } = useRail()
+  const { fisso, blocca, aperto, apri, apriSubito, chiudi } = useRail()
   const { attesa, parti } = useAttesa(pathname)
 
   /* Il pannello si chiude da sé al cambio pagina: lasciarlo aperto sopra la
@@ -143,6 +149,16 @@ export default function StaffShell({
           data-fisso={fisso}
           onPointerEnter={apri}
           onPointerLeave={chiudi}
+          /* Il fuoco apre **subito**: i 150ms difendono dal puntatore che sfiora
+             la barra andando altrove, e col Tab quel caso non esiste — chi ci
+             arriva ci è arrivato apposta. In uscita si chiude solo se il fuoco
+             è uscito davvero: passando da una voce alla successiva il blur
+             arriva prima del focus, e senza il controllo la barra sbatterebbe a
+             ogni Tab. */
+          onFocus={apriSubito}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) chiudi()
+          }}
         >
           <div className="lm-rail-inner">
             <div className="lm-rail-head">
@@ -209,25 +225,21 @@ export default function StaffShell({
                 href={HREF_IMPOSTAZIONI}
                 className="lm-staff-link lm-rail-me"
                 aria-current={pathname.startsWith(HREF_IMPOSTAZIONI) ? 'page' : undefined}
+                title={`${ruolo(me)} · ${me.nome}`}
               >
                 <Avatar nome={me.nome} foto={foto} size="rail" />
                 <span className="lm-rail-label" style={sfasa(0)}>
                   <b>{me.nome}</b>
-                  <small>{me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}</small>
-                </span>
-                <span className="lm-tip">
-                  <b>{me.nome}</b>
-                  {me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}
+                  <small>{ruolo(me)}</small>
                 </span>
               </Link>
 
               <form action="/staff/logout" method="post">
-                <button type="submit" className="lm-staff-link" aria-label="Esci">
+                <button type="submit" className="lm-staff-link" aria-label="Esci" title="Esci">
                   <LogOut aria-hidden="true" />
                   <span className="lm-rail-label" style={sfasa(1)}>
                     Esci
                   </span>
-                  <span className="lm-tip">Esci</span>
                 </button>
               </form>
             </div>
@@ -407,7 +419,12 @@ function useRail() {
     setAperto(false)
   }, [])
 
-  return { fisso, blocca, aperto, apri, chiudi }
+  const apriSubito = useCallback(() => {
+    if (timer.current) window.clearTimeout(timer.current)
+    setAperto(true)
+  }, [])
+
+  return { fisso, blocca, aperto, apri, apriSubito, chiudi }
 }
 
 /**
@@ -479,13 +496,13 @@ function Voce({
       className="lm-staff-link"
       aria-current={attiva ? 'page' : undefined}
       data-attesa={attesa || undefined}
+      title={item.label}
       onClick={() => parti(item.href)}
     >
       <Icon aria-hidden="true" />
       <span className="lm-rail-label" style={sfasa(indice)}>
         {item.label}
       </span>
-      <span className="lm-tip">{item.label}</span>
     </Link>
   )
 }
@@ -501,6 +518,16 @@ function Voce({
  */
 function sfasa(i: number): React.CSSProperties {
   return { '--i': i } as React.CSSProperties
+}
+
+/** Il ruolo scritto dalla persona, o quello che discende dal permesso. */
+function ruolo(me: StaffProfile) {
+  return me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')
+}
+
+/** «Soldi (fase 6) · Progetti (fase 7)» — per il `title` e per il lettore. */
+function elenco(items: StaffNavItem[]) {
+  return items.map((i) => `${i.label} (fase ${i.fase})`).join(' · ')
 }
 
 /** Il marchio: la I nel gradiente, come sul sito pubblico. */
@@ -558,14 +585,16 @@ function Avatar({
  */
 function Prossime({ items }: { items: StaffNavItem[] }) {
   return (
-    <span className="lm-staff-link" tabIndex={0} role="button" aria-label="Sezioni in arrivo">
+    <span
+      className="lm-staff-link"
+      tabIndex={0}
+      role="button"
+      aria-label={`Sezioni in arrivo: ${elenco(items)}`}
+      title={`In arrivo · ${elenco(items)}`}
+    >
       <MoreHorizontal aria-hidden="true" />
       <span className="lm-rail-label" style={sfasa(0)}>
         In arrivo
-      </span>
-      <span className="lm-tip" data-multi="true">
-        <b>In arrivo</b>
-        {items.map((i) => `${i.label} (fase ${i.fase})`).join(' · ')}
       </span>
     </span>
   )
@@ -604,6 +633,7 @@ function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolea
       data-on={acceso}
       aria-pressed={acceso}
       aria-label="Dati demo"
+      title={acceso ? 'Dati demo accesi' : 'Dati demo spenti'}
       disabled={inCorso}
       onClick={() => cambia(!acceso)}
     >
@@ -611,7 +641,6 @@ function InterruttoreDemo({ acceso, esteso }: { acceso: boolean; esteso?: boolea
       <span className="lm-rail-label" style={sfasa(0)}>
         Dati demo
       </span>
-      <span className="lm-tip">{acceso ? 'Dati demo accesi' : 'Dati demo spenti'}</span>
     </button>
   )
 }
