@@ -54,7 +54,6 @@ export default async function StaffHome() {
   const me = await requireStaff()
   const demo = demoAttivo(me.role)
   const supabase = staffDb()
-  const foto = await firmaAvatar(me.foto_url)
 
   const oggi = new Date()
   const iso = (d: Date) => d.toISOString().slice(0, 10)
@@ -62,7 +61,13 @@ export default async function StaffHome() {
   const inizioMeseScorso = iso(new Date(oggi.getFullYear(), oggi.getMonth() - 1, 1))
   const fra30Giorni = iso(new Date(oggi.getTime() + 30 * 86_400_000))
 
-  const [clienti, deals, abbonamenti, followup, rinnovi, flusso, visite] = await Promise.all([
+  /* La firma della foto profilo sta **dentro** il Promise.all e non prima.
+     Era un `await` da sola, in cima alla funzione: un viaggio a Storage in
+     serie, prima ancora di cominciare a leggere i dati, per disegnare un
+     cerchio di quaranta pixel. Non dipende da niente di quello che segue, e la
+     home è la pagina che si apre più di tutte. */
+  const [foto, clienti, deals, abbonamenti, followup, rinnovi, flusso, visite] = await Promise.all([
+    firmaAvatar(me.foto_url),
     /* `*` e non l'elenco delle colonne: serve `is_demo`, che arriva con la
        migration 0031, e nominarla esplicitamente farebbe fallire ogni query
        su un database dove non è ancora passata. Con `*` la colonna c'è se

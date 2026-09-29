@@ -53,3 +53,6 @@ ADMIN_CONFIG.md
 
 # Copiato da node_modules a ogni build (scripts/copia-pdf-worker.mjs)
 public/pdfjs/
+
+# Credenziali usa e getta della misura delle prestazioni
+scripts/.utente-prova.json

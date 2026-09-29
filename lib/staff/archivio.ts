@@ -78,9 +78,15 @@ export async function caricaArchivio(
      in SQL perché un `or` su due colonne in PostgREST diventa una stringa che
      nessuno rilegge, e le righe qui sono al massimo quaranta. */
 
-  const [righe, profili] = await Promise.all([
+  /* Tre letture in parallelo e non in fila. Il sommario non dipende
+     dall'elenco — ignora i filtri apposta — quindi metterlo dopo vorrebbe dire
+     un viaggio a Supabase in più, in serie, per ogni apertura della pagina.
+     Da questo portatile un viaggio costa 260ms e si vede; dal datacenter ne
+     costa una ventina e non si vede, ma è lo stesso viaggio inutile. */
+  const [righe, profili, sommario] = await Promise.all([
     query,
     supabase.from('staff_profiles').select('id, nome'),
+    sommarioArchivio(demo),
   ])
 
   if (righe.error?.code === '42P01' || righe.error?.code === '42703') {
@@ -123,8 +129,6 @@ export async function caricaArchivio(
     created_by: r.created_by,
     autore: r.created_by ? (nomi.get(r.created_by) ?? null) : null,
   }))
-
-  const sommario = await sommarioArchivio(demo)
 
   const autori = [...nomi.entries()]
     .map(([id, nome]) => ({ id, nome }))
