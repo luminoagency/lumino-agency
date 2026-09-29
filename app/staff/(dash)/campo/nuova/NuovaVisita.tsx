@@ -9,6 +9,7 @@ import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import PhotoPicker, { type FotoScattata } from '@/components/staff/PhotoPicker'
 import VoiceNote from '@/components/staff/VoiceNote'
 import { creaCliente, salvaVisita, type DatiVisita } from '@/lib/staff/actions'
+import { accoda, annunciaCoda } from '@/lib/staff/coda'
 import type { ClienteScelta } from '@/lib/staff/queries'
 import {
   GESTIONE_LABEL,
@@ -130,7 +131,49 @@ export default function NuovaVisita({
       followup_nota: richiamoNota,
     }
 
-    const esito = await salvaVisita(dati)
+    /* ── Senza rete la visita non si perde ──────────────────────────────────
+       Questo modulo si compila in piedi davanti a un locale, dove la rete c'è
+       e non c'è. Una visita di due minuti persa perché al momento di salvare
+       non c'era campo è il modo più sicuro di far smettere qualcuno di
+       registrare le visite.
+
+       Due strade verso la coda, e servono tutte e due: `navigator.onLine`
+       falso taglia corto **prima** di provare — altrimenti si resta a guardare
+       un bottone che gira finché il browser non si arrende — mentre il `catch`
+       prende il caso vero e più frequente, cioè la rete che c'è ma non
+       risponde, che `onLine` non sa vedere.
+
+       Le fotografie no: `PhotoPicker` le carica al momento dello scatto, non
+       qui, quindi senza rete l'ha già detto e la visita parte senza. Il testo,
+       il GPS e il vocale — cioè il contenuto — si salvano lo stesso. */
+    const inCoda = () => {
+      if (!accoda(scelto.nome, dati)) {
+        setErrore(
+          'Non c’è rete e il telefono non ha spazio per tenere la visita da parte. Riprova quando torna la connessione.',
+        )
+        setBusy(false)
+        return false
+      }
+      annunciaCoda()
+      /* Niente `router.refresh()`: senza rete fallirebbe, e la pagina del
+         Campo si rileggerà da sé quando la visita sarà davvero partita. */
+      router.push('/staff/campo')
+      return true
+    }
+
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      inCoda()
+      return
+    }
+
+    let esito
+    try {
+      esito = await salvaVisita(dati)
+    } catch {
+      inCoda()
+      return
+    }
+
     if (!esito.ok) {
       setErrore(esito.error ?? 'Non è stato possibile salvare la visita.')
       setBusy(false)

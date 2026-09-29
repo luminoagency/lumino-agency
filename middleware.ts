@@ -49,7 +49,18 @@ export function middleware(request: NextRequest) {
      la verifica vera, compreso il "questo utente è davvero staff", la fa
      app/staff/(dash)/layout.tsx. */
   if (pathname === '/staff' || pathname.startsWith('/staff/')) {
-    if (pathname === '/staff/login' || pathname === '/staff/logout') return NextResponse.next()
+    /* Le tre porte che si aprono senza sessione. `/staff/offline` ci sta
+       perché è la pagina che il service worker mostra quando la rete non c'è:
+       se fosse dietro al gate, il worker si troverebbe in cache la pagina di
+       login al posto suo — cioè, senza rete, una schermata che chiede di
+       accedere e non può farlo. Dentro non c'è nessun dato. */
+    if (
+      pathname === '/staff/login' ||
+      pathname === '/staff/logout' ||
+      pathname === '/staff/offline'
+    ) {
+      return NextResponse.next()
+    }
 
     /* L'anteprima di sviluppo non esiste in produzione, e lo si decide **qui**,
        prima di qualsiasi altra cosa. La pagina ha già il suo `notFound()` e i
@@ -222,11 +233,16 @@ export const config = {
      Escludere qui costa meno che entrare nel middleware e uscirne subito per
      ogni immagine e ogni chunk.
 
-     `staff/stanza.webp` è l'unica eccezione che non è una cartella: è la
+     `staff-sw.js` è il service worker dell'area: sta in radice per poter
+     governare anche `/staff` (un worker governa solo la sua cartella), e deve
+     arrivare al browser così com'è, senza il `no-store` che il middleware
+     mette su tutto.
+
+     `staff/stanza.webp` è l'altra eccezione che non è una cartella: è la
      fotografia di sfondo dell'area, e sta sotto `/staff/` perché è lì che
      appartiene. Senza questa riga il gate qui sopra la scambiava per una pagina
      riservata e la rimandava al login — cioè **la pagina di login restava senza
      sfondo**, perché chi la guarda per definizione non ha una sessione. Non
      protegge niente tenerla dentro: è una stanza vuota. */
-  matcher: ['/((?!api|_next/static|_next/image|favicon|icon-|apple-touch-icon|og-image|works/|motion/|staff/stanza\.webp|robots.txt|sitemap.xml|manifest.webmanifest).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon|icon-|apple-touch-icon|og-image|works/|motion/|pwa/|staff-sw\.js|staff/stanza\.webp|robots.txt|sitemap.xml|site\.webmanifest|manifest.webmanifest).*)'],
 }

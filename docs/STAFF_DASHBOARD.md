@@ -161,6 +161,74 @@ che lo rendeva un contenitore di scorrimento e spegneva ogni `sticky` dentro:
 in `globals.css` ora c'è `overflow-x: clip`, che taglia uguale senza creare il
 contenitore.
 
+### L'app installabile (PWA)
+
+Da `/staff` si installa un'app vera sul telefono. **Copre solo l'area staff**:
+il sito pubblico non ha e non deve avere un service worker.
+
+| Pezzo | Dove | Nota |
+| --- | --- | --- |
+| Manifest | `public/pwa/staff.webmanifest` | `scope` e `start_url` su `/staff`, nome «Lumino Staff» |
+| Service worker | `public/staff-sw.js` | in radice, ambito `/staff` via `Service-Worker-Allowed` |
+| Icone e avviamenti | `public/pwa/` | generati da `scripts/icone-pwa.mjs` dal marchio |
+| Pagina offline | `app/staff/offline/page.tsx` | fuori dal gate, dentro non c'è nessun dato |
+| Registrazione, invito, coda | `components/staff/{RegistraSW,InvitoInstalla,CodaVisite}.tsx` | montati nel layout dell'area |
+
+**Il worker sta in radice e non sotto `/staff/`** perché un service worker
+governa solo la cartella da cui è servito: `/staff/sw.js` governerebbe
+`/staff/…` ma non `/staff`, cioè non la home della dashboard.
+
+**La regola che decide la cache: i dati non si mettono in cache.** Le
+navigazioni vanno in rete e basta; i payload RSC dei cambi pagina non vengono
+nemmeno toccati; POST, server action e Supabase passano fuori dal worker. In
+cache ci sono **solo** i file immutabili — `/_next/static/…`, che hanno
+l'impronta nel nome, le icone e la fotografia della stanza — più la pagina
+offline. Un elenco clienti servito da ieri è peggio di un elenco che non
+arriva: chi lo legge non ha modo di sapere che sta guardando ieri.
+
+**Non rallenta il primo caricamento**, e non è un'opinione: LCP misurato a
+1419 ms col worker attivo contro 1479 ms senza, sulla stessa pagina e sulla
+stessa macchina. Le ragioni sono tre: all'installazione mette in cache tre file
+(pagina offline e due icone) invece di precaricare il guscio di Next;
+`navigationPreload` fa partire la richiesta di rete **mentre** il browser
+avvia il worker, che è la latenza classica di un worker fermo; e tutto ciò che
+non è navigazione o file immutabile non passa da `respondWith`, quindi il
+worker non è nemmeno sulla strada.
+
+**iOS a parte.** Safari non legge dal manifest né le icone né la schermata
+d'avvio: vuole `apple-touch-icon`, i meta `apple-mobile-web-app-*` e un PNG per
+ogni dimensione di schermo, altrimenti mostra una pagina bianca mentre apre.
+Le trentaquattro righe di `<link>` sono generate insieme ai file in
+`lib/staff/avvii.ts` — corrispondenze da fare a mano non si fanno a mano.
+
+**L'area sicura.** `viewport-fit=cover` porta la stanza fino ai bordi dello
+schermo, e con lei il contenuto sotto il notch e sotto la barra dei gesti:
+`env(safe-area-inset-*)` lo rimette a posto su testata, colonna, dock e barra
+della visita — mai sullo sfondo, che deve arrivare in fondo. Sempre dentro un
+`max()`: su uno schermo senza notch `env()` vale zero, e una somma azzererebbe
+anche il margine che c'era già.
+
+**L'invito a installare** compare solo su telefono, solo se non è già
+installata, solo fuori dalla pagina di accesso, e una volta sola: chi lo chiude
+non lo rivede (`localStorage`, quindi per dispositivo, che è il modo giusto —
+la domanda riguarda quel telefono lì). Su Android usa il `beforeinstallprompt`
+che Chrome ci passa, trattenuto perché non salti fuori mentre si compila una
+visita. Su iOS quell'evento non esiste e non c'è nessun bottone: c'è
+l'istruzione col nome esatto della voce di menù, e solo dentro Safari vero —
+da Chrome per iOS o da un'anteprima dentro un'altra app quella voce non c'è.
+
+**Le visite senza rete** finiscono in `lib/staff/coda.ts` e ripartono da sole
+al ritorno della connessione (`online`, ritorno in primo piano, apertura
+dell'app: nessun timer che gira a vuoto). La pill in alto dice quante ce ne
+sono. Due strade verso la coda e servono entrambe: `navigator.onLine` falso
+taglia corto prima di provare, il `catch` prende il caso più frequente — la
+rete che c'è ma non risponde — che `onLine` non sa vedere. Se il server
+risponde e **rifiuta**, la visita esce dalla coda e la pill lo dice: ritentare
+per sempre una cosa che non passerà è peggio che dirlo.
+**Le fotografie non sono in coda**: `PhotoPicker` le carica al momento dello
+scatto, quindi senza rete lo dice subito e la visita parte senza. Testo, GPS e
+vocale — il contenuto — si salvano lo stesso.
+
 ### Navigazione
 
 - **Desktop:** rail nero **dentro** il pannello, che **si apre al passaggio del

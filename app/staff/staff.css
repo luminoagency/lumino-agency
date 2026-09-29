@@ -5330,3 +5330,254 @@
   text-underline-offset: 2px;
   cursor: pointer;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'APP INSTALLATA
+
+   Da `/staff` si può installare un'app vera sul telefono: manifest in
+   `public/pwa/staff.webmanifest`, service worker in `public/staff-sw.js`,
+   ambito `/staff` e basta — il sito pubblico non c'entra. Qui sotto c'è solo
+   quello che cambia **a schermo**, cioè due cose: l'area sicura e i due
+   avvisi che l'app installata si porta dietro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── L'area sicura ───────────────────────────────────────────────────────────
+   In piedi da browser il telefono tiene il contenuto lontano dal notch e dalla
+   barra dei gesti per conto suo. Da app installata no: con
+   `viewport-fit=cover` — che serve, perché è quello che porta la stanza fino
+   ai bordi dello schermo invece di lasciare due fasce bianche — la pagina
+   arriva davvero sotto l'orologio e sotto la barra. Rimettere l'aria è nostro.
+
+   Va **solo** dove c'è del contenuto da non far finire sotto: la testata, la
+   colonna e la pill in basso. Sullo sfondo non va, ed è il punto — la stanza
+   deve arrivare fino in fondo.
+
+   `max()` e non una somma: su uno schermo senza notch `env()` vale zero, e una
+   somma ridurrebbe a zero anche il margine che c'era già. */
+.lm-staff-top {
+  padding-top: max(0.9rem, env(safe-area-inset-top));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+@media (max-width: 1039px) {
+  .lm-staff-main {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    /* Il fondo era `--dock + 1.6rem`: la barra dei gesti sta sotto la pill e
+       si somma, non si sostituisce. */
+    padding-bottom: calc(var(--dock) + 1.6rem + env(safe-area-inset-bottom));
+  }
+
+  /* La pill di navigazione sale sopra la barra dei gesti dell'iPhone: dove non
+     c'è, `env()` vale zero e resta dov'era. */
+  .lm-staff-dock {
+    bottom: calc(0.9rem + env(safe-area-inset-bottom));
+  }
+
+  /* Idem per la barra della visita, che vive appesa sopra il dock. */
+  .lm-visita-bar {
+    bottom: calc(var(--dock) + 0.4rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Da app installata la pagina di accesso è la prima cosa che si vede a tutto
+   schermo: senza questo la card finirebbe sotto l'orologio. */
+.lm-staff-login {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── L'invito a installare ───────────────────────────────────────────────────
+   Una striscia di vetro sopra la pill di navigazione, non una finestra che
+   copre la schermata: è un suggerimento, e un suggerimento non si mette
+   davanti al lavoro. Compare solo su telefono e solo una volta — la logica sta
+   in `components/staff/InvitoInstalla.tsx`. */
+.lm-invito {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--dock) + 0.5rem + env(safe-area-inset-bottom));
+  /* Sopra la pill di navigazione (50) e sotto i fogli (60): è un avviso, e un
+     avviso non deve mai finire davanti a un modulo aperto. */
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: calc(100% - 1.6rem);
+  max-width: 460px;
+  padding: 0.7rem 0.7rem 0.7rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow: 0 22px 48px -20px rgba(28, 22, 18, 0.55);
+  animation: lm-invito-entra 0.5s var(--ease) both;
+}
+@media (min-width: 1040px) {
+  /* Non compare mai da scrivania — il componente non lo monta nemmeno — ma la
+     regola resta, perché una finestra stretta su un portatile non è un
+     telefono e non deve poterselo trovare addosso. */
+  .lm-invito {
+    display: none;
+  }
+}
+@keyframes lm-invito-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.lm-invito-testo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.lm-invito-testo b {
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+.lm-invito-testo span {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+}
+/* Le due icone dentro la frase per iOS sono il disegno esatto dei bottoni da
+   toccare: «usa la funzione di condivisione» non si trova, quel quadrato con
+   la freccia sì. */
+.lm-invito-ios {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+}
+.lm-invito-ios svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.8;
+  vertical-align: -2px;
+}
+.lm-invito-si {
+  flex: none;
+}
+.lm-invito-no {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.lm-invito-no svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+.lm-invito-no:hover {
+  background: rgba(23, 19, 15, 0.07);
+  color: var(--ink);
+}
+
+/* ── Le visite in attesa ─────────────────────────────────────────────────────
+   Una riga sola, in alto, dove si guarda per prima cosa. Sta in alto e non in
+   basso perché non è un'azione ma uno stato, e perché in basso c'è già la pill
+   di navigazione e l'invito: tre cose appoggiate sullo stesso bordo sono una
+   pila. */
+.lm-coda {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Sotto la testata, non sopra: su telefono in cima c'è il marchio, e una
+     pill agganciata a `top: 0` gli finisce addosso. */
+  top: calc(3.6rem + env(safe-area-inset-top));
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: calc(100% - 1.6rem);
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 16px 36px -18px rgba(28, 22, 18, 0.5);
+  font-size: 0.84rem;
+  color: var(--ink-2);
+  animation: lm-coda-entra 0.4s var(--ease) both;
+}
+@keyframes lm-coda-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.lm-coda svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.8;
+}
+.lm-coda[data-stato='invio'] svg {
+  animation: lm-coda-su 1.4s ease-in-out infinite;
+}
+@keyframes lm-coda-su {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 0.55;
+  }
+}
+@media (min-width: 1040px) {
+  /* Da scrivania la testata del telefono non c'è: la pill si aggancia al bordo
+     alto del vetro, come tutto il resto che si incolla in quest'area. */
+  .lm-coda {
+    top: calc(var(--sopra) + 0.7rem);
+  }
+}
+.lm-coda[data-stato='fatto'] {
+  color: var(--green);
+}
+.lm-coda[data-stato='respinta'] {
+  color: var(--red);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-invito,
+  .lm-coda,
+  .lm-coda svg {
+    animation: none;
+  }
+}
+
+/* La pagina offline non ha né rail né dock: senza questa riga la card resta
+   appiccicata in cima a uno schermo vuoto. È l'unica schermata dell'area che
+   sia solo un messaggio, quindi è l'unica che si centra. */
+.lm-staff-shell[data-offline='true'] {
+  display: grid;
+  place-items: center;
+  padding: max(1.2rem, env(safe-area-inset-top)) 1.2rem max(1.2rem, env(safe-area-inset-bottom));
+}
+.lm-staff-shell[data-offline='true'] .lm-staff-main {
+  width: 100%;
+  max-width: 560px;
+  padding: 0;
+}
