@@ -57,7 +57,16 @@
 html,
 body {
   max-width: 100vw;
+  /* `hidden` taglia quello che sborda di lato, ma per farlo **rende <body> un
+     contenitore di scorrimento**: da quel momento tutto ciò che sta dentro e
+     si dichiara `position: sticky` si aggancia a un riquadro che non scorre,
+     cioè non si aggancia a niente. È il motivo per cui il rail di /staff se ne
+     andava in alto scorrendo la pipeline.
+     `clip` taglia allo stesso modo e **non** crea il contenitore, quindi lo
+     `sticky` torna a guardare la finestra. Le due righe stanno insieme perché
+     un browser che non conosce `clip` scarta la seconda e si tiene la prima. */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {

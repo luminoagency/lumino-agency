@@ -23,7 +23,7 @@ export default function Soon({
     <div className="lm-soon-page">
       <PageHead title={titolo} sub={testo} />
       <div className="lm-thread" aria-hidden="true" />
-      <p className="lm-sub" style={{ marginTop: '1rem', fontSize: '0.78rem' }}>
+      <p className="lm-sub" style={{ marginTop: '1rem', fontSize: '0.86rem' }}>
         In costruzione: arriva nella fase {fase} del piano.
       </p>
     </div>

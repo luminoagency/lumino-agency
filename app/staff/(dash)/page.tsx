@@ -269,7 +269,7 @@ export default async function StaffHome() {
           <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Incassato</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 su {euro(venduto)} venduti
               </span>
             </div>
@@ -362,7 +362,7 @@ export default async function StaffHome() {
           <article className="lm-card lm-in" data-span="8" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">I prossimi sette giorni</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 {arretrati.length > 0
                   ? `${arretrati.length} in ritardo, appoggiati su oggi`
                   : 'Nessun arretrato'}

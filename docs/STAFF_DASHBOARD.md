@@ -45,54 +45,71 @@ Tre regole da cui discende tutto il resto:
 
 ### La scena
 
-**Niente video.** C'era `bg.mp4` (1.8MB), ed è stato tolto: un `<video>` sotto un
-`backdrop-filter` costringe il compositore a rifare la sfocatura a ogni
-fotogramma del filmato, venticinque volte al secondo su tutta la larghezza del
-pannello. Era la voce più cara della pagina, per una cosa che non si deve
-nemmeno notare.
+**Una fotografia.** `public/staff/stanza.webp`, 45 KB: un interno luminoso con
+vetrate a tutta altezza, una lama di sole che taglia la parete e cade sul
+pavimento, il legno in primo piano. Viene da Pexels, licenza libera, nessuna
+attribuzione dovuta.
 
-Al suo posto `components/staff/Sfondo.tsx`: **quattro macchie di colore che si
-muovono piano e non si fermano mai**, nei toni Lumino — perla, crema, un filo di
-rosa e uno di viola. Sono `radial-gradient` su quattro livelli, con durate
-(48s, 61s, 73s, 89s) senza divisori in comune, così la composizione non torna mai
-identica a sé stessa.
+Qui prima ci sono stati un video (`bg.mp4`, 1.8 MB — troppo caro: un `<video>`
+sotto un `backdrop-filter` fa rifare la sfocatura venticinque volte al secondo)
+e poi una stanza disegnata coi gradienti — due vetrate, un orizzonte, una pozza
+di luce. Il secondo tentativo costava zero byte ed è stato buttato lo stesso: una
+stanza fatta di campiture non ha prospettiva, ha strati. Sembrava un muro dipinto
+bene, e il pannello non ci galleggiava davanti, ci era appoggiato sopra.
 
-- Si anima **solo `transform`**. Ogni livello diventa una texture sulla GPU una
-  volta sola e poi viene spostato: costa come far scorrere la pagina. Un blur
-  animato o un gradiente che cambia colore obbligherebbero a rasterizzare mezzo
-  schermo a ogni frame.
-- La sfumatura la fa la **forma** del gradiente (`transparent 70%`), non un
-  filtro: quattro `blur(80px)` grandi come la finestra sarebbero la cosa più
-  costosa della pagina, e si vedrebbero uguali.
+L'obiezione al ritorno della fotografia era il peso, 150-250 KB. Non è successo:
+**la sfocatura è cotta nel file**, e una foto senza dettaglio fine non ha quasi
+niente da codificare. Cinque pixel di sfocatura su 1920 e il file crolla a 45 KB
+— meno di una foto profilo, per una stanza intera. Cotta e non lasciata a
+`filter: blur()` anche per il secondo motivo: quello che il browser sfoca, il
+browser può decidere di ridisegnarlo a ogni fotogramma; una texture no.
+
+**Per cambiare stanza:** `node scripts/sfondo-staff.mjs <foto.jpg>`. Lo script
+ridimensiona a 1920, desatura un filo, sfoca e riscrive il webp. Non c'è
+nient'altro da toccare, né nel CSS né in `components/staff/Sfondo.tsx`.
+
+- Si anima **solo `transform` e `opacity`**, su due livelli soli — la stanza
+  (zoom lentissimo, 96s) e un alone di luce che le passa davanti (137s). Durate
+  senza divisori in comune: la composizione non torna mai identica. Ogni livello
+  è una texture sulla GPU che viene spostata, non ridisegnata.
+- Sopra, un **velo chiarissimo nei toni Lumino** — bianco caldo al centro, un
+  soffio di viola in basso — più una vignettatura. La schiarita sta qui e non nel
+  file: un file schiarito perde la struttura di toni, e senza quella la stanza
+  vista attraverso il vetro torna a essere una foschia bianca.
 - È un Server Component: nessun JS, nessuna idratazione. Con
-  `prefers-reduced-motion` resta il solo fondo fermo, che da solo deve già stare
-  in piedi — e sta in piedi.
-- Sopra, un velo appena accennato che scurisce gli angoli: dà un bordo alla
-  stanza, senza il quale quattro macchie su fondo chiaro sembrano una texture.
+  `prefers-reduced-motion` resta la stessa stanza, ferma.
 
 ### Colore e superfici
 
 | Ruolo | Valore |
 | --- | --- |
 | Inchiostro | `#17130F`, secondario `rgba(23,19,15,.58)` |
-| Card bianca | `rgba(255,255,255,.82)` |
-| Card perla | `rgba(244,242,238,.58)` |
+| Card bianca | `rgba(255,255,255,.84)` |
+| Card perla | `rgba(244,242,238,.70)` |
 | Card nera | `#14120F` — una o due per schermata |
 | Viola | `#8B5CF6` (azione, selezione), `#6D3FE0` per i testi su chiaro |
 | Rosso | `#E5342A` — ritardo, errore, rifiuto |
 | Verde | `#1F9D63` — chiuso, in linea |
 
-Il pannello di vetro: `rgba(255,255,255,.5)`, `blur(22px) saturate(1.22)`, un
-solo bordo chiaro sottile, raggio 34px, e un'ombra lunga e morbida. Si stacca
-dalla stanza per l'ombra, non per il contorno.
+Il pannello di vetro: `rgba(255,255,255,.34)`, `blur(12px) saturate(1.3)
+brightness(1.04)`, un bordo chiaro sottile, un riflesso morbido sul quarto alto,
+raggio 32px, e un'ombra lunga. Si stacca dalla stanza per l'ombra, non per il
+contorno.
+
+Bianco e sfocatura sono scesi insieme quando dietro è arrivata la fotografia:
+metà bianco più venti pixel di sfocatura sopra una stanza chiara **danno
+bianco**, cioè carta invece di vetro. La stanza è già sfocata nel file, quindi
+qui non serve rifare quel lavoro — bastano dodici pixel per ammorbidire il bordo
+della lastra, e quello che resta si vede *attraverso*, che è il punto. Per la
+stessa ragione le card sono salite di opacità: dove sotto capita il camino o il
+legno, un grafico sottile in bianco e nero non si leggeva più.
 
 **Il blur vive solo da 1040px in su.** Sotto quella soglia il pannello occupa
 tutta la finestra, quindi sfocare il suo sfondo vuol dire ricalcolare una
 sfocatura grande come lo schermo di un telefono a ogni fotogramma, sul
-dispositivo che ha meno memoria per farlo: lì resta un bianco più coprente,
-indistinguibile a vedersi e gratis. Il raggio è sceso da 34 a 22px per la stessa
-ragione — sopra i venti pixel l'occhio non distingue più *quanto* è sfocato, ma
-il tempo di calcolo continua a crescere.
+dispositivo che ha meno memoria per farlo: lì resta un bianco più coprente
+(`.82`, perché senza sfocatura la fotografia arriva quasi intera sotto il testo),
+indistinguibile a vedersi e gratis.
 
 **Il blur sta sul pannello e sugli strati che coprono** (dock, sheet, modale,
 barra della visita, card di login) e **su nient'altro**: mai su una card, mai su
@@ -107,6 +124,38 @@ una.
 - **Etichette in tondo minuscolo.** Il maiuscoletto spaziato è vietato ovunque:
   è la firma del pannello generico.
 - Il logo resta il wordmark `LUMINO` con la I nel gradiente.
+- **Niente sotto i 13px.** Tutta la scala è stata alzata di un decimo, con un
+  pavimento a `0.82rem`: le etichette secondarie stavano a `0.62–0.72rem`, cioè
+  dieci-undici pixel, ed erano decorazione più che testo. Dove l'aumento ha
+  fatto saltare un ingranaggio è stato l'ingranaggio a cedere — il rail aperto è
+  passato da 214 a 236px e ha stretto gli interstizi, perché dodici voci più il
+  piede tornassero dentro uno schermo da 1080.
+
+### La misura del pannello
+
+Il pannello **occupa quasi tutto lo schermo**: `--bordo` (1.15rem) di stanza
+intorno, `--vetro` (0.5rem) di gioco dentro la lastra, `--dentro` per il respiro
+della colonna. Tre numeri, dichiarati una volta in cima a `staff.css`, perché
+tre cose diverse ci si appoggiano: il margine, lo `sticky` del rail e quello del
+conto alla rovescia. La loro somma è `--sopra`, cioè dove comincia il vetro
+contando dal bordo alto della finestra.
+
+**Nessun tetto alla larghezza.** C'era `max-width: 1660px`: su uno schermo da
+1920 restavano centotrenta pixel di stanza per lato, e un pannello che — tolte
+tre cornici annidate — dava milleduecento pixel al contenuto. Un numero più
+grande non risolve, sposta il buco più in là. Qui dentro non c'è prosa da
+leggere per righe, c'è una griglia a dodici colonne, e una griglia più larga è
+una griglia migliore.
+
+**Scorre la pagina, non la colonna.** C'era `max-height: calc(100dvh - 8rem)` e
+`overflow-y: auto` sul contenuto: una barra interna che si prendeva i suoi pixel
+alla colonna invece che alla finestra, e che faceva fare alla rotellina due cose
+diverse a seconda di dove stava il puntatore. Il prezzo del cambio è che il rail
+e il conto alla rovescia se lo devono fare da soli, con `position: sticky`
+agganciato a `--sopra`. E che `<body>` non può più avere `overflow-x: hidden`,
+che lo rendeva un contenitore di scorrimento e spegneva ogni `sticky` dentro:
+in `globals.css` ora c'è `overflow-x: clip`, che taglia uguale senza creare il
+contenitore.
 
 ### Navigazione
 

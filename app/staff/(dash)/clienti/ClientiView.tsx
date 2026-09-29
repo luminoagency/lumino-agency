@@ -280,7 +280,7 @@ function Voce({
   return (
     <div className="lm-sub-card">
       <span className="lm-label">{titolo}</span>
-      <p style={{ marginTop: '0.25rem', fontSize: '0.86rem', fontWeight: 600 }}>
+      <p style={{ marginTop: '0.25rem', fontSize: '0.95rem', fontWeight: 600 }}>
         {valore ? (
           href ? (
             <a href={href} style={{ color: 'inherit' }}>

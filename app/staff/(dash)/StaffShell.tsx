@@ -348,7 +348,7 @@ export default function StaffShell({
             )}
 
             <div className="lm-modal-actions">
-              <span className="lm-muted" style={{ marginRight: 'auto', fontSize: '0.82rem' }}>
+              <span className="lm-muted" style={{ marginRight: 'auto', fontSize: '0.9rem' }}>
                 {me.nome} · {me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}
               </span>
               <form action="/staff/logout" method="post">

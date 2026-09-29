@@ -82,7 +82,7 @@ export default async function ProgettiPage() {
           <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Dove sono i lavori</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 dal brief alla pubblicazione
               </span>
             </div>
@@ -134,7 +134,7 @@ export default async function ProgettiPage() {
           <article className="lm-card lm-in" data-span="12" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Tutti i progetti</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 aggiornati per ultimo in cima
               </span>
             </div>

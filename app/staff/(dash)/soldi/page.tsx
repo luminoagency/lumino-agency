@@ -79,7 +79,7 @@ export default async function SoldiPage() {
           <article className="lm-card lm-in" data-span="4" data-tone="pearl" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Incassato</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 su {euro(venduto)} venduti
               </span>
             </div>
@@ -151,7 +151,7 @@ export default async function SoldiPage() {
           <article className="lm-card lm-in" data-span="4" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Acconti e saldi</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 30 / 70
               </span>
             </div>
@@ -184,7 +184,7 @@ export default async function SoldiPage() {
           <article className="lm-card lm-in" data-span="4" data-tone="pearl" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Ricorrenti al mese</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 {d.abbonamenti.length} attivi
               </span>
             </div>
@@ -204,7 +204,7 @@ export default async function SoldiPage() {
           <article className="lm-card lm-in" data-span="6" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Rinnovi e abbonamenti</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 {scadenzeVicine.length} entro 30 giorni
               </span>
             </div>
@@ -278,7 +278,7 @@ export default async function SoldiPage() {
             <article className="lm-card lm-in" data-span="12" data-tone="violet" data-hover data-reveal>
               <div className="lm-card-top">
                 <span className="lm-label">Margine sulle trattative chiuse</span>
-                <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+                <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                   solo amministratori · {d.margine.su} trattative
                 </span>
               </div>

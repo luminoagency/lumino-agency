@@ -76,7 +76,7 @@ export default async function StatistichePage() {
           <article className="lm-card lm-in" data-span="4" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Tasso di chiusura</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 su {d.decise} decise
               </span>
             </div>
@@ -124,7 +124,7 @@ export default async function StatistichePage() {
             {d.prezzi.length > 1 && (
               <>
                 <Spark serie={d.prezzi} label="I prezzi chiusi, dal più basso al più alto" />
-                <p className="lm-muted" style={{ fontSize: '0.72rem', marginTop: '0.35rem' }}>
+                <p className="lm-muted" style={{ fontSize: '0.82rem', marginTop: '0.35rem' }}>
                   {d.prezzi.length} chiusure, da {euro(d.prezzi[0])} a{' '}
                   {euro(d.prezzi[d.prezzi.length - 1])}
                 </p>
@@ -168,7 +168,7 @@ export default async function StatistichePage() {
           <article className="lm-card lm-in" data-span="8" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Il territorio</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 {d.zone.length} città · i punti vicini si sommano
               </span>
             </div>
@@ -185,7 +185,7 @@ export default async function StatistichePage() {
           <article className="lm-card lm-in" data-span="4" data-tone="black" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Cosa ci si sente dire</span>
-              <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+              <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
                 dalle visite
               </span>
             </div>
@@ -259,7 +259,7 @@ function ClassificaCard({
     <article className="lm-card lm-in" data-span={span} data-tone={tono} data-hover data-reveal>
       <div className="lm-card-top">
         <span className="lm-label">{titolo}</span>
-        <span className="lm-muted" style={{ fontSize: '0.78rem' }}>
+        <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
           {nota}
         </span>
       </div>

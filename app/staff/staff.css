@@ -31,8 +31,25 @@
      «Statistiche» e «Ricerca Agent» stanno su una riga sola accanto all'icona.
      Un'etichetta che va a capo dentro un rail è peggio di un'etichetta che non
      c'è. */
-  --rail-aperto: 214px;
+  --rail-aperto: 236px;
   --dock: 84px;
+
+  /* Le tre distanze del guscio, dichiarate una volta sola perché tre cose
+     diverse ci si appoggiano — il margine del pannello, lo `sticky` del rail,
+     lo `sticky` del conto alla rovescia — e finché erano numeri scritti a mano
+     in tre punti, cambiarne uno ne rompeva un altro.
+       --bordo   quanto stanza resta attorno al pannello;
+       --vetro   il gioco fra il bordo della lastra e quello che c'è dentro;
+       --dentro  il respiro della colonna del contenuto;
+       --sopra   dove comincia il vetro, contando dal bordo alto della finestra:
+                 è la somma dei primi due, ed è l'aggancio di tutto ciò che si
+                 incolla in cima mentre la pagina scorre.
+     Su telefono `--sopra` è zero: lì il pannello parte dal bordo dello schermo
+     e non c'è niente da cui staccarsi. */
+  --bordo: 1.15rem;
+  --vetro: 0.5rem;
+  --dentro: 1.5rem 1.7rem 1.9rem;
+  --sopra: 0px;
 
   /* Inchiostro e superfici. Il bianco delle card non è mai opaco al 100%:
      deve lasciare intuire la stanza sotto, o il vetro non è vetro. */
@@ -42,8 +59,13 @@
   --line: rgba(23, 19, 15, 0.09);
   --line-2: rgba(23, 19, 15, 0.16);
 
-  --white: rgba(255, 255, 255, 0.82);
-  --pearl: rgba(244, 242, 238, 0.58);
+  /* Le due superfici delle card. La perla è salita da 0,58 a 0,70 quando
+     dietro è arrivata una fotografia: su quattro macchie di gradiente 0,58
+     bastava, su una stanza vera no — dove sotto capita il camino o il legno,
+     un grafico sottile in bianco e nero non si leggeva più. È il minimo che
+     regge il punto peggiore della foto, non un valore scelto a occhio. */
+  --white: rgba(255, 255, 255, 0.84);
+  --pearl: rgba(244, 242, 238, 0.7);
   --black: #14120f;
 
   --violet: #8b5cf6;
@@ -74,296 +96,137 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
-   LA SCENA — la stanza dietro il vetro
+   LA SCENA — la stanza, e questa volta è una stanza vera
 
-   Non uno sfondo astratto: una stanza d'angolo con due vetrate a tutta
-   altezza, come in ref1. Quello che la fa funzionare non è il colore, è che
-   abbia un **sopra e un sotto** — un soffitto, la riga dove il muro finisce e
-   comincia il pavimento, la luce che arriva da una parte precisa. Quattro
-   macchie sfumate, che è quello che c'era, non hanno un orizzonte: quindi non
-   hanno profondità, quindi il pannello non galleggiava su niente.
+   Il modello di ref1: dietro il pannello c'è un ambiente. Grandi vetrate, il
+   cielo, una lama di sole che taglia la parete e cade sul pavimento, un
+   camino che fa massa in fondo, il legno in primo piano. Non un fondo: un
+   luogo, con un sopra e un sotto e una profondità.
 
-   ## Tutto è grande, e non è una scelta di gusto
+   ## Perché una fotografia, dopo aver scritto che no
 
-   Questa stanza si guarda quasi tutta **attraverso** il pannello, che è bianco
-   al 50% con venti pixel di sfocatura dietro. Una sfocatura di venti pixel
-   cancella qualunque dettaglio più sottile di venti pixel: montanti, righe,
-   bordi netti spariscono e restano solo campi luminosi larghi. Per questo le
-   vetrate sono due **macchie di luce alte quanto lo schermo** e non due
-   disegni di finestre, e per questo la differenza di tono fra vetro, parete e
-   pavimento è netta invece che delicata — è l'unica cosa che sopravvive alla
-   sfocatura, ed è anche l'unica che serve: la profondità la fa il salto di
-   luminosità, non il disegno.
+   Qui prima c'erano gradienti, con tanto di ragionamento sul fatto che
+   costavano zero byte. Il ragionamento era giusto sul costo e sbagliato sul
+   risultato: una stanza fatta di campiture non ha prospettiva: ha strati.
+   Sembrava un muro dipinto bene, e il pannello non ci galleggiava davanti —
+   ci era appoggiato sopra.
 
-   I montanti ci sono lo stesso, sottili, e si vedono solo nella cornice di
-   stanza attorno al pannello — cioè esattamente dove non c'è sfocatura.
+   La fotografia costa **33 KB**, non i 150-250 che temevamo, perché la
+   sfocatura è cotta nel file (`scripts/sfondo-staff.mjs`): una foto senza
+   dettaglio fine non ha quasi niente da codificare. A quel prezzo il
+   confronto non esiste più.
 
-   ## Costo
+   ## Come si cambia stanza
 
-   Zero byte: sono gradienti, nessuna immagine da scaricare e nessuna licenza
-   da ricordare fra due anni. Zero lavoro per fotogramma: si animano solo
-   `transform` e `opacity`, quindi ogni livello è una texture sulla GPU che
-   viene spostata, non ridisegnata. Le durate (54s, 67s, 83s, 97s, 113s) non
-   hanno divisori in comune: la composizione non torna mai identica.
+   `node scripts/sfondo-staff.mjs <foto.jpg>` e basta: lo script schiarisce,
+   desatura, sfoca e scrive `public/staff/stanza.webp`. Non c'è nient'altro da
+   toccare, né qui né nel componente. La foto di adesso viene da Pexels
+   (licenza libera, nessuna attribuzione dovuta).
+
+   ## Il movimento
+
+   Solo `transform` e `opacity`, come prima e per la stessa ragione: ogni
+   livello diventa una texture sulla GPU una volta sola e poi viene spostato.
+   Nessun `filter` animato, nessun gradiente che cambia colore, niente che
+   obblighi a rasterizzare di nuovo mezzo schermo a ogni fotogramma. Le due
+   durate (96s e 137s) non hanno divisori in comune: la composizione non torna
+   mai identica.
 
    ## La leggibilità viene prima
 
-   Una stanza più luminosa rischia di mangiarsi il pannello: vetro bianco su
-   fondo bianco non è vetro, è carta. Per questo la stanza **non** è chiara e
-   basta — ha un pavimento deciso nell'ultimo quarto e una vignettatura agli
-   angoli, cioè qualcosa di più scuro contro cui il pannello si stacca su
-   qualunque larghezza.
+   Il pannello è bianco traslucido: su una foto contrastata sparirebbe. Per
+   questo la foto arriva già schiarita dallo script, e qui sopra ci va un velo
+   chiarissimo nei toni Lumino — bianco caldo al centro, un soffio di viola in
+   basso — più una vignettatura, che è quel qualcosa di più scuro contro cui
+   il vetro si stacca su qualunque larghezza.
    ─────────────────────────────────────────────────────────────────────────── */
-.lm-scene {
+.lm-scena {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  /* Il fondo fermo, ed è anche tutto quello che resta con
-     `prefers-reduced-motion`: da solo deve già essere una stanza.
-     Quattro strati, dal davanti al dietro nell'ordine del codice.
-       1. la luce che scende dal soffitto;
-       2. l'angolo: due pareti che si incontrano dietro il pannello, segnato da
-          un filo d'ombra verticale. Senza, le due vetrate sono una fascia sola;
-       3. il pavimento, che comincia al 72% con uno stacco netto — è
-          l'orizzonte, ed è la riga da cui discende tutta la profondità;
-       4. la parete, dal bianco caldo del soffitto al sabbia della base. */
-  background:
-    radial-gradient(106vw 44vh at 50% -14%, rgba(255, 255, 255, 0.7), transparent 62%),
-    /* Un velo freddo sul terzo di destra. Senza, la stanza è tutta calda e
-       diventa una cartolina: la luce che entra da una vetrata in ombra è
-       azzurrina, ed è il freddo di qui che fa sembrare vero il caldo di là. */
-    linear-gradient(90deg, transparent 0 54%, rgba(189, 203, 223, 0.22) 100%),
-    linear-gradient(
-      90deg,
-      transparent 0 44%,
-      rgba(112, 92, 70, 0.1) 49.6%,
-      rgba(112, 92, 70, 0.13) 50%,
-      transparent 56%
-    ),
-    linear-gradient(
-      180deg,
-      transparent 0 71.6%,
-      rgba(138, 113, 84, 0.34) 72%,
-      rgba(246, 236, 220, 0.55) 76.5%,
-      rgba(222, 204, 177, 0.4) 87%,
-      rgba(162, 137, 106, 0.46) 100%
-    ),
-    linear-gradient(180deg, #f4efe4 0%, #e6dcc9 20%, #d7cab1 46%, #c9bb9f 71.6%);
+  /* Il colore dei millisecondi prima che la foto arrivi, e l'unica cosa che
+     resta se non arriva mai: il tono medio della stanza, non il bianco. */
+  background: #e7e0d4;
 }
 
-/* ── Le vetrate ──────────────────────────────────────────────────────────── */
-/* Ognuna è un elemento solo con due gradienti sovrapposti: il vetro (una
-   campitura di luce) e i montanti (righe sottili). La maschera radiale le
-   sfuma in tutte e quattro le direzioni insieme: con due maschere lineari
-   servirebbe `mask-composite`, che non è dappertutto, e senza maschera un
-   rettangolo si vede come un rettangolo.
-
-   `skewY` è tutta la prospettiva che serve: inclinate in senso opposto, le due
-   vetrate convergono verso il centro e l'occhio legge un angolo. */
-.lm-vetrata {
+.lm-scena-foto {
   position: absolute;
-  top: -12vh;
-  height: 92vh;
-  /* Chiesto una volta e lasciato: questi livelli si muovono per tutta la vita
-     della pagina, e togliere e rimettere `will-change` costa più che tenerlo. */
-  will-change: transform, opacity;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
-  animation-direction: alternate;
-  mask-image: radial-gradient(64% 56% at 50% 46%, #000 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(64% 56% at 50% 46%, #000 30%, transparent 100%);
+  /* Più grande della finestra da ogni lato. La scena si muove, e un bordo che
+     entrasse nell'inquadratura direbbe «è un'immagine» invece di «è una
+     stanza». Il 7% copre lo zoom (7%) con un margine. */
+  inset: -7%;
+  background-image: url('/staff/stanza.webp');
+  background-size: cover;
+  /* Non al centro: un po' più in basso, così sotto il pannello resta il
+     pavimento — cioè l'orizzonte da cui discende tutta la profondità. */
+  background-position: 50% 52%;
+  will-change: transform;
+  animation: lm-stanza 96s ease-in-out infinite alternate;
 }
 
-/* Sinistra: è da qui che entra la luce, quindi è la più accesa e la più larga.
-   Il traverso orizzontale in alto è l'unico dettaglio "da finestra" che si
-   vede senza sfocatura, nella cornice sopra il pannello. */
-.lm-vetrata[data-v='1'] {
-  left: -14vw;
-  width: 54vw;
-  /* Lo skew sta anche qui e non solo nei fotogrammi: con
-     `prefers-reduced-motion` l'animazione si spegne, e senza questa riga le
-     due vetrate tornerebbero dritte — cioè due fasce invece di un angolo. */
-  transform: skewY(3.5deg);
-  background:
-    linear-gradient(180deg, transparent 0 15.5vh, rgba(96, 84, 70, 0.16) 15.5vh 16.1vh, transparent 16.1vh),
-    repeating-linear-gradient(93deg, rgba(96, 84, 70, 0.17) 0 1.5px, transparent 1.5px 8.5vw),
-    linear-gradient(
-      100deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 1) 32%,
-      rgba(255, 251, 240, 0.95) 66%,
-      rgba(255, 255, 255, 0) 100%
-    );
-  animation-name: lm-vetro-sx;
-  animation-duration: 54s;
-}
-
-/* Destra: più fredda e un gradino più bassa di tono. È la parete dell'angolo
-   che prende meno sole, e serve a far capire che sono due piani e non uno. */
-.lm-vetrata[data-v='2'] {
-  right: -16vw;
-  width: 48vw;
-  transform: skewY(-3deg);
-  background:
-    linear-gradient(180deg, transparent 0 13vh, rgba(96, 84, 70, 0.13) 13vh 13.6vh, transparent 13.6vh),
-    repeating-linear-gradient(-93deg, rgba(96, 84, 70, 0.13) 0 1.5px, transparent 1.5px 7.5vw),
-    linear-gradient(
-      78deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(243, 247, 255, 0.92) 36%,
-      rgba(255, 253, 246, 0.8) 72%,
-      rgba(255, 255, 255, 0) 100%
-    );
-  animation-name: lm-vetro-dx;
-  animation-duration: 67s;
-}
-
-/* Su telefono le vetrate spariscono.
-   Il pannello copre tutta la larghezza e li sotto non ha sfocatura dietro
-   (costa troppo su un telefono, vedi il commento del vetro): i montanti non
-   diventano una stanza, diventano righe sottili che attraversano la testata.
-   Restano il fondo — che ha già soffitto, orizzonte e pavimento — e la luce,
-   che si leggono come un ambiente anche senza.
-   `display: none` e non `opacity: 0`: così il browser non li disegna affatto,
-   e su un telefono sono due livelli compositi in meno da tenere in memoria. */
-@media (max-width: 1039px) {
-  .lm-vetrata {
-    display: none;
-  }
-}
-
-/* ── La luce ─────────────────────────────────────────────────────────────── */
-.lm-luce {
-  position: absolute;
-  will-change: transform, opacity;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
-  animation-direction: alternate;
-  pointer-events: none;
-}
-
-/* L'alone caldo in alto a sinistra: il sole che non si vede, fuori
-   dall'inquadratura. È la sorgente, e tutto il resto ne discende. */
-.lm-luce[data-l='alone'] {
-  top: -32vh;
-  left: -12vw;
-  width: 64vw;
-  height: 70vh;
-  background: radial-gradient(closest-side, rgba(255, 246, 224, 0.78), transparent 66%);
-  animation-name: lm-alone;
-  animation-duration: 83s;
-}
-
-/* Il taglio: la fascia obliqua che attraversa la stanza e cade sul pavimento.
-   È l'elemento che più di ogni altro dice «qui c'è una finestra», perché ha
-   una direzione — e una direzione sopravvive alla sfocatura. */
-.lm-luce[data-l='taglio'] {
-  top: 16vh;
-  left: -16vw;
-  width: 86vw;
-  height: 104vh;
-  transform: skewX(-26deg) rotate(5deg);
-  background: linear-gradient(
-    92deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.86) 40%,
-    rgba(255, 250, 238, 0.52) 64%,
-    transparent 100%
-  );
-  mask-image: radial-gradient(closest-side, #000 22%, transparent 100%);
-  -webkit-mask-image: radial-gradient(closest-side, #000 22%, transparent 100%);
-  animation-name: lm-taglio;
-  animation-duration: 97s;
-}
-
-/* La pozza sul pavimento, sotto il pannello: la luce delle vetrate che rimbalza.
-   È quello che fa sembrare il vetro appoggiato sopra qualcosa invece che
-   incollato allo schermo. */
-.lm-luce[data-l='pozza'] {
-  left: 50%;
-  bottom: -4vh;
-  width: 118vw;
-  height: 42vh;
-  margin-left: -59vw;
-  background: radial-gradient(closest-side, rgba(255, 253, 247, 0.98), transparent 70%);
-  animation-name: lm-pozza;
-  animation-duration: 113s;
-}
-
-/* L'angolo in basso a destra: in ref1 lì c'è un tavolino con una pianta. Qui
-   c'è solo la sua ombra — un mobile disegnato coi gradienti si riconoscerebbe
-   come un disegno, la sua ombra no, e fa lo stesso lavoro: dare un peso a un
-   angolo che altrimenti resta vuoto. */
-.lm-scene::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  bottom: -8vh;
-  width: 38vw;
-  height: 44vh;
-  background: radial-gradient(closest-side at 56% 62%, rgba(101, 82, 60, 0.26), transparent 66%);
-}
-
-@keyframes lm-vetro-sx {
-  from {
-    transform: skewY(3.5deg) translate3d(0, 0, 0) scale(1);
-    opacity: 0.92;
-  }
-  to {
-    transform: skewY(3.5deg) translate3d(3vw, 1.6vh, 0) scale(1.06);
-    opacity: 1;
-  }
-}
-@keyframes lm-vetro-dx {
-  from {
-    transform: skewY(-3deg) translate3d(0, 0, 0) scale(1.04);
-    opacity: 1;
-  }
-  to {
-    transform: skewY(-3deg) translate3d(-2.4vw, 2vh, 0) scale(1);
-    opacity: 0.86;
-  }
-}
-@keyframes lm-alone {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.88;
-  }
-  to {
-    transform: translate3d(-6vw, 4vh, 0) scale(1.12);
-    opacity: 1;
-  }
-}
-@keyframes lm-taglio {
-  from {
-    transform: skewX(-26deg) rotate(5deg) translate3d(0, 0, 0);
-    opacity: 0.68;
-  }
-  to {
-    transform: skewX(-26deg) rotate(5deg) translate3d(10vw, -3vh, 0);
-    opacity: 1;
-  }
-}
-@keyframes lm-pozza {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.82;
-  }
-  to {
-    transform: translate3d(5vw, -2vh, 0) scale(1.1);
-    opacity: 1;
-  }
-}
-
-/* Il velo: una vignettatura appena accennata, che tiene il centro luminoso e
-   scurisce di un soffio gli angoli. Dà un bordo alla stanza, e garantisce che
-   il pannello abbia sempre qualcosa di più scuro contro cui staccarsi. */
-.lm-scene::after {
-  content: '';
+/* Il velo. Tre strati in uno: la luce al centro che fa leggere il contenuto,
+   il tono Lumino che tiene la stanza dentro la tavolozza dell'area (bianco
+   caldo, e un soffio di viola solo dove il pannello finisce), la vignettatura
+   che dà un bordo all'ambiente. */
+.lm-scena-velo {
   position: absolute;
   inset: 0;
-  background: radial-gradient(132vw 100vh at 50% 32%, transparent 40%, rgba(54, 43, 33, 0.22));
+  background:
+    radial-gradient(
+      118vw 88vh at 46% 26%,
+      rgba(255, 255, 255, 0.24),
+      rgba(255, 255, 255, 0.08) 52%,
+      transparent 76%
+    ),
+    linear-gradient(
+      168deg,
+      rgba(248, 246, 255, 0.2) 0%,
+      rgba(255, 252, 246, 0.14) 46%,
+      rgba(139, 92, 246, 0.14) 100%
+    ),
+    radial-gradient(130vw 104vh at 50% 34%, transparent 40%, rgba(48, 38, 58, 0.3));
+}
+
+/* Il respiro: l'alone della luce che entra dalla vetrata, che si sposta con
+   una lentezza che non si nota mentre si guarda ma si nota tornando. */
+.lm-scena-luce {
+  position: absolute;
+  top: -26vh;
+  left: -10vw;
+  width: 70vw;
+  height: 84vh;
+  background: radial-gradient(closest-side, rgba(255, 247, 228, 0.5), transparent 68%);
+  will-change: transform, opacity;
+  animation: lm-respiro 137s ease-in-out infinite alternate;
+}
+
+@keyframes lm-stanza {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-1.6%, -1.1%, 0) scale(1.07);
+  }
+}
+
+@keyframes lm-respiro {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: translate3d(5vw, 3vh, 0) scale(1.14);
+    opacity: 1;
+  }
+}
+
+/* Con `prefers-reduced-motion` resta la stessa stanza, ferma. */
+@media (prefers-reduced-motion: reduce) {
+  .lm-scena-foto,
+  .lm-scena-luce {
+    animation: none;
+  }
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -396,24 +259,36 @@
 }
 
 @media (min-width: 1040px) {
+  .lm-staff {
+    --sopra: calc(var(--bordo) + var(--vetro));
+  }
+
   .lm-staff-shell {
     display: flex;
-    max-width: 1660px;
-    margin: 0 auto;
-    /* Il margine della stanza. Era `2.2rem 2rem 2.6rem`: a 1500px il pannello
-       copriva il 96% dello schermo e della stanza restava un filo di due
-       centimetri — cioè nessuna stanza, e nessun galleggiare. Sedici pixel in
-       più per lato bastano perché l'angolo e il pavimento si vedano; sono il
-       2,5% della larghezza del contenuto, e il contenuto non li sente.
-       Cambiando questi numeri va cambiato anche il `max-height` della colonna
-       del contenuto, che ci è legato. */
-    padding: 2.9rem 3rem 3.2rem;
+    /* **Nessun tetto alla larghezza.** Era 1660px: su uno schermo da 1920
+       restavano centotrenta pixel di stanza per lato, e un pannello che —
+       tolte tre cornici — dava milleduecento pixel al contenuto. Le card
+       stavano strette in mezzo a uno schermo mezzo vuoto, che è esattamente il
+       difetto da correggere. Un numero più grande non risolve, lo sposta più in
+       là: su un monitor da 2400 un tetto di 2100 rifà lo stesso buco.
+       Qui dentro non c'è prosa da leggere per righe — c'è una griglia a dodici
+       colonne, e una griglia più larga è una griglia migliore. La larghezza la
+       decide il margine qui sotto, e basta. */
+    /* Il margine della stanza. Ora che dietro c'è una fotografia, la stanza
+       non ha più bisogno di una fascia tutt'intorno per farsi vedere: si vede
+       **attraverso** il vetro, che è traslucido, e negli angoli tondi. Quindi
+       il margine torna a essere quello che deve essere — lo stacco che dice
+       «questo oggetto è appoggiato lì dentro» — e non un espediente. */
+    padding: var(--bordo);
   }
 }
 
-/* Il vetro vero e proprio: un solo bordo chiaro sottile, un'ombra lunga e
-   morbida, e il blur. Niente bordi doppi, niente inner glow: in ref1 e ref4
-   il pannello si stacca dalla stanza per l'ombra, non per il contorno.
+/* Il vetro vero e proprio.
+
+   Quattro cose, e sono quelle che rendono il vetro vetro invece che una card
+   bianca: un **bordo chiaro sottile** (il taglio della lastra), un **riflesso
+   morbido in alto** (la luce della stanza che ci scivola sopra), un'**ombra
+   lunga** che lo stacca dalla scena, e il blur di quello che c'è dietro.
 
    **Il blur sta solo nel media query da 1040px**, e non è un vezzo: sotto quella
    soglia il pannello occupa tutta la finestra, quindi sfocare il suo sfondo
@@ -421,21 +296,30 @@
    ogni fotogramma, sul dispositivo che ha meno banda di memoria per farlo. Su
    mobile resta un bianco più coprente: l'effetto è indistinguibile, il costo no.
 
-   Il raggio è sceso da 34 a 22px. Sopra i venti pixel l'occhio non distingue
-   più *quanto* è sfocato, ma il tempo di calcolo continua a crescere col
-   raggio: sono dodici pixel pagati e non visti. */
+   Il raggio è 22px. Sopra i venti pixel l'occhio non distingue più *quanto* è
+   sfocato, ma il tempo di calcolo continua a crescere col raggio. */
 .lm-glass {
   position: relative;
   /* Le due colonne si confrontano solo fra loro: vedi «I piani» più sopra. */
   isolation: isolate;
-  background: rgba(255, 255, 255, 0.72);
+  /* Su telefono il vetro non ha sfocatura dietro (vedi sotto), quindi la
+     fotografia arriva quasi intera sotto il testo: serve più bianco per
+     coprirla. Qui non si perde niente, perché la stanza a quella larghezza si
+     vede comunque solo dietro l'intestazione. */
+  background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 50px 120px -48px rgba(28, 22, 18, 0.62);
 }
 @media (min-width: 1040px) {
   .lm-glass {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(22px) saturate(1.22);
-    -webkit-backdrop-filter: blur(22px) saturate(1.22);
+    /* Il bianco è sceso da 0,50 a 0,34 e la sfocatura da 22 a 12 pixel, e le
+       due cose vanno insieme: metà bianco più venti pixel di sfocatura sopra
+       una stanza già chiara **danno bianco**, cioè carta. La stanza dietro è
+       già sfocata nel file, quindi qui non serve rifare quel lavoro — bastano
+       dodici pixel per ammorbidire il bordo della lastra, e quello che resta
+       si vede *attraverso*, che è il punto. */
+    background: rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(12px) saturate(1.3) brightness(1.04);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3) brightness(1.04);
     flex: 1;
     /* `min-width: 0` non è cosmetico: senza, il pannello si allarga fino al
        contenuto più largo che ha dentro (il kanban, la riga dei KPI) e sfonda
@@ -443,10 +327,37 @@
        default dei figli di un flex, e qui non va bene. */
     min-width: 0;
     display: flex;
-    gap: 1rem;
-    padding: 1rem;
+    /* Il gioco fra il rail e il contenuto. Era 1rem di `gap` più 1rem di
+       `padding` tutt'intorno: due cornici annidate prima ancora di arrivare al
+       contenuto, dopo il margine del guscio. Ne resta una sola, stretta. */
+    gap: 0.55rem;
+    padding: var(--vetro);
     border: 1px solid rgba(255, 255, 255, 0.62);
-    border-radius: 34px;
+    border-radius: 32px;
+  }
+
+  /* Il riflesso: una banda chiarissima sul quarto alto della lastra, che
+     sfuma prima di arrivare al contenuto. È un `::before` e non un gradiente
+     nello sfondo perché lo sfondo del vetro è già la sua trasparenza, e
+     sovrapporre i due vorrebbe dire scegliere fra riflesso e blur.
+     `pointer-events: none` e piano zero: sta sotto a tutto ciò che si clicca. */
+  .lm-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    /* Un quarto d'altezza e non metà, e mezzo bianco invece del bianco pieno:
+       il riflesso deve dire dov'è la lastra, non cancellare la stanza che ci
+       si vede attraverso. Provato più coprente, e il terzo alto del pannello
+       tornava una foschia. */
+    height: 26%;
+    border-radius: 32px 32px 0 0;
+    background: linear-gradient(
+      176deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      rgba(255, 255, 255, 0.1) 44%,
+      transparent 100%
+    );
+    pointer-events: none;
   }
 }
 
@@ -464,15 +375,38 @@
 }
 @media (min-width: 1040px) {
   .lm-staff-main {
-    padding: 1.4rem 1.6rem 1.6rem;
-    /* 2.9 + 3.2 del guscio, più 1rem per lato del vetro, meno un filo di
-       gioco: è la stessa relazione di prima, coi numeri nuovi. */
-    max-height: calc(100dvh - 8rem);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(23, 19, 15, 0.22) transparent;
+    padding: var(--dentro);
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   LO SCORRIMENTO È QUELLO DELLA PAGINA
+
+   Qui c'era `max-height: calc(100dvh - 8rem)` e `overflow-y: auto` sulla
+   colonna del contenuto: il pannello stava fermo alto quanto lo schermo e
+   dentro scorreva una barra sua. Tre difetti, in ordine di gravità.
+
+   1. **Restringeva il contenuto.** La barra si prende i suoi pixel a destra, e
+      li prende alla colonna, non alla finestra: ogni card era più stretta di
+      quanto poteva essere, su ogni schermo.
+   2. **Due scorrimenti nella stessa pagina.** La rotellina faceva una cosa
+      diversa a seconda di dove stava il puntatore, e la barra della finestra
+      restava lì ferma e inutile.
+   3. **Il telefono lo faceva già diversamente** (lì il `max-height` non c'era),
+      quindi la stessa dashboard si comportava in due modi.
+
+   Ora scorre la pagina, e il pannello è alto quanto il suo contenuto. Il
+   prezzo è che le due cose che devono restare in vista mentre si scorre — il
+   rail e il conto alla rovescia della preghiera — non possono più contare sul
+   fatto che la colonna sia ferma: se lo fanno da sole, con `sticky`, e per
+   farlo hanno bisogno di sapere a che altezza comincia il vetro. È `--sopra`.
+
+   Il rail lo fa qualche centinaio di righe più in basso, dove è già descritto:
+   là `position: relative` è diventato `position: sticky`. La regola sta lì e
+   non qui perché lì arriva dopo, e due regole di pari specificità le vince
+   l'ultima — scritta qui sopra, sarebbe stata sovrascritta e il rail avrebbe
+   continuato ad andarsene in alto scorrendo.
+   ─────────────────────────────────────────────────────────────────────────── */
 
 /* ───────────────────────────────────────────────────────────────────────────
    Marchio
@@ -486,7 +420,7 @@
   --wm-size: 1.15rem;
 }
 .lm-staff-brand .lm-staff-tag {
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink-3);
 }
@@ -522,7 +456,16 @@
     /* Il segnaposto: tiene il posto nel flex del pannello di vetro e non ha
        colore. Il nero è tutto nel figlio. */
     display: block;
-    position: relative;
+    /* **Incollato**, non semplicemente posizionato. Da quando scorre la pagina
+       e non la colonna del contenuto, un rail `relative` se ne andrebbe in
+       alto insieme a tutto il resto: si scorre la pipeline e il menù sparisce.
+       `align-self: flex-start` serve perché altrimenti il flex lo stira a
+       tutta l'altezza del vetro — che ora è alto quanto il contenuto — e
+       l'altezza qui sotto non varrebbe niente. */
+    position: sticky;
+    top: var(--sopra);
+    align-self: flex-start;
+    height: calc(100dvh - 2 * var(--sopra));
     /* Piano 2: sopra il contenuto, e il numero sta sul segnaposto e non sul
        pannello nero, così è il rail *intero* a salire — pannello, etichette e
        ombra insieme. */
@@ -544,7 +487,7 @@
     /* 16px per lato: 74 - 32 = 42, cioè esattamente la gabbia dell'icona. È
        quello che fa sì che da chiusa la voce attiva resti un quadrato e non un
        rettangolo con dodici pixel di bianco a destra. */
-    padding: 0.9rem 16px;
+    padding: 0.7rem 16px;
     border-radius: 26px;
     background: var(--black);
     color: rgba(255, 255, 255, 0.62);
@@ -583,7 +526,7 @@
   color: #fff;
   text-decoration: none;
   font-family: var(--font-display), Impact, sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.26rem;
   line-height: 1;
 }
 /* Il bottone del blocco esiste solo a barra aperta: a barra chiusa sarebbe una
@@ -640,10 +583,20 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  gap: 0.3rem;
+  /* Era 0,3rem. Con le etichette cresciute di un decimo, dodici voci più tre
+     titoletti più il piede non ci stavano più in uno schermo da 1080: l'ultima
+     voce restava tagliata a metà. Un decimo di rem per interstizio li rimette
+     dentro senza toccare l'altezza delle voci, che è 42 e deve restare 42 — è
+     la gabbia che tiene la voce attiva quadrata a barra chiusa. */
+  gap: 0.2rem;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  /* E se comunque non ci stanno — schermi bassi, barra aperta — l'elenco
+     sfuma invece di essere tagliato: una riga mozzata sembra un difetto, una
+     riga che sbiadisce dice «continua, scorri». */
+  mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent 100%);
 }
 .lm-rail-body::-webkit-scrollbar {
   display: none;
@@ -663,7 +616,7 @@
   overflow: hidden;
   padding-left: 0.62rem;
   color: rgba(255, 255, 255, 0.34);
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
@@ -674,7 +627,7 @@
 }
 .lm-staff-rail[data-esp='true'] .lm-rail-group-label {
   height: 1.05rem;
-  margin: 0.3rem 0 0.1rem;
+  margin: 0.22rem 0 0.06rem;
   opacity: 1;
   transition-delay: 0.1s;
 }
@@ -753,7 +706,7 @@
 .lm-rail-label {
   min-width: 0;
   padding-right: 0.7rem;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 500;
   white-space: nowrap;
   opacity: 0;
@@ -778,13 +731,13 @@
 }
 .lm-rail-me .lm-rail-label b {
   font-weight: 600;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   color: #fff;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .lm-rail-me .lm-rail-label small {
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.48);
 }
 /* Sulla propria pagina la riga diventa la pill bianca come ogni voce attiva, e
@@ -888,7 +841,7 @@
   border-radius: 50%;
   background: var(--violet);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -969,7 +922,7 @@
   background: transparent;
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 600;
   white-space: nowrap;
   text-decoration: none;
@@ -985,7 +938,7 @@
   stroke-width: 1.7;
 }
 .lm-staff-tab > span {
-  font-size: 0.64rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.002em;
   line-height: 1;
@@ -1043,7 +996,7 @@
   border-radius: var(--r-md);
   background: rgba(255, 255, 255, 0.6);
   color: var(--ink);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
@@ -1103,7 +1056,7 @@
 }
 .lm-sub {
   margin-top: 0.5rem;
-  font-size: 0.88rem;
+  font-size: 0.97rem;
   color: var(--ink-2);
   max-width: 54ch;
 }
@@ -1111,7 +1064,7 @@
 /* L'etichetta di una card. Tondo minuscolo, nessuna spaziatura forzata:
    il maiuscoletto spaziato è la firma del pannello generico. */
 .lm-label {
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -1301,7 +1254,7 @@
   color: var(--ink);
 }
 .lm-num-sm {
-  font-size: 1.2rem;
+  font-size: 1.32rem;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -1317,7 +1270,7 @@
 
 .lm-kpi-name {
   margin-top: 0.45rem;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 500;
   color: var(--ink-2);
 }
@@ -1327,7 +1280,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   color: var(--ink-2);
 }
 .lm-delta[data-dir='up'] {
@@ -1342,7 +1295,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -1377,7 +1330,7 @@
   background: rgba(255, 255, 255, 0.5);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 500;
   white-space: nowrap;
   text-decoration: none;
@@ -1420,7 +1373,7 @@
 .lm-pill[data-size='sm'] {
   height: 27px;
   padding: 0 0.6rem;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
 }
 /* Col pollice le pill diventano bersagli veri.
    L'area sensibile cresce **fuori** dalla pill, con uno pseudo-elemento
@@ -1457,7 +1410,7 @@
   padding: 0 0.32rem;
   border-radius: 999px;
   background: rgba(23, 19, 15, 0.1);
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -1484,7 +1437,7 @@
   background: var(--violet);
   color: #fff;
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -1522,7 +1475,7 @@
 .lm-btn[data-size='sm'] {
   height: 32px;
   padding: 0 0.7rem;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
 }
 .lm-btn[data-size='sm'] svg {
   width: 14px;
@@ -1614,7 +1567,7 @@
   align-items: center;
   gap: 0.35rem;
   margin-bottom: 0.7rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--ink-2);
   text-decoration: none;
@@ -1636,7 +1589,7 @@
   gap: 0.6rem;
   min-height: 44px;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: inherit;
 }
@@ -1742,7 +1695,7 @@
 }
 .lm-slider b {
   min-width: 3.4ch;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -1791,7 +1744,7 @@
 .lm-stepper b {
   min-width: 2.6ch;
   text-align: center;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -1825,7 +1778,7 @@
   background: transparent;
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.79rem;
+  font-size: 0.87rem;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -1846,7 +1799,7 @@
   border-radius: 999px;
   border: 1px solid var(--line-2);
   background: rgba(255, 255, 255, 0.5);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--ink-2);
   white-space: nowrap;
@@ -1906,7 +1859,7 @@
   padding-right: 0.7rem;
   margin-right: 0.15rem;
   border-right: 1px solid var(--line);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1925,7 +1878,7 @@
   background: rgba(255, 255, 255, 0.5);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   cursor: pointer;
 }
 .lm-select[data-on='true'] select {
@@ -1970,7 +1923,7 @@
   background: rgba(255, 255, 255, 0.5);
   color: var(--ink);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 .lm-search input::placeholder {
   color: var(--ink-3);
@@ -2022,14 +1975,14 @@
   text-align: center;
 }
 .lm-ring-n {
-  font-size: 1.45rem;
+  font-size: 1.6rem;
   font-weight: 300;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
 .lm-ring-cap {
   margin-top: 0.1rem;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
 }
 .lm-card[data-tone='black'] .lm-ring-cap,
@@ -2047,7 +2000,7 @@
   justify-content: space-between;
   gap: 0.7rem;
   margin-bottom: 0.3rem;
-  font-size: 0.79rem;
+  font-size: 0.87rem;
 }
 .lm-prog-top b {
   font-weight: 600;
@@ -2154,7 +2107,7 @@
   color: #fff;
 }
 .lm-lolli-cap {
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
   white-space: nowrap;
   max-width: 100%;
@@ -2189,7 +2142,7 @@
   color: rgba(255, 255, 255, 0.58);
 }
 .lm-lolli-n {
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -2224,7 +2177,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 0.3rem;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
 }
 /* Il cartellino del punto attivo.
@@ -2238,7 +2191,7 @@
   border-radius: 8px;
   background: var(--black);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
@@ -2338,12 +2291,12 @@
   border-color: rgba(139, 92, 246, 0.35);
 }
 .lm-cal-dow {
-  font-size: 0.66rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
   text-align: center;
 }
 .lm-cal-n {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 400;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -2355,7 +2308,7 @@
   border-radius: 7px;
   background: var(--black);
   color: #fff;
-  font-size: 0.64rem;
+  font-size: 0.82rem;
   font-weight: 500;
   line-height: 1.3;
   text-decoration: none;
@@ -2430,7 +2383,7 @@
   place-items: center;
   padding: 1rem;
   text-align: center;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--ink-2);
 }
 
@@ -2468,7 +2421,7 @@
   border-radius: 50%;
   background: var(--black);
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   box-shadow:
@@ -2486,7 +2439,7 @@
 .lm-map-canvas .leaflet-popup-content {
   margin: 0.7rem 0.85rem;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   line-height: 1.5;
 }
 .lm-map-canvas .leaflet-popup-tip {
@@ -2531,7 +2484,7 @@
   padding: 0.12rem 0.45rem;
   border-radius: 999px 0 0 0;
   background: rgba(255, 255, 255, 0.78);
-  font-size: 0.62rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
 }
 .lm-map-canvas .leaflet-control-attribution a {
@@ -2551,7 +2504,7 @@
      leggere tre parole. Il bianco al 94% fa lo stesso lavoro. */
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 6px 18px -8px rgba(20, 16, 12, 0.55);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   white-space: nowrap;
   z-index: 2;
 }
@@ -2641,7 +2594,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.13);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 .lm-flusso-testo {
@@ -2650,7 +2603,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.05rem;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   line-height: 1.35;
 }
 .lm-flusso-testo b {
@@ -2662,7 +2615,7 @@
    griglia bento al primo racconto lungo. */
 .lm-flusso-testo span {
   color: rgba(255, 255, 255, 0.56);
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2672,7 +2625,7 @@
   align-items: center;
   gap: 0.28rem;
   flex: none;
-  font-size: 0.71rem;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.5);
   white-space: nowrap;
 }
@@ -2734,10 +2687,10 @@
   padding: 0 0.25rem;
 }
 .lm-col-top .lm-label {
-  font-size: 0.78rem;
+  font-size: 0.86rem;
 }
 .lm-col-n {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
@@ -2749,7 +2702,7 @@
 }
 .lm-col-empty {
   padding: 0.7rem 0.3rem;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   color: var(--ink-3);
 }
 
@@ -2806,7 +2759,7 @@
   height: 30px;
   border-radius: 50%;
   background: rgba(23, 19, 15, 0.08);
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -2816,7 +2769,7 @@
 }
 .lm-ccard-name {
   display: block;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.012em;
 }
@@ -2825,7 +2778,7 @@
   align-items: center;
   gap: 0.32rem;
   flex-wrap: wrap;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
 }
 .lm-ccard[data-selected='true'] .lm-ccard-meta {
@@ -2839,7 +2792,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.73rem;
+  font-size: 0.82rem;
 }
 .lm-ccard[data-selected='true'] .lm-ccard-foot {
   border-top-color: rgba(255, 255, 255, 0.26);
@@ -2927,11 +2880,11 @@
   fill: rgba(255, 255, 255, 0.3);
 }
 .lm-kpi .lm-num {
-  font-size: 1.9rem;
+  font-size: 2.09rem;
 }
 .lm-kpi .lm-kpi-name {
   margin-top: 0.15rem;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -2953,7 +2906,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  max-height: 62vh;
+  /* Era 62vh, cioè quasi quattro dita di vuoto sotto la colonna su uno schermo
+     da scrivania. Questa lista è un selettore — si scorre qui dentro e si
+     guarda il dettaglio accanto — quindi la sua barra è voluta; quello che non
+     era voluto è che finisse a due terzi d'altezza lasciando il pannello
+     mezzo vuoto. */
+  max-height: 78vh;
   overflow-y: auto;
   padding: 0.6rem;
   border-radius: var(--r-xl);
@@ -2992,8 +2950,10 @@
 }
 
 .lm-detail {
+  /* Si incolla al bordo alto del vetro, non a quello della finestra: da quando
+     scorre la pagina e non la colonna, `top: 0` vorrebbe dire sopra la lastra. */
   position: sticky;
-  top: 0;
+  top: calc(var(--sopra) + 0.6rem);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -3044,7 +3004,7 @@
   gap: 0.85rem;
   padding: 0.58rem 0;
   border-bottom: 1px solid var(--line);
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   color: inherit;
   text-decoration: none;
 }
@@ -3055,7 +3015,7 @@
 .lm-row-note {
   display: block;
   margin-top: 0.12rem;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
 }
 .lm-card[data-tone='violet'] .lm-row-note,
@@ -3068,7 +3028,7 @@
   white-space: nowrap;
 }
 .lm-when {
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--ink-2);
   white-space: nowrap;
@@ -3091,7 +3051,7 @@
 }
 .lm-empty {
   padding: 1rem 0.2rem;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   color: var(--ink-3);
 }
 
@@ -3104,7 +3064,7 @@
 }
 .lm-time-item {
   position: relative;
-  font-size: 0.85rem;
+  font-size: 0.94rem;
 }
 .lm-time-item::before {
   content: '';
@@ -3124,7 +3084,7 @@
   gap: 0.8rem;
 }
 .lm-time-tipo {
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--violet-2);
 }
@@ -3163,7 +3123,7 @@
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 .lm-ask input:focus {
   outline: none;
@@ -3176,7 +3136,7 @@
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   background: rgba(23, 19, 15, 0.07);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -3190,7 +3150,7 @@
   border: 1px solid rgba(229, 52, 42, 0.3);
   border-radius: var(--r-md);
   background: rgba(229, 52, 42, 0.07);
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   line-height: 1.55;
 }
 .lm-warn code {
@@ -3198,7 +3158,7 @@
   color: var(--red);
 }
 .lm-error {
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--red);
 }
 
@@ -3216,7 +3176,7 @@
     rgba(23, 19, 15, 0.76) 12px 24px
   );
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 600;
 }
 
@@ -3260,7 +3220,7 @@
 }
 .lm-modal-box h2 {
   margin-top: 0.35rem;
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 300;
   letter-spacing: -0.035em;
 }
@@ -3296,7 +3256,7 @@
 .lm-field > .lm-label {
   display: block;
   margin-bottom: 0.3rem;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--ink-2);
 }
@@ -3310,7 +3270,7 @@
   background: rgba(255, 255, 255, 0.7);
   color: var(--ink);
   font: inherit;
-  font-size: 0.88rem;
+  font-size: 0.97rem;
   transition:
     border-color 0.22s,
     background-color 0.22s;
@@ -3337,7 +3297,7 @@
 }
 .lm-field-hint {
   margin-top: 0.28rem;
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   color: var(--ink-3);
 }
 
@@ -3354,7 +3314,7 @@
 .lm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   white-space: nowrap;
 }
 .lm-table th,
@@ -3364,7 +3324,7 @@
   border-bottom: 1px solid var(--line);
 }
 .lm-table th {
-  font-size: 0.76rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--ink-2);
   background: rgba(255, 255, 255, 0.6);
@@ -3496,7 +3456,7 @@
 .lm-chips .lm-pill {
   height: 38px;
   padding: 0 0.92rem;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 .lm-tabs {
@@ -3527,7 +3487,7 @@
   background: rgba(255, 255, 255, 0.5);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -3556,7 +3516,7 @@
   height: 27px;
   border-radius: 50%;
   background: rgba(23, 19, 15, 0.08);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
 .lm-step[data-on='true'] .lm-step-n {
@@ -3650,7 +3610,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: rgba(255, 255, 255, 0.45);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--ink-2);
 }
 .lm-gps svg {
@@ -3736,7 +3696,7 @@
   background: rgba(255, 255, 255, 0.35);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -3759,7 +3719,7 @@
 }
 
 .lm-visit-name {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: inherit;
@@ -3780,7 +3740,7 @@
   padding: 0.2rem 0.58rem;
   border: 1px solid var(--line-2);
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
   color: var(--ink-2);
@@ -3812,7 +3772,7 @@
   margin: 0.75rem 0 0;
   padding-left: 0.85rem;
   border-left: 2px solid var(--violet);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 300;
   line-height: 1.45;
   letter-spacing: -0.015em;
@@ -3829,7 +3789,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--ink-2);
   white-space: nowrap;
@@ -3848,7 +3808,7 @@
   padding: 0.6rem 0.75rem;
   border-radius: var(--r-sm);
   background: rgba(23, 19, 15, 0.045);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-style: italic;
   line-height: 1.55;
   color: var(--ink-2);
@@ -3946,11 +3906,11 @@
   }
 }
 .lm-prog-nome b {
-  font-size: 0.9rem;
+  font-size: 0.99rem;
   font-weight: 600;
 }
 .lm-prog-nome span {
-  font-size: 0.75rem;
+  font-size: 0.83rem;
   color: var(--ink-2);
 }
 .lm-prog-nome:hover b {
@@ -3999,7 +3959,7 @@
 }
 .lm-fasi b {
   margin-left: 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.83rem;
   font-weight: 600;
   color: var(--ink-2);
   white-space: nowrap;
@@ -4025,7 +3985,7 @@
 }
 .lm-frase p {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.86);
 }
@@ -4039,7 +3999,7 @@
   display: block;
   margin-top: 0.22rem;
   font-style: normal;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -4080,10 +4040,10 @@
   .lm-in {
     opacity: 1;
   }
-  /* La stanza resta, ferma: il fondo di `.lm-scene` da solo è già una stanza
-     con il suo orizzonte, e le vetrate senza animazione restano dove sono. */
-  .lm-vetrata,
-  .lm-luce,
+  /* La stanza resta, ferma: una fotografia non ha bisogno di muoversi per
+     essere una stanza. */
+  .lm-scena-foto,
+  .lm-scena-luce,
   .lm-thread,
   .lm-live::before,
   .lm-prog-fill,
@@ -4153,18 +4113,18 @@
 .lm-avatar[data-size='sm'] {
   width: 32px;
   height: 32px;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
 }
 .lm-avatar[data-size='rail'] {
   width: 30px;
   height: 30px;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 .lm-avatar[data-size='lg'] {
   width: 104px;
   height: 104px;
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 300;
 }
 /* Con una foto dentro, il fondo viola non si vede mai: toglierlo evita il lampo
@@ -4262,7 +4222,7 @@
   line-height: 1;
   width: 68px;
   height: 68px;
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.72),
     0 0 0 5px rgba(139, 92, 246, 0.1),
@@ -4275,7 +4235,7 @@
 .lm-saluto[data-lungo='true'] .lm-saluto-foto {
   width: 96px;
   height: 96px;
-  font-size: 2rem;
+  font-size: 2.2rem;
 }
 .lm-saluto-foto img {
   width: 100%;
@@ -4409,7 +4369,7 @@
   margin-top: 0.75rem;
   padding-left: 0.85rem;
   border-left: 2px solid var(--violet);
-  font-size: 1.12rem;
+  font-size: 1.23rem;
   font-weight: 300;
   line-height: 1.45;
   letter-spacing: -0.012em;
@@ -4421,7 +4381,7 @@
 }
 @media (min-width: 760px) {
   .lm-saluto[data-lungo='true'] .lm-saluto-riga {
-    font-size: 1.32rem;
+    font-size: 1.45rem;
     padding-left: 1.05rem;
   }
 }
@@ -4439,7 +4399,7 @@
 }
 .lm-saluto-meta {
   margin-top: 0.3rem;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   color: var(--ink-3);
 }
 .lm-saluto[data-anima='si'] .lm-saluto-meta {
@@ -4463,7 +4423,7 @@
   border-radius: var(--r-lg);
   background: rgba(255, 255, 255, 0.5);
   border: 1px solid var(--line);
-  font-size: 1.5rem;
+  font-size: 1.65rem;
   font-weight: 200;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -4479,7 +4439,7 @@
 .lm-anteprima-saluto small {
   display: block;
   margin-top: 0.45rem;
-  font-size: 0.85rem;
+  font-size: 0.94rem;
   font-weight: 400;
   letter-spacing: 0;
   color: var(--ink-2);
@@ -4594,7 +4554,7 @@
        scorrendo la pipeline non deve andarsene in alto. Lo sfondo negativo del
        margine chiude il buco che lo `sticky` lascerebbe sotto. */
     position: sticky;
-    top: 0;
+    top: calc(var(--sopra) + 0.6rem);
     z-index: 45;
     margin-bottom: 0.35rem;
     padding-bottom: 0.4rem;
@@ -4696,7 +4656,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 18px 40px -22px rgba(28, 22, 18, 0.5);
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   line-height: 1.35;
   color: var(--ink-2);
   animation: lm-salat-entra 0.28s var(--ease) both;
@@ -4715,11 +4675,11 @@
   line-height: 1.15;
 }
 .lm-salat-pill-testo b {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 .lm-salat-pill-testo small {
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   color: var(--ink-2);
   /* Le cifre non ballano mentre il conto scende: senza questo, «1h 09m» e
      «1h 11m» hanno larghezze diverse e la pill trema una volta al secondo. */
@@ -4730,7 +4690,7 @@
   padding-left: 0.5rem;
   margin-left: 0.1rem;
   border-left: 1px solid var(--line);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
@@ -4817,7 +4777,7 @@
   border-radius: 999px;
   background: rgba(23, 19, 15, 0.07);
   font-style: normal;
-  font-size: 0.64rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
 }
 
@@ -4861,7 +4821,7 @@
 }
 
 .lm-salat-adesso {
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   color: var(--ink-2);
   margin-bottom: 0.6rem;
 }
@@ -4872,7 +4832,7 @@
 .lm-salat-ar {
   margin-left: 0.4rem;
   font-family: var(--font-ar), serif;
-  font-size: 0.92rem;
+  font-size: 1.01rem;
   color: var(--ink-3);
 }
 
@@ -4896,7 +4856,7 @@
   gap: 0.7rem;
   padding: 0.44rem 0.55rem;
   border-radius: var(--r-sm);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   transition: background-color 0.25s;
 }
 .lm-salat-nome {
@@ -4907,7 +4867,7 @@
 }
 .lm-salat-nome small {
   font-family: var(--font-ar), serif;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--ink-3);
 }
 .lm-salat-t {
@@ -4973,7 +4933,7 @@
   border: 0;
   background: none;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   color: var(--ink);
 }
 .lm-salat-input input:focus {
@@ -4982,7 +4942,7 @@
 .lm-salat-input em {
   flex: none;
   font-style: normal;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   color: var(--ink-3);
 }
 .lm-salat-esiti {
@@ -5001,7 +4961,7 @@
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   text-align: left;
   cursor: pointer;
   transition: background-color 0.18s;
@@ -5024,7 +4984,7 @@
   gap: 0.8rem;
   padding: 0.55rem 0;
   border-top: 1px solid var(--line);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 .lm-salat-riga > span:first-child {
   display: flex;
@@ -5033,7 +4993,7 @@
   font-weight: 500;
 }
 .lm-salat-riga small {
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 400;
   color: var(--ink-3);
 }
@@ -5097,7 +5057,7 @@
 }
 .lm-ayah-ar {
   font-family: var(--font-ar), serif;
-  font-size: 1.06rem;
+  font-size: 1.17rem;
   font-weight: 400;
   /* L'arabo vocalizzato ha bisogno d'aria fra le righe: i segni stanno sopra e
      sotto la linea di base, e a interlinea normale si toccano. */
@@ -5107,13 +5067,13 @@
 }
 .lm-ayah-it {
   margin: 0.5rem 0 0;
-  font-size: 0.79rem;
+  font-size: 0.87rem;
   line-height: 1.55;
   color: var(--ink-2);
 }
 .lm-ayah figcaption {
   margin-top: 0.4rem;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
 }
 
@@ -5124,7 +5084,7 @@
 }
 .lm-ayah-card .lm-ayah-ar {
   border-top: 0;
-  font-size: 1.16rem;
+  font-size: 1.28rem;
 }
 .lm-ayah-card .lm-ayah-it {
   max-width: 76ch;
@@ -5311,8 +5271,11 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0.15rem 0.5rem;
-  margin: -0.4rem 0 1.1rem;
-  font-size: 0.8rem;
+  /* Era `-0.4rem` in alto: serviva a recuperare l'aria sotto un messaggio di
+     una riga. Cresciuto il corpo del testo, il messaggio ne prende tre e quel
+     rientro faceva toccare le righe. */
+  margin: 0.2rem 0 1.1rem;
+  font-size: 0.88rem;
   color: var(--ink-2);
 }
 .lm-login-chi b {
