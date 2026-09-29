@@ -4220,9 +4220,13 @@
   color: #fff;
   font-weight: 300;
   line-height: 1;
-  width: 68px;
-  height: 68px;
-  font-size: 1.65rem;
+  /* La misura sta in una variabile sola perché i due stati del saluto, i tre
+     scaglioni di larghezza e il corpo delle iniziali ne discendono tutti: era
+     una coppia di numeri scritta due volte, e le iniziali un terzo numero
+     scollegato che andava rifatto a mano a ogni ritocco. */
+  width: var(--foto);
+  height: var(--foto);
+  font-size: calc(var(--foto) * 0.38);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.72),
     0 0 0 5px rgba(139, 92, 246, 0.1),
@@ -4232,10 +4236,38 @@
     height 0.5s var(--ease),
     font-size 0.5s var(--ease);
 }
-.lm-saluto[data-lungo='true'] .lm-saluto-foto {
-  width: 96px;
-  height: 96px;
-  font-size: 2.2rem;
+
+/* Quanto è grande la foto: **quanto il nome più la riga personale**, che è il
+   blocco che le sta accanto. Era 68px contro un blocco di 96, cioè una foto
+   che galleggiava a mezza altezza del testo e si leggeva come una decorazione
+   invece che come la persona entrata.
+
+   I numeri non sono scalati in proporzione fra i tre scaglioni, e non è una
+   svista: su telefono la riga personale va a capo quattro volte, quindi il
+   blocco di testo è alto il doppio e seguirlo alla lettera vorrebbe dire una
+   foto da duecento pixel su uno schermo largo trecentonovanta. Lì la misura la
+   dà il titolo, non il paragrafo. */
+.lm-saluto {
+  --foto: 74px;
+}
+.lm-saluto[data-lungo='true'] {
+  --foto: 86px;
+}
+@media (min-width: 720px) {
+  .lm-saluto {
+    --foto: 88px;
+  }
+  .lm-saluto[data-lungo='true'] {
+    --foto: 108px;
+  }
+}
+@media (min-width: 1040px) {
+  .lm-saluto {
+    --foto: 96px;
+  }
+  .lm-saluto[data-lungo='true'] {
+    --foto: 124px;
+  }
 }
 .lm-saluto-foto img {
   width: 100%;
