@@ -48,6 +48,9 @@ export interface MembroTeam {
   clienti: number
   chiuse: number
   incassato: number
+  /* Quello entrato **questo mese**: e il numero che sta sotto l obiettivo, e
+     senza di lui la barra della squadra non si puo disegnare. */
+  incassatoMese: number
   /** Quanto manca all'obiettivo del mese, in percentuale. `null` senza obiettivo. */
   versoObiettivo: number | null
 }
@@ -278,6 +281,7 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
         clienti: v.clienti,
         chiuse: v.chiuse,
         incassato: v.incassato,
+        incassatoMese: v.mese,
         versoObiettivo: obiettivo && obiettivo > 0 ? Math.round((v.mese / obiettivo) * 100) : null,
       }
     }),

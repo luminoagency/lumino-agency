@@ -297,16 +297,30 @@ export default async function StaffHome() {
             </div>
           </article>
 
-          <article className="lm-card lm-in" data-span="3" data-tone="pearl" data-hover data-reveal>
+          {/* Il numero sta **in alto, sotto la sua etichetta**, e il grafico si
+              prende tutto quello che avanza. Prima era il contrario — numero
+              spinto in fondo da un `margin-top: auto` e sei barrette alte
+              trentotto pixel sotto — e siccome questa card è alta quanto la sua
+              vicina, in mezzo restava mezzo riquadro di bianco. Una card mezza
+              vuota accanto a una piena è il difetto che si vede prima di tutti,
+              e la regola di quest'area dice che ogni card porta qualcosa da
+              guardare: qui adesso lo porta per davvero, grande quanto lo spazio
+              che c'è. */}
+          <article
+            className="lm-card lm-in"
+            data-span="3"
+            data-tone="pearl"
+            data-riempi="true"
+            data-hover
+            data-reveal
+          >
             <span className="lm-label">Chiusi questo mese</span>
-            <div style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
-              <Counter value={chiusiDelMese.length} size="xl" />
-              <p className="lm-delta" data-dir={delta === 0 ? undefined : delta > 0 ? 'up' : 'down'}>
-                {delta === 0
-                  ? 'come il mese scorso'
-                  : `${delta > 0 ? '+' : ''}${delta} rispetto al mese scorso`}
-              </p>
-            </div>
+            <Counter value={chiusiDelMese.length} size="xl" />
+            <p className="lm-delta" data-dir={delta === 0 ? undefined : delta > 0 ? 'up' : 'down'}>
+              {delta === 0
+                ? 'come il mese scorso'
+                : `${delta > 0 ? '+' : ''}${delta} rispetto al mese scorso`}
+            </p>
             <Spark
               serie={andamento.map((p) => p.value)}
               label="Chiusure degli ultimi sei mesi"

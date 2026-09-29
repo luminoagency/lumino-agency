@@ -366,6 +366,12 @@ export interface DatiStatistiche {
   chiuse: number
   /** Prezzo medio di una chiusura. */
   prezzoMedio: number
+  /* I prezzi chiusi, dal piu basso al piu alto. La media da sola non dice se
+     sono tutti li intorno o se sono due a quattromila e otto a mille, ed e
+     esattamente la differenza fra un listino che tiene e una media che non
+     descrive nessuno.
+   */
+  prezzi: number[]
   /** Giorni medi fra la proposta e la firma. */
   giorniMedi: number | null
   perSettore: Taglio[]
@@ -523,6 +529,7 @@ export async function caricaStatistiche(demo: boolean): Promise<DatiStatistiche>
     decise: decise.length,
     chiuse: chiuse.length,
     prezzoMedio: media(prezzi),
+    prezzi: [...prezzi].sort((x, y) => x - y),
     giorniMedi: durate.length ? Math.round(media(durate)) : null,
     perSettore: taglio((c) => c.settore),
     perZona: taglio((c) => c.zona ?? c.citta),

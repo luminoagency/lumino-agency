@@ -50,6 +50,7 @@ export default async function TeamPage() {
   const attivi = membri.filter((m) => m.attivo)
   const obiettivoTotale = attivi.reduce((s, m) => s + (m.obiettivo_mensile ?? 0), 0)
   const incassatoTotale = membri.reduce((s, m) => s + m.incassato, 0)
+  const incassatoMese = membri.reduce((s, m) => s + m.incassatoMese, 0)
   const chiuseTotali = membri.reduce((s, m) => s + m.chiuse, 0)
 
   return (
@@ -74,15 +75,38 @@ export default async function TeamPage() {
         <article className="lm-card" data-span={5} data-tone="black">
           <div className="lm-card-top">
             <span className="lm-label">obiettivo del mese, tutti insieme</span>
+            {obiettivoTotale > 0 && (
+              <span className="lm-muted">{Math.round((incassatoMese / obiettivoTotale) * 100)}%</span>
+            )}
           </div>
           <p className="lm-num">
             <Counter value={obiettivoTotale} format="euro" />
           </p>
-          <p className="lm-muted">
-            {obiettivoTotale > 0
-              ? `Ripartito su ${attivi.filter((m) => m.obiettivo_mensile).length} persone.`
-              : 'Nessun obiettivo impostato: si mettono da Supabase, colonna obiettivo_mensile.'}
-          </p>
+          {/* Un obiettivo senza «a che punto siamo» è un numero che non si
+              guarda: è la stessa regola per cui ogni persona qui sotto ha la
+              sua barra, e questa card — che è quella di tutti — non l'aveva.
+              La barra sta sotto il totale e porta accanto la cifra vera, non
+              solo la percentuale: «2.658 €» e «1.124 € entrati» rispondono a
+              due domande diverse, e chi apre questa pagina le ha tutte e due. */}
+          {obiettivoTotale > 0 && (
+            <div style={{ marginTop: 'auto', paddingTop: '0.7rem' }}>
+              <Progress
+                value={incassatoMese}
+                max={obiettivoTotale}
+                display={euro(incassatoMese)}
+                label="Verso l’obiettivo del mese"
+              />
+              <p className="lm-muted" style={{ marginTop: '0.45rem' }}>
+                {euro(incassatoMese)} entrati questo mese · ripartito su{' '}
+                {attivi.filter((m) => m.obiettivo_mensile).length} persone.
+              </p>
+            </div>
+          )}
+          {obiettivoTotale === 0 && (
+            <p className="lm-muted">
+              Nessun obiettivo impostato: si mettono da Supabase, colonna obiettivo_mensile.
+            </p>
+          )}
         </article>
 
         <article className="lm-card" data-span={4} data-tone="pearl">

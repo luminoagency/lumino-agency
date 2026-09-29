@@ -85,7 +85,11 @@ export default function RisorseView({
           </div>
         )}
 
-        {isAdmin && (
+        {/* A elenco vuoto il bottone sta nella porta qui sotto, e uno solo
+            basta: due «Aggiungi» nella stessa schermata vuota non raddoppiano
+            le probabilità che si prema, raddoppiano il dubbio su quale dei due
+            faccia cosa. */}
+        {isAdmin && risorse.length > 0 && (
           <button type="button" className="lm-btn" onClick={() => setNuova(true)}>
             <Plus aria-hidden="true" /> Aggiungi
           </button>
@@ -93,11 +97,27 @@ export default function RisorseView({
       </div>
 
       {viste.length === 0 ? (
-        <p className="lm-empty">
-          {risorse.length === 0
-            ? 'Ancora niente. Il listino, il manuale e le demo per settore vanno qui: si aprono dal telefono davanti a un titolare.'
-            : 'Niente in questo settore.'}
-        </p>
+        /* Il vuoto di una schermata intera è una porta, non una riga grigia.
+           Qui c'era `.lm-empty`, che è il vuoto di un riquadro dentro una
+           pagina piena: su una schermata senza nient'altro diventava una frase
+           sospesa in mezzo a due metri di bianco. Con un filtro acceso invece
+           `.lm-empty` è giusto — la pagina non è vuota, è la selezione. */
+        risorse.length === 0 ? (
+          <p className="lm-vuoto-porta">
+            <b>Non c’è ancora niente da mostrare.</b>
+            <span>
+              Il listino, il manuale di vendita e le demo per settore vanno qui: si aprono dal
+              telefono, in piedi, davanti a un titolare che sta decidendo.
+            </span>
+            {isAdmin && (
+              <button type="button" className="lm-btn" onClick={() => setNuova(true)}>
+                <Plus aria-hidden="true" /> Carica il primo
+              </button>
+            )}
+          </p>
+        ) : (
+          <p className="lm-empty">Niente in questo settore.</p>
+        )
       ) : (
         <div className="lm-bento lm-risorse">
           {viste.map((r) => (

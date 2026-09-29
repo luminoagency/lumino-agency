@@ -2098,6 +2098,23 @@
   margin-top: 0.6rem;
   overflow: visible;
 }
+/* Il grafico che si prende lo spazio che avanza.
+   Serve dove la card è alta per colpa della vicina e non per il proprio
+   contenuto: trentotto pixel di barre sotto mezzo riquadro di bianco fanno
+   sembrare vuota una card che ha dentro sei mesi di storia. Con `flex: 1` la
+   stessa serie diventa il corpo della card, che è quello che è.
+   `min-height` perché resti leggibile anche quando lo spazio non avanza. */
+.lm-card[data-riempi='true'] .lm-spark {
+  flex: 1;
+  height: auto;
+  min-height: 46px;
+  /* Un tetto, perché «riempi lo spazio» non diventi «diventa un cartellone»:
+     oltre i centoventi pixel sei barre non dicono niente di più e smettono di
+     essere un grafico piccolo dentro una card. Quello che avanza lo prende
+     l'aria sotto il numero, che è aria voluta e non un buco. */
+  max-height: 120px;
+  margin-top: 0.8rem;
+}
 .lm-spark path {
   fill: none;
   stroke: var(--ink);

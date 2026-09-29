@@ -5,6 +5,7 @@ import Counter from '@/components/staff/Counter'
 import Mappa from '@/components/staff/Mappa'
 import PageHead from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
+import Spark from '@/components/staff/Spark'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
 import { demoAttivo } from '@/lib/staff/demo'
@@ -100,16 +101,35 @@ export default async function StatistichePage() {
             </div>
           </article>
 
-          <article className="lm-card lm-in" data-span="4" data-tone="pearl" data-hover data-reveal>
+          {/* La media da sola è la card più bugiarda della pagina: 413 € può
+              voler dire «costiamo tutti così» o «due a quattromila e otto a
+              mille», e sono due aziende diverse. Sotto ci sono i prezzi veri
+              in fila dal più basso al più alto — e si vede in un colpo se il
+              listino tiene o se la media non descrive nessuno. */}
+          <article
+            className="lm-card lm-in"
+            data-span="4"
+            data-tone="pearl"
+            data-riempi="true"
+            data-hover
+            data-reveal
+          >
             <span className="lm-label">Prezzo medio</span>
-            <div style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
-              <Counter value={Math.round(d.prezzoMedio)} format="euro" size="lg" />
-              <p className="lm-kpi-name">
-                {d.giorniMedi != null
-                  ? `${d.giorniMedi} giorni medi dalla proposta alla firma`
-                  : 'Non ci sono ancora trattative con proposta e firma datate'}
-              </p>
-            </div>
+            <Counter value={Math.round(d.prezzoMedio)} format="euro" size="lg" />
+            <p className="lm-kpi-name">
+              {d.giorniMedi != null
+                ? `${d.giorniMedi} giorni medi dalla proposta alla firma`
+                : 'Non ci sono ancora trattative con proposta e firma datate'}
+            </p>
+            {d.prezzi.length > 1 && (
+              <>
+                <Spark serie={d.prezzi} label="I prezzi chiusi, dal più basso al più alto" />
+                <p className="lm-muted" style={{ fontSize: '0.72rem', marginTop: '0.35rem' }}>
+                  {d.prezzi.length} chiusure, da {euro(d.prezzi[0])} a{' '}
+                  {euro(d.prezzi[d.prezzi.length - 1])}
+                </p>
+              </>
+            )}
           </article>
 
           <article className="lm-card lm-in" data-span="4" data-hover data-reveal>
