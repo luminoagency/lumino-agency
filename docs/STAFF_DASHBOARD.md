@@ -66,7 +66,11 @@ browser può decidere di ridisegnarlo a ogni fotogramma; una texture no.
 
 **Per cambiare stanza:** `node scripts/sfondo-staff.mjs <foto.jpg>`. Lo script
 ridimensiona a 1920, desatura un filo, sfoca e riscrive il webp. Non c'è
-nient'altro da toccare, né nel CSS né in `components/staff/Sfondo.tsx`.
+nient'altro da toccare, né nel CSS né in `components/staff/Sfondo.tsx`. Il nome
+del file però sì: `staff/stanza.webp` è nominato **una volta** nel matcher del
+middleware, perché il gate di `/staff/` altrimenti lo scambia per una pagina
+riservata e lo rimanda al login — cioè lascia senza sfondo proprio la pagina di
+login, che per definizione guarda chi non ha una sessione.
 
 - Si anima **solo `transform` e `opacity`**, su due livelli soli — la stanza
   (zoom lentissimo, 96s) e un alone di luce che le passa davanti (137s). Durate

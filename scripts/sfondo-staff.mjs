@@ -17,7 +17,9 @@
  * non c'è niente da ridisegnare: è una texture, e si sposta.
  *
  * Per cambiare stanza: si lancia questo comando con un'altra foto. Non c'è
- * nient'altro da toccare, né nel CSS né nel componente.
+ * nient'altro da toccare, né nel CSS né nel componente. Il **nome** del file
+ * invece è nominato anche nel matcher di `middleware.ts`: sta sotto `/staff/`,
+ * e senza quell'eccezione il gate dell'area lo rimanda al login.
  */
 import sharp from 'sharp'
 import { stat } from 'node:fs/promises'

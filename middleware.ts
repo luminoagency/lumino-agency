@@ -220,6 +220,13 @@ function hasSessionCookie(request: NextRequest): boolean {
 export const config = {
   /* Tutto tranne gli statici e le API: la lingua si decide sulle pagine.
      Escludere qui costa meno che entrare nel middleware e uscirne subito per
-     ogni immagine e ogni chunk. */
-  matcher: ['/((?!api|_next/static|_next/image|favicon|icon-|apple-touch-icon|og-image|works/|motion/|robots.txt|sitemap.xml|manifest.webmanifest).*)'],
+     ogni immagine e ogni chunk.
+
+     `staff/stanza.webp` è l'unica eccezione che non è una cartella: è la
+     fotografia di sfondo dell'area, e sta sotto `/staff/` perché è lì che
+     appartiene. Senza questa riga il gate qui sopra la scambiava per una pagina
+     riservata e la rimandava al login — cioè **la pagina di login restava senza
+     sfondo**, perché chi la guarda per definizione non ha una sessione. Non
+     protegge niente tenerla dentro: è una stanza vuota. */
+  matcher: ['/((?!api|_next/static|_next/image|favicon|icon-|apple-touch-icon|og-image|works/|motion/|staff/stanza\.webp|robots.txt|sitemap.xml|manifest.webmanifest).*)'],
 }
