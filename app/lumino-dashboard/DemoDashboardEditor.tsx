@@ -298,7 +298,7 @@ export function DemoDashboardEditor({ site, initial, featureFlags, eventsCount }
               <input className="ae-input" value={data.tagline} onChange={e => set('tagline', e.target.value)} placeholder="Es. La cucina toscana di casa, in centro a Milano" />
             </div>
             <div className="ae-field">
-              <label className="ae-label">Descrizione · 2-3 righe sulla storia, lo stile, l'atmosfera</label>
+              <label className="ae-label">Descrizione · 2-3 righe sulla storia, lo stile, l’atmosfera</label>
               <textarea className="ae-textarea" value={data.description} onChange={e => set('description', e.target.value)} placeholder="Aperti dal 1972, tre generazioni..." />
             </div>
           </div>
@@ -333,7 +333,7 @@ export function DemoDashboardEditor({ site, initial, featureFlags, eventsCount }
 
         <div className="ae-section">
           <h2 className="ae-h2">Orari di apertura</h2>
-          <p className="ae-h2-sub">Imposta gli orari per ogni giorno. Spunta "Chiuso" per i giorni di riposo.</p>
+          <p className="ae-h2-sub">Imposta gli orari per ogni giorno. Spunta «Chiuso» per i giorni di riposo.</p>
           {DAYS.map(({ key, label }) => {
             const d = hours[key] || {}
             const closed = !!d.closed

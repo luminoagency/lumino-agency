@@ -14,7 +14,7 @@ export default async function ChefPage() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#050505', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif', padding: '2rem' }}>
         <div style={{ textAlign: 'center', maxWidth: 460 }}>
-          <h1 style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: 32, fontStyle: 'italic', marginBottom: 12 }}>Sezione "Lo chef" non inclusa nel piano Basic</h1>
+          <h1 style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: 32, fontStyle: 'italic', marginBottom: 12 }}>Sezione «Lo chef» non inclusa nel piano Basic</h1>
           <p style={{ color: '#aaa', lineHeight: 1.6 }}>Passa al piano Pro o Premium per aggiungere lo chef sul tuo sito.</p>
           <a href="/admin" style={{ color: '#e52d1d', display: 'inline-block', marginTop: 18 }}>← Torna al pannello</a>
         </div>

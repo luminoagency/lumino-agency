@@ -86,7 +86,7 @@ export function EventsEditor({ initial, siteSlug, backPath, saveAction, embedded
 
       <div className="ev-wrap">
         {embedded && <AdminSectionHead title="Eventi" siteSlug={siteSlug} />}
-        <p className="ev-hint">Pubblica eventi come "Cena con i vini", "Live music venerdì", "Menù speciale di Natale". Vengono mostrati sul tuo sito in ordine cronologico.</p>
+        <p className="ev-hint">Pubblica eventi come «Cena con i vini», «Live music venerdì», «Menù speciale di Natale». Vengono mostrati sul tuo sito in ordine cronologico.</p>
 
         {events.map((e, i) => (
           <div key={i} className="ev-card">

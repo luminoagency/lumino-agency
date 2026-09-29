@@ -77,7 +77,7 @@ export function ContattiEditor({ initial }: Props) {
 
       <div className="ae-section">
         <h2 className="ae-h2">Orari di apertura</h2>
-        <p className="ae-h2-sub">Imposta gli orari per ogni giorno. Spunta "Chiuso" per i giorni di riposo.</p>
+        <p className="ae-h2-sub">Imposta gli orari per ogni giorno. Spunta «Chiuso» per i giorni di riposo.</p>
         {DAYS.map(({ key, label }) => {
           const d = hours[key] || {}
           const closed = !!d.closed

@@ -1,0 +1,21 @@
+{
+  // Senza questo file `next lint` si ferma su una domanda interattiva e in CI
+  // non risponde nessuno. `core-web-vitals` è la stessa base che Next userebbe
+  // se gliela si facesse scegliere: nessuna regola inventata qui.
+  "extends": ["next/core-web-vitals"],
+  // Il plugin serve perché i `eslint-disable @typescript-eslint/...` sparsi nel
+  // codice abbiano una regola da disabilitare: senza, ESLint segnala un errore
+  // sul commento stesso ("definition for rule not found").
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    // Le uniche due immagini non ottimizzate dell'area staff sono URL firmati
+    // che scadono in sei ore: passarli a `next/image` vuol dire ri-scaricare e
+    // ri-comprimere la stessa foto a ogni firma. È una scelta, non una
+    // dimenticanza — resta un avviso perché la prossima non lo sia.
+    "@next/next/no-img-element": "warn",
+    // Regola del Pages Router: parla di `pages/_document.js`, che in un'app
+    // App Router non esiste. Qui segnalava quindici link a Google Fonts dentro
+    // i template dei siti generati, tutti corretti.
+    "@next/next/no-page-custom-font": "off"
+  }
+}

@@ -363,7 +363,7 @@ export default function RegisterPage() {
                   </div>
                 ))}
               </div>
-              <p className="rg-help">Il prezzo finale dipende dalle funzioni che ti servono. Si parte con il 30% all'avvio del lavoro.</p>
+              <p className="rg-help">Il prezzo finale dipende dalle funzioni che ti servono. Si parte con il 30% all’avvio del lavoro.</p>
             </>
           )}
 
@@ -387,7 +387,7 @@ export default function RegisterPage() {
                   <div className="rg-field" style={{ marginTop: 6 }}>
                     <label className="rg-label">Hai già un dominio tuo?</label>
                     <div className="rg-choice-row">
-                      <div className={`rg-choice ${d.hasDomain === 'yes' ? 'selected' : ''}`} onClick={() => set('hasDomain', 'yes')}>Sì, ce l'ho</div>
+                      <div className={`rg-choice ${d.hasDomain === 'yes' ? 'selected' : ''}`} onClick={() => set('hasDomain', 'yes')}>Sì, ce l’ho</div>
                       <div className={`rg-choice ${d.hasDomain === 'no' ? 'selected' : ''}`} onClick={() => set('hasDomain', 'no')}>No, registratelo voi</div>
                     </div>
                     {d.hasDomain === 'yes' && (
@@ -429,7 +429,7 @@ export default function RegisterPage() {
 
                   {/* Chef */}
                   <div className="rg-field">
-                    <label className="rg-label">Vuoi una sezione "Lo chef"? <span className="rg-label-opt">opzionale</span></label>
+                    <label className="rg-label">Vuoi una sezione «Lo chef»? <span className="rg-label-opt">opzionale</span></label>
                     <div className="rg-choice-row">
                       <div className={`rg-choice ${d.hasChef === 'yes' ? 'selected' : ''}`} onClick={() => set('hasChef', 'yes')}>Sì, mettiamola</div>
                       <div className={`rg-choice ${d.hasChef === 'no' ? 'selected' : ''}`} onClick={() => set('hasChef', 'no')}>No, salta</div>

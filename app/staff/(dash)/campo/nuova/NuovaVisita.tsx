@@ -90,7 +90,7 @@ export default function NuovaVisita({
   const [richiamoData, setRichiamoData] = useState('')
   const [richiamoNota, setRichiamoNota] = useState('')
 
-  const posizione = usaPosizione(passo >= 2)
+  const posizione = usePosizione(passo >= 2)
 
   const ultimo = passo === PASSI.length - 1
   const puoSalvare = Boolean(scelto) && !busy
@@ -626,7 +626,7 @@ type StatoGps = 'spento' | 'cerco' | 'presa' | 'negata'
  * delle zone della fase 4 avrà qualche buco, che è meglio di qualche visita in
  * meno.
  */
-function usaPosizione(attiva: boolean) {
+function usePosizione(attiva: boolean) {
   const [stato, setStato] = useState<StatoGps>('spento')
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)

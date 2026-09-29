@@ -83,12 +83,12 @@ export function ChefEditor({ initial, siteSlug, backPath, saveAction, embedded }
 
       <div className="cf-wrap">
         {embedded && <AdminSectionHead title="Lo chef" siteSlug={siteSlug} />}
-        <p className="cf-hint">La sezione "Lo chef" mostra una foto, nome, ruolo e una breve frase. Compare nei template che la supportano (Cinematico, Aurora, Mercato).</p>
+        <p className="cf-hint">La sezione «Lo chef» mostra una foto, nome, ruolo e una breve frase. Compare nei template che la supportano (Cinematico, Aurora, Mercato).</p>
 
         <label className="cf-toggle">
           <input type="checkbox" checked={!!d.chef_active} onChange={e => set('chef_active', e.target.checked)} />
           <div>
-            <strong>Mostra la sezione "Lo chef" sul sito</strong>
+            <strong>Mostra la sezione «Lo chef» sul sito</strong>
             <small>Se spunti, compilare nome + ruolo per pubblicarla.</small>
           </div>
         </label>

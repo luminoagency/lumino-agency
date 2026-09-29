@@ -411,7 +411,7 @@ export function SuperAdminClient(props: Props) {
                     </div>
                     <span className="la-review-stars">{'★'.repeat(pr.review.rating)}{'☆'.repeat(5 - pr.review.rating)}</span>
                   </div>
-                  <p className="la-review-text">"{pr.review.text}"</p>
+                  <p className="la-review-text">«{pr.review.text}»</p>
                   <div className="la-actions">
                     <button className="la-btn la-btn-success" disabled={pending} onClick={() => doApproveReview(pr.siteId, pr.index)}>✓ Approva e pubblica</button>
                     <button className="la-btn la-btn-danger" disabled={pending} onClick={() => doDeleteReview(pr.siteId, pr.index)}>Elimina</button>
