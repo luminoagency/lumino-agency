@@ -294,6 +294,81 @@ export async function aggiornaCliente(id: string, dati: NuovoCliente): Promise<E
   return { ok: true }
 }
 
+/**
+ * Il cliente cancellato, e tutto quello che gli stava attaccato.
+ *
+ * **Perché serviva un'azione e non bastava una `delete`.** Con la RLS accesa
+ * una delete che la policy non permette non è un errore: PostgREST non trova
+ * nessuna riga da cancellare e risponde «ok, zero righe». Chiamata da un
+ * bottone, quel «ok» diventa una modale che si chiude e un cliente che resta
+ * lì — il modo peggiore di fallire, perché non lascia niente da leggere.
+ * Per questo qui si conta: `select('id')` sulla delete restituisce le righe
+ * toccate, e zero righe è un errore con un nome.
+ *
+ * **Cosa se ne va.** Trattative, abbonamenti, progetti (e i loro extra),
+ * attività, richiami e report di campo hanno tutti la loro riga in `cascade`
+ * sul `client_id`: li porta via Postgres, in una transazione sola, e non
+ * c'è codice qui che possa dimenticarne una. Restano due cose che il database
+ * non sa cancellare:
+ *
+ * · **le foto dei report di campo**, che nel database sono solo percorsi:
+ *   vanno lette *prima* della delete, perché dopo le righe non ci sono più, e
+ *   tolte dal bucket dopo — un file orfano non si vede e non fa danno, una
+ *   riga che punta a un file cancellato è una scheda rotta;
+ * · **le voci d'archivio**, che invece **non se ne vanno** ed è voluto. Il
+ *   `client_id` lì è `on delete set null`: un PDF di un fornitore o la foto di
+ *   un menù restano materiale buono anche quando il locale non è più un
+ *   cliente, e la ricerca e il Lab AI continuano a leggerli. Si stacca il
+ *   nome, non si brucia l'archivio. Chi vuole via anche quelli le cancella
+ *   dall'Archivio, dove si vede cosa si sta buttando.
+ */
+export async function eliminaCliente(id: string): Promise<Esito> {
+  const me = await requireStaff()
+
+  /* La regola vera è la policy `staff_clients_delete` nel database. Questa è
+     solo la stessa cosa detta in italiano e un viaggio prima, perché un
+     venditore che preme il bottone si merita una frase e non uno zero. */
+  if (me.role !== 'admin') {
+    return { ok: false, error: 'Solo un admin può cancellare un cliente: uno storico perso non torna.' }
+  }
+
+  const supabase = createClient()
+
+  const { data: report } = await supabase
+    .from('staff_field_reports')
+    .select('foto')
+    .eq('client_id', id)
+
+  const { data: tolti, error } = await supabase
+    .from('staff_clients')
+    .delete()
+    .eq('id', id)
+    .select('id')
+
+  if (error) return { ok: false, error: messaggio(error.message) }
+
+  if (!tolti?.length) {
+    return {
+      ok: false,
+      error:
+        'Il database non ha cancellato niente: o il cliente non c’è più, o non è tuo. Ricarica la pagina.',
+    }
+  }
+
+  const foto = ((report ?? []) as { foto: string[] | null }[]).flatMap((r) => r.foto ?? [])
+  if (foto.length) {
+    await createAdminClient().storage.from(BUCKET_CAMPO).remove(foto)
+  }
+
+  revalidatePath('/staff/clienti')
+  revalidatePath('/staff/pipeline')
+  revalidatePath('/staff/campo')
+  revalidatePath('/staff/soldi')
+  revalidatePath('/staff/progetti')
+  revalidatePath('/staff')
+  return { ok: true }
+}
+
 export interface DatiVisita {
   client_id: string
   gestione_prenotazioni: string[]

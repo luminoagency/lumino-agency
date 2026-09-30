@@ -2,10 +2,16 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { CalendarClock, Pencil, PlusCircle } from 'lucide-react'
+import { CalendarClock, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { ChipsOne, opzioni } from '@/components/staff/Chips'
 import Modal from '@/components/staff/Modal'
-import { aggiornaCliente, creaAttivita, creaFollowup, type NuovoCliente } from '@/lib/staff/actions'
+import {
+  aggiornaCliente,
+  creaAttivita,
+  creaFollowup,
+  eliminaCliente,
+  type NuovoCliente,
+} from '@/lib/staff/actions'
 import {
   ATTIVITA_LABEL,
   SETTORE_LABEL,
@@ -17,7 +23,7 @@ import {
   type ClienteRiga,
 } from '@/lib/staff/types'
 
-type Aperta = null | 'modifica' | 'attivita' | 'followup'
+type Aperta = null | 'modifica' | 'attivita' | 'followup' | 'elimina'
 
 /**
  * Le tre cose che si fanno da una scheda cliente.
@@ -55,7 +61,24 @@ export default function SchedaAzioni({
         <Pencil aria-hidden="true" />
         Modifica
       </button>
+      {/* Solo all'admin, come la policy `staff_clients_delete`: un bottone che
+          esiste per tutti e funziona per uno è un bottone che insegna a non
+          fidarsi dei bottoni. */}
+      {isAdmin && (
+        <button
+          type="button"
+          className="lm-pill"
+          data-variant="danger"
+          onClick={() => setAperta('elimina')}
+        >
+          <Trash2 aria-hidden="true" />
+          Elimina
+        </button>
+      )}
 
+      {aperta === 'elimina' && (
+        <ConfermaElimina cliente={cliente} onChiudi={() => setAperta(null)} />
+      )}
       {aperta === 'modifica' && (
         <FormModifica
           cliente={cliente}
@@ -438,6 +461,104 @@ function FormFollowup({ clientId, onChiudi }: { clientId: string; onChiudi: () =
           </button>
           <button type="submit" className="lm-btn" disabled={busy || !data}>
             {busy ? 'Salvo…' : 'Prendi il richiamo'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * La conferma prima di cancellare.
+ *
+ * Non un `confirm()` del browser: quello dice «Sei sicuro?» e non dice cosa se
+ * ne va. Qui c'è scritto, perché la cosa che si perde non è il cliente — è la
+ * storia che gli sta attaccata, e chi preme deve sapere di star cancellando
+ * anche quella.
+ *
+ * Il nome si riscrive a mano. È una frizione voluta, e solo qui: è l'unico
+ * gesto dell'area che non ha un annulla, e tre secondi di fatica sono il prezzo
+ * giusto per non farlo per sbaglio scorrendo col pollice.
+ */
+function ConfermaElimina({
+  cliente,
+  onChiudi,
+}: {
+  cliente: ClienteRiga
+  onChiudi: () => void
+}) {
+  const router = useRouter()
+  const [scritto, setScritto] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [errore, setErrore] = useState<string | null>(null)
+
+  const combacia = scritto.trim().toLowerCase() === cliente.nome.trim().toLowerCase()
+
+  async function elimina(event: React.FormEvent) {
+    event.preventDefault()
+    if (!combacia) return
+    setBusy(true)
+    setErrore(null)
+
+    const esito = await eliminaCliente(cliente.id)
+    if (!esito.ok) {
+      /* Il messaggio dell'azione e non una frase generica: distingue «non hai i
+         permessi» da «non c'era più», e sono due cose che si risolvono in due
+         modi diversi. */
+      setErrore(esito.error ?? 'Non è stato possibile eliminare il cliente.')
+      setBusy(false)
+      return
+    }
+
+    /* Via dalla scheda di una cosa che non esiste più, e `refresh()` perché
+       l'elenco è un Server Component: senza, si torna sulla versione in cache
+       del router, cioè su una riga che non c'è più nel database. */
+    router.replace('/staff/clienti')
+    router.refresh()
+  }
+
+  return (
+    <Modal title={`Elimina ${cliente.nome}`} onClose={onChiudi}>
+      <form onSubmit={elimina}>
+        <span className="lm-label">Attenzione</span>
+        <h2>Questo non si annulla</h2>
+
+        <p className="lm-sub" style={{ marginTop: '0.7rem' }}>
+          Se ne vanno con lui la trattativa, l’abbonamento, il progetto, tutte le attività in
+          timeline, i richiami presi e i report di campo con le loro foto.
+        </p>
+        <p className="lm-field-hint" style={{ marginTop: '0.5rem' }}>
+          Le voci d’archivio restano: perdono il nome del cliente, non il contenuto.
+        </p>
+
+        <div className="lm-field" style={{ marginTop: '1.1rem' }}>
+          <label htmlFor="e-nome">
+            Riscrivi <b>{cliente.nome}</b> per confermare
+          </label>
+          <input
+            id="e-nome"
+            value={scritto}
+            onChange={(e) => setScritto(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoFocus
+          />
+        </div>
+
+        {errore && (
+          <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
+            {errore}
+          </p>
+        )}
+
+        <div className="lm-modal-actions">
+          <button type="button" className="lm-btn" data-variant="ghost" onClick={onChiudi}>
+            Annulla
+          </button>
+          <button type="submit" className="lm-btn" data-variant="danger" disabled={busy || !combacia}>
+            {busy ? 'Elimino…' : 'Elimina definitivamente'}
           </button>
         </div>
       </form>
