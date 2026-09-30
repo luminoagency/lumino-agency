@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { Mail, Phone } from 'lucide-react'
 import { Progress } from '@/components/staff/Bars'
 import Counter from '@/components/staff/Counter'
+import NuovoMembro from '@/components/staff/NuovoMembro'
 import PageHead from '@/components/staff/PageHead'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
@@ -32,14 +33,22 @@ export const dynamic = 'force-dynamic'
  * barra piena per due terzi si leggono in tempi diversi, e questa pagina la si
  * guarda di sfuggita.
  *
- * ## Gli account si creano da Supabase, e la pagina lo dice
+ * ## Gli account adesso si creano da qui, ma non li crea chiunque
  *
- * Non c'è un bottone «aggiungi persona», e non è una mancanza: creare un utente
- * vuol dire creare credenziali, cioè un'operazione su `auth.users` che passa dal
- * service-role. Farla da qui vorrebbe dire una route che crea account, e una
- * route che crea account è il primo posto che qualcuno proverebbe a spingere. Si
- * fa tre volte l'anno e si fa nella dashboard di Supabase: la pagina lo scrive,
- * invece di lasciare cercare.
+ * Per cinque fasi questa pagina ha scritto «gli account si creano nella
+ * dashboard di Supabase», e la ragione era buona: creare un utente vuol dire
+ * creare credenziali, cioè `auth.admin.createUser` con la service-role, e una
+ * route che crea account è il primo posto che qualcuno proverebbe a spingere.
+ *
+ * Ora si assume, e passare da Supabase per ogni persona vuol dire che l'unico
+ * che può farlo è chi ha quelle chiavi. Il bottone c'è, ma dietro un permesso
+ * che **non coincide con `admin`**: `puo_creare_membri` (migration 0037) ce
+ * l'hanno le tre persone che l'hanno fondata, e un amministratore creato da
+ * questo stesso bottone non lo eredita. Se il permesso si ereditasse, la prima
+ * persona assunta avrebbe la chiave di casa.
+ *
+ * Nascondere il bottone non è il controllo: `creaMembro` rifà la stessa domanda
+ * prima di toccare `auth.users`.
  */
 export default async function TeamPage() {
   const me = await requireStaff()
@@ -76,7 +85,9 @@ export default async function TeamPage() {
           <div className="lm-card-top">
             <span className="lm-label">obiettivo del mese, tutti insieme</span>
             {obiettivoTotale > 0 && (
-              <span className="lm-muted">{Math.round((incassatoMese / obiettivoTotale) * 100)}%</span>
+              <span className="lm-muted">
+                {Math.round((incassatoMese / obiettivoTotale) * 100)}%
+              </span>
             )}
           </div>
           <p className="lm-num">
@@ -123,11 +134,20 @@ export default async function TeamPage() {
           <div className="lm-card-top">
             <span className="lm-label">gli account</span>
           </div>
-          <p className="lm-sub" style={{ marginTop: 'auto' }}>
-            Si creano nella dashboard di Supabase, in <b>Authentication</b>, e poi va aggiunta la
-            riga in <code>staff_profiles</code> con lo stesso id. Ruoli, obiettivi e provvigioni si
-            scrivono lì.
-          </p>
+          {me.puo_creare_membri ? (
+            <div style={{ marginTop: 'auto' }}>
+              <p className="lm-sub" style={{ marginBottom: '0.9rem' }}>
+                Nome, ruolo, email e una password iniziale: l’account e il profilo nascono insieme.
+                Obiettivi e provvigioni si scrivono dopo, da Supabase.
+              </p>
+              <NuovoMembro />
+            </div>
+          ) : (
+            <p className="lm-sub" style={{ marginTop: 'auto' }}>
+              Li crea chi ha fondato lo studio. Se serve una persona in più, chiedi a loro: il
+              permesso non si dà da soli, nemmeno essendo amministratori.
+            </p>
+          )}
         </article>
 
         {membri.map((m) => (
@@ -147,69 +167,69 @@ function Persona({ m, io }: { m: MembroTeam; io: boolean }) {
        dentro, che è la card vera. */
     <div className="lm-persona-cella" data-span={4}>
       <Tilt className="lm-card lm-persona" data-tone={io ? 'violet' : undefined}>
-      <header className="lm-persona-testa">
-        <span className="lm-avatar" data-size="lg" data-foto={Boolean(m.foto)}>
-          {m.foto ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={m.foto} alt="" />
-          ) : (
-            <span aria-hidden="true">{iniziali(m.nome)}</span>
-          )}
-        </span>
-        <span className="lm-persona-chi">
-          <b>{m.nome}</b>
-          <small>
-            {m.ruolo_titolo ?? (m.role === 'admin' ? 'Amministratore' : 'Venditore')}
-            {!m.attivo && ' · sospeso'}
-          </small>
-        </span>
-      </header>
+        <header className="lm-persona-testa">
+          <span className="lm-avatar" data-size="lg" data-foto={Boolean(m.foto)}>
+            {m.foto ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={m.foto} alt="" />
+            ) : (
+              <span aria-hidden="true">{iniziali(m.nome)}</span>
+            )}
+          </span>
+          <span className="lm-persona-chi">
+            <b>{m.nome}</b>
+            <small>
+              {m.ruolo_titolo ?? (m.role === 'admin' ? 'Amministratore' : 'Venditore')}
+              {!m.attivo && ' · sospeso'}
+            </small>
+          </span>
+        </header>
 
-      <dl className="lm-persona-numeri">
-        <div>
-          <dt>clienti</dt>
-          <dd>{m.clienti}</dd>
-        </div>
-        <div>
-          <dt>chiuse</dt>
-          <dd>{m.chiuse}</dd>
-        </div>
-        <div>
-          <dt>incassato</dt>
-          <dd>{euro(m.incassato)}</dd>
-        </div>
-      </dl>
+        <dl className="lm-persona-numeri">
+          <div>
+            <dt>clienti</dt>
+            <dd>{m.clienti}</dd>
+          </div>
+          <div>
+            <dt>chiuse</dt>
+            <dd>{m.chiuse}</dd>
+          </div>
+          <div>
+            <dt>incassato</dt>
+            <dd>{euro(m.incassato)}</dd>
+          </div>
+        </dl>
 
-      {m.versoObiettivo !== null ? (
-        <div className="lm-persona-obiettivo">
-          {/* Oltre il 100% la barra resta piena e il numero accanto dice il
+        {m.versoObiettivo !== null ? (
+          <div className="lm-persona-obiettivo">
+            {/* Oltre il 100% la barra resta piena e il numero accanto dice il
               vero: una barra che sfonda il proprio contenitore è un difetto,
               non un premio. */}
-          <Progress
-            label={`su ${euro(m.obiettivo_mensile)} questo mese`}
-            value={Math.min(100, m.versoObiettivo)}
-            max={100}
-            display={`${m.versoObiettivo}%`}
-          />
-        </div>
-      ) : (
-        <p className="lm-muted lm-persona-obiettivo">Nessun obiettivo mensile.</p>
-      )}
+            <Progress
+              label={`su ${euro(m.obiettivo_mensile)} questo mese`}
+              value={Math.min(100, m.versoObiettivo)}
+              max={100}
+              display={`${m.versoObiettivo}%`}
+            />
+          </div>
+        ) : (
+          <p className="lm-muted lm-persona-obiettivo">Nessun obiettivo mensile.</p>
+        )}
 
-      <footer className="lm-persona-piede">
-        {m.email && (
-          <a href={`mailto:${m.email}`} aria-label={`Scrivi a ${m.nome}`}>
-            <Mail aria-hidden="true" /> {m.email}
-          </a>
-        )}
-        {m.telefono && (
-          <a href={`tel:${m.telefono}`} aria-label={`Chiama ${m.nome}`}>
-            <Phone aria-hidden="true" /> {m.telefono}
-          </a>
-        )}
-        {m.provvigione_pct !== null && (
-          <span className="lm-muted">{m.provvigione_pct}% di provvigione</span>
-        )}
+        <footer className="lm-persona-piede">
+          {m.email && (
+            <a href={`mailto:${m.email}`} aria-label={`Scrivi a ${m.nome}`}>
+              <Mail aria-hidden="true" /> {m.email}
+            </a>
+          )}
+          {m.telefono && (
+            <a href={`tel:${m.telefono}`} aria-label={`Chiama ${m.nome}`}>
+              <Phone aria-hidden="true" /> {m.telefono}
+            </a>
+          )}
+          {m.provvigione_pct !== null && (
+            <span className="lm-muted">{m.provvigione_pct}% di provvigione</span>
+          )}
         </footer>
       </Tilt>
     </div>

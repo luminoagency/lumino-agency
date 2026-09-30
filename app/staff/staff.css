@@ -4711,6 +4711,62 @@
   gap: 0.9rem;
   margin-top: 0.4rem;
 }
+/* Dentro «Nuovo membro» la foto non è la schermata: è il primo di sei campi, e
+   in colonna si mangerebbe mezza modale prima ancora del nome. Solo finché non
+   si sta inquadrando — lì torna colonna, perché il riquadro del ritaglio è
+   largo quanto l'anteprima. */
+.lm-avatar-edit[data-riga='true'] {
+  flex-direction: row;
+  align-items: center;
+}
+
+/* Il campo password con l'occhio dentro. Il bottone sta nel campo e non
+   accanto: fuori diventerebbe una terza colonna che si porta dietro
+   l'allineamento di tutta la riga. */
+.lm-campo-pwd {
+  position: relative;
+  display: flex;
+}
+.lm-campo-pwd input {
+  flex: 1;
+  padding-right: 2.6rem;
+}
+.lm-campo-pwd button {
+  position: absolute;
+  top: 50%;
+  right: 0.3rem;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.lm-campo-pwd button:hover {
+  color: var(--ink);
+}
+.lm-campo-pwd svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Un avviso: non un errore, non un suggerimento. Era già scritto nel markup
+   della pagina Team e non aveva nessuna regola, cioè arrivava come un capoverso
+   qualunque in mezzo alle card. */
+.lm-avviso {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.8rem;
+  border-left: 2px solid var(--violet);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: rgb(var(--violet-rgb) / 0.08);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
 
 /* Il riquadro del ritaglio. Quadrato, con dentro il canvas dell'anteprima e
    sopra una maschera ad anello: si vede anche quello che resta FUORI dal cerchio,
