@@ -50,7 +50,7 @@
   filter: blur(64px);
   background:
     radial-gradient(ellipse at 26% 48%, rgba(229, 52, 42, 0.85), transparent 46%),
-    radial-gradient(ellipse at 74% 52%, rgba(59, 79, 196, 0.9), rgba(139, 92, 246, 0.4) 38%, transparent 58%),
+    radial-gradient(ellipse at 74% 52%, rgba(59, 79, 196, 0.9), rgb(var(--violet-rgb) / 0.4) 38%, transparent 58%),
     radial-gradient(ellipse at 50% 50%, rgba(255, 190, 140, 0.22), transparent 42%);
   animation: lm-bloom-breathe 9s 2.4s ease-in-out infinite;
 }

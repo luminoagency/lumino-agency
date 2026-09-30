@@ -32,7 +32,17 @@
   --red: #e5342a;
   --bordeaux: #6b1f2a;
   --blue: #3b4fc4;
-  --violet: #8b5cf6;
+  /* Il viola è sceso di tre punti di luminosità, da #8b5cf6 a #814ff5, e non
+     è una questione di gusto: il bianco sopra il vecchio faceva 4,23:1, cioè
+     sotto il minimo per un testo. Ora fa 4,80:1. Tinta e saturazione sono le
+     stesse (258°, 90%) — è lo stesso viola, un gradino più sotto.
+     `--violet-rgb` sono le stesse tre componenti separate da spazi, per gli usi
+     trasparenti: `rgb(var(--violet-rgb) / .12)`. Serve perché una variabile in
+     esadecimale non si può rendere trasparente, ed è il motivo per cui prima
+     c'erano quaranta `rgba(139, 92, 246, …)` scritte a mano — cioè quaranta
+     posti da ritrovare oggi. */
+  --violet: #814ff5;
+  --violet-rgb: 129 79 245;
   --pink: #ec6a9c;
 
   /* Separatori */
@@ -47,7 +57,7 @@
   --shadow-ink-lift: 0 2px 4px rgba(22, 17, 14, 0.06), 0 22px 48px rgba(22, 17, 14, 0.1);
 
   /* Gradiente firma */
-  --grad: linear-gradient(100deg, #e5342a, #ec6a9c 46%, #8b5cf6);
+  --grad: linear-gradient(100deg, #e5342a, #ec6a9c 46%, var(--violet));
 
   /* I token --font-sans / --font-serif sono valorizzati da next/font
      in app/layout.tsx (Inter + Fraunces). Non ridefinirli qui: la

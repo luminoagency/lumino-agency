@@ -146,40 +146,62 @@ function primaVoltaOggi(): boolean {
 }
 
 /**
- * Le lettere che salgono.
+ * Le lettere che salgono, una parola alla volta.
  *
  * Una `<span>` per carattere, con il proprio indice in una variabile CSS: il
  * ritardo lo calcola il foglio di stile, così `prefers-reduced-motion` lo azzera
  * in una regola sola invece di dover ricalcolare qui. Si animano `transform` e
  * `opacity` e nient'altro, come tutto il resto dell'area.
  *
- * Gli spazi restano spazi veri (` ` dentro uno span non andrebbe a capo dove
- * deve): ognuno diventa una `<span>` col suo ritardo, e il testo resta
- * selezionabile e leggibile da uno screen reader perché i caratteri sono in
- * ordine e senza niente in mezzo.
+ * ## Perché le parole sono avvolte
+ *
+ * `.lm-lettera` è `inline-block`, e fra due inline-block il browser può andare
+ * a capo: su uno schermo da 390 il saluto si leggeva «Buonasera, Prov / a».
+ * Spezzare un nome a metà è il difetto peggiore che possa avere la riga più
+ * grande della schermata, perché è il nome della persona appena entrata.
+ *
+ * Quindi ogni **parola** sta dentro un `.lm-parola` con `white-space: nowrap`,
+ * che toglie le occasioni di a capo lì dentro, e fra una parola e l'altra c'è
+ * uno spazio di testo vero — fuori da ogni inline-block, quindi con la sua
+ * larghezza e la sua occasione di a capo. L'animazione non cambia di una
+ * virgola: le lettere restano lettere, e l'indice continua a contare sul testo
+ * intero, spazi compresi, così le due metà del saluto non si accavallano.
+ *
+ * Il tutto resta selezionabile e leggibile da uno screen reader: i caratteri
+ * sono in ordine e non c'è niente in mezzo.
  *
  * `da` sfasa il secondo blocco: il nome deve partire *dopo* che l'apertura ha
  * finito, o le due metà salirebbero sovrapposte.
  */
 function Lettere({ testo, da }: { testo: string; da: number }) {
+  /* La posizione nel testo originale, spazi inclusi: è quella che va nella
+     variabile del ritardo, non l'indice dentro la parola. */
+  let posizione = 0
+
   return (
     <>
-      {Array.from(testo).map((c, i) => (
-        <span
-          key={`${i}-${c}`}
-          className="lm-lettera"
-          style={{ '--l': i + da } as React.CSSProperties}
-        >
-          {/* Uno spazio unificatore e non uno spazio normale. `.lm-lettera` è
-              `inline-block`, e uno spazio dentro un inline-block collassa a
-              larghezza zero: «CEO Marco» si leggeva «CEOMarco». La riga che
-              c'era qui — `c === ' ' ? ' ' : c` — sostituiva uno spazio con sé
-              stesso, cioè non faceva niente. Non impedisce l'a capo dove serve:
-              l'unico spazio in gioco è quello fra il titolo e il nome, che deve
-              restare unito comunque. */}
-          {c === ' ' ? '\u00A0' : c}
-        </span>
-      ))}
+      {testo.split(' ').map((parola, p) => {
+        const inizio = posizione
+        posizione += parola.length + 1
+        return (
+          <span key={`${p}-${parola}`}>
+            {/* Lo spazio fra le parole, di testo e non dentro uno span: è
+                l'unico posto in cui si può andare a capo. */}
+            {p > 0 && ' '}
+            <span className="lm-parola">
+              {Array.from(parola).map((c, i) => (
+                <span
+                  key={`${i}-${c}`}
+                  className="lm-lettera"
+                  style={{ '--l': inizio + i + da } as React.CSSProperties}
+                >
+                  {c}
+                </span>
+              ))}
+            </span>
+          </span>
+        )
+      })}
     </>
   )
 }

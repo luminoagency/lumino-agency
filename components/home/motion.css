@@ -97,7 +97,7 @@
 .lm-cur-disc.is-grown {
   width: 82px;
   height: 82px;
-  background: rgba(139, 92, 246, 0.16);
+  background: rgb(var(--violet-rgb) / 0.16);
   border-color: transparent;
 }
 
@@ -113,17 +113,17 @@
 .lm-cur-disc.is-view {
   width: 130px;
   height: 130px;
-  background: rgba(139, 92, 246, 0.65);
+  background: rgb(var(--violet-rgb) / 0.65);
 }
 .lm-cur-disc.is-open {
   width: 90px;
   height: 90px;
-  background: rgba(139, 92, 246, 0.62);
+  background: rgb(var(--violet-rgb) / 0.62);
 }
 .lm-cur-disc.is-copy {
   width: 104px;
   height: 104px;
-  background: rgba(139, 92, 246, 0.6);
+  background: rgb(var(--violet-rgb) / 0.6);
 }
 .lm-cur-disc.is-whatsapp {
   width: 118px;
@@ -288,7 +288,7 @@ body.lm-cursor-away .lm-cur-ring {
   background: linear-gradient(
     to bottom,
     rgba(233, 150, 110, 0.1),
-    rgba(139, 92, 246, 0.05) 45%,
+    rgb(var(--violet-rgb) / 0.05) 45%,
     transparent
   );
 }
@@ -313,7 +313,7 @@ body.lm-cursor-away .lm-cur-ring {
   background: radial-gradient(
     circle,
     rgba(59, 79, 196, 0.9),
-    rgba(139, 92, 246, 0.4) 55%,
+    rgb(var(--violet-rgb) / 0.4) 55%,
     transparent 72%
   );
 }
@@ -334,7 +334,7 @@ body.lm-cursor-away .lm-cur-ring {
     circle,
     rgba(255, 198, 140, 0.55),
     rgba(229, 52, 42, 0.22) 38%,
-    rgba(139, 92, 246, 0.12) 60%,
+    rgb(var(--violet-rgb) / 0.12) 60%,
     transparent 74%
   );
 }
@@ -724,7 +724,7 @@ body.lm-loaded .lm-wm:not(.is-static) b {
   opacity: 0;
   transition: opacity 0.6s;
   background:
-    radial-gradient(circle at 78% 30%, rgba(139, 92, 246, 0.2), transparent 60%),
+    radial-gradient(circle at 78% 30%, rgb(var(--violet-rgb) / 0.2), transparent 60%),
     radial-gradient(circle at 20% 80%, rgba(229, 52, 42, 0.16), transparent 62%);
 }
 .lm-overlay.is-hot .lm-ov-wash {

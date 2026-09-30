@@ -87,13 +87,29 @@ login, che per definizione guarda chi non ha una sessione.
 
 | Ruolo | Valore |
 | --- | --- |
-| Inchiostro | `#17130F`, secondario `rgba(23,19,15,.58)` |
+| Inchiostro | `#17130F`, secondario `rgba(23,19,15,.61)` |
 | Card bianca | `rgba(255,255,255,.84)` |
 | Card perla | `rgba(244,242,238,.70)` |
 | Card nera | `#14120F` — una o due per schermata |
-| Viola | `#8B5CF6` (azione, selezione), `#6D3FE0` per i testi su chiaro |
+| Viola | `#814FF5` (azione, selezione), `#6433DE` per i testi su chiaro |
 | Rosso | `#E5342A` — ritardo, errore, rifiuto |
 | Verde | `#1F9D63` — chiuso, in linea |
+
+**Il viola e l'inchiostro secondario sono scesi di un gradino, e per una
+ragione misurabile.** Il bianco su `#8B5CF6` faceva 4,23:1 e `--ink-2` al 58%
+faceva 4,42:1 sulla card più chiara: sotto il 4,5 che serve a un testo piccolo,
+cioè su ogni bottone principale e su ogni etichetta secondaria dell'area. Ora
+fanno 4,80:1 e 4,88:1. Tinta e saturazione del viola sono identiche (258°, 90%)
+— è lo stesso viola, tre punti di luminosità più sotto — e a occhio il grigio è
+lo stesso.
+
+I valori stanno **in un token e basta**: `--violet` per il colore pieno,
+`--violet-rgb` (le tre componenti separate) per i trentotto usi trasparenti che
+prima erano `rgba(139, 92, 246, …)` scritte a mano, `--violet-pannello` per il
+gradiente delle superfici viola che era copiato in tre punti. Una variabile in
+esadecimale non si può rendere trasparente: è per questo che serve il gemello in
+componenti, ed è per questo che senza di lui il viola non si cambia davvero —
+si cambia in un posto e resta vecchio in altri trentotto.
 
 Il pannello di vetro: `rgba(255,255,255,.34)`, `blur(12px) saturate(1.3)
 brightness(1.04)`, un bordo chiaro sottile, un riflesso morbido sul quarto alto,

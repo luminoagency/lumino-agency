@@ -170,7 +170,7 @@
 /* Linee guida e quota: appartengono al primo atto, altrove non esistono. */
 .lm-p-guide {
   position: absolute;
-  background: rgba(139, 92, 246, 0.55);
+  background: rgb(var(--violet-rgb) / 0.55);
   opacity: 0;
 }
 .lm-p-guide-v {
@@ -198,7 +198,7 @@
 .lm-p-measure i {
   flex: 1;
   height: 1px;
-  background: rgba(139, 92, 246, 0.6);
+  background: rgb(var(--violet-rgb) / 0.6);
 }
 .lm-p-measure b {
   font-size: 0.52rem;
@@ -213,8 +213,8 @@
 .lm-demo-1 {
   background: #14100e;
   background-image:
-    linear-gradient(rgba(139, 92, 246, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.07) 1px, transparent 1px);
+    linear-gradient(rgb(var(--violet-rgb) / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--violet-rgb) / 0.07) 1px, transparent 1px);
   background-size: 26px 26px;
 }
 /* Blocchi vuoti: solo contorno, niente riempimento. */
@@ -228,11 +228,11 @@
 .lm-page-a1 .lm-p-price,
 .lm-page-a1 .lm-p-row {
   background: rgba(244, 238, 228, 0.04);
-  border: 1px dashed rgba(139, 92, 246, 0.45);
+  border: 1px dashed rgb(var(--violet-rgb) / 0.45);
 }
 .lm-page-a1 .lm-p-title b {
   color: transparent;
-  -webkit-text-stroke: 1px rgba(139, 92, 246, 0.55);
+  -webkit-text-stroke: 1px rgb(var(--violet-rgb) / 0.55);
 }
 
 /* Scattano in posizione uno dopo l'altro: `steps(1)` perché in un file di

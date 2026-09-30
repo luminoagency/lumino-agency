@@ -80,7 +80,11 @@ export default function AreaChart({
 
         <line className="lm-area-rule" x1={xy[active].x} y1={PAD} x2={xy[active].x} y2={H} />
         <circle className="lm-area-dot" cx={xy[active].x} cy={xy[active].y} r="4.5" />
-        <circle cx={xy[active].x} cy={xy[active].y} r="10" fill="#8b5cf6" opacity="0.26" />
+        {/* L'alone del punto attivo. `currentColor` e non il viola scritto a
+            mano: così segue `--violet` come tutto il resto, e il giorno che il
+            viola cambia non resta indietro un cerchio di dieci pixel dentro un
+            SVG. Il colore glielo passa la classe qui sotto, in staff.css. */}
+        <circle className="lm-area-alone" cx={xy[active].x} cy={xy[active].y} r="10" />
 
         {/* Una fascia trasparente sopra tutto: rende l'intero riquadro
             sensibile al puntatore, anche dove la curva non passa. */}
