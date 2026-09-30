@@ -92,10 +92,29 @@ caricare niente.
 ### Quello che lo rende un archivio e non una cartella
 
 La colonna `testo`. Il **browser** estrae il testo al caricamento — dai PDF con
-`pdfjs`, dalle immagini con l'OCR di `tesseract.js`, dalle vocali col dettato
-nativo — e da lì in poi quel materiale è cercabile e analizzabile come se fosse
-stato scritto a mano. Una foto di un menù diventa una fonte di prezzi; una
-vocale diventa un'obiezione citabile.
+`pdfjs`, dai file di testo leggendoli, dalle vocali col dettato nativo — e da lì
+in poi quel materiale è cercabile e analizzabile come se fosse stato scritto a
+mano. Una vocale diventa un'obiezione citabile.
+
+**Le foto no** (30 settembre 2026, migration 0036). Fino a quel giorno ci girava
+sopra l'OCR di `tesseract.js`, e quello che ne usciva veniva salvato. Su una
+foto di un menù scritto a mano, su uno screenshot compresso o su una vetrina
+ripresa di sbieco non ne esce un testo sbagliato: ne escono righe di caratteri
+che non sono parole. E quelle righe finivano nella `ricerca` — la `tsvector`
+generata — cioè sporcavano la ricerca di *tutto* l'archivio, e arrivavano al Lab
+AI come se fossero contenuto. Ora una foto mostra sé stessa, in anteprima nella
+card e nel dettaglio, e quello che c'è da dire sta nella **nota**, che è
+indicizzata come il testo. Il divieto è in tre punti perché sono tre strade
+diverse: `estrai.ts` non chiama l'OCR, `creaVoceArchivio()` azzera il testo di
+un'immagine qualunque cosa le arrivi, e il vincolo `staff_archive_foto_senza_testo`
+non lo si aggira con una richiesta scritta a mano. `tesseract.js` è uscito dalle
+dipendenze.
+
+Per PDF e file di testo l'estrazione resta, con una soglia: sotto il 55% di
+sequenze che somigliano a parole il testo **non si salva** e si legge «Nessun
+testo leggibile». Un PDF coi caratteri mappati male esce illeggibile esattamente
+come usciva un OCR, e un rumore salvato è peggio di un campo vuoto — nessuno lo
+rilegge e la ricerca ci inciampa dentro.
 
 **Nel browser e non sul server**, e non è una scorciatoia: estrarre lato server
 vorrebbe dire un runtime che sa leggere i PDF e far girare un OCR, cioè qualche

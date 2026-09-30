@@ -601,7 +601,7 @@ function archivioDemo(
       /* Di una foto il testo non si estrae piu (vedi `estrai.ts`): quello che
          c\u2019e scritto sopra sta nella nota, che e indicizzata come il testo. */
       nota: 'Cambia ogni settimana, scritto a mano. Sul sito non c\u2019e. Primi sui 12-14, secondi sui 16-18, coperto 2.',
-      testo: '',
+      testo: null,
       stato: 'assente',
       fonte: 'foto in loco',
       tags: ['menu', 'prezzi'],
@@ -678,7 +678,7 @@ function archivioDemo(
       kind: 'immagine',
       titolo: 'Screenshot: recensione sulle prenotazioni perse',
       nota: 'Recensione a due stelle. Parla esattamente del problema del telefono: ha chiamato tre volte per prenotare, non ha risposto nessuno, sono andati altrove.',
-      testo: '',
+      testo: null,
       stato: 'assente',
       fonte: 'Google',
       tags: ['recensioni', 'prenotazioni'],
