@@ -3256,10 +3256,18 @@
     opacity: 0;
   }
 }
+/* Tre piani in colonna: testa ferma, corpo che scorre, azioni ferme in fondo.
+   Prima era una scatola sola che cresceva quanto il contenuto, e con una foto
+   verticale dentro il bottone di conferma finiva sotto il bordo dello schermo.
+   Il tetto è in `dvh` e non in `vh`: su telefono `vh` conta anche la barra
+   degli indirizzi aperta, cioè promette un'altezza che non c'è. */
 .lm-modal-box {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 440px;
-  padding: 1.4rem;
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: var(--r-xl);
   background: rgba(255, 255, 255, 0.94);
@@ -3268,10 +3276,56 @@
   box-shadow: 0 50px 100px -40px rgba(28, 22, 18, 0.7);
   animation: lm-pop 0.34s var(--ease) both;
 }
+/* Un form che deve avvolgere corpo e azioni sparisce come scatola e lascia i
+   tre piani figli diretti della colonna. Resta un form per il DOM: il submit e
+   il tasto Invio funzionano come prima. */
+.lm-modal-form {
+  display: contents;
+}
 .lm-modal-box:has(.lm-modal-form) {
   max-width: 680px;
-  max-height: 88vh;
+}
+.lm-modal-testa {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  flex: 0 0 auto;
+  padding: 1.2rem 1.4rem 0.7rem;
+}
+.lm-modal-titolo {
+  flex: 1;
+  min-width: 0;
+}
+.lm-modal-chiudi {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  margin: -0.2rem -0.35rem 0 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.055);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.18s var(--ease), color 0.18s var(--ease);
+}
+.lm-modal-chiudi:hover {
+  background: rgba(23, 19, 15, 0.1);
+  color: var(--ink);
+}
+.lm-modal-chiudi svg {
+  width: 17px;
+  height: 17px;
+}
+.lm-modal-corpo {
+  flex: 1 1 auto;
+  /* Senza `min-height: 0` un figlio flex non scende sotto la propria altezza
+     naturale: la colonna crescerebbe lo stesso e le azioni uscirebbero. */
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.4rem 1rem;
   scrollbar-width: thin;
 }
 .lm-modal-box h2 {
@@ -3286,10 +3340,59 @@
   gap: 0.5rem;
   margin-top: 1.2rem;
 }
+/* Dentro una modale le azioni non sono in fondo al contenuto: sono un piano
+   della finestra, e il margine che le staccava dal testo qui non serve più.
+   `env(safe-area-inset-bottom)` le tiene sopra la barra dei gesti, che con
+   `viewportFit: cover` passa sotto la pagina. */
+.lm-modal-box .lm-modal-actions {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0.85rem 1.4rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(23, 19, 15, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}
 @keyframes lm-pop {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.985);
+  }
+}
+
+/* Sul telefono la modale non è una finestra al centro: è un foglio che sale dal
+   basso e arriva ai due bordi. Non è gusto — è che il pollice sta in fondo allo
+   schermo, ed è lì che devono stare i bottoni. */
+@media (max-width: 640px) {
+  .lm-modal {
+    padding: 0;
+    place-items: end stretch;
+  }
+  .lm-modal-box {
+    max-width: none;
+    max-height: 92dvh;
+    border-bottom: 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    animation-name: lm-foglio;
+  }
+  .lm-modal-testa,
+  .lm-modal-corpo,
+  .lm-modal-box .lm-modal-actions {
+    padding-inline: 1rem;
+  }
+  .lm-modal-box h2 {
+    font-size: 1.42rem;
+  }
+  /* Due bottoni larghi uguali invece di due bottoni stretti a destra: a
+     quarantasei pixel si prendono senza guardare. */
+  .lm-modal-box .lm-modal-actions .lm-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: 46px;
+  }
+}
+@keyframes lm-foglio {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
   }
 }
 

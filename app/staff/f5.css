@@ -848,8 +848,13 @@
   object-fit: contain;
   border-radius: var(--r-md);
 }
+/* L'anteprima di quello che si sta per caricare è un promemoria, non una
+   galleria: una foto verticale da telefono, lasciata libera, da sola riempie il
+   corpo della modale e spinge tutto il resto — nota, cliente, data — fuori
+   dalla parte visibile. Il tetto è anche in `dvh` perché su uno schermo basso
+   240px sono già metà finestra. */
 .lm-arc-foto[data-scelta='true'] img {
-  max-height: 240px;
+  max-height: min(240px, 28dvh);
 }
 
 .lm-arc-tags {

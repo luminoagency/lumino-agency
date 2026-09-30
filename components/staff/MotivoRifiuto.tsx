@@ -31,29 +31,39 @@ export default function MotivoRifiuto({
   const [motivo, setMotivo] = useState('')
 
   return (
-    <Modal title="Motivo del rifiuto" onClose={onAnnulla}>
+    <Modal
+      title="Motivo del rifiuto"
+      onClose={onAnnulla}
+      head={
+        <>
+          <span className="lm-label">{nome}</span>
+          <h2>Perché non se n’è fatto niente?</h2>
+        </>
+      }
+    >
       <form
+        className="lm-modal-form"
         onSubmit={(event) => {
           event.preventDefault()
           if (motivo.trim()) onConferma(motivo.trim())
         }}
       >
-        <span className="lm-label">{nome}</span>
-        <h2>Perché non se n’è fatto niente?</h2>
-        <p className="lm-sub" style={{ marginBottom: '1rem' }}>
-          È l’unico dato che dice perché si perde, ed è quello che si salta sempre. Senza, il
-          cliente resta in «{STATO_LABEL[statoAttuale]}».
-        </p>
+        <div className="lm-modal-corpo">
+          <p className="lm-sub" style={{ marginBottom: '1rem' }}>
+            È l’unico dato che dice perché si perde, ed è quello che si salta sempre. Senza, il
+            cliente resta in «{STATO_LABEL[statoAttuale]}».
+          </p>
 
-        <div className="lm-field">
-          <label htmlFor="motivo-rifiuto">Motivo</label>
-          <textarea
-            id="motivo-rifiuto"
-            value={motivo}
-            required
-            onChange={(event) => setMotivo(event.target.value)}
-            placeholder="Prezzo troppo alto, ha già un cugino che glielo fa, non risponde più…"
-          />
+          <div className="lm-field">
+            <label htmlFor="motivo-rifiuto">Motivo</label>
+            <textarea
+              id="motivo-rifiuto"
+              value={motivo}
+              required
+              onChange={(event) => setMotivo(event.target.value)}
+              placeholder="Prezzo troppo alto, ha già un cugino che glielo fa, non risponde più…"
+            />
+          </div>
         </div>
 
         <div className="lm-modal-actions">

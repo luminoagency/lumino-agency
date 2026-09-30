@@ -134,7 +134,9 @@ function Barra({
   const router = useRouter()
   const params = useSearchParams()
   const [testo, setTesto] = useState(filtri.q ?? '')
-  const [altri, setAltri] = useState(Boolean(filtri.autore || filtri.cliente || filtri.dal || filtri.al))
+  const [altri, setAltri] = useState(
+    Boolean(filtri.autore || filtri.cliente || filtri.dal || filtri.al),
+  )
   const primo = useRef(true)
 
   function vaiCon(cambi: Record<string, string | undefined>) {
@@ -144,7 +146,9 @@ function Barra({
       else q.delete(k)
     }
     const s = q.toString()
-    router.replace(s ? `/staff/archivio?${s}` : '/staff/archivio', { scroll: false })
+    router.replace(s ? `/staff/archivio?${s}` : '/staff/archivio', {
+      scroll: false,
+    })
   }
 
   useEffect(() => {
@@ -165,13 +169,13 @@ function Barra({
      card e nessun modo evidente di tornare a vederle tutte. */
   const conFiltri = Boolean(
     filtri.q ||
-      filtri.voce ||
-      filtri.kind ||
-      filtri.tag ||
-      filtri.autore ||
-      filtri.cliente ||
-      filtri.dal ||
-      filtri.al,
+    filtri.voce ||
+    filtri.kind ||
+    filtri.tag ||
+    filtri.autore ||
+    filtri.cliente ||
+    filtri.dal ||
+    filtri.al,
   )
 
   return (
@@ -236,7 +240,11 @@ function Barra({
         </button>
 
         {conFiltri && (
-          <button type="button" className="lm-arc-pulisci" onClick={() => router.replace('/staff/archivio')}>
+          <button
+            type="button"
+            className="lm-arc-pulisci"
+            onClick={() => router.replace('/staff/archivio')}
+          >
             <X aria-hidden="true" /> togli i filtri
           </button>
         )}
@@ -392,7 +400,15 @@ function Card({ voce, mia, apri }: { voce: VoceArchivio; mia: boolean; apri: () 
  * Qui il testo è un campo, non un paragrafo: si legge, si aggiusta la riga
  * storta, e da quel momento il Lab AI sa che dietro c'è una persona.
  */
-function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; chiudi: () => void }) {
+function Dettaglio({
+  voce,
+  mia,
+  chiudi,
+}: {
+  voce: VoceArchivio
+  mia: boolean
+  chiudi: () => void
+}) {
   const [testo, setTesto] = useState(voce.testo ?? '')
   const [errore, setErrore] = useState<string | null>(null)
   const [salvato, setSalvato] = useState(false)
@@ -405,95 +421,109 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
   const foto = eImmagine(voce.mime) || voce.kind === 'immagine'
 
   return (
-    <Modal title={voce.titolo} onClose={chiudi}>
-      <div className="lm-arc-dettaglio">
-        <h2>{voce.titolo}</h2>
-        <p className="lm-muted">
-          {GENERI[voce.kind]} · {quando(voce)}
-          {voce.cliente ? ` · ${voce.cliente}` : ''}
-          {voce.autore ? ` · caricato da ${voce.autore}` : ''}
-          {voce.fonte ? ` · da ${voce.fonte}` : ''}
-        </p>
+    <Modal
+      title={voce.titolo}
+      onClose={chiudi}
+      head={
+        <>
+          <h2>{voce.titolo}</h2>
+          <p className="lm-muted">
+            {GENERI[voce.kind]} · {quando(voce)}
+            {voce.cliente ? ` · ${voce.cliente}` : ''}
+            {voce.autore ? ` · caricato da ${voce.autore}` : ''}
+            {voce.fonte ? ` · da ${voce.fonte}` : ''}
+          </p>
+        </>
+      }
+    >
+      <div className="lm-modal-corpo">
+        <div className="lm-arc-dettaglio">
+          {voce.nota && <p className="lm-arc-nota">{voce.nota}</p>}
 
-        {voce.nota && <p className="lm-arc-nota">{voce.nota}</p>}
+          {voce.indirizzo && (
+            <a
+              className="lm-btn"
+              data-variant="ghost"
+              href={voce.indirizzo}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink aria-hidden="true" /> {voce.nostro ? 'Apri il file' : 'Apri il link'}
+            </a>
+          )}
 
-        {voce.indirizzo && (
-          <a className="lm-btn" data-variant="ghost" href={voce.indirizzo} target="_blank" rel="noreferrer">
-            <ExternalLink aria-hidden="true" /> {voce.nostro ? 'Apri il file' : 'Apri il link'}
-          </a>
-        )}
-
-        {/* Una foto si guarda. Il box «Il testo che l'AI legge» qui dentro
+          {/* Una foto si guarda. Il box «Il testo che l'AI legge» qui dentro
             mostrava l'OCR, cioè righe di caratteri che non erano parole: non
             era un testo sbagliato, era rumore spacciato per contenuto. Vedi
             `estrai.ts`. Quello che di una foto va detto sta nella nota, qui
             sopra, e la nota è indicizzata come il testo. */}
-        {foto ? (
-          voce.indirizzo ? (
-            <figure className="lm-arc-foto">
-              <img src={voce.indirizzo} alt={voce.titolo} />
-            </figure>
+          {foto ? (
+            voce.indirizzo ? (
+              <figure className="lm-arc-foto">
+                <img src={voce.indirizzo} alt={voce.titolo} />
+              </figure>
+            ) : (
+              <p className="lm-empty">Questa foto non è più disponibile.</p>
+            )
           ) : (
-            <p className="lm-empty">Questa foto non è più disponibile.</p>
-          )
-        ) : (
-          <div className="lm-field">
-            <label htmlFor="arc-testo">
-              Il testo che l’AI legge
-              <small>
-                {voce.testo_stato === 'corretto'
-                  ? ' — riletto da una persona'
-                  : voce.testo_stato === 'automatico'
-                    ? ' — estratto in automatico, può contenere errori'
-                    : ' — nessun testo: scrivilo tu, e diventa cercabile'}
-              </small>
-            </label>
-            <textarea
-              id="arc-testo"
-              rows={12}
-              value={testo}
-              readOnly={!mia}
-              placeholder="Nessun testo leggibile."
-              onChange={(e) => {
-                setTesto(e.target.value)
-                setSalvato(false)
-              }}
-            />
-            {!mia && (
-              <p className="lm-field-hint">
-                Questa voce l’ha caricata qualcun altro: si legge, non si corregge.
-              </p>
-            )}
-          </div>
-        )}
+            <div className="lm-field">
+              <label htmlFor="arc-testo">
+                Il testo che l’AI legge
+                <small>
+                  {voce.testo_stato === 'corretto'
+                    ? ' — riletto da una persona'
+                    : voce.testo_stato === 'automatico'
+                      ? ' — estratto in automatico, può contenere errori'
+                      : ' — nessun testo: scrivilo tu, e diventa cercabile'}
+                </small>
+              </label>
+              <textarea
+                id="arc-testo"
+                rows={12}
+                value={testo}
+                readOnly={!mia}
+                placeholder="Nessun testo leggibile."
+                onChange={(e) => {
+                  setTesto(e.target.value)
+                  setSalvato(false)
+                }}
+              />
+              {!mia && (
+                <p className="lm-field-hint">
+                  Questa voce l’ha caricata qualcun altro: si legge, non si corregge.
+                </p>
+              )}
+            </div>
+          )}
 
-        {errore && (
-          <p className="lm-error" role="alert">
-            {errore}
-          </p>
-        )}
-
-        <div className="lm-modal-actions">
-          <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>
-            Chiudi
-          </button>
-          {mia && !foto && (
-            <button
-              type="button"
-              className="lm-btn"
-              disabled={inCorso || !cambiato}
-              onClick={() =>
-                avvia(async () => {
-                  const esito = await correggiTesto(voce.id, testo)
-                  if (esito.ok) setSalvato(true)
-                  else setErrore(esito.error ?? 'Non è stato salvato. Riprova.')
-                })
-              }
-            >
-              {inCorso ? 'Salvo…' : salvato ? 'Salvato' : 'Salva il testo'}
-            </button>
+          {errore && (
+            <p className="lm-error" role="alert">
+              {errore}
+            </p>
           )}
         </div>
+      </div>
+
+      <div className="lm-modal-actions">
+        <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>
+          Chiudi
+        </button>
+        {mia && !foto && (
+          <button
+            type="button"
+            className="lm-btn"
+            disabled={inCorso || !cambiato}
+            onClick={() =>
+              avvia(async () => {
+                const esito = await correggiTesto(voce.id, testo)
+                if (esito.ok) setSalvato(true)
+                else setErrore(esito.error ?? 'Non è stato salvato. Riprova.')
+              })
+            }
+          >
+            {inCorso ? 'Salvo…' : salvato ? 'Salvato' : 'Salva il testo'}
+          </button>
+        )}
       </div>
     </Modal>
   )
@@ -504,17 +534,38 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
 type Modo = 'file' | 'nota' | 'vocale' | 'link'
 
 const MODI: { chiave: Modo; label: string; hint: string }[] = [
-  { chiave: 'file', label: 'Un file', hint: 'PDF, foto, screenshot, testo. Dai documenti il testo lo leggo io.' },
+  {
+    chiave: 'file',
+    label: 'Un file',
+    hint: 'PDF, foto, screenshot, testo. Dai documenti il testo lo leggo io.',
+  },
   { chiave: 'nota', label: 'Una nota', hint: 'Scritta a mano libera, adesso.' },
-  { chiave: 'vocale', label: 'Una vocale', hint: 'Parla, e resta la trascrizione. L’audio non si salva.' },
-  { chiave: 'link', label: 'Un link', hint: 'Un articolo, un sito, un documento di qualcun altro.' },
+  {
+    chiave: 'vocale',
+    label: 'Una vocale',
+    hint: 'Parla, e resta la trascrizione. L’audio non si salva.',
+  },
+  {
+    chiave: 'link',
+    label: 'Un link',
+    hint: 'Un articolo, un sito, un documento di qualcun altro.',
+  },
 ]
 
-function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; chiudi: () => void }) {
+function Nuova({
+  clienti,
+  chiudi,
+}: {
+  clienti: { id: string; nome: string }[]
+  chiudi: () => void
+}) {
   const [modo, setModo] = useState<Modo>('file')
   const [testo, setTesto] = useState('')
   const [vocale, setVocale] = useState('')
-  const [estrazione, setEstrazione] = useState<{ frase: string; quota: number } | null>(null)
+  const [estrazione, setEstrazione] = useState<{
+    frase: string
+    quota: number
+  } | null>(null)
   const [notaEstrazione, setNotaEstrazione] = useState<string | null>(null)
   /* L'anteprima della foto scelta, prima ancora che parta il caricamento: è
      `URL.createObjectURL`, cioè il file che sta già nel browser, zero rete.
@@ -548,12 +599,16 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
         setTesto(esito.testo)
         setNotaEstrazione(esito.nota)
       } else {
-        setNotaEstrazione('Da questo formato non so tirare fuori del testo: scrivi tu nella nota cosa contiene.')
+        setNotaEstrazione(
+          'Da questo formato non so tirare fuori del testo: scrivi tu nella nota cosa contiene.',
+        )
       }
     } catch {
       /* Un'estrazione fallita non deve impedire il caricamento: il materiale
          vale comunque più della comodità di averlo cercabile. */
-      setNotaEstrazione('Non sono riuscito a leggere il testo di questo file. Si archivia lo stesso.')
+      setNotaEstrazione(
+        'Non sono riuscito a leggere il testo di questo file. Si archivia lo stesso.',
+      )
     } finally {
       setEstrazione(null)
     }
@@ -563,6 +618,7 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
     <Modal title="Butta dentro" onClose={chiudi}>
       <form
         ref={formRef}
+        className="lm-modal-form"
         onSubmit={(e) => {
           e.preventDefault()
           const form = new FormData(e.currentTarget)
@@ -576,160 +632,175 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
           })
         }}
       >
-        <div className="lm-chips lm-arc-modi" role="group" aria-label="Cosa stai archiviando">
-          {MODI.map((m) => (
-            <button
-              key={m.chiave}
-              type="button"
-              data-on={modo === m.chiave}
-              onClick={() => setModo(m.chiave)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-        <p className="lm-field-hint">{MODI.find((m) => m.chiave === modo)?.hint}</p>
+        <div className="lm-modal-corpo">
+          <div className="lm-chips lm-arc-modi" role="group" aria-label="Cosa stai archiviando">
+            {MODI.map((m) => (
+              <button
+                key={m.chiave}
+                type="button"
+                data-on={modo === m.chiave}
+                onClick={() => setModo(m.chiave)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <p className="lm-field-hint">{MODI.find((m) => m.chiave === modo)?.hint}</p>
 
-        <div className="lm-field">
-          <label htmlFor="arc-titolo">Titolo</label>
-          <input
-            id="arc-titolo"
-            name="titolo"
-            maxLength={160}
-            required
-            autoFocus
-            placeholder="Come lo cercherai fra sei mesi"
-          />
-        </div>
-
-        {modo === 'file' && (
           <div className="lm-field">
-            <label htmlFor="arc-file">Il file</label>
+            <label htmlFor="arc-titolo">Titolo</label>
             <input
-              id="arc-file"
-              name="file"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.txt,.md,.csv"
-              onChange={(e) => void suFile(e.target.files?.[0])}
+              id="arc-titolo"
+              name="titolo"
+              maxLength={160}
+              required
+              autoFocus
+              placeholder="Come lo cercherai fra sei mesi"
             />
-            <p className="lm-field-hint">
-              Massimo 20 MB. Dai PDF e dai file di testo estraggo il testo; le foto si guardano e basta.
-            </p>
           </div>
-        )}
 
-        {modo === 'link' && (
-          <div className="lm-field">
-            <label htmlFor="arc-link">L’indirizzo</label>
-            <input id="arc-link" name="link" type="url" inputMode="url" placeholder="https://…" />
-          </div>
-        )}
-
-        {modo === 'vocale' && (
-          <VoiceNote
-            value={vocale}
-            onChange={setVocale}
-            label="Parla"
-            hint="Resta solo la trascrizione: l’audio non viene salvato da nessuna parte."
-          />
-        )}
-
-        {estrazione && (
-          <div className="lm-arc-estrazione" role="status">
-            <span>{estrazione.frase}</span>
-            <span className="lm-arc-prog">
-              <i style={{ transform: `scaleX(${Math.max(0.02, estrazione.quota)})` }} />
-            </span>
-          </div>
-        )}
-
-        {anteprima ? (
-          <div className="lm-field">
-            <span className="lm-label">Cosa stai archiviando</span>
-            <figure className="lm-arc-foto" data-scelta="true">
-              <img src={anteprima} alt="La foto scelta" />
-            </figure>
-            {notaEstrazione && <p className="lm-field-hint">{notaEstrazione}</p>}
-          </div>
-        ) : (
-          modo !== 'vocale' &&
-          modo !== 'nota' &&
-          (testo || notaEstrazione) && (
+          {modo === 'file' && (
             <div className="lm-field">
-              <label htmlFor="arc-estratto">
-                Il testo trovato<small> — correggilo adesso, o dopo dal dettaglio</small>
-              </label>
-              <textarea
-                id="arc-estratto"
-                rows={7}
-                value={testo}
-                onChange={(e) => setTesto(e.target.value)}
+              <label htmlFor="arc-file">Il file</label>
+              <input
+                id="arc-file"
+                name="file"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.txt,.md,.csv"
+                onChange={(e) => void suFile(e.target.files?.[0])}
               />
+              <p className="lm-field-hint">
+                Massimo 20 MB. Dai PDF e dai file di testo estraggo il testo; le foto si guardano e
+                basta.
+              </p>
+            </div>
+          )}
+
+          {modo === 'link' && (
+            <div className="lm-field">
+              <label htmlFor="arc-link">L’indirizzo</label>
+              <input id="arc-link" name="link" type="url" inputMode="url" placeholder="https://…" />
+            </div>
+          )}
+
+          {modo === 'vocale' && (
+            <VoiceNote
+              value={vocale}
+              onChange={setVocale}
+              label="Parla"
+              hint="Resta solo la trascrizione: l’audio non viene salvato da nessuna parte."
+            />
+          )}
+
+          {estrazione && (
+            <div className="lm-arc-estrazione" role="status">
+              <span>{estrazione.frase}</span>
+              <span className="lm-arc-prog">
+                <i
+                  style={{
+                    transform: `scaleX(${Math.max(0.02, estrazione.quota)})`,
+                  }}
+                />
+              </span>
+            </div>
+          )}
+
+          {anteprima ? (
+            <div className="lm-field">
+              <span className="lm-label">Cosa stai archiviando</span>
+              <figure className="lm-arc-foto" data-scelta="true">
+                <img src={anteprima} alt="La foto scelta" />
+              </figure>
               {notaEstrazione && <p className="lm-field-hint">{notaEstrazione}</p>}
             </div>
-          )
-        )}
+          ) : (
+            modo !== 'vocale' &&
+            modo !== 'nota' &&
+            (testo || notaEstrazione) && (
+              <div className="lm-field">
+                <label htmlFor="arc-estratto">
+                  Il testo trovato
+                  <small> — correggilo adesso, o dopo dal dettaglio</small>
+                </label>
+                <textarea
+                  id="arc-estratto"
+                  rows={7}
+                  value={testo}
+                  onChange={(e) => setTesto(e.target.value)}
+                />
+                {notaEstrazione && <p className="lm-field-hint">{notaEstrazione}</p>}
+              </div>
+            )
+          )}
 
-        <div className="lm-field">
-          <label htmlFor="arc-nota">
-            {modo === 'nota' ? 'La nota' : 'Perché la stai archiviando'}
-          </label>
-          <textarea
-            id="arc-nota"
-            name="nota"
-            rows={modo === 'nota' ? 6 : 2}
-            required={modo === 'nota'}
-            placeholder={
-              modo === 'nota'
-                ? 'Scrivi quello che ti ricordi, com’è uscito.'
-                : 'Una riga: è quella che ti farà capire, fra sei mesi, perché ti serviva.'
-            }
-          />
-        </div>
-
-        <div className="lm-arc-riga">
           <div className="lm-field">
-            <label htmlFor="arc-tags">Tag</label>
-            <input
-              id="arc-tags"
-              name="tags"
-              placeholder="prezzi, menù, obiezioni"
-              autoCapitalize="none"
+            <label htmlFor="arc-nota">
+              {modo === 'nota' ? 'La nota' : 'Perché la stai archiviando'}
+            </label>
+            <textarea
+              id="arc-nota"
+              name="nota"
+              rows={modo === 'nota' ? 6 : 2}
+              required={modo === 'nota'}
+              placeholder={
+                modo === 'nota'
+                  ? 'Scrivi quello che ti ricordi, com’è uscito.'
+                  : 'Una riga: è quella che ti farà capire, fra sei mesi, perché ti serviva.'
+              }
             />
-            <p className="lm-field-hint">Separati da virgola. Sono il modo vero di ritrovare le cose.</p>
           </div>
 
-          <div className="lm-field">
-            <label htmlFor="arc-fonte">Da dove arriva</label>
-            <input id="arc-fonte" name="fonte" maxLength={60} placeholder="telefonata, sopralluogo, WhatsApp" />
+          <div className="lm-arc-riga">
+            <div className="lm-field">
+              <label htmlFor="arc-tags">Tag</label>
+              <input
+                id="arc-tags"
+                name="tags"
+                placeholder="prezzi, menù, obiezioni"
+                autoCapitalize="none"
+              />
+              <p className="lm-field-hint">
+                Separati da virgola. Sono il modo vero di ritrovare le cose.
+              </p>
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="arc-fonte">Da dove arriva</label>
+              <input
+                id="arc-fonte"
+                name="fonte"
+                maxLength={60}
+                placeholder="telefonata, sopralluogo, WhatsApp"
+              />
+            </div>
           </div>
+
+          <div className="lm-arc-riga">
+            <div className="lm-field">
+              <label htmlFor="arc-cliente">Cliente</label>
+              <select id="arc-cliente" name="cliente" defaultValue="">
+                <option value="">nessuno, è roba generale</option>
+                {clienti.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="arc-data">Quand’è successo</label>
+              <input id="arc-data" name="avvenuto_il" type="date" />
+              <p className="lm-field-hint">Vuoto: vale oggi.</p>
+            </div>
+          </div>
+
+          {errore && (
+            <p className="lm-error" role="alert">
+              {errore}
+            </p>
+          )}
         </div>
-
-        <div className="lm-arc-riga">
-          <div className="lm-field">
-            <label htmlFor="arc-cliente">Cliente</label>
-            <select id="arc-cliente" name="cliente" defaultValue="">
-              <option value="">nessuno, è roba generale</option>
-              {clienti.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="arc-data">Quand’è successo</label>
-            <input id="arc-data" name="avvenuto_il" type="date" />
-            <p className="lm-field-hint">Vuoto: vale oggi.</p>
-          </div>
-        </div>
-
-        {errore && (
-          <p className="lm-error" role="alert">
-            {errore}
-          </p>
-        )}
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>
@@ -750,5 +821,9 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
 function quando(v: VoceArchivio): string {
   const iso = v.avvenuto_il ?? v.created_at.slice(0, 10)
   const d = new Date(iso + 'T12:00:00')
-  return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('it-IT', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }

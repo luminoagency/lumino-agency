@@ -169,7 +169,9 @@ function Card({ risorsa, isAdmin }: { risorsa: RisorsaVista; isAdmin: boolean })
         <span className="lm-muted">
           {risorsa.nostro ? (risorsa.tipo ?? 'file') : 'link esterno'}
           {risorsa.dimensione ? ` · ${peso(risorsa.dimensione)}` : ''}
-          {risorsa.settore ? ` · ${SETTORE_LABEL[risorsa.settore as keyof typeof SETTORE_LABEL] ?? risorsa.settore}` : ''}
+          {risorsa.settore
+            ? ` · ${SETTORE_LABEL[risorsa.settore as keyof typeof SETTORE_LABEL] ?? risorsa.settore}`
+            : ''}
         </span>
         {isAdmin && (
           <button
@@ -204,6 +206,7 @@ function Nuova({ chiudi }: { chiudi: () => void }) {
     <Modal title="Aggiungi materiale" onClose={chiudi}>
       <form
         id="form-risorsa"
+        className="lm-modal-form"
         onSubmit={(e) => {
           e.preventDefault()
           const form = new FormData(e.currentTarget)
@@ -214,59 +217,61 @@ function Nuova({ chiudi }: { chiudi: () => void }) {
           })
         }}
       >
-        <div className="lm-field">
-          <label htmlFor="ris-titolo">Titolo</label>
-          <input id="ris-titolo" name="titolo" maxLength={120} required autoFocus />
-        </div>
+        <div className="lm-modal-corpo">
+          <div className="lm-field">
+            <label htmlFor="ris-titolo">Titolo</label>
+            <input id="ris-titolo" name="titolo" maxLength={120} required autoFocus />
+          </div>
 
-        <div className="lm-field">
-          <label htmlFor="ris-desc">A cosa serve</label>
-          <input id="ris-desc" name="descrizione" maxLength={200} placeholder="facoltativo" />
-        </div>
+          <div className="lm-field">
+            <label htmlFor="ris-desc">A cosa serve</label>
+            <input id="ris-desc" name="descrizione" maxLength={200} placeholder="facoltativo" />
+          </div>
 
-        <div className="lm-field">
-          <label htmlFor="ris-settore">Settore</label>
-          <select id="ris-settore" name="settore" defaultValue="">
-            <option value="">per tutti</option>
-            {SETTORI.map((s) => (
-              <option key={s} value={s}>
-                {SETTORE_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="lm-field">
+            <label htmlFor="ris-settore">Settore</label>
+            <select id="ris-settore" name="settore" defaultValue="">
+              <option value="">per tutti</option>
+              {SETTORI.map((s) => (
+                <option key={s} value={s}>
+                  {SETTORE_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="lm-field">
-          <label htmlFor="ris-file">Il file</label>
-          <input
-            id="ris-file"
-            name="file"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,.pptx,.docx"
-            disabled={haLink}
-            onChange={(e) => setHaFile(Boolean(e.target.files?.length))}
-          />
-          <p className="lm-field-hint">Massimo 10 MB. Per un video, usa il link.</p>
-        </div>
+          <div className="lm-field">
+            <label htmlFor="ris-file">Il file</label>
+            <input
+              id="ris-file"
+              name="file"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.mp4,.pptx,.docx"
+              disabled={haLink}
+              onChange={(e) => setHaFile(Boolean(e.target.files?.length))}
+            />
+            <p className="lm-field-hint">Massimo 10 MB. Per un video, usa il link.</p>
+          </div>
 
-        <div className="lm-field">
-          <label htmlFor="ris-link">…oppure un link</label>
-          <input
-            id="ris-link"
-            name="link"
-            type="url"
-            inputMode="url"
-            placeholder="https://…"
-            disabled={haFile}
-            onChange={(e) => setHaLink(Boolean(e.target.value.trim()))}
-          />
-        </div>
+          <div className="lm-field">
+            <label htmlFor="ris-link">…oppure un link</label>
+            <input
+              id="ris-link"
+              name="link"
+              type="url"
+              inputMode="url"
+              placeholder="https://…"
+              disabled={haFile}
+              onChange={(e) => setHaLink(Boolean(e.target.value.trim()))}
+            />
+          </div>
 
-        {errore && (
-          <p className="lm-error" role="alert">
-            {errore}
-          </p>
-        )}
+          {errore && (
+            <p className="lm-error" role="alert">
+              {errore}
+            </p>
+          )}
+        </div>
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>

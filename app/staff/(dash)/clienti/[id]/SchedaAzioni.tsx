@@ -159,127 +159,139 @@ function FormModifica({
   }
 
   return (
-    <Modal title={`Modifica ${cliente.nome}`} onClose={onChiudi}>
+    <Modal
+      title={`Modifica ${cliente.nome}`}
+      onClose={onChiudi}
+      head={
+        <>
+          <span className="lm-label">Anagrafica</span>
+          <h2>Correggi i dati</h2>
+        </>
+      }
+    >
       <form onSubmit={salva} className="lm-modal-form">
-        <span className="lm-label">Anagrafica</span>
-        <h2>Correggi i dati</h2>
+        <div className="lm-modal-corpo">
+          <div className="lm-form" data-cols="2" style={{ marginTop: '1.1rem' }}>
+            <div className="lm-field" data-wide="true">
+              <label htmlFor="m-nome">Nome del locale</label>
+              <input id="m-nome" value={dati.nome} onChange={set('nome')} required autoFocus />
+            </div>
 
-        <div className="lm-form" data-cols="2" style={{ marginTop: '1.1rem' }}>
-          <div className="lm-field" data-wide="true">
-            <label htmlFor="m-nome">Nome del locale</label>
-            <input id="m-nome" value={dati.nome} onChange={set('nome')} required autoFocus />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-settore">Settore</label>
-            <select id="m-settore" value={dati.settore} onChange={set('settore')}>
-              {SETTORI.map((s) => (
-                <option key={s} value={s}>
-                  {SETTORE_LABEL[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-sito">Sito attuale</label>
-            <select id="m-sito" value={dati.sito_attuale ?? ''} onChange={set('sito_attuale')}>
-              <option value="">Non so</option>
-              {SITI.map((s) => (
-                <option key={s} value={s}>
-                  {SITO_LABEL[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-citta">Città</label>
-            <input id="m-citta" value={dati.citta ?? ''} onChange={set('citta')} />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-zona">Zona</label>
-            <input id="m-zona" value={dati.zona ?? ''} onChange={set('zona')} />
-          </div>
-
-          <div className="lm-field" data-wide="true">
-            <label htmlFor="m-indirizzo">Indirizzo</label>
-            <input id="m-indirizzo" value={dati.indirizzo ?? ''} onChange={set('indirizzo')} />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-referente">Referente</label>
-            <input id="m-referente" value={dati.referente ?? ''} onChange={set('referente')} />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-telefono">Telefono</label>
-            <input
-              id="m-telefono"
-              type="tel"
-              inputMode="tel"
-              value={dati.telefono ?? ''}
-              onChange={set('telefono')}
-            />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-email">Email</label>
-            <input id="m-email" type="email" value={dati.email ?? ''} onChange={set('email')} />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-instagram">Instagram</label>
-            <input
-              id="m-instagram"
-              value={dati.instagram ?? ''}
-              onChange={set('instagram')}
-              placeholder="@nomelocale"
-            />
-          </div>
-
-          <div className="lm-field">
-            <label htmlFor="m-prezzo">Prezzo consigliato</label>
-            <input
-              id="m-prezzo"
-              type="number"
-              min="0"
-              step="50"
-              value={dati.prezzo_consigliato ?? ''}
-              onChange={set('prezzo_consigliato')}
-            />
-          </div>
-
-          {isAdmin && (
             <div className="lm-field">
-              <label htmlFor="m-assegnato">Assegnato a</label>
-              <select id="m-assegnato" value={dati.assegnato_a ?? ''} onChange={set('assegnato_a')}>
-                {venditori.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.nome}
+              <label htmlFor="m-settore">Settore</label>
+              <select id="m-settore" value={dati.settore} onChange={set('settore')}>
+                {SETTORI.map((s) => (
+                  <option key={s} value={s}>
+                    {SETTORE_LABEL[s]}
                   </option>
                 ))}
               </select>
             </div>
-          )}
 
-          <div className="lm-field" data-wide="true">
-            <label htmlFor="m-note">Note sul sito attuale</label>
-            <textarea id="m-note" value={dati.note_sito ?? ''} onChange={set('note_sito')} />
+            <div className="lm-field">
+              <label htmlFor="m-sito">Sito attuale</label>
+              <select id="m-sito" value={dati.sito_attuale ?? ''} onChange={set('sito_attuale')}>
+                <option value="">Non so</option>
+                {SITI.map((s) => (
+                  <option key={s} value={s}>
+                    {SITO_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-citta">Città</label>
+              <input id="m-citta" value={dati.citta ?? ''} onChange={set('citta')} />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-zona">Zona</label>
+              <input id="m-zona" value={dati.zona ?? ''} onChange={set('zona')} />
+            </div>
+
+            <div className="lm-field" data-wide="true">
+              <label htmlFor="m-indirizzo">Indirizzo</label>
+              <input id="m-indirizzo" value={dati.indirizzo ?? ''} onChange={set('indirizzo')} />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-referente">Referente</label>
+              <input id="m-referente" value={dati.referente ?? ''} onChange={set('referente')} />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-telefono">Telefono</label>
+              <input
+                id="m-telefono"
+                type="tel"
+                inputMode="tel"
+                value={dati.telefono ?? ''}
+                onChange={set('telefono')}
+              />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-email">Email</label>
+              <input id="m-email" type="email" value={dati.email ?? ''} onChange={set('email')} />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-instagram">Instagram</label>
+              <input
+                id="m-instagram"
+                value={dati.instagram ?? ''}
+                onChange={set('instagram')}
+                placeholder="@nomelocale"
+              />
+            </div>
+
+            <div className="lm-field">
+              <label htmlFor="m-prezzo">Prezzo consigliato</label>
+              <input
+                id="m-prezzo"
+                type="number"
+                min="0"
+                step="50"
+                value={dati.prezzo_consigliato ?? ''}
+                onChange={set('prezzo_consigliato')}
+              />
+            </div>
+
+            {isAdmin && (
+              <div className="lm-field">
+                <label htmlFor="m-assegnato">Assegnato a</label>
+                <select
+                  id="m-assegnato"
+                  value={dati.assegnato_a ?? ''}
+                  onChange={set('assegnato_a')}
+                >
+                  {venditori.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="lm-field" data-wide="true">
+              <label htmlFor="m-note">Note sul sito attuale</label>
+              <textarea id="m-note" value={dati.note_sito ?? ''} onChange={set('note_sito')} />
+            </div>
           </div>
-        </div>
 
-        <p className="lm-field-hint" style={{ marginTop: '0.8rem' }}>
-          Lo stato non si cambia da qui: si sposta dalla pipeline, dove il rifiuto chiede anche il
-          motivo.
-        </p>
-
-        {errore && (
-          <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
-            {errore}
+          <p className="lm-field-hint" style={{ marginTop: '0.8rem' }}>
+            Lo stato non si cambia da qui: si sposta dalla pipeline, dove il rifiuto chiede anche il
+            motivo.
           </p>
-        )}
+
+          {errore && (
+            <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
+              {errore}
+            </p>
+          )}
+        </div>
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={onChiudi}>
@@ -328,45 +340,53 @@ function FormAttivita({ clientId, onChiudi }: { clientId: string; onChiudi: () =
   }
 
   return (
-    <Modal title="Nuova attività" onClose={onChiudi}>
-      <form onSubmit={salva}>
-        <span className="lm-label">Storico</span>
-        <h2>Cos&apos;è successo</h2>
+    <Modal
+      title="Nuova attività"
+      onClose={onChiudi}
+      head={
+        <>
+          <span className="lm-label">Storico</span>
+          <h2>Cos&apos;è successo</h2>
+        </>
+      }
+    >
+      <form onSubmit={salva} className="lm-modal-form">
+        <div className="lm-modal-corpo">
+          <div style={{ marginTop: '1.1rem' }}>
+            <ChipsOne
+              label="Tipo"
+              options={opzioni(
+                TIPI_ATTIVITA.filter((t) => t !== 'visita'),
+                ATTIVITA_LABEL,
+              )}
+              value={tipo}
+              onChange={(v) => setTipo(v || 'chiamata')}
+            />
+          </div>
 
-        <div style={{ marginTop: '1.1rem' }}>
-          <ChipsOne
-            label="Tipo"
-            options={opzioni(
-              TIPI_ATTIVITA.filter((t) => t !== 'visita'),
-              ATTIVITA_LABEL,
-            )}
-            value={tipo}
-            onChange={(v) => setTipo(v || 'chiamata')}
-          />
-        </div>
+          <div className="lm-field" style={{ marginTop: '0.9rem' }}>
+            <label htmlFor="a-testo">Testo</label>
+            <textarea
+              id="a-testo"
+              value={corpo}
+              required
+              autoFocus
+              onChange={(e) => setCorpo(e.target.value)}
+              placeholder="Richiamato, non risponde. Riprovo dopo pranzo."
+            />
+          </div>
 
-        <div className="lm-field" style={{ marginTop: '0.9rem' }}>
-          <label htmlFor="a-testo">Testo</label>
-          <textarea
-            id="a-testo"
-            value={corpo}
-            required
-            autoFocus
-            onChange={(e) => setCorpo(e.target.value)}
-            placeholder="Richiamato, non risponde. Riprovo dopo pranzo."
-          />
-        </div>
-
-        <p className="lm-field-hint">
-          Le visite non si scrivono qui: si registrano dal Campo, che raccoglie anche come lavora
-          il locale.
-        </p>
-
-        {errore && (
-          <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
-            {errore}
+          <p className="lm-field-hint">
+            Le visite non si scrivono qui: si registrano dal Campo, che raccoglie anche come lavora
+            il locale.
           </p>
-        )}
+
+          {errore && (
+            <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
+              {errore}
+            </p>
+          )}
+        </div>
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={onChiudi}>
@@ -408,52 +428,60 @@ function FormFollowup({ clientId, onChiudi }: { clientId: string; onChiudi: () =
   }
 
   return (
-    <Modal title="Nuovo richiamo" onClose={onChiudi}>
-      <form onSubmit={salva}>
-        <span className="lm-label">Follow-up</span>
-        <h2>Quando lo richiami</h2>
+    <Modal
+      title="Nuovo richiamo"
+      onClose={onChiudi}
+      head={
+        <>
+          <span className="lm-label">Follow-up</span>
+          <h2>Quando lo richiami</h2>
+        </>
+      }
+    >
+      <form onSubmit={salva} className="lm-modal-form">
+        <div className="lm-modal-corpo">
+          <div style={{ marginTop: '1.1rem' }}>
+            <ChipsOne
+              label="Scorciatoie"
+              options={[
+                { value: oggiISO(1), label: 'Domani' },
+                { value: oggiISO(3), label: 'Fra 3 giorni' },
+                { value: oggiISO(7), label: 'Fra una settimana' },
+                { value: oggiISO(30), label: 'Fra un mese' },
+              ]}
+              value={data}
+              onChange={(v) => setData(v || oggiISO(3))}
+            />
+          </div>
 
-        <div style={{ marginTop: '1.1rem' }}>
-          <ChipsOne
-            label="Scorciatoie"
-            options={[
-              { value: oggiISO(1), label: 'Domani' },
-              { value: oggiISO(3), label: 'Fra 3 giorni' },
-              { value: oggiISO(7), label: 'Fra una settimana' },
-              { value: oggiISO(30), label: 'Fra un mese' },
-            ]}
-            value={data}
-            onChange={(v) => setData(v || oggiISO(3))}
-          />
+          <div className="lm-field" style={{ marginTop: '0.9rem' }}>
+            <label htmlFor="f-data">Data</label>
+            <input
+              id="f-data"
+              type="date"
+              min={oggiISO()}
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="lm-field">
+            <label htmlFor="f-nota">Cosa devo ricordarmi</label>
+            <input
+              id="f-nota"
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              placeholder="Portare il preventivo, chiedere del socio…"
+            />
+          </div>
+
+          {errore && (
+            <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
+              {errore}
+            </p>
+          )}
         </div>
-
-        <div className="lm-field" style={{ marginTop: '0.9rem' }}>
-          <label htmlFor="f-data">Data</label>
-          <input
-            id="f-data"
-            type="date"
-            min={oggiISO()}
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="lm-field">
-          <label htmlFor="f-nota">Cosa devo ricordarmi</label>
-          <input
-            id="f-nota"
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-            placeholder="Portare il preventivo, chiedere del socio…"
-          />
-        </div>
-
-        {errore && (
-          <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
-            {errore}
-          </p>
-        )}
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={onChiudi}>
@@ -482,13 +510,7 @@ function FormFollowup({ clientId, onChiudi }: { clientId: string; onChiudi: () =
  * gesto dell'area che non ha un annulla, e tre secondi di fatica sono il prezzo
  * giusto per non farlo per sbaglio scorrendo col pollice.
  */
-function ConfermaElimina({
-  cliente,
-  onChiudi,
-}: {
-  cliente: ClienteRiga
-  onChiudi: () => void
-}) {
+function ConfermaElimina({ cliente, onChiudi }: { cliente: ClienteRiga; onChiudi: () => void }) {
   const router = useRouter()
   const [scritto, setScritto] = useState('')
   const [busy, setBusy] = useState(false)
@@ -520,44 +542,57 @@ function ConfermaElimina({
   }
 
   return (
-    <Modal title={`Elimina ${cliente.nome}`} onClose={onChiudi}>
-      <form onSubmit={elimina}>
-        <span className="lm-label">Attenzione</span>
-        <h2>Questo non si annulla</h2>
-
-        <p className="lm-sub" style={{ marginTop: '0.7rem' }}>
-          Se ne vanno con lui la trattativa, l’abbonamento, il progetto, tutte le attività in
-          timeline, i richiami presi e i report di campo con le loro foto.
-        </p>
-        <p className="lm-field-hint" style={{ marginTop: '0.5rem' }}>
-          Le voci d’archivio restano: perdono il nome del cliente, non il contenuto.
-        </p>
-
-        <div className="lm-field" style={{ marginTop: '1.1rem' }}>
-          <label htmlFor="e-nome">
-            Riscrivi <b>{cliente.nome}</b> per confermare
-          </label>
-          <input
-            id="e-nome"
-            value={scritto}
-            onChange={(e) => setScritto(e.target.value)}
-            autoComplete="off"
-            autoCapitalize="none"
-            autoFocus
-          />
-        </div>
-
-        {errore && (
-          <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
-            {errore}
+    <Modal
+      title={`Elimina ${cliente.nome}`}
+      onClose={onChiudi}
+      head={
+        <>
+          <span className="lm-label">Attenzione</span>
+          <h2>Questo non si annulla</h2>
+        </>
+      }
+    >
+      <form onSubmit={elimina} className="lm-modal-form">
+        <div className="lm-modal-corpo">
+          <p className="lm-sub" style={{ marginTop: '0.7rem' }}>
+            Se ne vanno con lui la trattativa, l’abbonamento, il progetto, tutte le attività in
+            timeline, i richiami presi e i report di campo con le loro foto.
           </p>
-        )}
+          <p className="lm-field-hint" style={{ marginTop: '0.5rem' }}>
+            Le voci d’archivio restano: perdono il nome del cliente, non il contenuto.
+          </p>
+
+          <div className="lm-field" style={{ marginTop: '1.1rem' }}>
+            <label htmlFor="e-nome">
+              Riscrivi <b>{cliente.nome}</b> per confermare
+            </label>
+            <input
+              id="e-nome"
+              value={scritto}
+              onChange={(e) => setScritto(e.target.value)}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoFocus
+            />
+          </div>
+
+          {errore && (
+            <p className="lm-error" role="alert" style={{ marginTop: '0.8rem' }}>
+              {errore}
+            </p>
+          )}
+        </div>
 
         <div className="lm-modal-actions">
           <button type="button" className="lm-btn" data-variant="ghost" onClick={onChiudi}>
             Annulla
           </button>
-          <button type="submit" className="lm-btn" data-variant="danger" disabled={busy || !combacia}>
+          <button
+            type="submit"
+            className="lm-btn"
+            data-variant="danger"
+            disabled={busy || !combacia}
+          >
             {busy ? 'Elimino…' : 'Elimina definitivamente'}
           </button>
         </div>

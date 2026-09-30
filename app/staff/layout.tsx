@@ -88,6 +88,12 @@ export const viewport: Viewport = {
      rende un'app inutilizzabile a chi ha bisogno di zoomare, ed è vietata. */
   width: 'device-width',
   initialScale: 1,
+  /* Quando si apre la tastiera, Android di suo la disegna **sopra** la pagina:
+     la finestra resta alta uguale, `dvh` non cambia, e il piede di una modale
+     finisce coperto proprio mentre si scrive nel campo sopra. Con
+     `resizes-content` la tastiera rimpicciolisce la pagina, quindi il foglio si
+     accorcia e i bottoni restano visibili. */
+  interactiveWidget: 'resizes-content',
 }
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {

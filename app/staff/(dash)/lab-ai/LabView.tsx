@@ -84,7 +84,10 @@ export default function LabView({
   const [domanda, setDomanda] = useState('')
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState<string | null>(null)
-  const [daSalvare, setDaSalvare] = useState<{ testo: string; tipo: TipoInsight } | null>(null)
+  const [daSalvare, setDaSalvare] = useState<{
+    testo: string
+    tipo: TipoInsight
+  } | null>(null)
 
   const perNumero = useMemo(() => new Map(fonti.map((f) => [f.n, f])), [fonti])
 
@@ -156,7 +159,9 @@ export default function LabView({
         })
 
         if (!r.ok || !r.body) {
-          const d = (await r.json().catch(() => null)) as { error?: string } | null
+          const d = (await r.json().catch(() => null)) as {
+            error?: string
+          } | null
           throw new Error(d?.error ?? 'Il Lab non ha risposto.')
         }
 
@@ -173,7 +178,11 @@ export default function LabView({
           setTurni((prima) => {
             const dopo = prima.slice()
             const ultimo = dopo[dopo.length - 1]
-            if (ultimo?.ruolo === 'lab') dopo[dopo.length - 1] = { ...ultimo, testo: ultimo.testo + pezzo }
+            if (ultimo?.ruolo === 'lab')
+              dopo[dopo.length - 1] = {
+                ...ultimo,
+                testo: ultimo.testo + pezzo,
+              }
             return dopo
           })
         }
@@ -297,7 +306,10 @@ export default function LabView({
             <article key={i} className="lm-lab-turno" data-ruolo={t.ruolo}>
               <p>
                 {t.ruolo === 'lab' ? (
-                  <Risposta testo={t.testo} perNumero={modalita === 'archivio' ? perNumero : null} />
+                  <Risposta
+                    testo={t.testo}
+                    perNumero={modalita === 'archivio' ? perNumero : null}
+                  />
                 ) : (
                   t.testo
                 )}
@@ -312,7 +324,12 @@ export default function LabView({
                 <button
                   type="button"
                   className="lm-lab-salva"
-                  onClick={() => setDaSalvare({ testo: t.testo, tipo: tipoProposto(turni, i, modalita) })}
+                  onClick={() =>
+                    setDaSalvare({
+                      testo: t.testo,
+                      tipo: tipoProposto(turni, i, modalita),
+                    })
+                  }
                 >
                   <Bookmark aria-hidden="true" /> tieni questo
                 </button>
@@ -349,7 +366,11 @@ export default function LabView({
             disabled={!attivo || inCorso}
             aria-label="La tua domanda"
           />
-          <button type="submit" disabled={!attivo || inCorso || !domanda.trim()} aria-label="Chiedi">
+          <button
+            type="submit"
+            disabled={!attivo || inCorso || !domanda.trim()}
+            aria-label="Chiedi"
+          >
             <ArrowUp aria-hidden="true" />
           </button>
         </form>
@@ -409,7 +430,11 @@ export default function LabView({
       </section>
 
       {daSalvare && (
-        <Salva testo={daSalvare.testo} tipoIniziale={daSalvare.tipo} chiudi={() => setDaSalvare(null)} />
+        <Salva
+          testo={daSalvare.testo}
+          tipoIniziale={daSalvare.tipo}
+          chiudi={() => setDaSalvare(null)}
+        />
       )}
     </div>
   )
@@ -475,35 +500,41 @@ function Salva({
 
   return (
     <Modal title="Tieni questo" onClose={chiudi}>
-      <div className="lm-field">
-        <label htmlFor="ins-titolo">Come lo ritroverai</label>
-        <input
-          id="ins-titolo"
-          value={titolo}
-          maxLength={120}
-          onChange={(e) => setTitolo(e.target.value)}
-          autoFocus
-        />
+      <div className="lm-modal-corpo">
+        <div className="lm-field">
+          <label htmlFor="ins-titolo">Come lo ritroverai</label>
+          <input
+            id="ins-titolo"
+            value={titolo}
+            maxLength={120}
+            onChange={(e) => setTitolo(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        <div className="lm-field">
+          <label htmlFor="ins-tipo">Che cos’è</label>
+          <select
+            id="ins-tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as TipoInsight)}
+          >
+            {Object.entries(TIPI_INSIGHT).map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <p className="lm-lab-anteprima">{testo}</p>
+
+        {errore && (
+          <p className="lm-error" role="alert">
+            {errore}
+          </p>
+        )}
       </div>
-
-      <div className="lm-field">
-        <label htmlFor="ins-tipo">Che cos’è</label>
-        <select id="ins-tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoInsight)}>
-          {Object.entries(TIPI_INSIGHT).map(([k, label]) => (
-            <option key={k} value={k}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <p className="lm-lab-anteprima">{testo}</p>
-
-      {errore && (
-        <p className="lm-error" role="alert">
-          {errore}
-        </p>
-      )}
 
       <div className="lm-modal-actions">
         <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>
@@ -515,7 +546,11 @@ function Salva({
           disabled={inCorso}
           onClick={() =>
             avvia(async () => {
-              const esito = await salvaInsight({ tipo, titolo, contenuto: testo })
+              const esito = await salvaInsight({
+                tipo,
+                titolo,
+                contenuto: testo,
+              })
               if (esito.ok) chiudi()
               else setErrore(esito.error ?? 'L’insight non è stato salvato. Riprova.')
             })
