@@ -26,7 +26,7 @@ import {
   type Genere,
   type VoceArchivio,
 } from '@/lib/staff/archivio-tipi'
-import { estraiDa } from '@/lib/staff/estrai'
+import { eImmagine, estraiDa } from '@/lib/staff/estrai'
 
 /**
  * L'Archivio, dal lato di chi lo usa.
@@ -325,8 +325,16 @@ function Card({ voce, mia, apri }: { voce: VoceArchivio; mia: boolean; apri: () 
 
       {voce.nota && <p className="lm-sub">{voce.nota}</p>}
 
-      {voce.testo && (
-        <p className="lm-arc-assaggio">{voce.testo.slice(0, 170).replace(/\s+/g, ' ')}…</p>
+      {/* Di una foto si mostra la foto. L'assaggio di testo è per quello che
+          del testo ce l'ha davvero: un'immagine non ne ha più (vedi
+          `estrai.ts`), e un rettangolo di parole al posto di un'anteprima è la
+          cosa che rendeva l'archivio illeggibile a colpo d'occhio. */}
+      {eImmagine(voce.mime) && voce.indirizzo ? (
+        <img className="lm-arc-anteprima" src={voce.indirizzo} alt="" loading="lazy" />
+      ) : (
+        voce.testo && (
+          <p className="lm-arc-assaggio">{voce.testo.slice(0, 170).replace(/\s+/g, ' ')}…</p>
+        )
       )}
 
       {voce.tags.length > 0 && (
@@ -391,6 +399,10 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
   const [inCorso, avvia] = useTransition()
 
   const cambiato = testo !== (voce.testo ?? '')
+  /* `mime` vuoto e genere «immagine»: sono le voci seminate come dati demo, che
+     una foto non ce l'hanno. Contano come immagini lo stesso — il box del testo
+     non gli si deve aprire. */
+  const foto = eImmagine(voce.mime) || voce.kind === 'immagine'
 
   return (
     <Modal title={voce.titolo} onClose={chiudi}>
@@ -411,29 +423,49 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
           </a>
         )}
 
-        <div className="lm-field">
-          <label htmlFor="arc-testo">
-            Il testo che l’AI legge
-            <small>
-              {voce.testo_stato === 'corretto'
-                ? ' — riletto da una persona'
-                : voce.testo_stato === 'automatico'
-                  ? ' — estratto in automatico, può contenere errori'
-                  : ' — nessun testo: scrivilo tu, e diventa cercabile'}
-            </small>
-          </label>
-          <textarea
-            id="arc-testo"
-            rows={12}
-            value={testo}
-            readOnly={!mia}
-            onChange={(e) => {
-              setTesto(e.target.value)
-              setSalvato(false)
-            }}
-          />
-          {!mia && <p className="lm-field-hint">Questa voce l’ha caricata qualcun altro: si legge, non si corregge.</p>}
-        </div>
+        {/* Una foto si guarda. Il box «Il testo che l'AI legge» qui dentro
+            mostrava l'OCR, cioè righe di caratteri che non erano parole: non
+            era un testo sbagliato, era rumore spacciato per contenuto. Vedi
+            `estrai.ts`. Quello che di una foto va detto sta nella nota, qui
+            sopra, e la nota è indicizzata come il testo. */}
+        {foto ? (
+          voce.indirizzo ? (
+            <figure className="lm-arc-foto">
+              <img src={voce.indirizzo} alt={voce.titolo} />
+            </figure>
+          ) : (
+            <p className="lm-empty">Questa foto non è più disponibile.</p>
+          )
+        ) : (
+          <div className="lm-field">
+            <label htmlFor="arc-testo">
+              Il testo che l’AI legge
+              <small>
+                {voce.testo_stato === 'corretto'
+                  ? ' — riletto da una persona'
+                  : voce.testo_stato === 'automatico'
+                    ? ' — estratto in automatico, può contenere errori'
+                    : ' — nessun testo: scrivilo tu, e diventa cercabile'}
+              </small>
+            </label>
+            <textarea
+              id="arc-testo"
+              rows={12}
+              value={testo}
+              readOnly={!mia}
+              placeholder="Nessun testo leggibile."
+              onChange={(e) => {
+                setTesto(e.target.value)
+                setSalvato(false)
+              }}
+            />
+            {!mia && (
+              <p className="lm-field-hint">
+                Questa voce l’ha caricata qualcun altro: si legge, non si corregge.
+              </p>
+            )}
+          </div>
+        )}
 
         {errore && (
           <p className="lm-error" role="alert">
@@ -445,7 +477,7 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
           <button type="button" className="lm-btn" data-variant="ghost" onClick={chiudi}>
             Chiudi
           </button>
-          {mia && (
+          {mia && !foto && (
             <button
               type="button"
               className="lm-btn"
@@ -472,7 +504,7 @@ function Dettaglio({ voce, mia, chiudi }: { voce: VoceArchivio; mia: boolean; ch
 type Modo = 'file' | 'nota' | 'vocale' | 'link'
 
 const MODI: { chiave: Modo; label: string; hint: string }[] = [
-  { chiave: 'file', label: 'Un file', hint: 'PDF, foto, screenshot, testo. Il testo dentro lo leggo io.' },
+  { chiave: 'file', label: 'Un file', hint: 'PDF, foto, screenshot, testo. Dai documenti il testo lo leggo io.' },
   { chiave: 'nota', label: 'Una nota', hint: 'Scritta a mano libera, adesso.' },
   { chiave: 'vocale', label: 'Una vocale', hint: 'Parla, e resta la trascrizione. L’audio non si salva.' },
   { chiave: 'link', label: 'Un link', hint: 'Un articolo, un sito, un documento di qualcun altro.' },
@@ -484,6 +516,11 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
   const [vocale, setVocale] = useState('')
   const [estrazione, setEstrazione] = useState<{ frase: string; quota: number } | null>(null)
   const [notaEstrazione, setNotaEstrazione] = useState<string | null>(null)
+  /* L'anteprima della foto scelta, prima ancora che parta il caricamento: è
+     `URL.createObjectURL`, cioè il file che sta già nel browser, zero rete.
+     Si revoca quando cambia e quando la modale si chiude, o ogni foto provata
+     e scartata resta in memoria finché la scheda non si chiude. */
+  const [anteprima, setAnteprima] = useState<string | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, avvia] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
@@ -496,9 +533,12 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
    * quanto dura, e intanto si può continuare a scrivere il titolo — quando si
    * salva, il testo c'è già.
    */
+  useEffect(() => () => void (anteprima && URL.revokeObjectURL(anteprima)), [anteprima])
+
   async function suFile(file: File | undefined) {
     setNotaEstrazione(null)
     setTesto('')
+    setAnteprima(file && eImmagine(file.type) ? URL.createObjectURL(file) : null)
     if (!file) return
 
     setEstrazione({ frase: 'Apro il file…', quota: 0.02 })
@@ -573,7 +613,7 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
               onChange={(e) => void suFile(e.target.files?.[0])}
             />
             <p className="lm-field-hint">
-              Massimo 20 MB. Dai PDF leggo il testo, dalle foto lo riconosco con l’OCR.
+              Massimo 20 MB. Dai PDF e dai file di testo estraggo il testo; le foto si guardano e basta.
             </p>
           </div>
         )}
@@ -603,19 +643,31 @@ function Nuova({ clienti, chiudi }: { clienti: { id: string; nome: string }[]; c
           </div>
         )}
 
-        {modo !== 'vocale' && modo !== 'nota' && (testo || notaEstrazione) && (
+        {anteprima ? (
           <div className="lm-field">
-            <label htmlFor="arc-estratto">
-              Il testo trovato<small> — correggilo adesso, o dopo dal dettaglio</small>
-            </label>
-            <textarea
-              id="arc-estratto"
-              rows={7}
-              value={testo}
-              onChange={(e) => setTesto(e.target.value)}
-            />
+            <span className="lm-label">Cosa stai archiviando</span>
+            <figure className="lm-arc-foto" data-scelta="true">
+              <img src={anteprima} alt="La foto scelta" />
+            </figure>
             {notaEstrazione && <p className="lm-field-hint">{notaEstrazione}</p>}
           </div>
+        ) : (
+          modo !== 'vocale' &&
+          modo !== 'nota' &&
+          (testo || notaEstrazione) && (
+            <div className="lm-field">
+              <label htmlFor="arc-estratto">
+                Il testo trovato<small> — correggilo adesso, o dopo dal dettaglio</small>
+              </label>
+              <textarea
+                id="arc-estratto"
+                rows={7}
+                value={testo}
+                onChange={(e) => setTesto(e.target.value)}
+              />
+              {notaEstrazione && <p className="lm-field-hint">{notaEstrazione}</p>}
+            </div>
+          )
         )}
 
         <div className="lm-field">

@@ -598,10 +598,11 @@ function archivioDemo(
     {
       kind: 'immagine',
       titolo: 'Menu della Trattoria, foto della lavagna',
-      nota: 'Cambia ogni settimana, scritto a mano. Sul sito non c\u2019e.',
-      testo:
-        'MENU DEL GIORNO Antipasti Sarde in saor 9 Baccala mantecato 10 Primi Bigoli in salsa 12 Risotto di go 14 Secondi Fritto misto 18 Seppie in nero 16 Coperto 2',
-      stato: 'automatico',
+      /* Di una foto il testo non si estrae piu (vedi `estrai.ts`): quello che
+         c\u2019e scritto sopra sta nella nota, che e indicizzata come il testo. */
+      nota: 'Cambia ogni settimana, scritto a mano. Sul sito non c\u2019e. Primi sui 12-14, secondi sui 16-18, coperto 2.',
+      testo: '',
+      stato: 'assente',
       fonte: 'foto in loco',
       tags: ['menu', 'prezzi'],
       cliente: 2,
@@ -676,10 +677,9 @@ function archivioDemo(
     {
       kind: 'immagine',
       titolo: 'Screenshot: recensione sulle prenotazioni perse',
-      nota: 'Recensione a due stelle. Parla esattamente del problema del telefono.',
-      testo:
-        'Ho chiamato tre volte per prenotare e non ha risposto nessuno. Alla fine siamo andati altrove. Peccato perche si mangia benissimo.',
-      stato: 'automatico',
+      nota: 'Recensione a due stelle. Parla esattamente del problema del telefono: ha chiamato tre volte per prenotare, non ha risposto nessuno, sono andati altrove.',
+      testo: '',
+      stato: 'assente',
       fonte: 'Google',
       tags: ['recensioni', 'prenotazioni'],
       cliente: 1,

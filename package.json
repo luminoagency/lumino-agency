@@ -37,7 +37,6 @@
     "react-hook-form": "^7.79.0",
     "sharp": "^0.35.3",
     "tailwind-merge": "^2.5.2",
-    "tesseract.js": "^5.1.1",
     "three": "^0.184.0",
     "yet-another-react-lightbox": "^3.32.0",
     "zod": "^4.4.3"

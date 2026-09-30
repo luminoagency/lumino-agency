@@ -13,18 +13,22 @@ import type { Esito } from './actions'
  *
  * Tre sole, e una regola che vale per tutte: il testo estratto arriva **dal
  * browser**. È una scelta, non una scorciatoia. Estrarre lato server vorrebbe
- * dire un runtime che sa leggere i PDF e far girare un OCR, cioè una funzione
- * serverless da qualche secondo e qualche centinaio di MB per ogni foto
- * caricata — su un piano gratuito è la via più rapida per esaurirlo. Il browser
- * ce l'ha già tutto: `pdfjs` legge i PDF, `tesseract.js` fa l'OCR, il dettato è
- * nativo. Costa zero e succede mentre la persona sta ancora scrivendo il
- * titolo.
+ * dire un runtime che sa leggere i PDF, cioè una funzione serverless da qualche
+ * secondo e qualche centinaio di MB per ogni file caricato — su un piano
+ * gratuito è la via più rapida per esaurirlo. Il browser ce l'ha già tutto:
+ * `pdfjs` legge i PDF, il dettato è nativo. Costa zero e succede mentre la
+ * persona sta ancora scrivendo il titolo.
  *
  * Il prezzo è che il testo è **dichiarato dal client**, quindi non è un dato di
  * cui fidarsi ciecamente: vale per la ricerca e per l'analisi, non per decidere
  * niente. Ed è per questo che `testo_stato` distingue «automatico» da
  * «corretto» — chi legge una citazione del Lab AI ha diritto di sapere se
- * quella frase l'ha scritta una persona o un OCR.
+ * quella frase l'ha scritta una persona o un'estrazione.
+ *
+ * **Le immagini non hanno testo, e non lo prendono nemmeno se arriva.** Il
+ * controllo è qui e non solo nel browser: un client vecchio in una scheda
+ * aperta da ieri, o un `fetch` scritto a mano, manderebbero ancora l'OCR di
+ * prima, e quel testo finirebbe nella `tsvector` — cioè nella ricerca di tutti.
  */
 
 /** Venti mega: qui arrivano scansioni e foto non ritoccate. */
@@ -101,7 +105,7 @@ export async function creaVoceArchivio(form: FormData): Promise<Esito & { id?: s
   /* Il testo si tronca invece di rifiutare il caricamento: un PDF di
      duecento pagine è comunque materiale che si vuole tenere, e le prime
      centomila battute dicono già di cosa parla. */
-  const testo = testoGrezzo.slice(0, MAX_TESTO) || null
+  let testo = testoGrezzo.slice(0, MAX_TESTO) || null
 
   let file_path: string | null = null
   let mime: string | null = null
@@ -129,6 +133,12 @@ export async function creaVoceArchivio(form: FormData): Promise<Esito & { id?: s
     file_path = path
     mime = f.type
     dimensione = f.size
+
+    /* Una foto non porta testo: si guarda. Vedi il commento in cima e
+       `estrai.ts` — quello che il browser chiamava OCR era rumore, e il rumore
+       entrava nella ricerca di tutti. La descrizione a mano sta nella nota, che
+       è indicizzata come il testo. */
+    if (kind === 'immagine') testo = null
   } else if (link) {
     kind = 'link'
   } else if (vocale) {
@@ -186,7 +196,22 @@ export async function correggiTesto(id: string, testo: string): Promise<Esito> {
 
   const pulito = testo.trim().slice(0, MAX_TESTO)
 
-  const { error } = await createClient()
+  const supabase = createClient()
+
+  /* Nemmeno a mano: su una foto il campo non esiste più, e se arriva lo stesso
+     è un client vecchio in una scheda aperta da ieri. */
+  const { data: riga } = await supabase
+    .from('staff_archive')
+    .select('kind, mime')
+    .eq('id', id)
+    .maybeSingle()
+
+  const suFoto = (riga as { kind?: string; mime?: string | null } | null)
+  if (suFoto?.kind === 'immagine' || suFoto?.mime?.startsWith('image/')) {
+    return { ok: false, error: 'Una foto si guarda: il testo scrivilo nella nota.' }
+  }
+
+  const { error } = await supabase
     .from('staff_archive')
     .update({ testo: pulito || null, testo_stato: pulito ? 'corretto' : 'assente' })
     .eq('id', id)
