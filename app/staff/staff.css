@@ -54,12 +54,23 @@
   /* Inchiostro e superfici. Il bianco delle card non è mai opaco al 100%:
      deve lasciare intuire la stanza sotto, o il vetro non è vetro. */
   --ink: #17130f;
-  /* Salito da 0,58 a 0,61 per la stessa ragione del viola: sulla card più
-     chiara faceva 4,42:1 contro il minimo di 4,5 per un testo piccolo, e
-     `--ink-2` è il colore di **tutto** il testo secondario dell'area, dalla
-     traduzione dell'ayah alle etichette delle card. Ora fa 4,88:1. Tre
-     centesimi di opacità: a occhio è lo stesso grigio, al misuratore no. */
-  --ink-2: rgba(23, 19, 15, 0.61);
+  /* `--ink-2` è il colore di **tutto** il testo che non è il titolo: i
+     sottotitoli, le etichette, i vuoti dei riquadri, i segnaposto, gli hint.
+     Un token solo, e non tre gradi di grigio, perché tre gradi vogliono dire
+     che due su tre non li misura nessuno.
+
+     0,66 e non più 0,61: il calcolo di settembre era fatto sulla card, dove
+     0,61 bastava (4,81:1), ma lo stesso grigio finisce anche sul vetro nudo
+     del pannello — il sottotitolo di ogni pagina, sotto il titolo grande — e
+     lì sotto c'è la fotografia della stanza: 4,25:1, cioè sotto il minimo,
+     proprio dove il testo è più piccolo. A 0,66 il punto peggiore fa 4,91:1 e
+     la card fa 5,69:1.
+
+     `--ink-3` non è più un colore di testo. È rimasto per le cose che non si
+     leggono — il pallino di settore accanto a un nome — e chi lo usa per del
+     testo lo sta usando male: 2,4:1, cioè invisibile su qualunque superficie
+     di quest'area. */
+  --ink-2: rgba(23, 19, 15, 0.66);
   --ink-3: rgba(23, 19, 15, 0.38);
   --line: rgba(23, 19, 15, 0.09);
   --line-2: rgba(23, 19, 15, 0.16);
@@ -88,7 +99,11 @@
   /* Il viola pieno delle superfici — la card del cliente scelto, la sfera,
      il pannello di dettaglio. Era la stessa riga copiata in tre punti. */
   --violet-pannello: linear-gradient(152deg, #763ef1, var(--violet) 45%, #5d2bd3);
-  --red: #e5342a;
+  /* Sceso di un gradino come il viola, e per la stessa ragione: era #e5342a,
+     e il bianco sopra faceva 4,32:1 — cioè il bottone che cancella un cliente
+     era l'elemento meno leggibile dell'area. Ora fa 5,13:1 col bianco sopra e
+     4,58:1 come testo sulla card. Stessa tinta, stessa saturazione. */
+  --red: #d5241a;
   --green: #1f9d63;
 
   /* Raggi generosi, come in ref1/ref4. */
@@ -440,7 +455,7 @@
 .lm-staff-brand .lm-staff-tag {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -1520,7 +1535,24 @@
   background: var(--red);
 }
 .lm-btn[data-variant='danger']:hover:not(:disabled) {
-  box-shadow: 0 14px 28px -14px rgba(229, 52, 42, 0.7);
+  box-shadow: 0 14px 28px -14px rgba(213, 36, 26, 0.7);
+}
+
+/* La pill che cancella. Resta una pill — cioè un'azione secondaria accanto a
+   «Modifica», non una che chiede di essere premuta — e il rosso lo prende solo
+   al passaggio: in riposo è l'icona a dirlo. Una barra di azioni con dentro un
+   bottone rosso pieno sposta l'occhio sull'unica cosa che nessuno deve fare
+   per sbaglio. */
+.lm-pill[data-variant='danger'] {
+  color: var(--red);
+  border-color: rgba(213, 36, 26, 0.3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .lm-pill[data-variant='danger']:hover {
+    background: var(--red);
+    border-color: transparent;
+    color: #fff;
+  }
 }
 .lm-btn[data-variant='light'] {
   background: #fff;
@@ -1944,7 +1976,7 @@
   font-size: 0.9rem;
 }
 .lm-search input::placeholder {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-search input:focus {
   outline: none;
@@ -2202,7 +2234,7 @@
   justify-content: space-between;
   margin-top: 0.3rem;
   font-size: 0.82rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 /* Il cartellino del punto attivo.
    Le quattro combinazioni di `data-lato` e `data-sotto` le decide il componente,
@@ -2316,7 +2348,7 @@
 }
 .lm-cal-dow {
   font-size: 0.82rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-align: center;
 }
 .lm-cal-n {
@@ -2471,7 +2503,7 @@
   box-shadow: none;
 }
 .lm-map-canvas .leaflet-popup-close-button {
-  color: var(--ink-3) !important;
+  color: var(--ink-2) !important;
 }
 .lm-pop-nome {
   display: block;
@@ -2509,7 +2541,7 @@
   border-radius: 999px 0 0 0;
   background: rgba(255, 255, 255, 0.78);
   font-size: 0.82rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-map-canvas .leaflet-control-attribution a {
   color: var(--ink-2);
@@ -2716,7 +2748,7 @@
 .lm-col-n {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
 .lm-col-body {
@@ -2727,7 +2759,7 @@
 .lm-col-empty {
   padding: 0.7rem 0.3rem;
   font-size: 0.84rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .lm-ccard {
@@ -3076,7 +3108,7 @@
 .lm-empty {
   padding: 1rem 0.2rem;
   font-size: 0.92rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .lm-time {
@@ -3153,7 +3185,7 @@
   outline: none;
 }
 .lm-ask input::placeholder {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-ask-note {
   flex: none;
@@ -3263,7 +3295,43 @@
 
 /* ───────────────────────────────────────────────────────────────────────────
    Campi
+
+   LE TENDINE — l'unico pezzo di quest'area che non disegniamo noi
+
+   Il pannello che si apre da un `<select>` lo disegna il sistema operativo,
+   fuori dalla pagina: non lo raggiunge nessun selettore, non lo raggiunge il
+   `backdrop-filter`, e non eredita niente dal `.lm-staff`. Eredita una cosa
+   sola, e ci si rompe sopra: **il `color` e il `background-color` del select**.
+
+   Il nostro select di stato dentro la card viola ha `color: #fff` su un fondo
+   traslucido chiaro, perché lì sopra funziona. Aperta la tendina, Chrome su
+   Windows usa quello stesso bianco per il testo delle opzioni e uno sfondo
+   chiaro di sistema per il pannello: bianco su bianco, l'elenco è vuoto a
+   vedersi. Stesso identico difetto su ogni select dell'area, ovunque il fondo
+   sia scuro o il testo chiaro.
+
+   Si sistema in due righe, e valgono per tutti i select insieme perché sono
+   dichiarate sull'elemento e non su una classe:
+   · `color-scheme: light` dice al sistema di disegnare un pannello chiaro
+     anche quando il browser o il telefono stanno in scuro — senza, la tendina
+     arriva nera dentro un'interfaccia tutta chiara;
+   · le `option` si dichiarano con i colori nostri, in esadecimale pieno e non
+     con un `rgba` su un fondo che lì fuori non esiste.
+
+   È l'alternativa a costruire una tendina nostra con `div` e `role="listbox"`:
+   quella la si disegna come si vuole, ma va riscritta tutta a mano — tastiera,
+   lettori di schermo, ricerca a digitazione, apertura dentro una modale che ha
+   il suo `overflow` — ed è codice che sbaglia più spesso di quanto migliori.
    ─────────────────────────────────────────────────────────────────────────── */
+.lm-staff select {
+  color-scheme: light;
+}
+.lm-staff option,
+.lm-staff optgroup {
+  color: #171210;
+  background-color: #f4eee4;
+}
+
 .lm-form {
   display: grid;
   gap: 0.85rem;
@@ -3307,22 +3375,35 @@
 .lm-field select {
   appearance: none;
   cursor: pointer;
+  /* La freccia è disegnata qui e non con un'icona accanto, come fa
+     `.lm-select`: dentro un `.lm-field` il select è largo quanto la riga, e un
+     elemento in più andrebbe posizionato in assoluto sopra un campo che cambia
+     larghezza. Un `background-image` ci sta attaccato da sé.
+     `%2317130F` è `--ink` scritto per un data URI: in un `url()` il cancelletto
+     chiude il valore, e una variabile CSS qui dentro non si può usare. */
+  padding-right: 2.2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%2317130F' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='.55'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
 }
 .lm-field input:focus,
 .lm-field textarea:focus,
 .lm-field select:focus {
   outline: none;
   border-color: var(--violet);
-  background: #fff;
+  /* `background-color` e non `background`: la scorciatoia azzera anche
+     `background-image`, cioè la freccia del select sparirebbe appena il campo
+     prende il fuoco. */
+  background-color: #fff;
 }
 .lm-field input::placeholder,
 .lm-field textarea::placeholder {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-field-hint {
   margin-top: 0.28rem;
   font-size: 0.84rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -3359,7 +3440,7 @@
   border-bottom: 0;
 }
 .lm-table td[data-skip='true'] {
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .lm-drop {
@@ -4472,7 +4553,7 @@
 .lm-saluto-meta {
   margin-top: 0.3rem;
   font-size: 0.88rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-saluto[data-anima='si'] .lm-saluto-meta {
   animation: lm-sali-riga 0.7s var(--ease) 0.52s both;
@@ -4850,7 +4931,7 @@
   background: rgba(23, 19, 15, 0.07);
   font-style: normal;
   font-size: 0.82rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .lm-salat-head .lm-label svg {
@@ -4873,7 +4954,7 @@
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: var(--ink-3);
+  color: var(--ink-2);
   cursor: pointer;
   transition:
     background-color 0.2s,
@@ -4905,7 +4986,7 @@
   margin-left: 0.4rem;
   font-family: var(--font-ar), serif;
   font-size: 1.01rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* I cinque orari. Quattro stati e quattro trattamenti diversi, perché sono
@@ -4940,7 +5021,7 @@
 .lm-salat-nome small {
   font-family: var(--font-ar), serif;
   font-size: 0.9rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-salat-t {
   font-variant-numeric: tabular-nums;
@@ -4996,7 +5077,7 @@
   width: 15px;
   height: 15px;
   flex: none;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-salat-input input {
   flex: 1;
@@ -5015,7 +5096,7 @@
   flex: none;
   font-style: normal;
   font-size: 0.86rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-salat-esiti {
   display: flex;
@@ -5067,7 +5148,7 @@
 .lm-salat-riga small {
   font-size: 0.82rem;
   font-weight: 400;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .lm-salat-switch {
   display: grid;
@@ -5078,7 +5159,7 @@
   border: 1px solid var(--line-2);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.7);
-  color: var(--ink-3);
+  color: var(--ink-2);
   cursor: pointer;
   transition:
     background-color 0.22s,
@@ -5146,7 +5227,7 @@
 .lm-ayah figcaption {
   margin-top: 0.4rem;
   font-size: 0.82rem;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 /* La card della home: perla, senza bordo colorato, senza icona, senza titolo. Chi
@@ -5515,7 +5596,7 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: var(--ink-3);
+  color: var(--ink-2);
   cursor: pointer;
 }
 .lm-invito-no svg {
