@@ -66,5 +66,9 @@ export const requireStaff = cache(async function requireStaff(): Promise<StaffPr
     ruolo_titolo: (riga.ruolo_titolo as string | null) ?? null,
     saluto_custom: (riga.saluto_custom as string | null) ?? null,
     foto_url: (riga.foto_url as string | null) ?? null,
+    /* Stessa ragione delle tre sopra, e una in più: questo è un permesso, e un
+       permesso che arriva `undefined` da un database senza la 0037 deve valere
+       **no**, non «boh». */
+    puo_creare_membri: (riga.puo_creare_membri as boolean | undefined) === true,
   }
 })

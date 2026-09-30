@@ -213,6 +213,10 @@ export const PROFILO_DEMO = {
   ruolo_titolo: 'CEO',
   saluto_custom: null,
   foto_url: null,
+  /* In anteprima il permesso c'è: «Nuovo membro» è una schermata da guardare,
+     e l'anteprima non scrive niente da nessuna parte (vedi `ANTEPRIMA` in
+     db.ts) — la server action, se anche partisse, la fermerebbe la RLS. */
+  puo_creare_membri: true,
 }
 
 const COLLEGA_DEMO = {

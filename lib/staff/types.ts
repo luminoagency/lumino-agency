@@ -69,6 +69,12 @@ export interface StaffProfile {
   saluto_custom: string | null
   /** Un **percorso** dentro il bucket privato `staff-avatars`, non un URL. */
   foto_url: string | null
+  /* ── migration 0037 ──
+     Chi può aprire «Nuovo membro», cioè creare credenziali. Non è `role`, e
+     non si eredita da `role`: un admin creato dalla dashboard non deve poter
+     creare a sua volta altri account, altrimenti il permesso si propaga da
+     solo. Si concede a mano, con una riga di SQL. */
+  puo_creare_membri: boolean
 }
 
 /** Il nome con il titolo davanti: «CCO Ratib». Senza titolo, solo il nome. */
