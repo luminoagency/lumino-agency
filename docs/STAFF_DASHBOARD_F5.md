@@ -173,11 +173,15 @@ L'obiettivo è una barra e non una percentuale scritta, perché «68%» e una ba
 piena per due terzi si leggono in tempi diversi e questa pagina la si guarda di
 sfuggita. Oltre il 100% la barra resta piena e il numero accanto dice il vero.
 
-**Non c'è un bottone «aggiungi persona»**, e non è una mancanza: creare un utente
-vuol dire creare credenziali, cioè un'operazione su `auth.users` col service-role.
-Una route che crea account è il primo posto che qualcuno proverebbe a spingere. Si
-fa tre volte l'anno nella dashboard di Supabase, e la pagina lo scrive invece di
-lasciare cercare.
+**Il bottone «aggiungi persona» non c'era**, e non era una mancanza: creare un
+utente vuol dire creare credenziali, cioè un'operazione su `auth.users` col
+service-role, e una route che crea account è il primo posto che qualcuno
+proverebbe a spingere.
+
+Dal 1° ottobre 2026 c'è («Nuovo membro»), e quello che lo rende accettabile non
+è il codice: è `puo_creare_membri` della 0037, un permesso che **non si eredita
+da `role`** — un amministratore creato da quel bottone non può crearne altri.
+Il dettaglio sta nel commento in cima a `lib/staff/azioni-team.ts`.
 
 I dati demo **non** si nascondono qui: è la pagina di chi amministra, e i numeri
 accanto ai nomi devono corrispondere a quello che le altre pagine stanno mostrando

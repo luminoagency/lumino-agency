@@ -114,29 +114,31 @@ più ed è quella che chiude le trattative.
 
 ## Aggiungere una persona al team
 
-Serve un amministratore, e si fa in **due posti**: le credenziali stanno in
-Supabase, il resto nella dashboard.
+Si fa dalla pagina **Team**, bottone **Nuovo membro**, e lo vedono solo Amin,
+Ayman e Ratib. Servono nome, ruolo, email, una password iniziale, il livello di
+accesso e, se ce l'hai, la foto — che si inquadra trascinandola, come la
+propria.
 
-1. Vai su **supabase.com**, apri il progetto **Lumino** → **Authentication** →
-   **Users** → **Add user**. Metti email e una password provvisoria e conferma.
-2. Copia l'**id** (UUID) dell'utente appena creato.
-3. Apri **SQL Editor** e lancia questo, cambiando i valori:
+Al salvataggio nascono insieme l'account per entrare e il profilo nella
+squadra: la persona compare subito in Team, nella barra laterale e nei campi
+«​Assegnato a​», ed entra su **bylumino.com/staff** con quell'email e quella
+password. **La password non si rilegge più da nessuna parte**: diccela a voce,
+e che se la cambi dal proprio profilo.
+
+Se l'email esiste già, te lo dice invece di far finta di aver salvato.
+
+**Obiettivo del mese e provvigione non stanno nel modulo**: si scrivono dopo in
+`staff_profiles` (colonne `obiettivo_mensile` e `provvigione_pct`), perché
+quasi mai si sanno il giorno in cui una persona entra.
+
+**Chi può creare membri non è «siè amministratore».** È una colonna a parte,
+`puo_creare_membri`, e un amministratore creato da questo bottone **non la
+eredita**: altrimenti il permesso si propagherebbe da solo alla prima persona
+assunta. Per darlo a qualcun altro serve una riga nell'SQL Editor di Supabase:
 
 ```sql
-insert into staff_profiles (id, nome, email, role, attivo, obiettivo_mensile, provvigione_pct)
-values (
-  'INCOLLA-QUI-L-ID',
-  'Nome Cognome',
-  'email@bylumino.com',
-  'sales',            -- 'sales' oppure 'admin'
-  true,
-  5000,               -- obiettivo del mese in euro, o null
-  10                  -- provvigione in percentuale, o null
-);
+update staff_profiles set puo_creare_membri = true where email = 'email@bylumino.com';
 ```
-
-4. La persona entra su **bylumino.com/staff** con quella email e cambia la
-   password dal proprio profilo.
 
 **Cosa cambia fra `sales` e `admin`:** un `sales` vede solo i propri clienti e
 non vede mai i margini; un `admin` vede tutto, la pagina Team e l'interruttore

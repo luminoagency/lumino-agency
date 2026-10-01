@@ -426,10 +426,12 @@ Supabase Auth (email + password) su `/staff/login`. Tabella dei profili con
 ruolo `admin | sales`. RLS su tutte le tabelle: `sales` vede solo i propri
 clienti e non vede i margini, `admin` vede tutto.
 
-Gli account si creano a mano dalla dashboard Supabase e si abbinano inserendo la
-riga in `staff_profiles`: **nessun trigger su `auth.users`**, perché la stessa
-istanza autentica anche i clienti dei siti generati — un trigger darebbe a
-ognuno di loro un profilo staff.
+Account e profilo li crea **«Nuovo membro» nella pagina Team** (migration 0037),
+dietro il permesso `puo_creare_membri`, che non coincide con `role = 'admin'` e
+non si eredita. **Nessun trigger su `auth.users`**, perché la stessa istanza
+autentica anche i clienti dei siti generati — un trigger darebbe a ognuno di
+loro un profilo staff: le due righe le scrive la server action, in quest'ordine,
+e se la seconda fallisce la prima si annulla.
 
 ## Database
 
