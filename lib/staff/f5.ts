@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { firmaAvatars } from './avatar'
 import { staffDb } from './db'
 import { senzaDemo } from './demo'
+import { incassatoDi } from './pagamenti'
 import type { Insight } from './lab-tipi'
 
 /**
@@ -66,11 +67,17 @@ export interface MembroTeam {
  * memoria — sono nove righe, e una join per ricavarne nove nomi sarebbe una
  * vista da mantenere.
  */
-export async function caricaInsight(demo: boolean): Promise<{ insight: Insight[]; mancaSchema: boolean }> {
+export async function caricaInsight(
+  demo: boolean,
+): Promise<{ insight: Insight[]; mancaSchema: boolean }> {
   const supabase = staffDb()
 
   const [righe, profili] = await Promise.all([
-    supabase.from('staff_ai_insights').select('*').order('created_at', { ascending: false }).limit(60),
+    supabase
+      .from('staff_ai_insights')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(60),
     supabase.from('staff_profiles').select('id, nome'),
   ])
 
@@ -213,6 +220,7 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
     client_id: string
     prezzo_chiuso: number | null
     data_chiusura: string | null
+    modalita_pagamento: string | null
     acconto_30_pagato: boolean
     saldo_70_pagato: boolean
     is_demo?: boolean
@@ -233,7 +241,10 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
     .toISOString()
     .slice(0, 10)
 
-  const perPersona = new Map<string, { clienti: number; chiuse: number; incassato: number; mese: number }>()
+  const perPersona = new Map<
+    string,
+    { clienti: number; chiuse: number; incassato: number; mese: number }
+  >()
   const vuoto = () => ({ clienti: 0, chiuse: 0, incassato: 0, mese: 0 })
 
   for (const c of righeCliente) {
@@ -249,12 +260,12 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
     const v = perPersona.get(chi) ?? vuoto()
     if (d.data_chiusura) {
       v.chiuse += 1
-      /* «Incassato» qui vuol dire *entrato davvero*, non *firmato*: il 30% se
-         l'acconto è pagato, il resto solo col saldo. È la stessa regola della
-         pagina Soldi, e usarne una diversa qui farebbe due totali aziendali. */
-      const prezzo = d.prezzo_chiuso ?? 0
-      const entrato =
-        (d.acconto_30_pagato ? prezzo * 0.3 : 0) + (d.saldo_70_pagato ? prezzo * 0.7 : 0)
+      /* «Incassato» qui vuol dire *entrato davvero*, non *firmato*. Il conto
+         lo fa `incassatoDi()` e non questa riga: è la stessa regola della
+         pagina Soldi, e usarne una diversa qui farebbe due totali aziendali
+         — che è esattamente quello che sarebbe successo con la modalità di
+         pagamento unico aggiunta dalla 0038. */
+      const entrato = incassatoDi(d)
       v.incassato += entrato
       if (d.data_chiusura >= primoDelMese) v.mese += entrato
     }

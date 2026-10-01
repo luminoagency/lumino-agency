@@ -46,6 +46,15 @@ export interface Esito {
  * regola che vive solo nell'interfaccia non è una regola. Uscendo da
  * "rifiutato" il motivo si azzera: tenerselo appiccicato a un cliente tornato
  * in trattativa è il modo più rapido di leggere lo storico al contrario.
+ *
+ * **Su «accettato» succede dell'altro, e non succede qui.** Il trigger della
+ * 0038 crea la trattativa chiusa, il progetto in brief e l'eventuale
+ * abbonamento. Sta nel database e non in questa funzione perché lo stato si
+ * cambia da tre posti diversi — e domani da un import CSV o dall'SQL editor —
+ * e una regola scritta in uno dei tre vale per uno dei tre. Quello che resta
+ * da fare qui è **rinfrescare le pagine che ora hanno una riga in più**:
+ * Progetti e Soldi non erano nella lista, e senza di loro il cliente accettato
+ * ci sarebbe ma non si vedrebbe fino al reload successivo.
  */
 export async function cambiaStato(id: string, stato: Stato, motivo?: string): Promise<Esito> {
   await requireStaff()
@@ -71,6 +80,9 @@ export async function cambiaStato(id: string, stato: Stato, motivo?: string): Pr
   revalidatePath('/staff/pipeline')
   revalidatePath('/staff/clienti')
   revalidatePath(`/staff/clienti/${id}`)
+  revalidatePath('/staff/progetti')
+  revalidatePath('/staff/soldi')
+  revalidatePath('/staff/statistiche')
   revalidatePath('/staff')
   return { ok: true }
 }
@@ -329,7 +341,10 @@ export async function eliminaCliente(id: string): Promise<Esito> {
      solo la stessa cosa detta in italiano e un viaggio prima, perché un
      venditore che preme il bottone si merita una frase e non uno zero. */
   if (me.role !== 'admin') {
-    return { ok: false, error: 'Solo un admin può cancellare un cliente: uno storico perso non torna.' }
+    return {
+      ok: false,
+      error: 'Solo un admin può cancellare un cliente: uno storico perso non torna.',
+    }
   }
 
   const supabase = createClient()
@@ -587,7 +602,10 @@ export async function caricaFoto(
      troppo pesante» da solo lascia a indovinare se il problema sono i mega o i
      pixel, e chi è in piedi davanti a un locale non ha voglia di indovinare. */
   if (file.size > 6_000_000) {
-    return { ok: false, error: 'Foto troppo pesante: il massimo è 6 MB. Rifalla con meno risoluzione.' }
+    return {
+      ok: false,
+      error: 'Foto troppo pesante: il massimo è 6 MB. Rifalla con meno risoluzione.',
+    }
   }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     return { ok: false, error: 'Servono JPEG, PNG o WebP.' }
@@ -731,10 +749,7 @@ export async function aggiornaProfilo(dati: {
   }
   if (dati.foto_url !== undefined) patch.foto_url = dati.foto_url || null
 
-  const { error } = await createAdminClient()
-    .from('staff_profiles')
-    .update(patch)
-    .eq('id', me.id)
+  const { error } = await createAdminClient().from('staff_profiles').update(patch).eq('id', me.id)
 
   if (error) {
     /* 42703: colonna inesistente. È l'unico errore che vale la pena raccontare

@@ -97,10 +97,7 @@ export default async function SoldiPage() {
                 <span className="lm-row-v">{euro(d.extraDaIncassare)}</span>
               </div>
             </div>
-            <Spark
-              serie={d.mesi.map((m) => m.value)}
-              label="Incassi degli ultimi dodici mesi"
-            />
+            <Spark serie={d.mesi.map((m) => m.value)} label="Incassi degli ultimi dodici mesi" />
           </article>
 
           <article className="lm-card lm-in" data-span="8" data-hover data-reveal>
@@ -130,7 +127,7 @@ export default async function SoldiPage() {
                     <span>
                       {s.cliente}
                       <span className="lm-row-note">
-                        manca il {s.cosa} · chiuso {s.giorni} giorni fa
+                        manca {s.cosa} · chiuso {s.giorni} giorni fa
                       </span>
                     </span>
                     <span className="lm-row-v">{euro(s.mancante)}</span>
@@ -230,8 +227,8 @@ export default async function SoldiPage() {
               </div>
             ) : (
               <p className="lm-empty">
-                Nessun abbonamento. Sono la parte di fatturato che non va rivenduta ogni
-                mese: vale la pena proporli alla consegna.
+                Nessun abbonamento. Sono la parte di fatturato che non va rivenduta ogni mese: vale
+                la pena proporli alla consegna.
               </p>
             )}
           </article>
@@ -264,8 +261,7 @@ export default async function SoldiPage() {
               </div>
             ) : (
               <p className="lm-empty">
-                Nessuna modifica extra registrata. Sono 80 euro l&apos;una, 120 per gli
-                hotel.
+                Nessuna modifica extra registrata. Sono 80 euro l&apos;una, 120 per gli hotel.
               </p>
             )}
           </article>
@@ -275,7 +271,13 @@ export default async function SoldiPage() {
               linguaggio il viola è ciò che è selezionato o speciale — non una
               decorazione. Una per schermata, mai due. */}
           {d.margine && d.margine.su > 0 && (
-            <article className="lm-card lm-in" data-span="12" data-tone="violet" data-hover data-reveal>
+            <article
+              className="lm-card lm-in"
+              data-span="12"
+              data-tone="violet"
+              data-hover
+              data-reveal
+            >
               <div className="lm-card-top">
                 <span className="lm-label">Margine sulle trattative chiuse</span>
                 <span className="lm-muted" style={{ fontSize: '0.86rem' }}>
@@ -322,5 +324,7 @@ export default async function SoldiPage() {
 function giorniA(data: string): number {
   const oggi = new Date()
   oggi.setHours(12, 0, 0, 0)
-  return Math.round((new Date(`${data.slice(0, 10)}T12:00:00`).getTime() - oggi.getTime()) / 86_400_000)
+  return Math.round(
+    (new Date(`${data.slice(0, 10)}T12:00:00`).getTime() - oggi.getTime()) / 86_400_000,
+  )
 }

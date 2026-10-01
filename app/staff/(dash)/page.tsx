@@ -16,6 +16,7 @@ import { requireStaff } from '@/lib/staff/auth'
 import { firmaAvatar } from '@/lib/staff/avatar'
 import { staffDb } from '@/lib/staff/db'
 import { demoAttivo, senzaDemo } from '@/lib/staff/demo'
+import { vociPagamento } from '@/lib/staff/pagamenti'
 import { flussoTeam } from '@/lib/staff/queries'
 import ChiediALumino from '@/components/staff/ChiediALumino'
 import { costruisciSaluto, datiDaRighe } from '@/lib/staff/saluto'
@@ -113,7 +114,12 @@ export default async function StaffHome() {
   )
 
   const righeCliente = senzaDemo(
-    (clienti.data ?? []) as { stato: Stato; citta: string | null; lat: number | null; lng: number | null }[],
+    (clienti.data ?? []) as {
+      stato: Stato
+      citta: string | null
+      lat: number | null
+      lng: number | null
+    }[],
     demo,
   )
   const righeDeal = senzaDemo(
@@ -123,6 +129,7 @@ export default async function StaffHome() {
          `select('*')`, qui si dichiara una colonna che stava arrivando comunque. */
       client_id: string
       prezzo_chiuso: number | null
+      modalita_pagamento: string | null
       acconto_30_pagato: boolean
       saldo_70_pagato: boolean
       data_chiusura: string | null
@@ -155,9 +162,15 @@ export default async function StaffHome() {
          seconda della relazione: `nomeCliente` lo normalizza in tutta la pagina,
          e qui si fa lo stesso prima di passarlo invece di insegnare al saluto
          due forme diverse della stessa cosa. */
-      followup: richiami.map((f) => ({ data: f.data, staff_clients: { nome: nomeCliente(f.staff_clients) } })),
+      followup: richiami.map((f) => ({
+        data: f.data,
+        staff_clients: { nome: nomeCliente(f.staff_clients) },
+      })),
       rinnovi: righeRinnovo,
-      visite: senzaDemo((visite.data ?? []) as { created_at: string; user_id: string | null }[], demo),
+      visite: senzaDemo(
+        (visite.data ?? []) as { created_at: string; user_id: string | null }[],
+        demo,
+      ),
     }),
   )
 
@@ -169,17 +182,16 @@ export default async function StaffHome() {
     (d) => d.data_chiusura && d.data_chiusura >= inizioMeseScorso && d.data_chiusura < inizioMese,
   )
 
-  /* 30% all'ordine e 70% alla consegna: incassato e residuo si ricavano dalle
-     due spunte, non da un campo "pagato" tenuto in pari a mano. */
+  /* In quante voci si divide una trattativa lo dice `vociPagamento()`: dalla
+     0038 non è sempre 30 + 70, e questa pagina non deve essere il posto dove
+     si scopre che dice un numero diverso da Soldi. */
   let incassato = 0
   let daIncassare = 0
   for (const d of righeDeal) {
-    const totale = d.prezzo_chiuso ?? 0
-    if (!totale || !d.data_chiusura) continue
-    if (d.acconto_30_pagato) incassato += totale * 0.3
-    else daIncassare += totale * 0.3
-    if (d.saldo_70_pagato) incassato += totale * 0.7
-    else daIncassare += totale * 0.7
+    for (const v of vociPagamento(d)) {
+      if (v.pagato) incassato += v.importo
+      else daIncassare += v.importo
+    }
   }
   const venduto = incassato + daIncassare
   const ricorrenti = abbonamentiAttivi.reduce((s, a) => s + (a.importo_mensile ?? 0), 0)
@@ -326,10 +338,7 @@ export default async function StaffHome() {
                 ? 'come il mese scorso'
                 : `${delta > 0 ? '+' : ''}${delta} rispetto al mese scorso`}
             </p>
-            <Spark
-              serie={andamento.map((p) => p.value)}
-              label="Chiusure degli ultimi sei mesi"
-            />
+            <Spark serie={andamento.map((p) => p.value)} label="Chiusure degli ultimi sei mesi" />
           </article>
 
           <article className="lm-card lm-in" data-span="8" data-hover data-reveal>

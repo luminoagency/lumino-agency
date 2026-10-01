@@ -1,3 +1,4 @@
+import { incassatoDi } from './pagamenti'
 import { euro, type Stato } from './types'
 
 /**
@@ -166,7 +167,7 @@ function contati(n: number): string {
  * versione entusiasta di «da ieri non è successo nulla».
  */
 function cosaESuccesso(d: DatiSaluto, seme: number): string | null {
-  const v = <T,>(varianti: T[]): T => varianti[seme % varianti.length]
+  const v = <T>(varianti: T[]): T => varianti[seme % varianti.length]
 
   /* 1. Una chiusura ieri. */
   if (d.chiusureIeri.length > 0) {
@@ -249,14 +250,17 @@ function cosaESuccesso(d: DatiSaluto, seme: number): string | null {
  * in ritardo su un lavoro che non si poteva fare.
  */
 function cosaCEAdesso(d: DatiSaluto, seme: number): string | null {
-  const v = <T,>(varianti: T[]): T => varianti[seme % varianti.length]
+  const v = <T>(varianti: T[]): T => varianti[seme % varianti.length]
   const giorno = d.adesso.getDay()
   const feriale = giorno >= 1 && giorno <= 5
   const h = d.adesso.getHours()
 
   if (d.richiamiOggi > 0 && feriale && h < 19) {
     if (d.richiamiOggi === 1 && d.primoRichiamo) {
-      return v([`Oggi c’è da richiamare ${d.primoRichiamo}.`, `Un richiamo per oggi: ${d.primoRichiamo}.`])
+      return v([
+        `Oggi c’è da richiamare ${d.primoRichiamo}.`,
+        `Un richiamo per oggi: ${d.primoRichiamo}.`,
+      ])
     }
     return v([
       `Oggi ${contati(d.richiamiOggi)} persone ti aspettano.`,
@@ -298,7 +302,7 @@ function cosaCEAdesso(d: DatiSaluto, seme: number): string | null {
  * quello che si vede e si indica la porta.
  */
 function silenzio(d: DatiSaluto, seme: number): string {
-  const v = <T,>(varianti: T[]): T => varianti[seme % varianti.length]
+  const v = <T>(varianti: T[]): T => varianti[seme % varianti.length]
 
   if (d.clientiTotali === 0) {
     return v([
@@ -395,8 +399,21 @@ export function datiDaRighe(input: {
   salutoCustom: string | null
   obiettivoMensile: number | null
   adesso: Date
-  clienti: { id: string; nome: string; citta: string | null; stato: Stato; updated_at?: string | null }[]
-  deals: { client_id: string; data_chiusura: string | null; prezzo_chiuso: number | null; acconto_30_pagato: boolean; saldo_70_pagato: boolean }[]
+  clienti: {
+    id: string
+    nome: string
+    citta: string | null
+    stato: Stato
+    updated_at?: string | null
+  }[]
+  deals: {
+    client_id: string
+    data_chiusura: string | null
+    prezzo_chiuso: number | null
+    modalita_pagamento: string | null
+    acconto_30_pagato: boolean
+    saldo_70_pagato: boolean
+  }[]
   followup: { data: string; staff_clients?: { nome: string } | null }[]
   rinnovi: { data_rinnovo: string | null }[]
   visite: { created_at: string; user_id: string | null }[]
@@ -431,10 +448,7 @@ export function datiDaRighe(input: {
 
   const incassatoMese = chiuse
     .filter((d) => (d.data_chiusura as string) >= primoDelMese)
-    .reduce((s, d) => {
-      const p = d.prezzo_chiuso ?? 0
-      return s + (d.acconto_30_pagato ? p * 0.3 : 0) + (d.saldo_70_pagato ? p * 0.7 : 0)
-    }, 0)
+    .reduce((s, d) => s + incassatoDi(d), 0)
 
   const richiamiOggi = input.followup.filter((f) => f.data === oggi)
 

@@ -1,5 +1,6 @@
 import { staffDb } from './db'
 import { senzaDemo } from './demo'
+import { vociPagamento } from './pagamenti'
 import {
   FASI_PROGETTO,
   STAFF_COUNTRY,
@@ -49,7 +50,7 @@ export interface RigaIncasso {
   totale: number
   /** La quota che manca: 30, 70 o 100 per cento di `totale`. */
   mancante: number
-  /** Cosa manca, in parole: «acconto», «saldo», «acconto e saldo». */
+  /** Cosa manca, in parole e con l'articolo: «l'acconto», «l'acconto e il saldo». */
   cosa: string
   /** Da quanti giorni è chiusa. Serve a ordinare per anzianità del credito. */
   giorni: number
@@ -96,11 +97,14 @@ export interface DatiSoldi {
 /**
  * Quello che serve alla pagina Soldi.
  *
- * Il modello è quello del piano: **30% all'ordine, 70% alla consegna**, più gli
- * abbonamenti mensili e le modifiche extra. Incassato e residuo si ricavano
- * dalle due spunte (`acconto_30_pagato`, `saldo_70_pagato`) e non da un campo
- * «pagato» tenuto in pari a mano: un totale che si può aggiornare da solo non
- * può andare fuori sincrono con le sue parti.
+ * Il modello di default è quello del piano — **30% all'ordine, 70% alla messa
+ * online** — ma dalla 0038 una trattativa può anche essere a pagamento unico, e
+ * in quante voci si divida lo dice `vociPagamento()` e non questa funzione:
+ * cinque pagine facevano lo stesso conto a mano, e con due modalità sarebbero
+ * diventate cinque occasioni di dire numeri diversi. Incassato e residuo si
+ * ricavano comunque dalle spunte e non da un campo «pagato» tenuto in pari a
+ * mano: un totale che si può aggiornare da solo non può andare fuori sincrono
+ * con le sue parti.
  *
  * Gli extra si incrociano in memoria passando per i progetti, e non con una join
  * annidata: `staff_extra_changes` punta al progetto, il progetto al cliente, e
@@ -140,30 +144,22 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
   const perMese = new Map<string, number>()
 
   for (const d of righeDeal) {
-    const totale = Number(d.prezzo_chiuso ?? 0)
-    if (!totale || !d.data_chiusura) continue
+    const voci = vociPagamento(d)
+    if (!voci.length) continue
+    const totale = voci.reduce((s, v) => s + v.importo, 0)
 
-    const acconto = totale * 0.3
-    const saldo = totale * 0.7
     let mancante = 0
     const manca: string[] = []
 
-    if (d.acconto_30_pagato) {
-      incassato += acconto
-      segna(perMese, d.acconto_30_data ?? d.data_chiusura, acconto)
-    } else {
-      daIncassare += acconto
-      mancante += acconto
-      manca.push('acconto')
-    }
-
-    if (d.saldo_70_pagato) {
-      incassato += saldo
-      segna(perMese, d.saldo_70_data ?? d.data_chiusura, saldo)
-    } else {
-      daIncassare += saldo
-      mancante += saldo
-      manca.push('saldo')
+    for (const v of voci) {
+      if (v.pagato) {
+        incassato += v.importo
+        segna(perMese, v.data ?? d.data_chiusura!, v.importo)
+      } else {
+        daIncassare += v.importo
+        mancante += v.importo
+        manca.push(v.nome)
+      }
     }
 
     if (mancante > 0) {
@@ -175,7 +171,7 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
         totale,
         mancante,
         cosa: manca.join(' e '),
-        giorni: giorniDa(d.data_chiusura),
+        giorni: giorniDa(d.data_chiusura!),
         dataChiusura: d.data_chiusura,
       })
     }
@@ -305,29 +301,33 @@ export async function caricaProgetti(demo: boolean): Promise<DatiProgetti> {
     apertiPerProgetto.set(e.project_id, (apertiPerProgetto.get(e.project_id) ?? 0) + 1)
   }
 
-  const righe: RigaProgettoVista[] = senzaDemo((progetti.data ?? []) as RigaProgettoEmbed[], demo).map(
-    (p) => {
-      const c = primo(p.staff_clients)
-      return {
-        id: p.id,
-        cliente: c?.nome ?? 'Cliente',
-        clientId: p.client_id,
-        settore: c?.settore ?? null,
-        citta: c?.citta ?? null,
-        fase: p.fase,
-        previewUrl: p.preview_url,
-        dominio: p.dominio,
-        scadenzaDominio: p.scadenza_dominio,
-        giorniDominio: p.scadenza_dominio ? -giorniDa(p.scadenza_dominio) : null,
-        extraAperti: apertiPerProgetto.get(p.id) ?? 0,
-        aggiornato: p.updated_at ?? p.created_at,
-      }
-    },
-  )
+  const righe: RigaProgettoVista[] = senzaDemo(
+    (progetti.data ?? []) as RigaProgettoEmbed[],
+    demo,
+  ).map((p) => {
+    const c = primo(p.staff_clients)
+    return {
+      id: p.id,
+      cliente: c?.nome ?? 'Cliente',
+      clientId: p.client_id,
+      settore: c?.settore ?? null,
+      citta: c?.citta ?? null,
+      fase: p.fase,
+      previewUrl: p.preview_url,
+      dominio: p.dominio,
+      scadenzaDominio: p.scadenza_dominio,
+      giorniDominio: p.scadenza_dominio ? -giorniDa(p.scadenza_dominio) : null,
+      extraAperti: apertiPerProgetto.get(p.id) ?? 0,
+      aggiornato: p.updated_at ?? p.created_at,
+    }
+  })
 
   return {
     progetti: righe,
-    perFase: FASI_PROGETTO.map((fase) => ({ fase, n: righe.filter((p) => p.fase === fase).length })),
+    perFase: FASI_PROGETTO.map((fase) => ({
+      fase,
+      n: righe.filter((p) => p.fase === fase).length,
+    })),
     domini: righe
       .filter((p) => p.giorniDominio != null && p.giorniDominio <= 60)
       .sort((a, b) => (a.giorniDominio ?? 0) - (b.giorniDominio ?? 0)),
@@ -369,8 +369,10 @@ export interface DatiStatistiche {
   /* I prezzi chiusi, dal piu basso al piu alto. La media da sola non dice se
      sono tutti li intorno o se sono due a quattromila e otto a mille, ed e
      esattamente la differenza fra un listino che tiene e una media che non
-     descrive nessuno.
-   */
+     descrive nessuno.
+
+   */
+
   prezzi: number[]
   /** Giorni medi fra la proposta e la firma. */
   giorniMedi: number | null
@@ -460,29 +462,31 @@ export async function caricaStatistiche(demo: boolean): Promise<DatiStatistiche>
       else gruppi.set(k, [c])
     }
 
-    return Array.from(gruppi.entries())
-      .map(([nome, righe]) => {
-        const vinte = righe.filter((c) => c.stato === 'accettato')
-        const valori = vinte
-          .map((c) => Number(dealPerCliente.get(c.id)?.prezzo_chiuso ?? 0))
-          .filter((v) => v > 0)
-        return {
-          nome,
-          decise: righe.length,
-          chiuse: vinte.length,
-          tasso: righe.length ? (vinte.length / righe.length) * 100 : 0,
-          medio: media(valori),
-          incassato: valori.reduce((s, v) => s + v, 0),
-        }
-      })
-      /* I gruppi con meno di tre decise vanno in fondo: il loro tasso è rumore, e
+    return (
+      Array.from(gruppi.entries())
+        .map(([nome, righe]) => {
+          const vinte = righe.filter((c) => c.stato === 'accettato')
+          const valori = vinte
+            .map((c) => Number(dealPerCliente.get(c.id)?.prezzo_chiuso ?? 0))
+            .filter((v) => v > 0)
+          return {
+            nome,
+            decise: righe.length,
+            chiuse: vinte.length,
+            tasso: righe.length ? (vinte.length / righe.length) * 100 : 0,
+            medio: media(valori),
+            incassato: valori.reduce((s, v) => s + v, 0),
+          }
+        })
+        /* I gruppi con meno di tre decise vanno in fondo: il loro tasso è rumore, e
          in cima a una classifica il rumore sembra un risultato. */
-      .sort((a, b) => {
-        const solidoA = a.decise >= 3 ? 1 : 0
-        const solidoB = b.decise >= 3 ? 1 : 0
-        if (solidoA !== solidoB) return solidoB - solidoA
-        return b.tasso - a.tasso || b.decise - a.decise
-      })
+        .sort((a, b) => {
+          const solidoA = a.decise >= 3 ? 1 : 0
+          const solidoB = b.decise >= 3 ? 1 : 0
+          if (solidoA !== solidoB) return solidoB - solidoA
+          return b.tasso - a.tasso || b.decise - a.decise
+        })
+    )
   }
 
   const righeReport = senzaDemo((reports.data ?? []) as RigaReport[], demo)
@@ -533,7 +537,7 @@ export async function caricaStatistiche(demo: boolean): Promise<DatiStatistiche>
     giorniMedi: durate.length ? Math.round(media(durate)) : null,
     perSettore: taglio((c) => c.settore),
     perZona: taglio((c) => c.zona ?? c.citta),
-    perVenditore: taglio((c) => (c.assegnato_a ? nomiStaff.get(c.assegnato_a) ?? null : null)),
+    perVenditore: taglio((c) => (c.assegnato_a ? (nomiStaff.get(c.assegnato_a) ?? null) : null)),
     obiezioni: Array.from(conteggioObiezioni.entries())
       .map(([nome, n]) => ({ nome, n }))
       .sort((a, b) => b.n - a.n)
@@ -560,7 +564,9 @@ function media(valori: number[]): number {
 function giorniDa(data: string): number {
   const oggi = new Date()
   oggi.setHours(12, 0, 0, 0)
-  return Math.round((oggi.getTime() - new Date(`${data.slice(0, 10)}T12:00:00`).getTime()) / 86_400_000)
+  return Math.round(
+    (oggi.getTime() - new Date(`${data.slice(0, 10)}T12:00:00`).getTime()) / 86_400_000,
+  )
 }
 
 function segna(mappa: Map<string, number>, data: string | null, quanto: number) {
@@ -622,6 +628,7 @@ interface RigaDeal {
   pacchetto: Pacchetto | null
   prezzo_proposto: number | null
   prezzo_chiuso: number | null
+  modalita_pagamento: string | null
   acconto_30_pagato: boolean
   acconto_30_data: string | null
   saldo_70_pagato: boolean
