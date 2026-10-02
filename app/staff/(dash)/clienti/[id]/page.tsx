@@ -2,8 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ExternalLink, MapPin } from 'lucide-react'
 import { Progress } from '@/components/staff/Bars'
+import CambioStato from '@/components/staff/CambioStato'
 import Cascade from '@/components/staff/Cascade'
 import CondizioniDeal from '@/components/staff/CondizioniDeal'
+import { BottoneCanone, BottoneIncasso } from '@/components/staff/SegnaIncasso'
 import Counter from '@/components/staff/Counter'
 import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
@@ -112,6 +114,21 @@ export default async function SchedaCliente({ params }: { params: { id: string }
      dalla 0038 non è sempre 30 + 70. */
   const voci = deal ? vociPagamento(deal) : []
   const pagato = deal ? quotaPagata(deal) : 0
+
+  /* Il canone di questo mese risulta incassato? Una riga per mese (0039), e la
+     chiave è il primo del mese. La data si costruisce dal fuso locale e non con
+     `toISOString()`, che passa da UTC: l'ultimo giorno del mese, di sera,
+     darebbe già il mese dopo. */
+  const oggiLocale = new Date()
+  const meseCorrente = `${oggiLocale.getFullYear()}-${String(oggiLocale.getMonth() + 1).padStart(2, '0')}-01`
+  const canoneMese = abbonamento
+    ? await supabase
+        .from('staff_subscription_payments')
+        .select('id')
+        .eq('subscription_id', abbonamento.id)
+        .eq('mese', meseCorrente)
+        .maybeSingle()
+    : null
   const faseIndice = progetto ? FASI_PROGETTO.indexOf(progetto.fase) : -1
 
   return (
@@ -126,6 +143,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
         sub={[SETTORE_LABEL[c.settore], c.citta, c.zona].filter(Boolean).join(' · ')}
       >
         <StatoPill stato={c.stato} />
+        <CambioStato clientId={c.id} nome={c.nome} stato={c.stato} />
         <SchedaAzioni cliente={c} venditori={venditori} isAdmin={me.role === 'admin'} />
       </PageHead>
 
@@ -188,11 +206,15 @@ export default async function SchedaCliente({ params }: { params: { id: string }
                   <div className="lm-rows" style={{ flex: 1 }}>
                     {voci.length ? (
                       voci.map((v) => (
-                        <Riga
-                          key={v.chiave}
-                          titolo={v.etichetta}
-                          valore={v.pagato ? dataBreve(v.data) : 'da incassare'}
-                        />
+                        <div key={v.chiave} className="lm-row">
+                          <span>
+                            {v.etichetta}
+                            <span className="lm-row-note">
+                              {v.pagato ? dataBreve(v.data) : 'da incassare'}
+                            </span>
+                          </span>
+                          <BottoneIncasso dealId={deal.id} clientId={c.id} voce={v} compatto />
+                        </div>
                       ))
                     ) : (
                       <Riga titolo="Da incassare" valore="manca il prezzo chiuso" />
@@ -229,6 +251,21 @@ export default async function SchedaCliente({ params }: { params: { id: string }
                   <Riga titolo="Dal" valore={dataBreve(abbonamento.data_inizio)} />
                   <Riga titolo="Rinnovo" valore={dataBreve(abbonamento.data_rinnovo)} />
                   <Riga titolo="Stato" valore={abbonamento.attivo ? 'Attivo' : 'Sospeso'} />
+                  <div className="lm-row">
+                    <span>
+                      Questo mese
+                      <span className="lm-row-note">
+                        {canoneMese?.data ? 'incassato' : 'da incassare'}
+                      </span>
+                    </span>
+                    <BottoneCanone
+                      subscriptionId={abbonamento.id}
+                      clientId={c.id}
+                      importo={abbonamento.importo_mensile ?? 0}
+                      pagato={Boolean(canoneMese?.data)}
+                      compatto
+                    />
+                  </div>
                 </div>
               </>
             ) : (
@@ -493,6 +530,7 @@ interface Deal {
 }
 
 interface Abbonamento {
+  id: string
   tipo: string
   importo_mensile: number | null
   data_inizio: string | null

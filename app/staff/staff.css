@@ -3083,6 +3083,43 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Una riga con un bottone dentro.
+
+   Il bottone non può stare dentro un link — sarebbe un bersaglio che fa due
+   cose a seconda di dove lo si prende — quindi la riga diventa un contenitore
+   e il link resta sul nome. `.lm-row-chi` è quel link: prende tutto lo spazio
+   che avanza e si accorcia con i puntini invece di spingere fuori il bottone,
+   che è l'unica cosa della riga che deve restare raggiungibile. */
+.lm-row-azione {
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+}
+.lm-row-chi {
+  display: block;
+  flex: 1 1 8rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+}
+.lm-row-chi .lm-row-note {
+  white-space: normal;
+}
+/* Nella card nera il bottone chiaro sparisce: il fantasma è disegnato su un
+   bianco al 60%, che su nero è quasi bianco pieno. */
+.lm-card[data-tone='black'] .lm-row-azione .lm-btn[data-variant='ghost'] {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+.lm-card[data-tone='black'] .lm-row-azione .lm-btn[data-variant='dark'] {
+  background: #fff;
+  border-color: #fff;
+  color: var(--ink);
+}
 .lm-when {
   font-size: 0.82rem;
   font-weight: 500;
@@ -3308,7 +3345,9 @@
   background: rgba(23, 19, 15, 0.055);
   color: var(--ink-2);
   cursor: pointer;
-  transition: background 0.18s var(--ease), color 0.18s var(--ease);
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease);
 }
 .lm-modal-chiudi:hover {
   background: rgba(23, 19, 15, 0.1);
@@ -5457,8 +5496,7 @@
    quanto un rettangolo grigio. */
 .lm-sk {
   display: block;
-  background:
-    linear-gradient(
+  background: linear-gradient(
       100deg,
       rgba(23, 19, 15, 0.055) 20%,
       rgba(23, 19, 15, 0.1) 42%,

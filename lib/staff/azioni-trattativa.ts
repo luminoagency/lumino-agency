@@ -83,3 +83,185 @@ export async function aggiornaCondizioni(
   revalidatePath('/staff')
   return { ok: true }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Gli incassi
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/** Le pagine che mostrano un numero che dipende da un incasso. */
+function rinfrescaSoldi(clientId: string) {
+  revalidatePath(`/staff/clienti/${clientId}`)
+  revalidatePath('/staff/soldi')
+  revalidatePath('/staff/statistiche')
+  revalidatePath('/staff/team')
+  revalidatePath('/staff')
+}
+
+/**
+ * «È arrivato».
+ *
+ * Due colonne per tre bottoni: `acconto` e `unico` scrivono le stesse
+ * (`acconto_30_pagato`, `acconto_30_data`), perché col pagamento in una volta
+ * la voce è una e una terza colonna direbbe la stessa cosa in un posto in più
+ * — da tenere in pari, e un giorno fuori sincrono. Quale delle due si scrive
+ * lo decide la chiave, e la chiave la propone `vociPagamento()`: l'interfaccia
+ * non può chiedere di segnare un saldo che in quella modalità non esiste.
+ *
+ * La data arriva da chi incassa e non è `current_date`: un bonifico si vede il
+ * lunedì ed è di venerdì, e nel grafico «mese per mese» finirebbe nel mese
+ * sbagliato. Il default è oggi, ma si cambia.
+ */
+export async function segnaIncasso(
+  dealId: string,
+  clientId: string,
+  chiave: 'acconto' | 'saldo' | 'unico',
+  data: string,
+): Promise<Esito> {
+  await requireStaff()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { ok: false, error: 'Data non valida.' }
+  /* Un incasso nel futuro non è un incasso: è una previsione, e sommata agli
+     altri farebbe un totale che non esiste in banca. */
+  if (data > oggiISO()) return { ok: false, error: 'Non si può segnare un incasso futuro.' }
+
+  const patch =
+    chiave === 'saldo'
+      ? { saldo_70_pagato: true, saldo_70_data: data }
+      : { acconto_30_pagato: true, acconto_30_data: data }
+
+  return scriviSulDeal(dealId, clientId, patch)
+}
+
+/** L'incasso segnato per sbaglio. Torna «da incassare», e la data sparisce. */
+export async function annullaIncasso(
+  dealId: string,
+  clientId: string,
+  chiave: 'acconto' | 'saldo' | 'unico',
+): Promise<Esito> {
+  await requireStaff()
+
+  const patch =
+    chiave === 'saldo'
+      ? { saldo_70_pagato: false, saldo_70_data: null }
+      : { acconto_30_pagato: false, acconto_30_data: null }
+
+  return scriviSulDeal(dealId, clientId, patch)
+}
+
+async function scriviSulDeal(
+  dealId: string,
+  clientId: string,
+  patch: Record<string, unknown>,
+): Promise<Esito> {
+  const { data, error } = await createClient()
+    .from('staff_deals')
+    .update(patch)
+    .eq('id', dealId)
+    .select('id')
+
+  if (error) return { ok: false, error: error.message }
+  /* Con la RLS accesa un update che la policy non permette **non è un errore**:
+     PostgREST risponde «ok, zero righe». Senza il conteggio, a chi tocca la
+     trattativa di un collega l'interfaccia direbbe «segnato». */
+  if (!data?.length) return { ok: false, error: 'Questa trattativa non è tua.' }
+
+  rinfrescaSoldi(clientId)
+  return { ok: true }
+}
+
+/* ── I canoni ──────────────────────────────────────────────────────────────
+   Un abbonamento si incassa ogni mese, quindi non c'è una spunta da accendere
+   ma una riga da aggiungere: vedi il commento in cima alla 0039. */
+
+/** Il primo del mese di `data`, in ISO. È la chiave del mese di competenza. */
+function primoDelMese(data: string): string {
+  return `${data.slice(0, 7)}-01`
+}
+
+function oggiISO(): string {
+  /* `toISOString()` passa da UTC: alle 23 di sera in Italia darebbe domani.
+     Le tre parti si prendono dal fuso locale e si rimettono in fila. */
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const g = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${g}`
+}
+
+/**
+ * Il canone del mese, incassato.
+ *
+ * `mese` è quello di competenza (il primo del mese), `data` quando i soldi
+ * sono arrivati davvero: sono due cose diverse e il grafico degli incassi
+ * guarda la seconda. L'importo si fotografa adesso dalla riga
+ * dell'abbonamento, e non si legge al volo dopo: se il canone viene
+ * rinegoziato a marzo, i mesi di gennaio e febbraio devono restare quelli che
+ * sono stati davvero incassati.
+ */
+export async function segnaCanone(
+  subscriptionId: string,
+  clientId: string,
+  mese: string,
+  data: string,
+): Promise<Esito> {
+  const me = await requireStaff()
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(mese) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    return { ok: false, error: 'Data non valida.' }
+  }
+  if (data > oggiISO()) return { ok: false, error: 'Non si può segnare un incasso futuro.' }
+
+  const supabase = createClient()
+
+  const { data: abb, error: errAbb } = await supabase
+    .from('staff_subscriptions')
+    .select('id, importo_mensile, is_demo')
+    .eq('id', subscriptionId)
+    .maybeSingle()
+
+  if (errAbb) return { ok: false, error: errAbb.message }
+  if (!abb) return { ok: false, error: 'Questo abbonamento non è tuo.' }
+
+  const { error } = await supabase.from('staff_subscription_payments').insert({
+    subscription_id: subscriptionId,
+    mese: primoDelMese(mese),
+    importo: Number(abb.importo_mensile ?? 0),
+    incassato_il: data,
+    created_by: me.id,
+    is_demo: abb.is_demo ?? false,
+  })
+
+  if (error) {
+    /* 23505: il vincolo di unicità. Non è un guasto, è il bottone premuto due
+       volte — da due schede aperte, o da due persone. */
+    if (error.code === '23505') return { ok: false, error: 'Questo mese era già segnato.' }
+    if (error.code === '42P01') {
+      return { ok: false, error: 'Manca la migration 0039: eseguila e riprova.' }
+    }
+    return { ok: false, error: error.message }
+  }
+
+  rinfrescaSoldi(clientId)
+  return { ok: true }
+}
+
+/** Il canone segnato per sbaglio: la riga del mese se ne va. */
+export async function annullaCanone(
+  subscriptionId: string,
+  clientId: string,
+  mese: string,
+): Promise<Esito> {
+  await requireStaff()
+
+  const { data, error } = await createClient()
+    .from('staff_subscription_payments')
+    .delete()
+    .eq('subscription_id', subscriptionId)
+    .eq('mese', primoDelMese(mese))
+    .select('id')
+
+  if (error) return { ok: false, error: error.message }
+  if (!data?.length) return { ok: false, error: 'Questo mese non risultava incassato.' }
+
+  rinfrescaSoldi(clientId)
+  return { ok: true }
+}

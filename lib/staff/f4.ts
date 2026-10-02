@@ -1,6 +1,6 @@
 import { staffDb } from './db'
 import { senzaDemo } from './demo'
-import { vociPagamento } from './pagamenti'
+import { vociPagamento, type VocePagamento } from './pagamenti'
 import {
   FASI_PROGETTO,
   STAFF_COUNTRY,
@@ -42,9 +42,12 @@ function mancano(...risposte: { error?: { code?: string } | null }[]): boolean {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export interface RigaIncasso {
+  /** L'id della trattativa: serve ai bottoni «ricevuto». */
   id: string
   cliente: string
   clientId: string
+  /** Le voci ancora da incassare, con la chiave che il bottone deve mandare. */
+  daSegnare: VocePagamento[]
   pacchetto: Pacchetto | null
   /** Quanto vale la trattativa: il chiuso, o il proposto se non è chiusa. */
   totale: number
@@ -64,6 +67,8 @@ export interface RigaAbbonamento {
   tipo: string
   importo: number
   rinnovo: string | null
+  /** Il canone di questo mese risulta incassato. */
+  pagatoQuestoMese: boolean
 }
 
 export interface RigaExtra {
@@ -121,9 +126,10 @@ export interface DatiSoldi {
 export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<DatiSoldi> {
   const supabase = staffDb()
 
-  const [deals, subs, extras, progetti, clienti, margini] = await Promise.all([
+  const [deals, subs, canoni, extras, progetti, clienti, margini] = await Promise.all([
     supabase.from('staff_deals').select(TUTTO),
     supabase.from('staff_subscriptions').select(TUTTO).eq('attivo', true),
+    supabase.from('staff_subscription_payments').select(TUTTO),
     supabase.from('staff_extra_changes').select(TUTTO).order('created_at', { ascending: false }),
     supabase.from('staff_projects').select(TUTTO),
     supabase.from('staff_clients').select(TUTTO).eq('country', STAFF_COUNTRY),
@@ -165,6 +171,7 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
     if (mancante > 0) {
       scoperti.push({
         id: d.id,
+        daSegnare: voci.filter((v) => !v.pagato),
         cliente: nomi.get(d.client_id) ?? 'Cliente',
         clientId: d.client_id,
         pacchetto: d.pacchetto,
@@ -182,6 +189,15 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
   scoperti.sort((a, b) => b.giorni - a.giorni)
 
   const righeAbb = senzaDemo((subs.data ?? []) as RigaSub[], demo)
+  /* I canoni incassati: `{abbonamento}|{mese}` perché la domanda che la pagina
+     fa è sempre «questo abbonamento, questo mese», e una chiave composta
+     risponde senza scorrere l'elenco per ogni riga. */
+  const righeCanone = senzaDemo((canoni.data ?? []) as RigaCanone[], demo)
+  const canoniSegnati = new Set(
+    righeCanone.map((c) => `${c.subscription_id}|${c.mese.slice(0, 7)}`),
+  )
+  const meseCorrente = new Date().toISOString().slice(0, 7)
+
   const abbonamenti: RigaAbbonamento[] = righeAbb
     .map((a) => ({
       id: a.id,
@@ -190,6 +206,7 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
       tipo: a.tipo,
       importo: Number(a.importo_mensile ?? 0),
       rinnovo: a.data_rinnovo,
+      pagatoQuestoMese: canoniSegnati.has(`${a.id}|${meseCorrente}`),
     }))
     .sort((a, b) => (a.rinnovo ?? '9999').localeCompare(b.rinnovo ?? '9999'))
 
@@ -209,8 +226,11 @@ export async function caricaSoldi(demo: boolean, isAdmin: boolean): Promise<Dati
 
   /* Gli extra pagati entrano negli incassi del loro mese: sono soldi entrati
      come gli altri, e tenerli fuori farebbe sembrare il mese più magro di
-     com'è stato. */
+     com'è stato. **Stessa cosa per i canoni**, e per loro conta `incassato_il`
+     e non il mese di competenza: un canone di settembre pagato a ottobre è un
+     incasso di ottobre, come un saldo. */
   for (const e of extra) if (e.pagato) segna(perMese, e.created_at, e.prezzo)
+  for (const c of righeCanone) segna(perMese, c.incassato_il, Number(c.importo ?? 0))
 
   const idDemo = new Set(righeDeal.map((d) => d.id))
   const righeMargine = ((margini.data ?? []) as RigaMargine[]).filter((m) => idDemo.has(m.deal_id))
@@ -635,6 +655,14 @@ interface RigaDeal {
   saldo_70_data: string | null
   data_proposta: string | null
   data_chiusura: string | null
+}
+
+interface RigaCanone {
+  subscription_id: string
+  mese: string
+  importo: number | null
+  incassato_il: string
+  is_demo?: boolean
 }
 
 interface RigaSub {

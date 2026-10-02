@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BottoneCanone, BottoneIncasso } from '@/components/staff/SegnaIncasso'
 import AreaChart from '@/components/staff/AreaChart'
 import { Lollipop, Progress } from '@/components/staff/Bars'
 import Cascade from '@/components/staff/Cascade'
@@ -123,15 +124,27 @@ export default async function SoldiPage() {
             {d.scoperti.length ? (
               <div className="lm-rows">
                 {d.scoperti.slice(0, 5).map((s) => (
-                  <Link key={s.id} href={`/staff/clienti/${s.clientId}`} className="lm-row">
-                    <span>
+                  /* La riga non è più un link intero: dentro c'è un bottone, e un
+                     bottone dentro un link è un bersaglio che fa due cose a
+                     seconda di dove lo si prende. Il link resta sul nome. */
+                  <div key={s.id} className="lm-row lm-row-azione">
+                    <Link href={`/staff/clienti/${s.clientId}`} className="lm-row-chi">
                       {s.cliente}
                       <span className="lm-row-note">
                         manca {s.cosa} · chiuso {s.giorni} giorni fa
                       </span>
-                    </span>
+                    </Link>
                     <span className="lm-row-v">{euro(s.mancante)}</span>
-                  </Link>
+                    {s.daSegnare.map((v) => (
+                      <BottoneIncasso
+                        key={v.chiave}
+                        dealId={s.id}
+                        clientId={s.clientId}
+                        voce={v}
+                        compatto
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -208,13 +221,14 @@ export default async function SoldiPage() {
             {d.abbonamenti.length ? (
               <div className="lm-rows">
                 {d.abbonamenti.slice(0, 7).map((a) => (
-                  <Link key={a.id} href={`/staff/clienti/${a.clientId}`} className="lm-row">
-                    <span>
+                  <div key={a.id} className="lm-row lm-row-azione">
+                    <Link href={`/staff/clienti/${a.clientId}`} className="lm-row-chi">
                       {a.cliente}
                       <span className="lm-row-note">
                         {a.tipo} · {euro(a.importo)} al mese
+                        {a.pagatoQuestoMese ? ' · questo mese incassato' : ''}
                       </span>
-                    </span>
+                    </Link>
                     {a.rinnovo ? (
                       <span className="lm-when" data-late={giorniA(a.rinnovo) < 0}>
                         {dataBreve(a.rinnovo)}
@@ -222,7 +236,14 @@ export default async function SoldiPage() {
                     ) : (
                       <span className="lm-when">senza scadenza</span>
                     )}
-                  </Link>
+                    <BottoneCanone
+                      subscriptionId={a.id}
+                      clientId={a.clientId}
+                      importo={a.importo}
+                      pagato={a.pagatoQuestoMese}
+                      compatto
+                    />
+                  </div>
                 ))}
               </div>
             ) : (

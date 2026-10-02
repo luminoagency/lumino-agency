@@ -6,6 +6,7 @@ import { ArrowUpRight, ChevronDown, Search } from 'lucide-react'
 import ClienteCardBody from '@/components/staff/ClienteCardBody'
 import FilterBar, { type Filtro } from '@/components/staff/Filters'
 import MotivoRifiuto from '@/components/staff/MotivoRifiuto'
+import { ConfermaUscitaAccettato } from '@/components/staff/CambioStato'
 import { cambiaStato } from '@/lib/staff/actions'
 import {
   SETTORE_LABEL,
@@ -45,6 +46,7 @@ export default function ClientiView({
   const [cerca, setCerca] = useState('')
   const [sceltoId, setSceltoId] = useState<string | null>(iniziali[0]?.id ?? null)
   const [rifiuto, setRifiuto] = useState<ClienteRiga | null>(null)
+  const [uscita, setUscita] = useState<{ cliente: ClienteRiga; verso: Stato } | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, startTransition] = useTransition()
 
@@ -73,7 +75,12 @@ export default function ClientiView({
       value: filtri.settore,
       options: SETTORI.map((s) => ({ value: s, label: SETTORE_LABEL[s] })),
     },
-    { key: 'zona', label: 'Zona', value: filtri.zona, options: zone.map((z) => ({ value: z, label: z })) },
+    {
+      key: 'zona',
+      label: 'Zona',
+      value: filtri.zona,
+      options: zone.map((z) => ({ value: z, label: z })),
+    },
     {
       key: 'assegnato',
       label: 'Assegnato a',
@@ -199,10 +206,7 @@ export default function ClientiView({
                   titolo="Sito attuale"
                   valore={scelto.sito_attuale ? SITO_LABEL[scelto.sito_attuale] : null}
                 />
-                <Voce
-                  titolo="Valore"
-                  valore={prezzi[scelto.id] ? euro(prezzi[scelto.id]) : null}
-                />
+                <Voce titolo="Valore" valore={prezzi[scelto.id] ? euro(prezzi[scelto.id]) : null} />
                 <Voce
                   titolo="Assegnato a"
                   valore={venditori.find((v) => v.id === scelto.assegnato_a)?.nome ?? null}
@@ -210,7 +214,10 @@ export default function ClientiView({
               </div>
 
               {scelto.stato === 'rifiutato' && scelto.motivo_rifiuto && (
-                <p className="lm-sub" style={{ color: 'rgba(255,255,255,0.8)', marginTop: '0.9rem' }}>
+                <p
+                  className="lm-sub"
+                  style={{ color: 'rgba(255,255,255,0.8)', marginTop: '0.9rem' }}
+                >
                   Motivo del rifiuto: {scelto.motivo_rifiuto}
                 </p>
               )}
@@ -225,6 +232,13 @@ export default function ClientiView({
                       const stato = event.target.value as Stato
                       if (stato === scelto.stato) return
                       if (stato === 'rifiutato') setRifiuto(scelto)
+                      /* Uscire da «Accettato» lascia in giro una trattativa
+                         chiusa e un progetto: la stessa domanda che fa la
+                         scheda, perché posta in uno dei due posti è una
+                         domanda che nell'altro si dimentica. */ else if (
+                        scelto.stato === 'accettato'
+                      )
+                        setUscita({ cliente: scelto, verso: stato })
                       else sposta(scelto.id, stato)
                     }}
                   >
@@ -263,20 +277,25 @@ export default function ClientiView({
           }}
         />
       )}
+
+      {uscita && (
+        <ConfermaUscitaAccettato
+          nome={uscita.cliente.nome}
+          verso={uscita.verso}
+          inCorso={inCorso}
+          onAnnulla={() => setUscita(null)}
+          onConferma={() => {
+            sposta(uscita.cliente.id, uscita.verso)
+            setUscita(null)
+          }}
+        />
+      )}
     </>
   )
 }
 
 /** Una sotto-card traslucida del pannello: etichetta piccola, valore sotto. */
-function Voce({
-  titolo,
-  valore,
-  href,
-}: {
-  titolo: string
-  valore: string | null
-  href?: string
-}) {
+function Voce({ titolo, valore, href }: { titolo: string; valore: string | null; href?: string }) {
   return (
     <div className="lm-sub-card">
       <span className="lm-label">{titolo}</span>
