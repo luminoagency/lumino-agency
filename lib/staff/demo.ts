@@ -56,7 +56,7 @@ export function demoAttivo(role: StaffRole): boolean {
   const anteprima =
     process.env.NODE_ENV !== 'production' && process.env.STAFF_DEV_PREVIEW === '1'
 
-  if (!anteprima && role !== 'admin') return false
+  if (!anteprima && role !== 'admin' && role !== 'owner') return false
 
   /* Spento **solo** se l'interruttore lo dice esplicitamente. Senza cookie si
      è accesi: è il primo accesso, ed è quello che deve vedere pieno. */
@@ -213,6 +213,14 @@ export const PROFILO_DEMO = {
   ruolo_titolo: 'CEO',
   saluto_custom: null,
   foto_url: null,
+  /* In anteprima tutti i permessi sono accesi: serve a guardare il disegno
+     delle pagine, non a provare cosa si vede senza un permesso — quello si
+     prova con una sessione vera e un membro vero, perché è la RLS che va
+     messa alla prova e l'anteprima non passa da Supabase. */
+  can_view_soldi: true,
+  can_view_incassi: true,
+  can_manage_clients: true,
+  can_view_trattative: true,
   /* In anteprima il permesso c'è: «Nuovo membro» è una schermata da guardare,
      e l'anteprima non scrive niente da nessuna parte (vedi `ANTEPRIMA` in
      db.ts) — la server action, se anche partisse, la fermerebbe la RLS. */

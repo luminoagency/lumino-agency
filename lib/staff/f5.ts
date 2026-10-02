@@ -4,6 +4,8 @@ import { staffDb } from './db'
 import { senzaDemo } from './demo'
 import { incassatoDi } from './pagamenti'
 import type { Insight } from './lab-tipi'
+import type { Permesso } from './permessi'
+import type { StaffRole } from './types'
 
 /**
  * Le letture della F5: insight salvati, materiale, squadra.
@@ -38,7 +40,7 @@ export interface MembroTeam {
   nome: string
   email: string | null
   telefono: string | null
-  role: 'admin' | 'sales'
+  role: StaffRole
   ruolo_titolo: string | null
   attivo: boolean
   obiettivo_mensile: number | null
@@ -54,6 +56,14 @@ export interface MembroTeam {
   incassatoMese: number
   /** Quanto manca all'obiettivo del mese, in percentuale. `null` senza obiettivo. */
   versoObiettivo: number | null
+  /* ── migration 0040 ──
+     I quattro permessi come stanno **scritti nel database**, non come li vede
+     chi li ha: per l'owner `puo()` risponde sempre `true`, e un pannello che
+     disegnasse gli interruttori su quella risposta mostrerebbe quattro
+     interruttori accesi anche dopo averli spenti. Qui serve la riga vera. */
+  permessi: Record<Permesso, boolean>
+  /** Chi gestisce la squadra. Nel pannello è la riga che non si può toccare. */
+  puoCreareMembri: boolean
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -208,12 +218,17 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
     nome: string
     email: string | null
     telefono: string | null
-    role: 'admin' | 'sales'
+    role: StaffRole
     attivo: boolean
     obiettivo_mensile: number | null
     provvigione_pct: number | null
     ruolo_titolo?: string | null
     foto_url?: string | null
+    puo_creare_membri?: boolean
+    can_view_soldi?: boolean
+    can_view_incassi?: boolean
+    can_manage_clients?: boolean
+    can_view_trattative?: boolean
   }
   type RigaCliente = { id: string; assegnato_a: string | null; is_demo?: boolean }
   type RigaDeal = {
@@ -294,6 +309,18 @@ export async function caricaTeam(): Promise<{ membri: MembroTeam[]; mancaSchema:
         incassato: v.incassato,
         incassatoMese: v.mese,
         versoObiettivo: obiettivo && obiettivo > 0 ? Math.round((v.mese / obiettivo) * 100) : null,
+        /* `!== false` e non `=== true`: su un database dove la 0040 non è
+           passata le colonne arrivano `undefined`, e il pannello deve
+           mostrare quello che la RLS sta effettivamente permettendo — che
+           senza quella migration è tutto. Stessa scelta di `requireStaff()`,
+           stessa ragione. */
+        permessi: {
+          can_view_soldi: p.can_view_soldi !== false,
+          can_view_incassi: p.can_view_incassi !== false,
+          can_manage_clients: p.can_manage_clients !== false,
+          can_view_trattative: p.can_view_trattative !== false,
+        },
+        puoCreareMembri: p.puo_creare_membri === true,
       }
     }),
     mancaSchema: false,

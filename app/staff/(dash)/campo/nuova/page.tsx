@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { AVVISO_SCHEMA, clientiPerVisita } from '@/lib/staff/queries'
 import NuovaVisita from './NuovaVisita'
@@ -30,7 +31,7 @@ export default async function NuovaVisitaPage() {
 
       {mancaSchema && <p className="lm-warn">{AVVISO_SCHEMA}</p>}
 
-      <NuovaVisita clienti={clienti} isAdmin={me.role === 'admin'} ioId={me.id} />
+      <NuovaVisita clienti={clienti} isAdmin={eAdmin(me)} ioId={me.id} />
     </>
   )
 }

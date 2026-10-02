@@ -39,6 +39,7 @@ import {
   visibleNav,
   type StaffNavItem,
 } from '@/lib/staff/nav'
+import { RUOLO_LABEL, eAdmin } from '@/lib/staff/permessi'
 import type { StaffProfile } from '@/lib/staff/types'
 
 /**
@@ -114,7 +115,7 @@ export default function StaffShell({
 }) {
   const pathname = usePathname() ?? '/staff'
   const active = activeHref(pathname)
-  const items = visibleNav(me.role === 'admin')
+  const items = visibleNav(me)
   const vive = items.filter((i) => i.fase <= FASE_VIVA)
   const future = items.filter((i) => i.fase > FASE_VIVA)
   const gruppi = navPerGruppi(vive)
@@ -218,7 +219,7 @@ export default function StaffShell({
                 la foto porta con sé nome e ruolo, che è l'unica informazione di
                 tutta la schermata che dice con quale account si è entrati. */}
             <div className="lm-rail-foot">
-              {me.role === 'admin' && <InterruttoreDemo acceso={demo} />}
+              {eAdmin(me) && <InterruttoreDemo acceso={demo} />}
               <span className="lm-rail-sep" aria-hidden="true" />
 
               <Link
@@ -341,7 +342,7 @@ export default function StaffShell({
               </Link>
             </div>
 
-            {me.role === 'admin' && (
+            {eAdmin(me) && (
               <div style={{ marginTop: '1rem' }}>
                 <InterruttoreDemo acceso={demo} esteso />
               </div>
@@ -349,7 +350,7 @@ export default function StaffShell({
 
             <div className="lm-modal-actions">
               <span className="lm-muted" style={{ marginRight: 'auto', fontSize: '0.9rem' }}>
-                {me.nome} · {me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')}
+                {me.nome} · {ruolo(me)}
               </span>
               <form action="/staff/logout" method="post">
                 <button type="submit" className="lm-btn" data-variant="ghost">
@@ -522,7 +523,7 @@ function sfasa(i: number): React.CSSProperties {
 
 /** Il ruolo scritto dalla persona, o quello che discende dal permesso. */
 function ruolo(me: StaffProfile) {
-  return me.ruolo_titolo ?? (me.role === 'admin' ? 'Amministratore' : 'Venditore')
+  return me.ruolo_titolo ?? RUOLO_LABEL[me.role]
 }
 
 /** «Soldi (fase 6) · Progetti (fase 7)» — per il `title` e per il lettore. */

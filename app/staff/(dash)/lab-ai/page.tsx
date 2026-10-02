@@ -1,6 +1,7 @@
 import { KeyRound } from 'lucide-react'
 import PageHead from '@/components/staff/PageHead'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { caricaInsight } from '@/lib/staff/f5'
 import { foglioDati, labAttivo } from '@/lib/staff/lab'
@@ -51,7 +52,7 @@ export default async function LabPage() {
      database per non mostrarlo a nessuno. */
   const [{ insight, mancaSchema }, foglio, fonti] = await Promise.all([
     caricaInsight(demo),
-    attivo ? foglioDati(demo, me.role === 'admin') : Promise.resolve(''),
+    attivo ? foglioDati(demo, eAdmin(me)) : Promise.resolve(''),
     attivo ? fontiArchivio(demo) : Promise.resolve([]),
   ])
 
@@ -90,7 +91,7 @@ export default async function LabPage() {
         foglio={foglio}
         fonti={fonti}
         ioSono={me.nome.split(' ')[0]}
-        isAdmin={me.role === 'admin'}
+        isAdmin={eAdmin(me)}
       />
     </>
   )

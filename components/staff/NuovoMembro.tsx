@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, Eye, EyeOff, UserPlus } from 'lucide-react'
 import { creaMembro } from '@/lib/staff/azioni-team'
+import { PERMESSI, PERMESSO_LABEL, PERMESSO_SPIEGA } from '@/lib/staff/permessi'
+import { Toggle } from './Controls'
 import Modal from './Modal'
 import Ritaglio from './Ritaglio'
 
@@ -60,6 +62,13 @@ function Form({ chiudi }: { chiudi: (creato: boolean, avviso?: string) => void }
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
   const [foto, setFoto] = useState<{ blob: Blob; url: string } | null>(null)
   const [mostraPwd, setMostraPwd] = useState(false)
+  /* Tutti accesi di partenza. Il senso di questa funzione è «il titolare può
+     togliere», non «chi entra nasce cieco»: una persona assunta oggi lavora
+     come lavorano gli altri, e si spegne quello che non le serve. È la stessa
+     scelta del `default true` sulle colonne della 0040. */
+  const [permessi, setPermessi] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(PERMESSI.map((p) => [p, true])),
+  )
   const [errore, setErrore] = useState<string | null>(null)
   const [inCorso, avvia] = useTransition()
   const input = useRef<HTMLInputElement>(null)
@@ -217,10 +226,31 @@ function Form({ chiudi }: { chiudi: (creato: boolean, avviso?: string) => void }
                 <option value="admin">Amministratore — tutto, soldi compresi</option>
               </select>
               <p className="lm-field-hint">
-                Nessuno dei due può creare altri membri: quel permesso si dà a mano.
+                Nessuno dei due gestisce la squadra: quello è il titolare, e si assegna a mano.
               </p>
             </div>
           </div>
+
+          <section className="lm-gm-sezione" style={{ marginTop: '1.1rem' }}>
+            <h3 className="lm-label">cosa potrà vedere</h3>
+            <p className="lm-field-hint">
+              Si cambiano anche dopo, dal bottone «Gestisci» sulla sua card. Spento vuol dire che
+              il database non gli manda quelle righe, non che l’interfaccia le nasconde.
+            </p>
+            <ul className="lm-gm-permessi">
+              {PERMESSI.map((p) => (
+                <li key={p}>
+                  <Toggle
+                    label={PERMESSO_LABEL[p]}
+                    name={p}
+                    checked={permessi[p]}
+                    onChange={(v) => setPermessi((d) => ({ ...d, [p]: v }))}
+                  />
+                  <small>{PERMESSO_SPIEGA[p]}</small>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           {errore && (
             <p className="lm-error" role="alert">

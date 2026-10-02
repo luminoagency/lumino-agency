@@ -1094,3 +1094,85 @@
   color: #fff;
   text-decoration: underline;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Gestione di un membro (migration 0040)
+
+   Una modale con cinque gruppi, e il problema di una modale a gruppi è che
+   senza una separazione si legge come un modulo unico: si arriva in fondo e si
+   cerca il «Salva» che non c'è, perché i permessi si applicano al click. Il
+   filo chiaro fra le sezioni dice che sono cinque decisioni e non cinque campi
+   di una sola.
+
+   Non c'è nessun titoletto in maiuscoletto spaziato: vale qui come altrove.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-gm-sezione {
+  padding-top: 1.05rem;
+  margin-top: 1.05rem;
+  border-top: 1px solid var(--bordo);
+}
+/* Il primo gruppo tocca già la testa della modale: un filo lì sopra sarebbe un
+   secondo bordo a due pixel dal primo. */
+.lm-gm-sezione:first-child {
+  padding-top: 0.2rem;
+  margin-top: 0;
+  border-top: 0;
+}
+
+.lm-gm-sezione > h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.lm-gm-sezione > h3 svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  opacity: 0.6;
+}
+
+/* Il gruppo rosso è l'ultimo e non è rosso: è solo staccato di più. Una
+   sezione colorata in una modale di sei sezioni grida prima che si sia letto
+   cosa fa, e la frizione qui la fa il nome da riscrivere — che è una barriera
+   vera, non un colore. */
+.lm-gm-sezione[data-tono='rosso'] {
+  padding-top: 1.35rem;
+  margin-top: 1.35rem;
+}
+
+.lm-gm-permessi {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lm-gm-permessi > li {
+  display: grid;
+  gap: 0.15rem;
+}
+/* La spiegazione sotto l'interruttore e allineata al suo testo, non al bordo
+   della modale: cosi si legge come la didascalia di *quell'* interruttore e
+   non come una riga a sé. 2.95rem è la pista del toggle più il suo gap. */
+.lm-gm-permessi > li > small {
+  padding-left: 2.95rem;
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  /* Sul foglio che sale dal basso lo spazio verticale è tutto: i gruppi si
+     stringono, ma il filo resta — è l'unica cosa che tiene separate cinque
+     decisioni in una colonna sola. */
+  .lm-gm-sezione {
+    padding-top: 0.9rem;
+    margin-top: 0.9rem;
+  }
+  .lm-gm-permessi > li > small {
+    padding-left: 0;
+  }
+}

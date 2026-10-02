@@ -2,12 +2,14 @@ import { notFound } from 'next/navigation'
 import { Mail, Phone } from 'lucide-react'
 import { Progress } from '@/components/staff/Bars'
 import Counter from '@/components/staff/Counter'
+import GestioneMembro from '@/components/staff/GestioneMembro'
 import NuovoMembro from '@/components/staff/NuovoMembro'
 import PageHead from '@/components/staff/PageHead'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
 import { iniziali } from '@/lib/staff/avatar'
 import { caricaTeam, type MembroTeam } from '@/lib/staff/f5'
+import { RUOLO_LABEL, puoGestireTeam } from '@/lib/staff/permessi'
 import { AVVISO_SCHEMA } from '@/lib/staff/queries'
 import { euro } from '@/lib/staff/types'
 
@@ -17,9 +19,13 @@ export const dynamic = 'force-dynamic'
 /**
  * La squadra.
  *
- * Solo admin. Il menù nasconde già la voce a chi non lo è, ma nascondere un link
- * non protegge un indirizzo: /staff/team si scrive a mano. `notFound()` e non un
- * messaggio di divieto — a un venditore questa pagina non deve nemmeno risultare
+ * **Solo il titolare**, dalla migration 0040. Prima era «solo admin», e con tre
+ * admin quella frase voleva dire tutti e tre: questa pagina crea credenziali e
+ * assegna permessi, quindi chi la apre può crearsi un secondo account con cui
+ * aggirare i propri limiti — cioè i permessi non sarebbero permessi. Il menù
+ * nasconde già la voce a chi non è owner, ma nascondere un link non protegge un
+ * indirizzo: /staff/team si scrive a mano. `notFound()` e non un messaggio di
+ * divieto — a chi non la amministra questa pagina non deve nemmeno risultare
  * esistente.
  *
  * ## Non è una rubrica
@@ -52,7 +58,7 @@ export const dynamic = 'force-dynamic'
  */
 export default async function TeamPage() {
   const me = await requireStaff()
-  if (me.role !== 'admin') notFound()
+  if (!puoGestireTeam(me)) notFound()
 
   const { membri, mancaSchema } = await caricaTeam()
 
@@ -134,20 +140,13 @@ export default async function TeamPage() {
           <div className="lm-card-top">
             <span className="lm-label">gli account</span>
           </div>
-          {me.puo_creare_membri ? (
-            <div style={{ marginTop: 'auto' }}>
-              <p className="lm-sub" style={{ marginBottom: '0.9rem' }}>
-                Nome, ruolo, email e una password iniziale: l’account e il profilo nascono insieme.
-                Obiettivi e provvigioni si scrivono dopo, da Supabase.
-              </p>
-              <NuovoMembro />
-            </div>
-          ) : (
-            <p className="lm-sub" style={{ marginTop: 'auto' }}>
-              Li crea chi ha fondato lo studio. Se serve una persona in più, chiedi a loro: il
-              permesso non si dà da soli, nemmeno essendo amministratori.
+          <div style={{ marginTop: 'auto' }}>
+            <p className="lm-sub" style={{ marginBottom: '0.9rem' }}>
+              Nome, ruolo, email, una password iniziale e cosa potrà vedere: l’account, il profilo e
+              i permessi nascono insieme. Obiettivi e provvigioni si scrivono dopo, da Supabase.
             </p>
-          )}
+            <NuovoMembro />
+          </div>
         </article>
 
         {membri.map((m) => (
@@ -179,7 +178,7 @@ function Persona({ m, io }: { m: MembroTeam; io: boolean }) {
           <span className="lm-persona-chi">
             <b>{m.nome}</b>
             <small>
-              {m.ruolo_titolo ?? (m.role === 'admin' ? 'Amministratore' : 'Venditore')}
+              {m.ruolo_titolo ?? RUOLO_LABEL[m.role]}
               {!m.attivo && ' · sospeso'}
             </small>
           </span>
@@ -230,6 +229,11 @@ function Persona({ m, io }: { m: MembroTeam; io: boolean }) {
           {m.provvigione_pct !== null && (
             <span className="lm-muted">{m.provvigione_pct}% di provvigione</span>
           )}
+          {/* Su di sé non c'è niente da gestire: le quattro azioni rifiutano
+              tutte `id === me.id`, e un bottone che apre una finestra dove
+              ogni comando risponde «non su te stesso» è un bottone che prende
+              in giro chi lo preme. */}
+          {!io && <GestioneMembro m={m} />}
         </footer>
       </Tilt>
     </div>

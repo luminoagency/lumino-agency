@@ -1,5 +1,6 @@
 import PageHead from '@/components/staff/PageHead'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { caricaRisorse } from '@/lib/staff/f5'
 import { AVVISO_SCHEMA } from '@/lib/staff/queries'
@@ -39,7 +40,7 @@ export default async function RisorsePage() {
 
       {mancaSchema && <p className="lm-avviso">{AVVISO_SCHEMA}</p>}
 
-      <RisorseView risorse={risorse} isAdmin={me.role === 'admin'} />
+      <RisorseView risorse={risorse} isAdmin={eAdmin(me)} />
     </>
   )
 }

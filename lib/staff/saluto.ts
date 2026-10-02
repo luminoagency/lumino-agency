@@ -1,4 +1,5 @@
 import { incassatoDi } from './pagamenti'
+import type { StaffRole } from './types'
 import { euro, type Stato } from './types'
 
 /**
@@ -50,7 +51,10 @@ import { euro, type Stato } from './types'
  * «bentornato».
  */
 
-export type Ruolo = 'admin' | 'sales'
+/* Il ruolo di chi legge il saluto. È `StaffRole` e non una copia: con tre
+   valori una copia dimenticata manderebbe il titolare sul ramo del venditore,
+   cioè gli direbbe cosa ha fatto lui invece di cosa ha fatto la squadra. */
+export type Ruolo = StaffRole
 
 export interface DatiSaluto {
   nome: string
@@ -223,7 +227,7 @@ function cosaESuccesso(d: DatiSaluto, seme: number): string | null {
   }
 
   /* 4. L'admin guarda la squadra, non sé. */
-  if (d.role === 'admin' && d.visiteSquadraIeri > 0) {
+  if ((d.role === 'admin' || d.role === 'owner') && d.visiteSquadraIeri > 0) {
     return v([
       `Ieri la squadra ha fatto ${contati(d.visiteSquadraIeri)} ${
         d.visiteSquadraIeri === 1 ? 'visita' : 'visite'

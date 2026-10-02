@@ -13,6 +13,7 @@ import Settimana, { type EventoSettimana } from '@/components/staff/Settimana'
 import Spark from '@/components/staff/Spark'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { puo } from '@/lib/staff/permessi'
 import { firmaAvatar } from '@/lib/staff/avatar'
 import { staffDb } from '@/lib/staff/db'
 import { demoAttivo, senzaDemo } from '@/lib/staff/demo'
@@ -53,6 +54,12 @@ export const dynamic = 'force-dynamic'
  */
 export default async function StaffHome() {
   const me = await requireStaff()
+  /* Gli importi di questa pagina si sommano da `staff_deals` e
+     `staff_subscriptions`: con la 0040 la RLS non li manda a chi non ha il
+     permesso, quindi i totali sarebbero **zero** — e «0 € incassati» su una
+     home non si legge come «non ti è permesso», si legge come un mese andato
+     male. La card si toglie. */
+  const vedeSoldi = puo(me, 'can_view_soldi')
   const demo = demoAttivo(me.role)
   const supabase = staffDb()
 
@@ -271,13 +278,16 @@ export default async function StaffHome() {
                 <span className="lm-muted">Clienti in archivio</span>
                 <span className="lm-row-v">{righeCliente.length}</span>
               </div>
-              <div className="lm-row">
-                <span className="lm-muted">Ricorrenti al mese</span>
-                <span className="lm-row-v">{euro(ricorrenti)}</span>
-              </div>
+              {vedeSoldi && (
+                <div className="lm-row">
+                  <span className="lm-muted">Ricorrenti al mese</span>
+                  <span className="lm-row-v">{euro(ricorrenti)}</span>
+                </div>
+              )}
             </div>
           </article>
 
+          {vedeSoldi && (
           <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Incassato</span>
@@ -313,6 +323,7 @@ export default async function StaffHome() {
               />
             </div>
           </article>
+          )}
 
           {/* Il numero sta **in alto, sotto la sua etichetta**, e il grafico si
               prende tutto quello che avanza. Prima era il contrario — numero
@@ -396,6 +407,7 @@ export default async function StaffHome() {
             <Mappa punti={zone(righeCliente)} unita="clienti" />
           </article>
 
+          {vedeSoldi && (
           <article className="lm-card lm-in" data-span="6" data-hover data-reveal>
             <div className="lm-card-top">
               <span className="lm-label">Rinnovi entro 30 giorni</span>
@@ -421,6 +433,7 @@ export default async function StaffHome() {
               <p className="lm-empty">Nessun rinnovo nei prossimi 30 giorni.</p>
             )}
           </article>
+          )}
 
           <article className="lm-card lm-in" data-span="6" data-hover data-reveal>
             <div className="lm-card-top">

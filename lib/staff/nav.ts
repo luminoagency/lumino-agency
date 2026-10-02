@@ -1,3 +1,6 @@
+import { eAdmin, eOwner, puo, type Permesso } from './permessi'
+import type { StaffProfile } from './types'
+
 /**
  * Le voci dell'area staff, in un posto solo.
  *
@@ -43,6 +46,21 @@ export interface StaffNavItem {
   /** Il blocco del rail a cui appartiene. */
   gruppo: Gruppo
   adminOnly?: boolean
+  /**
+   * Solo il titolare. Diverso da `adminOnly`, e la differenza è il senso della
+   * migration 0040: Ayman è admin e la gestione della squadra non è sua.
+   */
+  ownerOnly?: boolean
+  /**
+   * La voce esiste solo con questo permesso.
+   *
+   * Non «si apre e non mostra niente»: **non c'è**. Una sezione Soldi che si
+   * apre su zeri non dice «non ti è permesso», dice «non hai venduto niente»,
+   * e sono due frasi molto diverse da leggere la mattina. Chi ci arriva
+   * scrivendo l'indirizzo a mano lo scopre dalla pagina, che fa lo stesso
+   * controllo e risponde 404 (vedi `app/staff/(dash)/soldi/page.tsx`).
+   */
+  permesso?: Permesso
   /** Le cinque voci che stanno nella barra mobile. */
   mobile?: boolean
 }
@@ -52,14 +70,25 @@ export const STAFF_NAV: StaffNavItem[] = [
   { href: '/staff/pipeline', label: 'Pipeline', short: 'Pipeline', fase: 1, gruppo: 'giorno', mobile: true },
   { href: '/staff/clienti', label: 'Clienti', short: 'Clienti', fase: 1, gruppo: 'giorno', mobile: true },
   { href: '/staff/campo', label: 'Campo', short: 'Campo', fase: 3, gruppo: 'giorno', mobile: true },
-  { href: '/staff/soldi', label: 'Soldi', short: 'Soldi', fase: 4, gruppo: 'gestione' },
+  {
+    href: '/staff/soldi',
+    label: 'Soldi',
+    short: 'Soldi',
+    fase: 4,
+    gruppo: 'gestione',
+    permesso: 'can_view_soldi',
+  },
   { href: '/staff/progetti', label: 'Progetti', short: 'Progetti', fase: 4, gruppo: 'gestione' },
   { href: '/staff/statistiche', label: 'Statistiche', short: 'Stats', fase: 4, gruppo: 'gestione' },
   /* Team dichiarava `fase: 4`, ma la F4 del piano è «soldi + progetti +
      statistiche»: non c'era dentro, e lasciarla a 4 l'avrebbe fatta apparire
      come voce viva alzando FASE_VIVA — cioè un'icona che porta a una pagina
      «in arrivo». Vale 5, come le altre ancora da costruire. */
-  { href: '/staff/team', label: 'Team', short: 'Team', fase: 5, gruppo: 'gestione', adminOnly: true },
+  /* Era `adminOnly`. Dalla 0040 la squadra la gestisce una persona sola: il
+     pannello crea credenziali e assegna permessi, e un admin che potesse
+     aprirlo potrebbe crearsi un secondo account con cui aggirare i propri
+     limiti. */
+  { href: '/staff/team', label: 'Team', short: 'Team', fase: 5, gruppo: 'gestione', ownerOnly: true },
   /* L'Archivio sta accanto alle Risorse e non fra le voci del giorno, ed è la
      collocazione giusta anche se ci si scrive dentro tutti i giorni: il blocco
      «risorse» è quello che si apre **quando serve qualcosa**, e l'Archivio si
@@ -97,8 +126,21 @@ export function navPerGruppi(items: StaffNavItem[]): { gruppo: Gruppo; voci: Sta
  */
 export const HREF_IMPOSTAZIONI = '/staff/io'
 
-export function visibleNav(isAdmin: boolean): StaffNavItem[] {
-  return STAFF_NAV.filter((item) => !item.adminOnly || isAdmin)
+/**
+ * Le voci che questa persona deve vedere.
+ *
+ * Prende il profilo e non un `isAdmin`, e il cambio di firma è voluto: con un
+ * booleano, aggiungere il terzo ruolo e i quattro permessi avrebbe voluto dire
+ * aggiungere un parametro per ognuno, e un giorno chiamare la funzione con i
+ * parametri nell'ordine sbagliato. Qui la domanda si fa alla persona.
+ */
+export function visibleNav(me: StaffProfile): StaffNavItem[] {
+  return STAFF_NAV.filter((item) => {
+    if (item.ownerOnly && !eOwner(me)) return false
+    if (item.adminOnly && !eAdmin(me)) return false
+    if (item.permesso && !puo(me, item.permesso)) return false
+    return true
+  })
 }
 
 /**

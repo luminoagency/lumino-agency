@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from './auth'
+import { eAdmin } from './permessi'
 import { BUCKET_RISORSE } from './f5'
 import { eTipoInsight } from './lab-tipi'
 import type { Esito } from './actions'
@@ -110,7 +111,7 @@ const TIPI_FILE: Record<string, string> = {
  */
 export async function creaRisorsa(form: FormData): Promise<Esito> {
   const me = await requireStaff()
-  if (me.role !== 'admin') return { ok: false, error: 'Il materiale lo aggiunge un amministratore.' }
+  if (!eAdmin(me)) return { ok: false, error: 'Il materiale lo aggiunge un amministratore.' }
 
   const titolo = String(form.get('titolo') ?? '').trim()
   const descrizione = String(form.get('descrizione') ?? '').trim()
@@ -178,7 +179,7 @@ export async function creaRisorsa(form: FormData): Promise<Esito> {
 /** Toglie la riga e, se il file era nostro, anche il file. */
 export async function eliminaRisorsa(id: string): Promise<Esito> {
   const me = await requireStaff()
-  if (me.role !== 'admin') return { ok: false, error: 'Il materiale lo gestisce un amministratore.' }
+  if (!eAdmin(me)) return { ok: false, error: 'Il materiale lo gestisce un amministratore.' }
 
   const supabase = createClient()
 

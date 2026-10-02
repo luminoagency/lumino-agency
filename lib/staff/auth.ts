@@ -70,5 +70,18 @@ export const requireStaff = cache(async function requireStaff(): Promise<StaffPr
        permesso che arriva `undefined` da un database senza la 0037 deve valere
        **no**, non «boh». */
     puo_creare_membri: (riga.puo_creare_membri as boolean | undefined) === true,
+    /* I quattro della 0040 vanno nel verso opposto, e non è un'incoerenza.
+       `puo_creare_membri` apre una porta: assente vuol dire chiusa. Questi
+       quattro **ne chiudono** una che prima era aperta per tutti, e su un
+       database dove la 0040 non è passata non esistono né le colonne né la RLS
+       che le fa valere — quindi Postgres servirebbe allegramente i dati che
+       l'interfaccia avrebbe deciso di nascondere. Nascondere dati che il
+       database manda non è sicurezza, è un'area staff rotta per tre persone su
+       tre. Dopo la 0040 la colonna non è mai nulla e questo ramo non si
+       percorre più. */
+    can_view_soldi: (riga.can_view_soldi as boolean | undefined) !== false,
+    can_view_incassi: (riga.can_view_incassi as boolean | undefined) !== false,
+    can_manage_clients: (riga.can_manage_clients as boolean | undefined) !== false,
+    can_view_trattative: (riga.can_view_trattative as boolean | undefined) !== false,
   }
 })

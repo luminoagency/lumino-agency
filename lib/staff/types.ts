@@ -47,7 +47,20 @@ export type FaseProgetto = (typeof FASI_PROGETTO)[number]
 export const PACCHETTI = ['basic', 'pro', 'premium'] as const
 export type Pacchetto = (typeof PACCHETTI)[number]
 
-export type StaffRole = 'admin' | 'sales'
+/**
+ * I tre livelli, dal più alto.
+ *
+ * `owner` è uno solo (migration 0040) e non si assegna dall'interfaccia: è chi
+ * gestisce la squadra e decide i permessi. `admin` vede il lavoro di tutti ma
+ * è **regolabile** dall'owner, ed è il motivo per cui owner non è semplicemente
+ * un admin con un titolo diverso. `sales` vede i propri clienti.
+ *
+ * Per sapere se qualcuno ha i poteri da amministratore non si confronta questa
+ * stringa con 'admin': si chiama `eAdmin()` in `lib/staff/permessi.ts`. Un
+ * `role === 'admin'` sparso nel codice è un posto in cui l'owner perde i suoi
+ * stessi permessi.
+ */
+export type StaffRole = 'owner' | 'admin' | 'sales'
 
 export interface StaffProfile {
   id: string
@@ -73,8 +86,19 @@ export interface StaffProfile {
      Chi può aprire «Nuovo membro», cioè creare credenziali. Non è `role`, e
      non si eredita da `role`: un admin creato dalla dashboard non deve poter
      creare a sua volta altri account, altrimenti il permesso si propaga da
-     solo. Si concede a mano, con una riga di SQL. */
+     solo. Da sola non basta più a decidere chi apre il pannello Team: con la
+     0040 quel cancello è `role === 'owner'`, e questa colonna è rimasta a
+     essere la stessa cosa detta due volte — il pannello controlla entrambe. */
   puo_creare_membri: boolean
+  /* ── migration 0040 ──
+     I quattro permessi che l'owner regola per ogni membro. Non si eredita
+     niente da `role`: un admin senza `can_view_soldi` non vede i soldi, ed è
+     esattamente il punto. Qui sono quattro booleani perché così li legge la
+     RLS — la stessa regola, nel punto in cui non si può aggirare. */
+  can_view_soldi: boolean
+  can_view_incassi: boolean
+  can_manage_clients: boolean
+  can_view_trattative: boolean
 }
 
 /** Il nome con il titolo davanti: «CCO Ratib». Senza titolo, solo il nome. */

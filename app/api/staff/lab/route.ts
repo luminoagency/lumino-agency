@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { ISTRUZIONI, MODELLO, foglioDati, labAttivo } from '@/lib/staff/lab'
 import { ISTRUZIONI_ARCHIVIO, foglioArchivio } from '@/lib/staff/archivio-lab'
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
         }
       : {
           apertura: 'Ecco i dati di Lumino, aggiornati adesso.',
-          foglio: await foglioDati(demo, me.role === 'admin'),
+          foglio: await foglioDati(demo, eAdmin(me)),
           istruzioni: ISTRUZIONI,
         }
 

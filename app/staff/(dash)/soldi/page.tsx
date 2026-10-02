@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { BottoneCanone, BottoneIncasso } from '@/components/staff/SegnaIncasso'
 import AreaChart from '@/components/staff/AreaChart'
 import { Lollipop, Progress } from '@/components/staff/Bars'
@@ -9,6 +10,7 @@ import Ring from '@/components/staff/Ring'
 import Spark from '@/components/staff/Spark'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin, puo } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { caricaSoldi } from '@/lib/staff/f4'
 import { AVVISO_SCHEMA } from '@/lib/staff/queries'
@@ -32,6 +34,14 @@ export const dynamic = 'force-dynamic'
  * I crediti più vecchi stanno in cima (li ordina `caricaSoldi`): in una lista di
  * solleciti l'ordine è già metà della decisione.
  *
+ * **Chi non ha `can_view_soldi` non arriva qui.** Il rail non disegna la voce,
+ * ma un indirizzo si scrive a mano, quindi la pagina rifà il controllo e
+ * risponde 404 — non «non ti è permesso»: a chi non la deve vedere questa
+ * pagina non deve nemmeno risultare esistente, come /staff/team. Il cancello
+ * vero resta comunque la RLS della 0040: senza il permesso, canoni ed extra non
+ * arrivano dal database, quindi anche saltando questa riga la pagina non
+ * avrebbe niente da mostrare.
+ *
  * I margini li vede solo l'admin, e non per una `if` in questa pagina: la RLS di
  * `staff_deal_margins` non dà le righe a un venditore. Qui la richiesta si evita
  * perché sarebbe a vuoto, non perché sia questo il posto dove si protegge il
@@ -39,8 +49,11 @@ export const dynamic = 'force-dynamic'
  */
 export default async function SoldiPage() {
   const me = await requireStaff()
+  if (!puo(me, 'can_view_soldi')) notFound()
+
   const demo = demoAttivo(me.role)
-  const isAdmin = me.role === 'admin'
+  const isAdmin = eAdmin(me)
+  const puoIncassare = puo(me, 'can_view_incassi')
   const d = await caricaSoldi(demo, isAdmin)
 
   const venduto = d.incassato + d.daIncassare
@@ -135,15 +148,19 @@ export default async function SoldiPage() {
                       </span>
                     </Link>
                     <span className="lm-row-v">{euro(s.mancante)}</span>
-                    {s.daSegnare.map((v) => (
-                      <BottoneIncasso
-                        key={v.chiave}
-                        dealId={s.id}
-                        clientId={s.clientId}
-                        voce={v}
-                        compatto
-                      />
-                    ))}
+                    {/* Senza `can_view_incassi` il bottone non c'è: premerlo
+                        riceverebbe un no dal trigger della 0040, e un comando
+                        che esiste per dire di no non deve esistere. */}
+                    {puoIncassare &&
+                      s.daSegnare.map((v) => (
+                        <BottoneIncasso
+                          key={v.chiave}
+                          dealId={s.id}
+                          clientId={s.clientId}
+                          voce={v}
+                          compatto
+                        />
+                      ))}
                   </div>
                 ))}
               </div>
@@ -236,13 +253,15 @@ export default async function SoldiPage() {
                     ) : (
                       <span className="lm-when">senza scadenza</span>
                     )}
-                    <BottoneCanone
-                      subscriptionId={a.id}
-                      clientId={a.clientId}
-                      importo={a.importo}
-                      pagato={a.pagatoQuestoMese}
-                      compatto
-                    />
+                    {puoIncassare && (
+                      <BottoneCanone
+                        subscriptionId={a.id}
+                        clientId={a.clientId}
+                        importo={a.importo}
+                        pagato={a.pagatoQuestoMese}
+                        compatto
+                      />
+                    )}
                   </div>
                 ))}
               </div>

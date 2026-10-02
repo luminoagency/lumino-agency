@@ -8,6 +8,7 @@ import Ring from '@/components/staff/Ring'
 import Spark from '@/components/staff/Spark'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { puo } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { caricaStatistiche, type Taglio } from '@/lib/staff/f4'
 import { AVVISO_SCHEMA } from '@/lib/staff/queries'
@@ -51,6 +52,11 @@ export const dynamic = 'force-dynamic'
  */
 export default async function StatistichePage() {
   const me = await requireStaff()
+  /* I prezzi vengono da `staff_deals`: senza `can_view_trattative` la RLS non
+     li manda e la card direbbe «prezzo medio 0 €», che è una statistica
+     sbagliata e non un permesso negato. Il resto della pagina — stati, zone,
+     tassi di conversione — si conta sui clienti e resta. */
+  const vedePrezzi = puo(me, 'can_view_trattative')
   const demo = demoAttivo(me.role)
   const d = await caricaStatistiche(demo)
 
@@ -106,6 +112,7 @@ export default async function StatistichePage() {
               mille», e sono due aziende diverse. Sotto ci sono i prezzi veri
               in fila dal più basso al più alto — e si vede in un colpo se il
               listino tiene o se la media non descrive nessuno. */}
+          {vedePrezzi && (
           <article
             className="lm-card lm-in"
             data-span="4"
@@ -131,6 +138,7 @@ export default async function StatistichePage() {
               </>
             )}
           </article>
+          )}
 
           <article className="lm-card lm-in" data-span="4" data-hover data-reveal>
             <div className="lm-card-top">
@@ -143,6 +151,7 @@ export default async function StatistichePage() {
           </article>
 
           <ClassificaCard
+            vedePrezzi={vedePrezzi}
             titolo="Per settore"
             nota="quanto conviene ogni tipo di locale"
             righe={d.perSettore}
@@ -151,6 +160,7 @@ export default async function StatistichePage() {
           />
 
           <ClassificaCard
+            vedePrezzi={vedePrezzi}
             titolo="Per zona"
             nota="dove si chiude più facile"
             righe={d.perZona.slice(0, 7)}
@@ -158,6 +168,7 @@ export default async function StatistichePage() {
           />
 
           <ClassificaCard
+            vedePrezzi={vedePrezzi}
             titolo="Per venditore"
             nota="chi chiude, e a quanto"
             righe={d.perVenditore}
@@ -247,6 +258,7 @@ function ClassificaCard({
   span,
   tono,
   nomeLeggibile,
+  vedePrezzi,
 }: {
   titolo: string
   nota: string
@@ -254,6 +266,10 @@ function ClassificaCard({
   span: string
   tono?: 'pearl'
   nomeLeggibile?: (nome: string) => string
+  /* `can_view_trattative`. Senza, al posto dell'importo medio resta il tasso
+     in percentuale: la classifica continua a dire chi converte meglio, che è
+     l'informazione per cui esiste, senza dire a quanto vende. */
+  vedePrezzi: boolean
 }) {
   return (
     <article className="lm-card lm-in" data-span={span} data-tone={tono} data-hover data-reveal>
@@ -276,7 +292,9 @@ function ClassificaCard({
               label={`${nomeLeggibile ? nomeLeggibile(r.nome) : r.nome} · ${r.chiuse}/${r.decise}`}
               value={r.tasso}
               max={100}
-              display={r.medio > 0 ? euro(r.medio) : `${Math.round(r.tasso)}%`}
+              display={
+                vedePrezzi && r.medio > 0 ? euro(r.medio) : `${Math.round(r.tasso)}%`
+              }
               tone={r.decise >= 3 && r.tasso >= 50 ? 'violet' : undefined}
             />
           ))}

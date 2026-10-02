@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from './auth'
+import { eAdmin } from './permessi'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { COOKIE_DEMO_NOME } from './demo'
 import { BUCKET_AVATAR } from './avatar'
@@ -13,6 +14,7 @@ import {
   SITI,
   STATI,
   TIPI_ATTIVITA,
+  type ClienteRiga,
   type Settore,
   type SitoAttuale,
   type Stato,
@@ -67,24 +69,59 @@ export async function cambiaStato(id: string, stato: Stato, motivo?: string): Pr
   }
 
   const supabase = createClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('staff_clients')
     .update({
       stato,
       motivo_rifiuto: stato === 'rifiutato' ? pulito.slice(0, 500) : null,
     })
     .eq('id', id)
+    /* `.select('id')` non è per leggere l'id: è per **contare le righe**. Con
+       la RLS accesa un update che la policy non permette non è un errore —
+       PostgREST non trova nessuna riga da aggiornare e risponde «ok, zero
+       righe», e un «ok» qui diventa una card che si sposta sullo schermo e uno
+       stato che nel database è rimasto quello di prima. Vedi `eliminaCliente`,
+       dove la stessa trappola era già costata una lezione. */
+    .select('id')
 
   if (error) return { ok: false, error: messaggio(error.message) }
+  if (!data?.length) return { ok: false, error: NIENTE_TOCCATO }
 
-  revalidatePath('/staff/pipeline')
-  revalidatePath('/staff/clienti')
-  revalidatePath(`/staff/clienti/${id}`)
-  revalidatePath('/staff/progetti')
-  revalidatePath('/staff/soldi')
-  revalidatePath('/staff/statistiche')
-  revalidatePath('/staff')
+  rinfrescaArea(id)
   return { ok: true }
+}
+
+/**
+ * «Ok, zero righe».
+ *
+ * La frase che si legge quando la scrittura è arrivata a Postgres e Postgres
+ * non ha trovato niente su cui applicarla. Due cause possibili, e dirle
+ * entrambe è l'unica cosa onesta: o il cliente non è più lì, o non è roba di
+ * chi sta scrivendo. Un «riprova» non servirebbe a niente, perché riprovando
+ * succede identico.
+ */
+const NIENTE_TOCCATO =
+  'Niente è stato salvato: il cliente non esiste più, oppure non hai il permesso di modificarlo. Ricarica la pagina e controlla.'
+
+/**
+ * Le pagine da rifare dopo aver toccato un cliente.
+ *
+ * `'layout'` e non una lista di rotte, e la lista di rotte era il bug: un
+ * cliente compare col suo nome nella lista, nel kanban, nella sua scheda, in
+ * Soldi, in Progetti, nelle Statistiche, nel flusso del Team e nel saluto
+ * della home. Enumerarle a mano vuol dire che la nona pagina che nominerà un
+ * cliente nascerà con i dati vecchi, e nessuno se ne accorgerà finché non è un
+ * dato che conta. `revalidatePath('/staff', 'layout')` invalida l'area intera,
+ * che è esattamente l'insieme giusto: le pagine di /staff sono tutte
+ * `force-dynamic`, quindi non c'è nessuna cache di pagina da ricostruire — si
+ * sta buttando via solo la **cache del router nel browser**, che è la cosa che
+ * teneva sullo schermo i valori di prima.
+ */
+function rinfrescaArea(clientId?: string): void {
+  revalidatePath('/staff', 'layout')
+  /* La scheda è una rotta dinamica: `'layout'` sopra copre il segmento, questa
+     riga copre l'istanza che si sta guardando in questo momento. */
+  if (clientId) revalidatePath(`/staff/clienti/${clientId}`)
 }
 
 export interface NuovoCliente {
@@ -113,14 +150,13 @@ export async function creaCliente(dati: NuovoCliente): Promise<Esito & { id?: st
   const supabase = createClient()
   const { data, error } = await supabase
     .from('staff_clients')
-    .insert(riga(dati, me.id, me.role === 'admin'))
+    .insert(riga(dati, me.id, eAdmin(me)))
     .select('id')
     .single()
 
   if (error) return { ok: false, error: messaggio(error.message) }
 
-  revalidatePath('/staff/pipeline')
-  revalidatePath('/staff/clienti')
+  rinfrescaArea()
   return { ok: true, id: data?.id }
 }
 
@@ -147,7 +183,7 @@ export async function importaClienti(righe: NuovoCliente[]): Promise<Esito> {
     return { ok: false, error: 'Massimo 500 righe per import. Dividi il file.' }
   }
 
-  const admin = me.role === 'admin'
+  const admin = eAdmin(me)
   const valide = righe
     .filter((r) => (r.nome ?? '').trim().length > 0)
     .map((r) => riga(r, me.id, admin))
@@ -159,8 +195,7 @@ export async function importaClienti(righe: NuovoCliente[]): Promise<Esito> {
 
   if (error) return { ok: false, error: messaggio(error.message) }
 
-  revalidatePath('/staff/pipeline')
-  revalidatePath('/staff/clienti')
+  rinfrescaArea()
   return { ok: true, n: valide.length }
 }
 
@@ -231,7 +266,7 @@ function messaggio(raw: string): string {
  */
 export async function impostaDemo(acceso: boolean): Promise<Esito> {
   const me = await requireStaff()
-  if (me.role !== 'admin') return { ok: false, error: 'Solo un amministratore.' }
+  if (!eAdmin(me)) return { ok: false, error: 'Solo un amministratore.' }
 
   cookies().set(COOKIE_DEMO_NOME, acceso ? '1' : '0', {
     httpOnly: true,
@@ -268,7 +303,10 @@ export async function impostaDemo(acceso: boolean): Promise<Esito> {
  * quando serve. Due strade per lo stesso dato sono due strade per dimenticarsi
  * il motivo del rifiuto in una delle due.
  */
-export async function aggiornaCliente(id: string, dati: NuovoCliente): Promise<Esito> {
+export async function aggiornaCliente(
+  id: string,
+  dati: NuovoCliente,
+): Promise<Esito & { cliente?: ClienteRiga }> {
   const me = await requireStaff()
 
   const nome = (dati.nome ?? '').trim()
@@ -294,16 +332,36 @@ export async function aggiornaCliente(id: string, dati: NuovoCliente): Promise<E
   /* Riassegnare un cliente è cosa da admin: la policy di update di un
      venditore accetta solo righe che restano sue, quindi il campo non si
      manda nemmeno. */
-  if (me.role === 'admin' && dati.assegnato_a) campi.assegnato_a = dati.assegnato_a
+  if (eAdmin(me) && dati.assegnato_a) campi.assegnato_a = dati.assegnato_a
 
   const supabase = createClient()
-  const { error } = await supabase.from('staff_clients').update(campi).eq('id', id)
-  if (error) return { ok: false, error: messaggio(error.message) }
+  /* `.select().single()` e non un update nudo: è la differenza fra sapere e
+     credere. Un update che la RLS non permette torna «ok, zero righe», e
+     questa funzione rispondeva `{ ok: true }` a una modifica che non era
+     entrata da nessuna parte — la modale si chiudeva, l'interfaccia diceva
+     salvato, il database non era cambiato. Con `.single()` zero righe è un
+     errore con un codice (`PGRST116`), e chi ha premuto Salva lo legge. */
+  const { data, error } = await supabase
+    .from('staff_clients')
+    .update(campi)
+    .eq('id', id)
+    .select('*')
+    .single()
 
-  revalidatePath(`/staff/clienti/${id}`)
-  revalidatePath('/staff/clienti')
-  revalidatePath('/staff/pipeline')
-  return { ok: true }
+  if (error) {
+    return {
+      ok: false,
+      error: error.code === 'PGRST116' ? NIENTE_TOCCATO : messaggio(error.message),
+    }
+  }
+
+  rinfrescaArea(id)
+  /* La riga vera torna a chi ha salvato: il modulo la usa per risincronizzarsi
+     invece di fidarsi di quello che aveva in mano. Quello che il database ha
+     scritto non è sempre quello che era stato digitato — il nome viene
+     tagliato a 200 caratteri, il settore fuori vocabolario diventa «altro», il
+     prezzo a zero diventa `null`. */
+  return { ok: true, cliente: data as unknown as ClienteRiga }
 }
 
 /**
@@ -340,7 +398,7 @@ export async function eliminaCliente(id: string): Promise<Esito> {
   /* La regola vera è la policy `staff_clients_delete` nel database. Questa è
      solo la stessa cosa detta in italiano e un viaggio prima, perché un
      venditore che preme il bottone si merita una frase e non uno zero. */
-  if (me.role !== 'admin') {
+  if (!eAdmin(me)) {
     return {
       ok: false,
       error: 'Solo un admin può cancellare un cliente: uno storico perso non torna.',
@@ -375,12 +433,7 @@ export async function eliminaCliente(id: string): Promise<Esito> {
     await createAdminClient().storage.from(BUCKET_CAMPO).remove(foto)
   }
 
-  revalidatePath('/staff/clienti')
-  revalidatePath('/staff/pipeline')
-  revalidatePath('/staff/campo')
-  revalidatePath('/staff/soldi')
-  revalidatePath('/staff/progetti')
-  revalidatePath('/staff')
+  rinfrescaArea(id)
   return { ok: true }
 }
 
@@ -487,11 +540,7 @@ export async function salvaVisita(dati: DatiVisita): Promise<Esito & { id?: stri
     })
   }
 
-  revalidatePath('/staff/campo')
-  revalidatePath('/staff')
-  revalidatePath('/staff/pipeline')
-  revalidatePath('/staff/clienti')
-  revalidatePath(`/staff/clienti/${dati.client_id}`)
+  rinfrescaArea(dati.client_id)
   return { ok: true, id: data?.id }
 }
 
@@ -518,8 +567,7 @@ export async function creaAttivita(
   })
   if (error) return { ok: false, error: messaggio(error.message) }
 
-  revalidatePath(`/staff/clienti/${clientId}`)
-  revalidatePath('/staff/campo')
+  rinfrescaArea(clientId)
   return { ok: true }
 }
 
@@ -540,9 +588,7 @@ export async function creaFollowup(clientId: string, data: string, nota?: string
   })
   if (error) return { ok: false, error: messaggio(error.message) }
 
-  revalidatePath('/staff/campo')
-  revalidatePath('/staff')
-  revalidatePath(`/staff/clienti/${clientId}`)
+  rinfrescaArea(clientId)
   return { ok: true }
 }
 
@@ -571,9 +617,7 @@ export async function aggiornaFollowup(
   const { error } = await supabase.from('staff_followups').update(campi).eq('id', id)
   if (error) return { ok: false, error: messaggio(error.message) }
 
-  revalidatePath('/staff/campo')
-  revalidatePath('/staff')
-  revalidatePath('/staff/clienti')
+  rinfrescaArea()
   return { ok: true }
 }
 

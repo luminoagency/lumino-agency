@@ -1,7 +1,9 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import PageHead from '@/components/staff/PageHead'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin, puo } from '@/lib/staff/permessi'
 import { staffDb } from '@/lib/staff/db'
 import NuovoClienteForm from './NuovoClienteForm'
 
@@ -11,13 +13,14 @@ export const dynamic = 'force-dynamic'
 
 export default async function NuovoClientePage() {
   const me = await requireStaff()
+  if (!puo(me, 'can_manage_clients')) notFound()
   const supabase = staffDb()
 
   /* L'elenco dei colleghi serve solo all'admin. Un venditore lo riceverebbe
      comunque filtrato dalla RLS (vede solo sé), ma chiederlo per poi non
      mostrarlo è una query in meno da fare. */
   const { data: venditori } =
-    me.role === 'admin'
+    eAdmin(me)
       ? await supabase.from('staff_profiles').select('id, nome').eq('attivo', true).order('nome')
       : { data: [{ id: me.id, nome: me.nome }] }
 
@@ -35,7 +38,7 @@ export default async function NuovoClientePage() {
 
       <NuovoClienteForm
         venditori={(venditori ?? []) as { id: string; nome: string }[]}
-        isAdmin={me.role === 'admin'}
+        isAdmin={eAdmin(me)}
         ioId={me.id}
       />
     </>

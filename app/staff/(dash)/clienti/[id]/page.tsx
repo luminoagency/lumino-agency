@@ -11,6 +11,7 @@ import PageHead, { StatoPill } from '@/components/staff/PageHead'
 import Ring from '@/components/staff/Ring'
 import Tilt from '@/components/staff/Tilt'
 import { requireStaff } from '@/lib/staff/auth'
+import { eAdmin, puo } from '@/lib/staff/permessi'
 import { demoAttivo } from '@/lib/staff/demo'
 import { modalitaDi, quotaPagata, vociPagamento } from '@/lib/staff/pagamenti'
 import { followupDiCliente, reportDiCliente } from '@/lib/staff/queries'
@@ -96,6 +97,16 @@ export default async function SchedaCliente({ params }: { params: { id: string }
 
   /* Un cliente finto con l'interruttore spento non esiste: aprirlo dal suo
      link diretto deve dare lo stesso 404 che dà un cliente di un collega. */
+  /* Cosa di questa scheda si disegna. Senza il permesso la card **non c'è**:
+     la RLS ha già restituito `null` al posto della trattativa, e disegnare il
+     riquadro vuoto direbbe «nessuna trattativa aperta» — che è un'informazione
+     falsa, non un permesso negato. Un dato che non si può vedere non si
+     racconta come un dato che non esiste. */
+  const vedeTrattative = puo(me, 'can_view_trattative')
+  const vedeSoldi = puo(me, 'can_view_soldi')
+  const puoIncassare = puo(me, 'can_view_incassi')
+  const puoGestireClienti = puo(me, 'can_manage_clients')
+
   const demo = demoAttivo(me.role)
   if (!cliente.data || (!demo && (cliente.data as { is_demo?: boolean }).is_demo === true)) {
     notFound()
@@ -143,8 +154,13 @@ export default async function SchedaCliente({ params }: { params: { id: string }
         sub={[SETTORE_LABEL[c.settore], c.citta, c.zona].filter(Boolean).join(' · ')}
       >
         <StatoPill stato={c.stato} />
-        <CambioStato clientId={c.id} nome={c.nome} stato={c.stato} />
-        <SchedaAzioni cliente={c} venditori={venditori} isAdmin={me.role === 'admin'} />
+        {puoGestireClienti && <CambioStato clientId={c.id} nome={c.nome} stato={c.stato} />}
+        <SchedaAzioni
+          cliente={c}
+          venditori={venditori}
+          isAdmin={eAdmin(me)}
+          puoGestire={puoGestireClienti}
+        />
       </PageHead>
 
       {c.stato === 'rifiutato' && c.motivo_rifiuto && (
@@ -178,6 +194,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
             )}
           </article>
 
+          {vedeTrattative && (
           <article className="lm-card lm-in" data-span="4" data-tone="black" data-hover data-reveal>
             <span className="lm-label">Trattativa</span>
             {deal ? (
@@ -213,7 +230,9 @@ export default async function SchedaCliente({ params }: { params: { id: string }
                               {v.pagato ? dataBreve(v.data) : 'da incassare'}
                             </span>
                           </span>
-                          <BottoneIncasso dealId={deal.id} clientId={c.id} voce={v} compatto />
+                          {puoIncassare && (
+                            <BottoneIncasso dealId={deal.id} clientId={c.id} voce={v} compatto />
+                          )}
                         </div>
                       ))
                     ) : (
@@ -238,7 +257,9 @@ export default async function SchedaCliente({ params }: { params: { id: string }
               </p>
             )}
           </article>
+          )}
 
+          {vedeSoldi && (
           <article className="lm-card lm-in" data-span="3" data-tone="pearl" data-hover data-reveal>
             <span className="lm-label">Abbonamento</span>
             {abbonamento ? (
@@ -258,13 +279,15 @@ export default async function SchedaCliente({ params }: { params: { id: string }
                         {canoneMese?.data ? 'incassato' : 'da incassare'}
                       </span>
                     </span>
-                    <BottoneCanone
-                      subscriptionId={abbonamento.id}
-                      clientId={c.id}
-                      importo={abbonamento.importo_mensile ?? 0}
-                      pagato={Boolean(canoneMese?.data)}
-                      compatto
-                    />
+                    {puoIncassare && (
+                      <BottoneCanone
+                        subscriptionId={abbonamento.id}
+                        clientId={c.id}
+                        importo={abbonamento.importo_mensile ?? 0}
+                        pagato={Boolean(canoneMese?.data)}
+                        compatto
+                      />
+                    )}
                   </div>
                 </div>
               </>
@@ -272,6 +295,7 @@ export default async function SchedaCliente({ params }: { params: { id: string }
               <p className="lm-empty">Nessun abbonamento attivo.</p>
             )}
           </article>
+          )}
 
           <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
             <div className="lm-card-top">
