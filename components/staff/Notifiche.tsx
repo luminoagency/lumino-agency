@@ -104,12 +104,33 @@ export default function Notifiche() {
 
   /** Mostra, e programma la scomparsa. Un solo posto che tocca `avviso`. */
   const mostra = useCallback((a: Avviso) => {
+    /**
+     * L'angolo in basso è di uno alla volta.
+     *
+     * È la stessa regola per cui l'adhan sostituisce un'ayah invece di
+     * affiancarla, applicata a un vicino che non vive in questo componente:
+     * `.lm-invito`, la striscia «installa l'app», sul telefono sta nello stesso
+     * posto e ha un `z-index` più alto (55 contro 44), quindi coprirebbe la
+     * notifica a metà. Succede in una finestra stretta — primo accesso da
+     * telefono, striscia ancora aperta — ma il risultato sarebbe una notifica
+     * illeggibile, e una notifica illeggibile è peggio di una mancata.
+     *
+     * Si salta il turno, non si rimanda: la prossima ayah arriva fra un
+     * intervallo, e nel frattempo la striscia è stata chiusa o accettata.
+     *
+     * Restituisce **se ha mostrato davvero**, e serve all'adhan: il suo «già
+     * visto» si scrive solo dopo un sì, altrimenti l'unica notifica di quella
+     * preghiera si perderebbe per una striscia che nessuno aveva ancora chiuso.
+     */
+    if (document.querySelector('.lm-invito')) return false
+
     if (uscita.current !== null) window.clearTimeout(uscita.current)
     setAvviso(a)
     uscita.current = window.setTimeout(() => {
       uscita.current = null
       setAvviso(null)
     }, a.durata)
+    return true
   }, [])
 
   /* ── le ayat ───────────────────────────────────────────────────────────── */
@@ -178,19 +199,30 @@ export default function Notifiche() {
       const chiave = st.attuale.at.toISOString()
       try {
         if (localStorage.getItem(CHIAVE_VISTO) === chiave) return
-        localStorage.setItem(CHIAVE_VISTO, chiave)
       } catch {
         /* Finestra privata: meglio nessuna notifica che una a ogni ciclo. */
         return
       }
 
-      mostra({
+      const mostrata = mostra({
         tipo: 'adhan',
         preghiera: st.attuale.chiave,
         ora: st.attuale.ora,
         citta: pos.citta || null,
         durata: DURATA_ADHAN,
       })
+
+      /* **Si segna solo dopo**: scrivere prima e poi non mostrare vorrebbe dire
+         bruciare l'unica notifica di quella preghiera. Fra la lettura e la
+         scrittura non c'è niente che possa inserirsi — siamo in un ciclo
+         sincrono di venti secondi, non in una transazione. */
+      if (!mostrata) return
+      try {
+        localStorage.setItem(CHIAVE_VISTO, chiave)
+      } catch {
+        /* Mostrata e non segnata: ricaricando la pagina nei prossimi dieci
+           minuti ricomparirà. È il male minore fra due difetti piccoli. */
+      }
     }
 
     guarda()
