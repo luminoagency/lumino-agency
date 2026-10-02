@@ -2514,6 +2514,104 @@
   color: var(--ink-2);
 }
 
+/* ── Il popup di un cliente ──────────────────────────────────────────────────
+   Tre righe: nome, indirizzo, e i bottoni per andarci. Il popup di Leaflet è
+   largo quanto il suo contenuto, quindi il tetto va messo qui: senza, un
+   indirizzo lungo lo allarga oltre la mappa e i bottoni finiscono fuori dal
+   riquadro visibile. */
+.lm-pop-dove {
+  display: block;
+  max-width: 15rem;
+  color: var(--ink-2);
+  font-size: 0.84rem;
+}
+
+.lm-pop-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+/* Il bersaglio è alto 32px e non 24: questo bottone lo si preme con il pollice,
+   in piedi davanti a un locale, con il telefono in una mano. Sotto i 32px si
+   sbaglia, e sbagliare qui vuol dire aprire il popup di un altro pin. */
+.lm-pop-naviga {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  background: var(--black);
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none !important;
+  white-space: nowrap;
+}
+.lm-pop-naviga:hover {
+  background: var(--violet);
+}
+
+.lm-pop-scheda {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: var(--violet) !important;
+  font-size: 0.82rem;
+  text-decoration: none !important;
+}
+.lm-pop-scheda:hover {
+  text-decoration: underline !important;
+}
+
+/* La riga sotto la mappa: quanti clienti non si possono disegnare. Sta fuori
+   dal riquadro e non dentro, perché dentro coprirebbe la mappa proprio nel caso
+   in cui si sta cercando qualcosa su di essa. */
+/* Il suggerimento delle due dita. Esiste **solo** dove si punta con un dito, e
+   si spegne da sé dopo qualche secondo: un'istruzione che resta sempre lì sopra
+   la mappa diventa un adesivo, e un adesivo copre un pin. */
+.lm-map-dita {
+  position: absolute;
+  z-index: 500;
+  right: 0.55rem;
+  bottom: 0.55rem;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(23, 19, 15, 0.78);
+  color: #fff;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  pointer-events: none;
+  display: none;
+}
+@media (pointer: coarse) {
+  .lm-map-dita {
+    display: block;
+    animation: lm-dita 5.5s 1s forwards;
+  }
+}
+@keyframes lm-dita {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Senza animazione resta visibile: sparire di colpo è peggio che restare, e
+     restare è solo un piccolo ingombro in un angolo. */
+  .lm-map-dita {
+    animation: none;
+  }
+}
+
+.lm-map-mancanti {
+  margin: 0.5rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 /* I comandi e l'attribuzione: piccoli, tondi, dello stesso colore di tutto il
    resto. L'attribuzione non si tocca nel contenuto — è la licenza — ma può
    smettere di sembrare un residuo di un altro sito. */

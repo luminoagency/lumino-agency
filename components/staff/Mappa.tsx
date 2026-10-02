@@ -26,6 +26,7 @@ const Leaflet = dynamic(() => import('./MappaLeaflet'), { ssr: false })
 
 export default function Mappa({
   altezza = 'sm',
+  mancanti = 0,
   ...resto
 }: {
   punti: PuntoZona[]
@@ -33,13 +34,32 @@ export default function Mappa({
   unita?: string
   centro?: [number, number]
   zoom?: number
+  /**
+   * Quanti non si possono disegnare perché non hanno coordinate.
+   *
+   * Una mappa con venti pin dove i clienti sono venticinque non si vede che è
+   * incompleta: i cinque che mancano mancano in silenzio, e nessuno conta i pin.
+   * Questa riga è l'unico posto in cui quel numero compare, e porta con sé cosa
+   * fare — la scheda di ognuno dice poi se è un indirizzo da correggere o un
+   * indirizzo che non c'è.
+   */
+  mancanti?: number
 }) {
   /* La cornice è qui e non dentro il pezzo caricato a parte: esiste dal primo
      dipinto, con la sua altezza, e quando la mappa arriva ci si appoggia dentro
      senza far saltare la card. */
   return (
-    <div className="lm-map" data-h={altezza}>
-      <Leaflet {...resto} />
-    </div>
+    <>
+      <div className="lm-map" data-h={altezza}>
+        <Leaflet {...resto} />
+      </div>
+      {mancanti > 0 && (
+        <p className="lm-map-mancanti">
+          {mancanti} client{mancanti === 1 ? 'e' : 'i'} non {mancanti === 1 ? 'è' : 'sono'} sulla
+          mappa: {mancanti === 1 ? 'manca' : 'mancano'} le coordinate. La scheda di ognuno dice se
+          l’indirizzo va corretto.
+        </p>
+      )}
+    </>
   )
 }

@@ -12,6 +12,7 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "staff:geo": "node scripts/geocodifica-clienti.mjs",
     "staff:seed": "node scripts/staff-seed.mjs",
     "staff:seed:clean": "node scripts/staff-seed.mjs --clean"
   },

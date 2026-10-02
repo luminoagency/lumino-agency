@@ -232,7 +232,17 @@ export interface ClienteRiga {
   voto_sito: number | null
   fonte: string
   created_at: string
+  /* ── migration 0041 ──
+     Perché le coordinate ci sono o non ci sono. Serve a una cosa sola, ed è la
+     ragione per cui non basta guardare `lat is null`: distinguere «non c'è un
+     indirizzo da cercare» da «l'indirizzo c'è e non si trova». Il secondo è un
+     errore di scrittura, e la scheda lo deve dire — nessun altro se ne
+     accorgerà, perché un cliente che manca da una mappa non si vede mancare. */
+  geo_stato?: GeoStato | null
 }
+
+/** Vedi `lib/staff/geocode.ts`: qui è un re-export per non importare due file. */
+export type GeoStato = 'ok' | 'non_trovato' | 'assente' | 'da_fare'
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Campo (F3)

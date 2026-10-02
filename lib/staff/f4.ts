@@ -377,6 +377,10 @@ export interface PuntoMappa {
   lat: number
   lng: number
   n: number
+  /** L'indirizzo scritto: è quello che fa comparire i bottoni di navigazione. */
+  indirizzo?: string | null
+  /** La scheda da aprire dal popup. */
+  id?: string
 }
 
 export interface DatiStatistiche {
@@ -404,6 +408,8 @@ export interface DatiStatistiche {
   /** Le ultime frasi dei titolari, con chi le ha dette. */
   frasi: { id: string; testo: string; cliente: string }[]
   zone: PuntoMappa[]
+  /** Quanti clienti non hanno coordinate: la mappa lo dice sotto il riquadro. */
+  zoneMancanti: number
   mesi: { label: string; value: number }[]
   mancaSchema: boolean
 }
@@ -534,13 +540,21 @@ export async function caricaStatistiche(demo: boolean): Promise<DatiStatistiche>
       cliente: primo(r.staff_clients)?.nome ?? 'Un titolare',
     }))
 
-  const perCitta = new Map<string, { lat: number; lng: number; n: number }>()
-  for (const c of righeCliente) {
-    if (!c.citta || c.lat == null || c.lng == null) continue
-    const corrente = perCitta.get(c.citta)
-    if (corrente) corrente.n += 1
-    else perCitta.set(c.citta, { lat: c.lat, lng: c.lng, n: 1 })
-  }
+  /* Un punto per cliente, al suo indirizzo. Aggregava per città tenendo le
+     coordinate del **primo** cliente del comune e scrivendoci il totale: i
+     pin erano esatti ma di qualcun altro, e nessuno si poteva aprire. I vicini
+     li somma già `leaflet.markercluster`, e un cluster si apre. Vedi la nota
+     completa in `app/staff/(dash)/page.tsx`. */
+  const puntiCliente: PuntoMappa[] = righeCliente
+    .filter((c) => c.lat != null && c.lng != null)
+    .map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      lat: c.lat as number,
+      lng: c.lng as number,
+      n: 1,
+      indirizzo: [c.indirizzo, c.citta].filter(Boolean).join(', ') || null,
+    }))
 
   const perMese = new Map<string, number>()
   for (const d of righeDeal) {
@@ -563,9 +577,8 @@ export async function caricaStatistiche(demo: boolean): Promise<DatiStatistiche>
       .sort((a, b) => b.n - a.n)
       .slice(0, 5),
     frasi,
-    zone: Array.from(perCitta.entries())
-      .map(([nome, v]) => ({ nome, ...v }))
-      .sort((a, b) => b.n - a.n),
+    zone: puntiCliente,
+    zoneMancanti: righeCliente.length - puntiCliente.length,
     mesi: ultimiDodiciMesi(perMese).slice(-6),
     mancaSchema: mancano(clienti, deals),
   }
@@ -636,6 +649,7 @@ interface RigaCliente {
   settore: Settore
   citta: string | null
   zona: string | null
+  indirizzo: string | null
   stato: Stato
   assegnato_a: string | null
   lat: number | null

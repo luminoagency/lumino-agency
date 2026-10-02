@@ -72,10 +72,32 @@ export default function Tilt({
     let daMisurare = true
 
     function misura() {
-      carte = Array.from(el!.querySelectorAll<HTMLElement>('[data-hover]')).map((c) => ({
-        el: c,
-        r: c.getBoundingClientRect(),
-      }))
+      carte = Array.from(el!.querySelectorAll<HTMLElement>('[data-hover]'))
+        /**
+         * **Le card con una mappa dentro non si inclinano.** Era il motivo per
+         * cui la mappa non si riusciva a trascinare, ed è un difetto che si
+         * spiega solo guardando i due pezzi insieme.
+         *
+         * Leaflet ricava la posizione del puntatore da
+         * `getBoundingClientRect()` del proprio contenitore, dividendo per il
+         * fattore di scala che ne ricava. Il conto è esatto sotto una
+         * traslazione, e **non lo è** sotto una rotazione 3D: `rotateX`/
+         * `rotateY` danno un rettangolo *proiettato*, più grande dell'elemento,
+         * e la trasformazione inversa non è una divisione. Quindi ogni delta
+         * del trascinamento arrivava sbagliato.
+         *
+         * E arrivava sbagliato in modo diverso a ogni fotogramma, perché lo
+         * stesso `pointermove` che Leaflet stava usando per trascinare faceva
+         * inclinare la card di sotto: l'obiettivo si spostava mentre si cercava
+         * di prenderlo. Il risultato visto da fuori era una mappa che non si
+         * muove.
+         *
+         * Si esclude qui e non togliendo `data-hover` dalle due card: così la
+         * regola vale per la terza mappa che qualcuno aggiungerà, invece di
+         * essere una cosa da ricordarsi.
+         */
+        .filter((c) => !c.querySelector('.lm-map'))
+        .map((c) => ({ el: c, r: c.getBoundingClientRect() }))
       daMisurare = false
     }
 

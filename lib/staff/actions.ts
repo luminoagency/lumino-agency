@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from './auth'
 import { eAdmin } from './permessi'
+import { firmaIndirizzo, geocodifica, haIndirizzo } from './geocode'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { COOKIE_DEMO_NOME } from './demo'
 import { BUCKET_AVATAR } from './avatar'
@@ -147,10 +148,18 @@ export async function creaCliente(dati: NuovoCliente): Promise<Esito & { id?: st
   const nome = (dati.nome ?? '').trim()
   if (!nome) return { ok: false, error: 'Il nome è obbligatorio.' }
 
+  /* Le coordinate si cercano **prima** dell'insert, non dopo: due scritture
+     per una riga nuova vorrebbero dire un cliente che per un istante esiste
+     senza posizione, e se la seconda fallisce resta così per sempre senza che
+     nessuno lo sappia. Nominatim ha un timeout di sei secondi e non lancia mai:
+     il caso peggiore è un cliente salvato con `non_trovato`, che la scheda dice
+     a voce alta. */
+  const geo = await geocodifica(dati)
+
   const supabase = createClient()
   const { data, error } = await supabase
     .from('staff_clients')
-    .insert(riga(dati, me.id, eAdmin(me)))
+    .insert({ ...riga(dati, me.id, eAdmin(me)), lat: geo.lat, lng: geo.lng, geo_stato: geo.stato, geo_at: new Date().toISOString() })
     .select('id')
     .single()
 
@@ -184,9 +193,16 @@ export async function importaClienti(righe: NuovoCliente[]): Promise<Esito> {
   }
 
   const admin = eAdmin(me)
+  /* **L'import non geocodifica.** Nominatim ammette una richiesta al secondo:
+     cinquecento righe sarebbero otto minuti con il browser che aspetta, e una
+     server action che aspetta otto minuti su Vercel viene interrotta a metà —
+     cioè metà dei clienti dentro e nessun modo di sapere quali. Entrano con
+     `geo_stato = 'da_fare'`, che è la coda che legge
+     `scripts/geocodifica-clienti.mjs`, e nel frattempo ci sono: un cliente
+     senza pin si lavora, un import a metà no. */
   const valide = righe
     .filter((r) => (r.nome ?? '').trim().length > 0)
-    .map((r) => riga(r, me.id, admin))
+    .map((r) => ({ ...riga(r, me.id, admin), geo_stato: 'da_fare' }))
 
   if (!valide.length) return { ok: false, error: 'Nessuna riga ha un nome.' }
 
@@ -335,6 +351,53 @@ export async function aggiornaCliente(
   if (eAdmin(me) && dati.assegnato_a) campi.assegnato_a = dati.assegnato_a
 
   const supabase = createClient()
+
+  /* ── le coordinate, se e solo se l'indirizzo è cambiato ──────────────────
+     Questa funzione gira a ogni salvataggio della scheda, anche per correggere
+     un numero di telefono: geocodificare sempre vorrebbe dire una chiamata a
+     Nominatim per riottenere le stesse coordinate, e la sua policy è una
+     richiesta al secondo. Si legge la riga di prima e si confronta la firma
+     dell'indirizzo — una select corta su chiave primaria, e solo quella.
+
+     La lettura passa dalla **sessione** e non dal service-role: se la RLS non
+     dà questa riga in lettura non la darà nemmeno in scrittura, e scoprirlo qui
+     costa una query in meno di scoprirlo dopo. */
+  const { data: prima } = await supabase
+    .from('staff_clients')
+    .select('indirizzo, citta, zona, country, lat, lng, geo_stato')
+    .eq('id', id)
+    .maybeSingle()
+
+  const vecchio = (prima ?? {}) as {
+    indirizzo?: string | null
+    citta?: string | null
+    zona?: string | null
+    country?: string | null
+    geo_stato?: string | null
+  }
+  const nuovo = { indirizzo: campi.indirizzo as string | null, citta: campi.citta as string | null, zona: campi.zona as string | null, country: vecchio.country ?? 'IT' }
+
+  /* Si rifà la ricerca quando l'indirizzo è cambiato **oppure** quando l'ultimo
+     tentativo era andato a vuoto: un indirizzo corretto a mano dopo un avviso
+     «posizione non trovata» ha la firma diversa, ma uno rimasto identico con
+     `geo_stato = 'da_fare'` (import CSV) non l'avrebbe — e resterebbe senza pin
+     per sempre. */
+  const indirizzoCambiato = firmaIndirizzo({ ...nuovo }) !== firmaIndirizzo(vecchio)
+  if (indirizzoCambiato || vecchio.geo_stato === 'da_fare') {
+    if (!haIndirizzo(nuovo)) {
+      campi.lat = null
+      campi.lng = null
+      campi.geo_stato = 'assente'
+      campi.geo_at = new Date().toISOString()
+    } else {
+      const geo = await geocodifica(nuovo)
+      campi.lat = geo.lat
+      campi.lng = geo.lng
+      campi.geo_stato = geo.stato
+      campi.geo_at = new Date().toISOString()
+    }
+  }
+
   /* `.select().single()` e non un update nudo: è la differenza fra sapere e
      credere. Un update che la RLS non permette torna «ok, zero righe», e
      questa funzione rispondeva `{ ok: true }` a una modifica che non era

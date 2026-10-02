@@ -122,8 +122,11 @@ export default async function StaffHome() {
 
   const righeCliente = senzaDemo(
     (clienti.data ?? []) as {
+      id: string
+      nome: string
       stato: Stato
       citta: string | null
+      indirizzo: string | null
       lat: number | null
       lng: number | null
     }[],
@@ -180,6 +183,9 @@ export default async function StaffHome() {
       ),
     }),
   )
+
+  /* Si calcola una volta: serve ai pin e serve a contare quanti non ci sono. */
+  const puntiMappa = zone(righeCliente)
 
   const perStato = new Map<Stato, number>()
   for (const riga of righeCliente) perStato.set(riga.stato, (perStato.get(riga.stato) ?? 0) + 1)
@@ -404,7 +410,11 @@ export default async function StaffHome() {
                 Campo
               </Link>
             </div>
-            <Mappa punti={zone(righeCliente)} unita="clienti" />
+            <Mappa
+              punti={puntiMappa}
+              unita="clienti"
+              mancanti={righeCliente.length - puntiMappa.length}
+            />
           </article>
 
           {vedeSoldi && (
@@ -509,22 +519,51 @@ function ultimiSeiMesi(deals: { data_chiusura: string | null }[], oggi: Date): A
  * Leaflet. Resta perché la card è alta 210px e nove punti sono già una risposta
  * completa alla domanda «sto coprendo il territorio».
  */
+/**
+ * Un punto per cliente, al suo indirizzo.
+ *
+ * **Prima aggregava per città**, e lì stava il difetto che la mappa aveva: dei
+ * sei clienti di Jesolo teneva le coordinate del **primo** e ci scriveva «6»,
+ * quindi cinque pin su sei erano al posto di un altro e nessuno di loro si
+ * poteva aprire. Visto da fuori sembrava un pin approssimativo per comune; in
+ * realtà era un pin esatto, di un cliente diverso.
+ *
+ * Aggregare serviva a non sovrapporre i pallini, e quel lavoro adesso lo fa già
+ * `leaflet.markercluster`: a zoom basso i vicini si sommano in un disco col
+ * totale, e avvicinandosi il gruppo si apre da sé. La differenza è che il
+ * cluster si **apre**, e una città riassunta a mano no.
+ *
+ * Niente `slice(0, 9)`: il tetto c'era perché nove etichette di città erano il
+ * massimo leggibile. I cluster non hanno quel limite, e un tetto qui vorrebbe
+ * dire una mappa che non mostra i clienti più recenti senza dirlo.
+ *
+ * Chi è senza coordinate non si disegna, e non è un silenzio: la card lo conta e
+ * la scheda di ognuno dice perché.
+ */
 function zone(
-  clienti: { citta: string | null; lat: number | null; lng: number | null }[],
+  clienti: {
+    id: string
+    nome: string
+    citta: string | null
+    indirizzo: string | null
+    lat: number | null
+    lng: number | null
+  }[],
 ): PuntoZona[] {
-  const mappa = new Map<string, { lat: number; lng: number; n: number }>()
-
-  for (const c of clienti) {
-    if (!c.citta || c.lat == null || c.lng == null) continue
-    const corrente = mappa.get(c.citta)
-    if (corrente) corrente.n += 1
-    else mappa.set(c.citta, { lat: c.lat, lng: c.lng, n: 1 })
-  }
-
-  return Array.from(mappa.entries())
-    .map(([nome, v]) => ({ nome, ...v }))
-    .sort((a, b) => b.n - a.n)
-    .slice(0, 9)
+  return clienti
+    .filter((c) => c.lat != null && c.lng != null)
+    .map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      lat: c.lat as number,
+      lng: c.lng as number,
+      n: 1,
+      /* L'indirizzo è quello che fa comparire i bottoni «Google Maps» e «Apple
+         Maps» nel popup: senza, resterebbe un pin da guardare. La città da sola
+         vale come ripiego — porta davanti al comune, che è più di niente
+         quando il civico non c'è. */
+      indirizzo: [c.indirizzo, c.citta].filter(Boolean).join(', ') || null,
+    }))
 }
 
 /* La tabella collegata, come la restituisce PostgREST: un oggetto quando la

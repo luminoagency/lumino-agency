@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { linkMappe } from '@/lib/staff/geocode'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 
@@ -11,6 +12,17 @@ export interface PuntoZona {
   lng: number
   /** Quanti: clienti, visite, chiusure. Il popup lo dice con `unita`. */
   n: number
+  /**
+   * L'indirizzo scritto, quando il punto è **un** posto e non un gruppo.
+   *
+   * La sua presenza è quello che cambia il popup: con l'indirizzo compaiono i
+   * due bottoni per aprire le mappe del telefono, senza resta il conteggio. È
+   * la distinzione giusta — «Jesolo · 6 clienti» non è un posto in cui si va, e
+   * un bottone «Naviga» su un comune porterebbe in piazza.
+   */
+  indirizzo?: string | null
+  /** La scheda da aprire dal popup, se il punto è un cliente. */
+  id?: string
 }
 
 /**
@@ -70,6 +82,10 @@ export default function Mappa({
   zoom?: number
 }) {
   const box = useRef<HTMLDivElement>(null)
+  /* Una volta per montaggio: lo user agent non cambia mentre la pagina è
+     aperta, e leggerlo dentro l'effetto dei marker vorrebbe dire rileggerlo a
+     ogni cambio di dati. */
+  const duePiattaforme = useMemo(appleQui, [])
   /* Il tipo è `unknown` e si restringe dentro l'effetto: tipizzarlo come
      `L.Map` costringerebbe a importare Leaflet anche solo per i tipi, e
      `import type` in cima a un file client lo trascina nel bundle del server. */
@@ -85,16 +101,63 @@ export default function Mappa({
       if (!vivo || !el) return
 
       if (!mappa.current) {
+        /* Il telefono si riconosce dal **tipo di puntatore**, non dalla
+           larghezza: un portatile con lo schermo touch ha un mouse, e un
+           tablet in orizzontale è largo come un desktop. `(pointer: coarse)`
+           risponde alla domanda vera — «si punta con un dito?». */
+        const dito = window.matchMedia('(pointer: coarse)').matches
+
         const m = L.map(el, {
           center: centro,
           zoom,
-          /* Lo scroll della pagina non deve diventare uno zoom della mappa: su
-             una dashboard che si scorre è il modo più rapido di perdere il
-             segno. Ci si zooma coi comandi o col doppio clic. */
-          scrollWheelZoom: false,
+          /* **La rotellina zooma, e prima no.** Era spenta per non far
+             diventare lo scroll della pagina uno zoom della mappa, e il
+             problema era vero: il rimedio però era una mappa su cui non si
+             poteva zoomare, che è peggio del male. Il rimedio giusto è che la
+             mappa si prenda la rotellina solo quando ha il fuoco del
+             puntatore, e Leaflet lo fa da sé — la rotellina su una mappa
+             sotto il cursore zooma, altrove scorre la pagina. */
+          scrollWheelZoom: true,
+          /* Il doppio clic ingrandisce, e con shift rimpicciolisce. */
+          doubleClickZoom: true,
+          /* **Su un dito il trascinamento parte spento, e questa è la riga
+             che non blocca lo scroll della pagina.** Non per modo di dire: il
+             CSS di Leaflet mette `touch-action: none` sul contenitore solo
+             quando il gestore del trascinamento è attivo (la classe
+             `leaflet-touch-drag`). Spento, resta `pan-x pan-y`, cioè il dito
+             che parte da sopra la mappa scorre la pagina come su qualunque
+             altra card — che su una dashboard lunga con una mappa alta 210px è
+             l'unico comportamento che non è una trappola.
+
+             Il pinch continua a funzionare, e il pinch di Leaflet **sposta
+             anche**: muove il centro seguendo il punto medio fra le due dita.
+             Quindi con due dita la mappa si zooma e si trascina già. L'effetto
+             qui sotto accende in più il trascinamento vero mentre le due dita
+             sono giù, così anche un movimento a distanza costante — due dita
+             che scorrono parallele, senza stringere — la sposta.
+
+             Col mouse non c'è niente di tutto questo: si trascina e basta. */
+          dragging: !dito,
+          touchZoom: true,
           zoomControl: true,
           attributionControl: true,
         })
+
+        /* Due dita sulla mappa: si può spostare. Un dito: scorre la pagina.
+           `touchstart` e `touchend` e non i Pointer Events, perché la cosa che
+           serve sapere è **quante** dita ci sono, e `TouchEvent.touches` è
+           l'unico posto dove quel numero è già pronto. `passive: true`: qui non
+           si annulla niente, si accende e si spegne un comportamento di
+           Leaflet. */
+        if (dito) {
+          const guarda = (e: TouchEvent) => {
+            if (e.touches.length >= 2) m.dragging.enable()
+            else m.dragging.disable()
+          }
+          el.addEventListener('touchstart', guarda, { passive: true })
+          el.addEventListener('touchend', guarda, { passive: true })
+          el.addEventListener('touchcancel', guarda, { passive: true })
+        }
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution:
@@ -153,9 +216,7 @@ export default function Mappa({
              tenere una seconda mappa id → numero da mantenere in pari. */
           ...({ lmN: p.n } as Record<string, unknown>),
         })
-        marker.bindPopup(
-          `<span class="lm-pop-nome">${fuga(p.nome)}</span><span class="lm-pop-n">${p.n} ${fuga(unita)}</span>`,
-        )
+        marker.bindPopup(popup(p, unita, duePiattaforme))
         gruppo.addLayer(marker)
       }
 
@@ -177,7 +238,7 @@ export default function Mappa({
     return () => {
       vivo = false
     }
-  }, [punti, centro, zoom, unita])
+  }, [punti, centro, zoom, unita, duePiattaforme])
 
   /* Lo smontaggio vero è separato: nel corpo dell'effetto sopra dipenderebbe da
      `punti`, e ogni cambio di dati distruggerebbe e ricreerebbe la mappa. */
@@ -196,6 +257,17 @@ export default function Mappa({
   return (
     <>
       <div ref={box} className="lm-map-canvas" />
+      {/* Il suggerimento delle due dita: lo mostra il CSS solo dove si punta
+          con un dito (`pointer: coarse`), perché su un computer sarebbe
+          un'istruzione per un gesto che non esiste. Dirlo è necessario: un dito
+          che scorre la pagina invece di muovere la mappa, senza una riga che lo
+          spieghi, si legge come una mappa rotta — ed è esattamente l'errore da
+          cui veniamo. */}
+      {Boolean(punti.length) && (
+        <p className="lm-map-dita" aria-hidden="true">
+          Due dita per spostare e zoomare
+        </p>
+      )}
       {!punti.length && (
         <p className="lm-map-vuota">
           Nessun punto sulla mappa: i clienti senza coordinate non si possono
@@ -210,4 +282,78 @@ export default function Mappa({
     poter chiudere il tag che lo contiene. */
 function fuga(testo: string): string {
   return testo.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+}
+
+/**
+ * Il contenuto del popup.
+ *
+ * Due forme, e la differenza la fa l'indirizzo:
+ *
+ * · **un gruppo** (una città, una zona) → nome e conteggio. Non ci sono bottoni
+ *   per navigare, perché non c'è un posto dove andare: «Jesolo» è sei clienti
+ *   sparsi, e un «Naviga» porterebbe nel municipio;
+ * · **un cliente** → nome, indirizzo scritto, e i due bottoni che aprono
+ *   l'applicazione di mappe del telefono. Più il link alla scheda, che è la cosa
+ *   che si cerca più spesso dopo aver riconosciuto un pin.
+ *
+ * `target="_blank" rel="noopener"` su tutti e tre: senza, l'app di mappe si
+ * aprirebbe **dentro** la dashboard sostituendola, e tornare indietro vorrebbe
+ * dire ricaricare l'area e ritrovarsi sul pin perduto.
+ *
+ * È una stringa e non JSX perché `bindPopup` di Leaflet vuole HTML: ogni valore
+ * che viene dal database passa da `fuga()`, compreso l'indirizzo — un nome di
+ * locale con una parentesi angolare dentro è raro ma esiste, e il popup è il
+ * posto in cui diventerebbe markup.
+ */
+function popup(p: PuntoZona, unita: string, duePiattaforme: boolean): string {
+  const nome = fuga(p.nome)
+
+  if (!p.indirizzo) {
+    return `<span class="lm-pop-nome">${nome}</span><span class="lm-pop-n">${p.n} ${fuga(unita)}</span>`
+  }
+
+  const { google, apple } = linkMappe(p.lat, p.lng, p.nome)
+  const scheda = p.id
+    ? `<a class="lm-pop-scheda" href="/staff/clienti/${encodeURIComponent(p.id)}">Apri la scheda</a>`
+    : ''
+
+  /* Su Android il bottone Apple non si mostra: aprirebbe `maps.apple.com` nel
+     browser, cioè una pagina che dice «apri su un dispositivo Apple». Su iPhone
+     si mostrano entrambi perché l'una o l'altra è una preferenza vera, e
+     indovinarla al posto di chi guarda si sbaglia la metà delle volte. */
+  const bottoni = [
+    `<a class="lm-pop-naviga" href="${google}" target="_blank" rel="noopener">Google Maps</a>`,
+    duePiattaforme
+      ? `<a class="lm-pop-naviga" href="${apple}" target="_blank" rel="noopener">Apple Maps</a>`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('')
+
+  return (
+    `<span class="lm-pop-nome">${nome}</span>` +
+    `<span class="lm-pop-dove">${fuga(p.indirizzo)}</span>` +
+    `<span class="lm-pop-azioni">${bottoni}</span>` +
+    scheda
+  )
+}
+
+/**
+ * Siamo su un dispositivo Apple?
+ *
+ * Serve a decidere se mostrare anche il bottone di Apple Maps, e si risponde
+ * con lo user agent perché non c'è altro modo: non esiste una *feature query*
+ * per «hai Apple Maps installata».
+ *
+ * Il secondo controllo non è un doppione: dal 2019 un **iPad** si dichiara
+ * «Macintosh» per ricevere i siti da desktop, quindi l'unico modo di
+ * riconoscerlo è un Mac che ha più di un punto di contatto — un Mac vero ne ha
+ * zero. Senza quella riga, su iPad comparirebbe solo Google Maps, cioè
+ * mancherebbe l'applicazione di sistema.
+ */
+function appleQui(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  if (/iPhone|iPad|iPod/.test(ua)) return true
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1
 }

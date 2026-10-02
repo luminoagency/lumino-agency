@@ -187,7 +187,7 @@ export default async function StatistichePage() {
                 di OpenStreetMap, schiarite dal CSS: l'attribuzione in basso a
                 destra è la condizione della licenza, non un dettaglio che si
                 possa nascondere per pulizia. */}
-            <Mappa punti={d.zone} altezza="lg" unita="clienti" />
+            <Mappa punti={d.zone} altezza="lg" unita="clienti" mancanti={d.zoneMancanti} />
           </article>
 
           {/* La card nera: cosa ci si sente dire. È l'unica cosa in questa pagina

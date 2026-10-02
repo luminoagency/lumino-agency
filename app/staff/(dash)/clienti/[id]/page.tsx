@@ -167,6 +167,21 @@ export default async function SchedaCliente({ params }: { params: { id: string }
         <p className="lm-warn">Rifiutato: {c.motivo_rifiuto}</p>
       )}
 
+      {/* L'avviso è qui in cima e non accanto alla riga dell'indirizzo, dove
+          sarebbe più "logico": accanto alla riga lo leggerebbe solo chi sta già
+          guardando l'indirizzo, e chi guarda l'indirizzo non ha il problema. Il
+          problema lo ha chi cerca questo cliente sulla mappa e non lo trova, e
+          quella persona apre la scheda dall'elenco e legge dall'alto.
+
+          Dice **cosa fare**, non cosa è andato storto: «controlla l'indirizzo»
+          è un'istruzione, «geocoding fallito» è un lamento. */}
+      {c.geo_stato === 'non_trovato' && (
+        <p className="lm-warn">
+          Posizione non trovata: controlla l’indirizzo. Finché non si trova, questo cliente non
+          compare sulla mappa — correggilo da «Modifica» e il pin si rifà al salvataggio.
+        </p>
+      )}
+
       <Tilt>
         <Cascade className="lm-bento">
           <article className="lm-card lm-in" data-span="5" data-hover data-reveal>
