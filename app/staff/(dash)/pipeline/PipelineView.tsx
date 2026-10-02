@@ -10,6 +10,7 @@ import FilterBar, { type Filtro } from '@/components/staff/Filters'
 import MotivoRifiuto from '@/components/staff/MotivoRifiuto'
 import Spark from '@/components/staff/Spark'
 import { cambiaStato } from '@/lib/staff/actions'
+import { useRisincronizza } from '@/lib/staff/useRisincronizza'
 import {
   SETTORE_LABEL,
   SETTORI,
@@ -40,13 +41,25 @@ export default function PipelineView({
   prezzi,
   venditori,
   zone,
+  gestione,
 }: {
   clienti: ClienteRiga[]
   prezzi: Record<string, number | null>
   venditori: { id: string; nome: string }[]
   zone: string[]
+  /**
+   * `can_manage_clients` (migration 0040).
+   *
+   * Senza, le card non si prendono: `draggable` resta falso e le colonne non
+   * accettano niente. Lasciarlo acceso avrebbe funzionato quasi — la card si
+   * muove, il server rifiuta, la card torna — e «quasi» qui vuol dire
+   * insegnare che il kanban a volte perde gli spostamenti.
+   */
+  gestione: boolean
 }) {
-  const [clienti, setClienti] = useState(iniziali)
+  /* Vedi `useRisincronizza`: la copia locale regge il trascinamento ottimista,
+     ma dopo un salvataggio le righe buone sono quelle del server. */
+  const [clienti, setClienti] = useRisincronizza(iniziali)
   const [filtri, setFiltri] = useState({ settore: '', zona: '', assegnato: '', stato: '' })
   const [cerca, setCerca] = useState('')
   const [trascinato, setTrascinato] = useState<string | null>(null)
@@ -291,6 +304,7 @@ export default function PipelineView({
                       cliente={cliente}
                       prezzo={prezzi[cliente.id] ?? null}
                       inMano={trascinato === cliente.id}
+                      gestione={gestione}
                       onPresa={setTrascinato}
                       onLascia={lascia}
                     />
@@ -372,12 +386,14 @@ const CardKanban = memo(function CardKanban({
   cliente,
   prezzo,
   inMano,
+  gestione,
   onPresa,
   onLascia,
 }: {
   cliente: ClienteRiga
   prezzo: number | null
   inMano: boolean
+  gestione: boolean
   onPresa: (id: string) => void
   onLascia: () => void
 }) {
@@ -385,7 +401,7 @@ const CardKanban = memo(function CardKanban({
     <Link
       href={`/staff/clienti/${cliente.id}`}
       className="lm-ccard"
-      draggable
+      draggable={gestione}
       data-dragging={inMano}
       onDragStart={(event) => {
         event.dataTransfer.setData('text/plain', cliente.id)

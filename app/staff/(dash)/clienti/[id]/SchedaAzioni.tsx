@@ -40,10 +40,21 @@ export default function SchedaAzioni({
   cliente,
   venditori,
   isAdmin,
+  puoGestire,
 }: {
   cliente: ClienteRiga
   venditori: { id: string; nome: string }[]
   isAdmin: boolean
+  /**
+   * `can_manage_clients` (migration 0040).
+   *
+   * Annotare un'attività e prendere un richiamo **non** passano da qui: sono
+   * righe su `staff_activities` e `staff_followups`, cioè il lavoro di tutti i
+   * giorni di chiunque abbia il cliente in carico. Il permesso riguarda
+   * l'anagrafica — cambiarla ed eliminarla — e quello è l'unico pezzo che
+   * sparisce.
+   */
+  puoGestire: boolean
 }) {
   const [aperta, setAperta] = useState<Aperta>(null)
 
@@ -57,14 +68,16 @@ export default function SchedaAzioni({
         <CalendarClock aria-hidden="true" />
         Richiamo
       </button>
-      <button type="button" className="lm-btn" onClick={() => setAperta('modifica')}>
-        <Pencil aria-hidden="true" />
-        Modifica
-      </button>
+      {puoGestire && (
+        <button type="button" className="lm-btn" onClick={() => setAperta('modifica')}>
+          <Pencil aria-hidden="true" />
+          Modifica
+        </button>
+      )}
       {/* Solo all'admin, come la policy `staff_clients_delete`: un bottone che
           esiste per tutti e funziona per uno è un bottone che insegna a non
           fidarsi dei bottoni. */}
-      {isAdmin && (
+      {isAdmin && puoGestire && (
         <button
           type="button"
           className="lm-pill"
@@ -152,6 +165,30 @@ function FormModifica({
       setErrore(esito.error ?? 'Non è stato possibile salvare le modifiche.')
       setBusy(false)
       return
+    }
+
+    /* La riga che è entrata davvero, non quella che era stata digitata: il
+       database taglia il nome a 200 caratteri, riporta un settore fuori
+       vocabolario su «altro» e manda a `null` un prezzo a zero. Riaprendo la
+       modale subito — prima che il refresh del server sia arrivato — si
+       leggono i valori veri invece di quelli chiesti. */
+    if (esito.cliente) {
+      const c = esito.cliente
+      setDati({
+        nome: c.nome,
+        settore: c.settore,
+        citta: c.citta ?? '',
+        zona: c.zona ?? '',
+        indirizzo: c.indirizzo ?? '',
+        referente: c.referente ?? '',
+        telefono: c.telefono ?? '',
+        email: c.email ?? '',
+        instagram: c.instagram ?? '',
+        sito_attuale: c.sito_attuale ?? '',
+        note_sito: c.note_sito ?? '',
+        prezzo_consigliato: c.prezzo_consigliato ? String(c.prezzo_consigliato) : '',
+        assegnato_a: c.assegnato_a ?? '',
+      })
     }
 
     router.refresh()

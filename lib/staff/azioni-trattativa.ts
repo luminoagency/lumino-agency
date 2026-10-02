@@ -77,10 +77,8 @@ export async function aggiornaCondizioni(
      avvenuto. */
   await supabase.rpc('staff_applica_accettazione', { p_client: clientId })
 
+  revalidatePath('/staff', 'layout')
   revalidatePath(`/staff/clienti/${clientId}`)
-  revalidatePath('/staff/soldi')
-  revalidatePath('/staff/progetti')
-  revalidatePath('/staff')
   return { ok: true }
 }
 
@@ -90,11 +88,8 @@ export async function aggiornaCondizioni(
 
 /** Le pagine che mostrano un numero che dipende da un incasso. */
 function rinfrescaSoldi(clientId: string) {
+  revalidatePath('/staff', 'layout')
   revalidatePath(`/staff/clienti/${clientId}`)
-  revalidatePath('/staff/soldi')
-  revalidatePath('/staff/statistiche')
-  revalidatePath('/staff/team')
-  revalidatePath('/staff')
 }
 
 /**

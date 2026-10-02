@@ -8,6 +8,7 @@ import FilterBar, { type Filtro } from '@/components/staff/Filters'
 import MotivoRifiuto from '@/components/staff/MotivoRifiuto'
 import { ConfermaUscitaAccettato } from '@/components/staff/CambioStato'
 import { cambiaStato } from '@/lib/staff/actions'
+import { useRisincronizza } from '@/lib/staff/useRisincronizza'
 import {
   SETTORE_LABEL,
   SETTORI,
@@ -35,13 +36,20 @@ export default function ClientiView({
   prezzi,
   venditori,
   zone,
+  gestione,
 }: {
   clienti: ClienteRiga[]
   prezzi: Record<string, number | null>
   venditori: { id: string; nome: string }[]
   zone: string[]
+  /** `can_manage_clients`: senza, la tendina dello stato non c'è. */
+  gestione: boolean
 }) {
-  const [clienti, setClienti] = useState(iniziali)
+  /* `useRisincronizza` e non `useState`: lo stato locale serve allo spostamento
+     ottimista, ma deve lasciar vincere il server quando il server riparla —
+     dopo un salvataggio arrivano le righe nuove e questa copia va buttata.
+     Con `useState` restavano quelle del montaggio: vedi l'hook. */
+  const [clienti, setClienti] = useRisincronizza(iniziali)
   const [filtri, setFiltri] = useState({ settore: '', zona: '', assegnato: '', stato: '' })
   const [cerca, setCerca] = useState('')
   const [sceltoId, setSceltoId] = useState<string | null>(iniziali[0]?.id ?? null)
@@ -223,6 +231,7 @@ export default function ClientiView({
               )}
 
               <div className="lm-detail-foot">
+                {gestione && (
                 <label className="lm-select" data-on="true">
                   <span className="lm-sr">Stato di {scelto.nome}</span>
                   <select
@@ -250,6 +259,7 @@ export default function ClientiView({
                   </select>
                   <ChevronDown aria-hidden="true" />
                 </label>
+                )}
 
                 <Link href={`/staff/clienti/${scelto.id}`} className="lm-btn" data-variant="light">
                   Apri scheda
