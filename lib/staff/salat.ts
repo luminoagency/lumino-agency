@@ -218,14 +218,37 @@ export function leggiImpostazioni(): ImpostazioniSalat {
       madhab: v.madhab && v.madhab in MADHAB ? v.madhab : IMPOSTAZIONI_DEFAULT.madhab,
       notifiche: v.notifiche !== false,
       ayat: v.ayat !== false,
-      /* Sotto i cinque minuti una dissolvenza continua è un disturbo, sopra le
-         quattro ore non cambia mai: il campo è un numero libero, i limiti no. */
-      intervalloAyah: limita(Number(v.intervalloAyah) || IMPOSTAZIONI_DEFAULT.intervalloAyah, 5, 240),
+      /* **Il minimo è un minuto, e prima era cinque.** Era il pavimento di
+         un'ayah *ferma in pagina*, dove un cambio ogni minuto sarebbe stato un
+         testo che si riscrive sotto gli occhi mentre si legge un'altra cosa.
+         Da quando le ayat sono una notifica che entra e se ne va, un minuto è
+         una scelta legittima — e prima di questa riga era una scelta
+         **impossibile**: il numero si salvava e si rileggeva come 5, quindi
+         chi scriveva 1 vedeva il campo tornare a 5 e concludeva che non
+         funzionava niente. Il tetto resta a quattro ore: oltre, non cambia
+         mai. */
+      intervalloAyah: limita(Number(v.intervalloAyah) || IMPOSTAZIONI_DEFAULT.intervalloAyah, 1, 240),
     }
   } catch {
     return IMPOSTAZIONI_DEFAULT
   }
 }
+
+/**
+ * «Le preferenze sono cambiate».
+ *
+ * Esiste perché le preferenze si cambiano da **due** posti — il pannello del
+ * rail e `/staff/io` — e le legge un terzo che non si smonta mai: le notifiche
+ * vivono nella shell, cioè restano montate per tutta la sessione, e leggere
+ * `localStorage` una volta al montaggio vorrebbe dire che l'intervallo nuovo
+ * entra in vigore al prossimo ricaricamento della pagina. È lo stesso difetto
+ * dell'ayah che non cambiava: un valore salvato che nessuno rilegge.
+ *
+ * `storage` da solo non basta: il browser lo manda alle **altre** schede, non a
+ * quella che ha scritto. Servono entrambi — l'evento nostro per questa scheda,
+ * `storage` per le altre.
+ */
+export const EVENTO_IMPOSTAZIONI = 'lm:salat'
 
 export function scriviImpostazioni(v: ImpostazioniSalat): void {
   try {
@@ -233,6 +256,31 @@ export function scriviImpostazioni(v: ImpostazioniSalat): void {
   } catch {
     /* Niente da fare e niente da dire: le preferenze valgono per questa
        sessione invece che per sempre, e il widget funziona uguale. */
+  }
+  try {
+    window.dispatchEvent(new Event(EVENTO_IMPOSTAZIONI))
+  } catch {
+    /* Fuori da un browser non c'è niente da avvisare. */
+  }
+}
+
+/**
+ * Chi vuole sapere quando cambiano. Restituisce la funzione per smettere.
+ *
+ * Il filtro sulla chiave di `storage` non è pignoleria: in questa stessa origine
+ * ci scrivono la posizione, il permesso negato, la coda delle visite offline e i
+ * flag dell'adhan già visto. Senza il filtro, ogni visita salvata senza rete
+ * farebbe ricalcolare le notifiche.
+ */
+export function ascoltaImpostazioni(quando: () => void): () => void {
+  const daAltraScheda = (e: StorageEvent) => {
+    if (e.key === null || e.key === CHIAVE_IMPOSTAZIONI) quando()
+  }
+  window.addEventListener(EVENTO_IMPOSTAZIONI, quando)
+  window.addEventListener('storage', daAltraScheda)
+  return () => {
+    window.removeEventListener(EVENTO_IMPOSTAZIONI, quando)
+    window.removeEventListener('storage', daAltraScheda)
   }
 }
 

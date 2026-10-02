@@ -26,6 +26,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
+import Notifiche from '@/components/staff/Notifiche'
 import Salat from '@/components/staff/Salat'
 import { Toggle } from '@/components/staff/Controls'
 import { impostaDemo } from '@/lib/staff/actions'
@@ -276,6 +277,14 @@ export default function StaffShell({
           <div className="lm-shell-salat">
             <Salat />
           </div>
+
+          {/* Le notifiche stanno **qui**, nella shell, e non in una pagina: la
+              shell non si smonta navigando dentro /staff, quindi il loro timer
+              parte una volta e continua. Nella home si azzerava a ogni
+              navigazione — è il motivo per cui l'ayah non cambiava mai. Non
+              disegna niente di suo: quando c'è qualcosa da dire si porta su
+              `.lm-staff` con un portale. */}
+          <Notifiche />
 
           <PageEnter key={pathname}>{children}</PageEnter>
         </main>

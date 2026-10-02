@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import AreaChart, { type AreaPoint } from '@/components/staff/AreaChart'
-import AyahCard from '@/components/staff/AyahCard'
 import { Lollipop, Progress } from '@/components/staff/Bars'
 import Cascade from '@/components/staff/Cascade'
 import Counter from '@/components/staff/Counter'
@@ -477,7 +476,7 @@ export default async function StaffHome() {
               un testo da leggere davanti a quello che si è venuti a vedere è il
               modo di far chiudere entrambi. In fondo la trova chi scorre, cioè
               chi ha finito. Si spegne dalle proprie impostazioni. */}
-          <AyahCard />
+
         </Cascade>
       </Tilt>
     </>

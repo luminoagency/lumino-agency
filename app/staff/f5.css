@@ -1176,3 +1176,167 @@
     padding-left: 0;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Le notifiche: ayah e adhan
+
+   Un oggetto di vetro appoggiato nell'angolo, come tutto il resto dell'area —
+   non un rettangolo di sistema. Perla traslucida, non viola: il viola qui è
+   riservato ad azione e selezione, e una notifica non è né l'una né l'altra.
+   L'adhan si distingue da **una riga** sopra, non da un colore di fondo:
+   cambiare il colore dello sfondo per dire «questa è più importante» vorrebbe
+   dire due notifiche che sembrano due componenti diversi.
+
+   Dove sta, e perché proprio lì:
+   · in basso a **destra** sul desktop, perché a sinistra c'è il rail e in alto
+     ci sono il titolo della pagina e i suoi bottoni;
+   · in basso ma **sopra il dock** sul telefono (`--dock`), così non copre mai la
+     navigazione — e `z-index: 44` la tiene comunque sotto il dock (50) e sotto
+     le modali (55), quindi anche sbagliando i conti dei pixel non può finire
+     sopra qualcosa su cui si preme.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.lm-nota {
+  position: fixed;
+  z-index: 44;
+  right: 1.15rem;
+  bottom: 1.15rem;
+  width: min(23rem, calc(100vw - 2.3rem));
+  padding: 1rem 1.1rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--r-lg, 20px);
+  /* Più opaca del vetro del pannello (.34): qui sotto passa qualunque cosa ci
+     sia nella pagina, e un arabo vocalizzato sopra una tabella di numeri non si
+     legge. L'opacità è la leggibilità, non l'estetica. */
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 24px 52px -24px rgba(28, 22, 18, 0.5);
+  animation: lm-nota-entra 0.44s var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+/* Entra salendo di poco e sfumando: dieci pixel, non cento. Una notifica che
+   arriva volando dal bordo dello schermo si guarda invece di leggersi. */
+@keyframes lm-nota-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* L'uscita non è un'animazione: il componente si smonta, e un elemento smontato
+   non può animare la propria sparizione senza una libreria o un secondo stato.
+   La dissolvenza in uscita costerebbe un `useState` in più per 300ms — e
+   l'entrata morbida è la metà che si nota, perché è quella che arriva mentre si
+   sta guardando altro. */
+
+.lm-nota-x {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  display: grid;
+  place-items: center;
+  /* 32px: si chiude col pollice, e un bersaglio più piccolo in un angolo
+     arrotondato si manca. */
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.lm-nota-x:hover {
+  background: rgba(23, 19, 15, 0.07);
+  color: var(--ink);
+}
+.lm-nota-x svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ── L'arabo ─────────────────────────────────────────────────────────────────
+   Più grande che nella card di prima (1.17rem): qui c'è un testo solo e qualche
+   secondo per leggerlo, e la misura generosa è il motivo per cui una notifica
+   funziona dove una card in mezzo ai numeri no. `--font-ar` è Noto Naskh
+   Arabic, servito dal nostro dominio (vedi components/staff/fonts.ts). */
+.lm-nota-ar {
+  margin: 0;
+  padding-right: 1.6rem;
+  font-family: var(--font-ar), serif;
+  font-size: 1.34rem;
+  font-weight: 400;
+  /* L'arabo vocalizzato ha i segni sopra e sotto la linea di base: a interlinea
+     normale si toccano. */
+  line-height: 2.05;
+  color: var(--ink);
+  text-align: right;
+}
+
+.lm-nota-it {
+  margin: 0.5rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.lm-nota-rif {
+  margin: 0.55rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── La testa dell'adhan ─────────────────────────────────────────────────────
+   «Adhan» a sinistra, «Asr 15:42» a destra. L'orario in tabular-nums perché è
+   l'informazione della notifica: con le cifre proporzionali un 1 stretto accanto
+   a un 5 larga si legge male proprio nella riga che conta. */
+.lm-nota[data-tipo='adhan'] {
+  border-color: rgba(23, 19, 15, 0.14);
+}
+
+.lm-nota-testa {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin: 0 1.6rem 0.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.lm-nota-tipo {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.lm-nota-quando {
+  font-size: 1.02rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+/* Il nome arabo della preghiera è un nome, non un versetto: non ha bisogno
+   dell'interlinea doppia e starebbe troppo largo. */
+.lm-nota[data-tipo='adhan'] .lm-nota-ar {
+  padding-right: 0;
+  font-size: 1.5rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 1039px) {
+  /* Sopra il dock, con il margine di sicurezza del telefono: coprire la
+     navigazione è l'unico errore che una notifica non può permettersi, perché
+     chi la trova lì non può nemmeno andarsene. */
+  .lm-nota {
+    right: 0.8rem;
+    left: 0.8rem;
+    bottom: calc(var(--dock) + 0.6rem + env(safe-area-inset-bottom));
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-nota {
+    animation: none;
+  }
+}

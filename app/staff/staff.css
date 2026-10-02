@@ -5483,86 +5483,13 @@
   margin-top: 0.5rem;
 }
 
-/* ───────────────────────────────────────────────────────────────────────────
-   Le ayat
-
-   Arabo in Noto Naskh, servito dal nostro dominio, e la traduzione italiana
-   sotto in piccolo col riferimento esatto. La dimensione è contenuta di
-   proposito: un versetto a corpo di titolo in una dashboard di vendite sarebbe
-   fuori posto due volte — nella gerarchia della pagina e nel tono.
-
-   La dissolvenza è sull'opacità e su nient'altro: 0.84s in tutto, con il cambio
-   di testo a metà, quando il testo è del tutto invisibile.
-   ─────────────────────────────────────────────────────────────────────────── */
-.lm-ayah {
-  margin: 0.9rem 0 0;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--line);
-  opacity: 1;
-  transition: opacity 0.42s ease;
-}
-.lm-ayah[data-fade='true'] {
-  opacity: 0;
-}
-.lm-ayah-ar {
-  font-family: var(--font-ar), serif;
-  font-size: 1.17rem;
-  font-weight: 400;
-  /* L'arabo vocalizzato ha bisogno d'aria fra le righe: i segni stanno sopra e
-     sotto la linea di base, e a interlinea normale si toccano. */
-  line-height: 2.05;
-  color: var(--ink);
-  text-align: right;
-}
-.lm-ayah-it {
-  margin: 0.5rem 0 0;
-  font-size: 0.87rem;
-  line-height: 1.55;
-  color: var(--ink-2);
-}
-.lm-ayah figcaption {
-  margin-top: 0.4rem;
-  font-size: 0.82rem;
-  color: var(--ink-2);
-}
-
-/* La card della home: perla, senza bordo colorato, senza icona, senza titolo. Chi
-   la vuole leggere la legge, chi sta guardando i numeri non la incontra. */
-.lm-ayah-card {
-  gap: 0;
-}
-.lm-ayah-card .lm-ayah-ar {
-  border-top: 0;
-  font-size: 1.28rem;
-}
-.lm-ayah-card .lm-ayah-it {
-  max-width: 76ch;
-}
-@media (min-width: 900px) {
-  /* Sul largo l'arabo va a destra e l'italiano a sinistra, su due colonne: sono
-     due versi della stessa cosa, non un testo e la sua didascalia. */
-  .lm-ayah-card {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-    gap: 1.6rem;
-  }
-  .lm-ayah-card .lm-ayah-ar {
-    grid-column: 2;
-    grid-row: 1;
-    margin: 0;
-  }
-  .lm-ayah-card .lm-ayah-it {
-    grid-column: 1;
-    grid-row: 1;
-    margin: 0;
-  }
-  .lm-ayah-card figcaption {
-    grid-column: 1;
-    grid-row: 2;
-    margin-top: 0.5rem;
-  }
-}
+/* Le ayat non hanno più un CSS: non sono più un elemento della pagina.
+ *
+ * Stavano in una card della home e in fondo al pannello della preghiera, e qui
+ * c'erano ottanta righe per la loro tipografia e per la dissolvenza del cambio.
+ * Ora sono una notifica (`.lm-nota` in f5.css), e tenere in vita queste regole
+ * vorrebbe dire due posti dove si cambia la misura dell'arabo e uno dei due che
+ * non si vede. Il perché del cambio sta in components/staff/Notifiche.tsx. */
 
 /* Con il movimento ridotto la dissolvenza sparisce (la regola generale azzera le
    transizioni) e il punto della preghiera in corso smette di pulsare. */

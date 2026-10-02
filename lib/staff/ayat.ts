@@ -235,6 +235,44 @@ export function ayahDelGiro(giro: number): Ayah {
   return AYAT[((giro % AYAT.length) + AYAT.length) % AYAT.length]
 }
 
+/**
+ * L'ayah dopo quella di prima, mai la stessa due volte di seguito.
+ *
+ * ## Perché a sorte, dopo che `ayahDelGiro` era deterministica apposta
+ *
+ * Quella funzione evita `Math.random()` per una ragione precisa: era l'ayah di
+ * una card **disegnata dal server**, e server e browser devono produrre lo
+ * stesso primo dipinto o React segnala un errore di idratazione. Una notifica
+ * non ha quel vincolo — non esiste al primo dipinto, la crea un timer nel
+ * browser qualche minuto dopo — quindi la scelta può tornare a essere una
+ * scelta. Ed è meglio che sia: venticinque versetti sempre nello stesso ordine
+ * diventano una sequenza che si impara, e una sequenza che si impara non si
+ * legge più.
+ *
+ * ## «Mai la stessa due volte» è l'unica garanzia, e basta
+ *
+ * Si esclude solo la precedente, non le ultime cinque. Una memoria più lunga
+ * vorrebbe dire conservare una coda fra i ricaricamenti per un difetto che si
+ * nota a malapena, mentre la stessa ayah due volte di fila si nota subito —
+ * sembra che la notifica sia comparsa per sbaglio.
+ */
+export function indiceAyahDopo(precedente: number | null): number {
+  if (AYAT.length < 2) return 0
+  /* Si estrae da **una in meno** e si salta la precedente: così ogni altra ayah
+     ha esattamente la stessa probabilità. Riestrarre finché non è diversa
+     darebbe lo stesso risultato in media ma con un ciclo che in teoria non
+     finisce, e un ciclo del genere in un timer è il posto peggiore dove
+     metterlo. */
+  if (precedente == null) return Math.floor(Math.random() * AYAT.length)
+  const i = Math.floor(Math.random() * (AYAT.length - 1))
+  return i < precedente ? i : i + 1
+}
+
+/** L'ayah di un certo indice, qualunque numero arrivi. */
+export function ayahAt(indice: number): Ayah {
+  return ayahDelGiro(indice)
+}
+
 /** Il riferimento leggibile: «An-Nur 24:37». */
 export function riferimento(a: Ayah): string {
   return `${a.sura} ${a.rif}`

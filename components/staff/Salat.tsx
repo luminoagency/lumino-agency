@@ -4,7 +4,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom'
 import { ospitePortale } from '@/lib/staff/portale'
 import { Bell, BellOff, Check, Clock, MapPin, Moon, Search, Settings2, X } from 'lucide-react'
-import { ayahDelGiro } from '@/lib/staff/ayat'
 import {
   IMPOSTAZIONI_DEFAULT,
   MADHAB,
@@ -68,8 +67,6 @@ export default function Salat() {
   const [aperto, setAperto] = useState(false)
   const [pannello, setPannello] = useState<'orari' | 'impostazioni'>('orari')
   const [adesso, setAdesso] = useState<number>(() => Date.now())
-  const [giro, setGiro] = useState(0)
-  const [dissolve, setDissolve] = useState(false)
   const [inCorso, setInCorso] = useState(false)
   /* La finestra del permesso è aperta in questo momento: sotto la pill compare
      una riga che dice perché. Dura quanto la finestra e non un millisecondo di
@@ -245,6 +242,12 @@ export default function Salat() {
     if (!imp?.attivo || !imp.notifiche || !st) return
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
 
+    /* **Solo a scheda nascosta.** Da quando l'adhan compare come notifica
+       in-app (`Notifiche.tsx`), questa del sistema operativo servirebbe a dire
+       la stessa cosa due volte a chi sta guardando la dashboard. Divisi così si
+       completano: il toast raggiunge chi è dentro, questa chi è altrove. */
+    if (document.visibilityState === 'visible') return
+
     const chiave = st.attuale.at.toISOString()
     /* Più di dieci minuti dopo l'entrata non si notifica: aprendo la dashboard
        alle quattro del pomeriggio non deve arrivare la notifica di Dhuhr. */
@@ -273,22 +276,12 @@ export default function Salat() {
     }
   }, [imp?.attivo, imp?.notifiche, st, pos?.citta])
 
-  /* ── l'ayah che gira ───────────────────────────────────────────────────── */
-  useEffect(() => {
-    if (!imp?.attivo || !imp.ayat) return
-    const ms = Math.max(5, imp.intervalloAyah) * 60_000
-    const id = window.setInterval(() => {
-      /* Prima si sbiadisce, poi si cambia testo, poi si rientra: cambiare la
-         stringa e la trasparenza nello stesso fotogramma si vede come un
-         lampo, non come una dissolvenza. */
-      setDissolve(true)
-      window.setTimeout(() => {
-        setGiro((g) => g + 1)
-        setDissolve(false)
-      }, 420)
-    }, ms)
-    return () => window.clearInterval(id)
-  }, [imp?.attivo, imp?.ayat, imp?.intervalloAyah])
+  /* ── le ayat non stanno più qui ─────────────────────────────────────────
+     Erano una `figure` in fondo a questo pannello e una card nella home, con
+     un timer per ciascuna. Ora sono una notifica, e il timer è uno solo, in
+     `components/staff/Notifiche.tsx` — che vive nella shell e quindi non si
+     azzera navigando. Il perché, e perché non cambiavano mai, sta scritto là.
+     Qui resta l'interruttore e l'intervallo, perché le preferenze sono queste. */
 
   /* ── azioni ────────────────────────────────────────────────────────────── */
   const salva = useCallback((patch: Partial<ImpostazioniSalat>) => {
@@ -358,7 +351,6 @@ export default function Salat() {
 
   if (!pronto || !imp?.attivo) return null
 
-  const ayah = ayahDelGiro(giro)
   /* Quindici minuti: la soglia oltre la quale la pill diventa nera. Non è
      decorazione — è l'unico momento in cui quel widget ha qualcosa di urgente da
      dire, e il nero è l'accento di questa interfaccia. Il resto del tempo resta
@@ -454,21 +446,6 @@ export default function Salat() {
                 })}
               </ul>
 
-              {imp.ayat && (
-                <figure className="lm-ayah" data-fade={dissolve}>
-                  <p className="lm-ayah-ar" lang="ar" dir="rtl">
-                    {ayah.parziale && <span aria-hidden="true">…</span>}
-                    {ayah.ar}
-                  </p>
-                  <blockquote className="lm-ayah-it">
-                    {ayah.parziale && '…'}
-                    {ayah.it}
-                  </blockquote>
-                  <figcaption>
-                    {ayah.sura} {ayah.rif}
-                  </figcaption>
-                </figure>
-              )}
             </>
           ) : (
             <Dove
@@ -837,7 +814,7 @@ function Impostazioni({
       <div className="lm-salat-riga">
         <span>
           Ayah
-          <small>nel pannello e nella home</small>
+          <small>come notifica, ogni tanto</small>
         </span>
         <button
           type="button"
@@ -856,9 +833,9 @@ function Impostazioni({
           <span className="lm-salat-input">
             <input
               type="number"
-              min={5}
+              min={1}
               max={240}
-              step={5}
+              step={1}
               value={imp.intervalloAyah}
               onChange={(e) => salva({ intervalloAyah: Number(e.target.value) })}
             />

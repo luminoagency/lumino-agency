@@ -60,7 +60,7 @@ export default function PreferenzeSalat() {
         onChange={(v) => salva({ attivo: v })}
       />
       <Toggle
-        label="Mostra le ayat (nel pannello e nella home)"
+        label="Mostra le ayat (come notifica)"
         checked={imp.ayat}
         onChange={(v) => salva({ ayat: v })}
       />
@@ -102,16 +102,24 @@ export default function PreferenzeSalat() {
         </label>
 
         <label className="lm-field">
-          <span className="lm-label">Cambia ayah ogni (minuti)</span>
+          <span className="lm-label">Nuova ayah ogni (minuti)</span>
           <input
             type="number"
-            min={5}
+            /* Uno, non cinque. Il cinque era il minimo di un'ayah ferma in
+               pagina; adesso è una notifica che entra e se ne va, e un minuto è
+               una scelta legittima — oltre che una scelta che il campo
+               accettava e il codice buttava. */
+            min={1}
             max={240}
-            step={5}
+            step={1}
             value={imp.intervalloAyah}
             disabled={!imp.ayat}
             onChange={(e) => salva({ intervalloAyah: Number(e.target.value) })}
           />
+          <p className="lm-field-hint">
+            Compare come notifica nell’angolo in basso, resta qualche secondo e se ne va. Non si
+            ripete due volte di seguito.
+          </p>
         </label>
 
         <div className="lm-field">
