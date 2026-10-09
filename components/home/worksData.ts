@@ -71,24 +71,62 @@ export interface Work {
     non esiste. Sostituendo questi file con le versioni full-page — stessi
     nomi — lo scorrimento parte senza toccare il codice. Vedi README.txt.
 
-    Gli screenshot sono TUTTI E NOVE interi, non prime schermate: catturati a
+    Gli screenshot sono TUTTI E DIECI interi, non prime schermate: catturati a
     1440 esatti di larghezza — con la barra di scorrimento nascosta, altrimenti
-    ne verrebbero 1425 — e alti fra 5.000 e 12.500 pixel. La card lo riconosce
+    ne verrebbero 1425 — e alti fra 5.000 e 16.200 pixel. La card lo riconosce
     dalle proporzioni e li fa scorrere davvero. Prima cinque erano prime
     schermate e facevano la deriva lenta: due comportamenti diversi nella
     stessa griglia si leggono come un difetto, non come una scelta.
+
+    Ambasciata è l'unico cucito a mano, e per forza: quel sito blocca le
+    sezioni e le anima mentre si scorre, quindi un full-page normale viene
+    fuori quasi tutto fondo vuoto — le sezioni bloccate disegnano solo dentro
+    la finestra. Sono diciotto schermate prese scendendo e rimesse una sotto
+    l'altra: 18 × 900 = 16.200, poco sotto il tetto di 16.383 pixel oltre il
+    quale il WebP non si salva più. La pagina vera è 17.319: la pellicola
+    stringe un po' il passo, non taglia niente.
 
     Il PNG accanto a ogni WebP è ridotto a 900px: lo serve solo un browser che
     non conosca WebP, cioè in pratica nessuno, e a piena risoluzione erano
     megabyte di peso morto nel deploy.
 
-    URL — tutti e nove rispondono 200 e si lasciano incorporare. Le due
-    eccezioni storiche sono chiuse: rossi-restaurant e incanto-gelateria erano
-    dietro la Deployment Protection di Vercel e servivano la pagina di login
-    (X-Frame-Options: DENY); tolta la protezione, incorporano come gli altri.
-    Incanto in più non aveva alcun deployment di produzione: ora ce l'ha.  */
+    URL — nessuno dei dieci risponde oggi: l'account Vercel che li ospita
+    (siwakyceos-projects) è sospeso e serve 402 DEPLOYMENT_DISABLED su tutti i
+    domini, deployment di produzione compresi. Non è Deployment Protection e
+    non si sblocca dal progetto: finché l'account resta così l'overlay ripiega
+    sullo screenshot, che è il motivo per cui quel ripiego esiste. Le due
+    eccezioni storiche invece sono chiuse: rossi-restaurant e incanto-gelateria
+    erano dietro la Deployment Protection di Vercel e servivano la pagina di
+    login (X-Frame-Options: DENY); tolta la protezione, incorporano come gli
+    altri. Incanto in più non aveva alcun deployment di produzione: ora ce
+    l'ha.  */
 
 export const WORKS: Work[] = [
+  {
+    id: 'ambasciata',
+    client: "Ristorante L'Ambasciata",
+    sector: 'Ristorante · Quistello',
+    year: '2026',
+    barLabel: "Ristorante L'Ambasciata",
+    siteUrl: 'https://ambasciata-web.vercel.app',
+    blurb:
+      "Una quadreria di cornici dorate che si apre dietro una porta rossa. Contatore delle date, galleria dei piatti come in un museo, Libro di Casa da sfogliare e prenotazione su WhatsApp. Italiano e inglese.",
+    shot: {
+      webp: '/works/hero/ambasciata.webp',
+      png: '/works/hero/ambasciata.png',
+      width: 1440,
+      height: 900,
+    },
+    accent: 'var(--bordeaux)',
+    ready: true,
+    media: {
+      kind: 'shot',
+      webp: '/works/ambasciata.webp',
+      png: '/works/ambasciata.png',
+      width: 1440,
+      height: 16200,
+    },
+  },
   {
     id: 'zayyane',
     client: 'Zayyane',
