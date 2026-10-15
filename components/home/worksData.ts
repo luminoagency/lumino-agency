@@ -90,11 +90,11 @@ export interface Work {
     non conosca WebP, cioè in pratica nessuno, e a piena risoluzione erano
     megabyte di peso morto nel deploy.
 
-    URL — nessuno dei dieci risponde oggi: l'account Vercel che li ospita
-    (siwakyceos-projects) è sospeso e serve 402 DEPLOYMENT_DISABLED su tutti i
-    domini, deployment di produzione compresi. Non è Deployment Protection e
-    non si sblocca dal progetto: finché l'account resta così l'overlay ripiega
-    sullo screenshot, che è il motivo per cui quel ripiego esiste. Le due
+    URL — tutti e dieci rispondono 200 e si lasciano incorporare (verificato
+    il 15 ottobre 2026). Dal 9 al 12 ottobre l'account Vercel che li ospita
+    (siwakyceos-projects) era sospeso e serviva 402 DEPLOYMENT_DISABLED su
+    tutti i domini: in quei casi l'overlay ripiega sullo screenshot, che è il
+    motivo per cui quel ripiego esiste. Le due
     eccezioni storiche invece sono chiuse: rossi-restaurant e incanto-gelateria
     erano dietro la Deployment Protection di Vercel e servivano la pagina di
     login (X-Frame-Options: DENY); tolta la protezione, incorporano come gli
