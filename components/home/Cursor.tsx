@@ -67,18 +67,40 @@ export default function Cursor() {
     const ringPos = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
     const auroraPos = { x: window.innerWidth / 2, y: window.innerHeight * 0.45 }
 
+    /* Ultima posizione scritta nello stile: col mouse fermo e anello e
+       aurora già arrivati non si scrive niente. Riscrivere lo stesso
+       transform a ogni frame costava comunque un ricalcolo di stile e un
+       frame del compositor, sessanta volte al secondo, a pagina ferma. */
+    let lastX = NaN
+    let lastY = NaN
+
     const tick = () => {
-      dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`
-
-      ringPos.x = lerp(ringPos.x, pointer.x, lag)
-      ringPos.y = lerp(ringPos.y, pointer.y, lag)
-      ring.style.transform = `translate3d(${ringPos.x}px, ${ringPos.y}px, 0)`
-
-      auroraPos.x = lerp(auroraPos.x, pointer.x, 0.045)
-      auroraPos.y = lerp(auroraPos.y, pointer.y, 0.045)
-      aurora.style.transform = `translate3d(${auroraPos.x}px, ${auroraPos.y}px, 0)`
-
       raf = requestAnimationFrame(tick)
+
+      const moved = pointer.x !== lastX || pointer.y !== lastY
+      if (moved) {
+        dot.style.transform = `translate3d(${pointer.x}px, ${pointer.y}px, 0)`
+        lastX = pointer.x
+        lastY = pointer.y
+      }
+
+      const ringIdle =
+        Math.abs(ringPos.x - pointer.x) < 0.1 && Math.abs(ringPos.y - pointer.y) < 0.1
+      if (!ringIdle) {
+        ringPos.x = lerp(ringPos.x, pointer.x, lag)
+        ringPos.y = lerp(ringPos.y, pointer.y, lag)
+        ring.style.transform = `translate3d(${ringPos.x}px, ${ringPos.y}px, 0)`
+      }
+
+      // Sotto la finestra di un lavoro l'aurora è nascosta: non la si sposta.
+      if (document.body.classList.contains('lm-lock')) return
+      const auroraIdle =
+        Math.abs(auroraPos.x - pointer.x) < 0.1 && Math.abs(auroraPos.y - pointer.y) < 0.1
+      if (!auroraIdle) {
+        auroraPos.x = lerp(auroraPos.x, pointer.x, 0.045)
+        auroraPos.y = lerp(auroraPos.y, pointer.y, 0.045)
+        aurora.style.transform = `translate3d(${auroraPos.x}px, ${auroraPos.y}px, 0)`
+      }
     }
 
     const onOver = (event: PointerEvent) => {

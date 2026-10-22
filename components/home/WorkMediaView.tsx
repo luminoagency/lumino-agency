@@ -68,10 +68,13 @@ export default function WorkMediaView({
   work,
   eager = false,
   variant = 'full',
+  sizes = '(max-width: 768px) 100vw, 50vw',
 }: {
   work: Work
   eager?: boolean
   variant?: 'card' | 'full'
+  /** Quanto è larga l'immagine a schermo: decide fra 720px e originale. */
+  sizes?: string
 }) {
   const media = variant === 'card' ? work.shot : work.media
 
@@ -100,9 +103,19 @@ export default function WorkMediaView({
     )
   }
 
+  /* La prima schermata esiste anche a 720px (`-720.webp`): su telefono la
+     card è larga meno di 400px, e scaricare e decodificare la 1440 per
+     mostrarla a un quarto era tempo perso proprio mentre si scorre la
+     griglia. Lo screenshot intero non ha la versione piccola. */
+  const small = media.webp.replace(/\.webp$/, '-720.webp')
+
   return (
     <picture>
-      <source srcSet={media.webp} type="image/webp" />
+      {variant === 'card' ? (
+        <source srcSet={`${small} 720w, ${media.webp} ${media.width}w`} sizes={sizes} type="image/webp" />
+      ) : (
+        <source srcSet={media.webp} type="image/webp" />
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element -- lo screenshot è
           servito a dimensione fissa e già ottimizzato: next/image aggiungerebbe
           un secondo passaggio di ridimensionamento senza guadagno.

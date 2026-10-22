@@ -64,8 +64,7 @@
     width 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
     height 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
     background 0.35s,
-    border-color 0.35s,
-    backdrop-filter 0.35s;
+    border-color 0.35s;
 }
 /* La parola entra crescendo, non con una dissolvenza secca. */
 .lm-cur-disc span {
@@ -101,14 +100,15 @@
   border-color: transparent;
 }
 
-/* Dischi pieni translucidi: si vede attraverso quello che c'è sotto. Il blur
-   li stacca dal fondo senza coprirlo. */
+/* Dischi pieni translucidi: si vede attraverso quello che c'è sotto.
+   Niente backdrop-filter: un disco sfocato che si muove col mouse obbligava
+   il browser a rileggere e sfocare il fondo a ogni frame, e a 2px la
+   differenza non si vede. */
 .lm-cur-disc.is-view,
 .lm-cur-disc.is-open,
 .lm-cur-disc.is-whatsapp,
 .lm-cur-disc.is-copy {
   border-color: transparent;
-  backdrop-filter: blur(2px);
 }
 .lm-cur-disc.is-view {
   width: 130px;
@@ -273,6 +273,10 @@ body.lm-cursor-away .lm-cur-ring {
 }
 
 /* ─── Aurora + aloni di fondo ────────────────────────────────────────────── */
+/* Gli aloni sono fissi e grandi quanto mezzo schermo: con filter: blur() il
+   browser li risfocava a ogni frame di scroll, ed era la prima causa del lag
+   della home. La morbidezza ora sta nel gradiente stesso (più fermate, coda
+   più lunga), che si dipinge una volta e poi si compone soltanto. */
 .lm-dawn,
 .lm-glow,
 .lm-aurora {
@@ -294,7 +298,6 @@ body.lm-cursor-away .lm-cur-ring {
 }
 .lm-glow {
   border-radius: 50%;
-  filter: blur(95px);
   z-index: 0;
   opacity: 0.72;
 }
@@ -303,7 +306,7 @@ body.lm-cursor-away .lm-cur-ring {
   height: 600px;
   top: -160px;
   left: -220px;
-  background: radial-gradient(circle, var(--bordeaux), transparent 68%);
+  background: radial-gradient(circle, var(--bordeaux), rgba(107, 31, 42, 0.45) 30%, transparent 70%);
 }
 .lm-glow-b {
   width: 700px;
@@ -312,8 +315,9 @@ body.lm-cursor-away .lm-cur-ring {
   right: -300px;
   background: radial-gradient(
     circle,
-    rgba(59, 79, 196, 0.9),
-    rgb(var(--violet-rgb) / 0.4) 55%,
+    rgba(59, 79, 196, 0.62),
+    rgba(59, 79, 196, 0.3) 30%,
+    rgb(var(--violet-rgb) / 0.16) 52%,
     transparent 72%
   );
 }
@@ -326,17 +330,28 @@ body.lm-cursor-away .lm-cur-ring {
   margin: -360px 0 0 -360px;
   border-radius: 50%;
   z-index: 1;
-  filter: blur(120px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
+  opacity: 0.4;
   will-change: transform;
   background: radial-gradient(
     circle,
-    rgba(255, 198, 140, 0.55),
-    rgba(229, 52, 42, 0.22) 38%,
-    rgb(var(--violet-rgb) / 0.12) 60%,
-    transparent 74%
+    rgba(255, 198, 140, 0.34),
+    rgba(229, 52, 42, 0.12) 34%,
+    rgb(var(--violet-rgb) / 0.06) 56%,
+    transparent 70%
   );
+}
+/* Con la finestra di un lavoro aperta la pagina sotto si ferma: aloni
+   nascosti e animazioni CSS in pausa. Sono coperti dal fondo scuro del
+   viewer, e continuare a dipingerli rubava frame proprio all'iframe. */
+body.lm-lock .lm-dawn,
+body.lm-lock .lm-glow,
+body.lm-lock .lm-aurora {
+  visibility: hidden;
+}
+body.lm-lock .lm *,
+body.lm-lock .lm *::before,
+body.lm-lock .lm *::after {
+  animation-play-state: paused !important;
 }
 
 /* Il contenuto sta sopra gli aloni.
@@ -887,8 +902,9 @@ body.lm-loaded .lm-wm:not(.is-static) b {
 .lm-viewer-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(9, 6, 5, 0.72);
-  backdrop-filter: blur(6px);
+  /* Più coperto e senza blur: sfocare tutta la pagina sotto mentre la
+     finestra cresce costava più dell'apertura stessa. */
+  background: rgba(9, 6, 5, 0.9);
 }
 /* Cornice: stessa grafica della card, posizionata da GSAP.
    L'apertura anima top/left/width/height — MAI transform: scale(), che su un
@@ -1176,7 +1192,9 @@ body.lm-loaded .lm-wm:not(.is-static) b {
 .lm-viewer-shot video,
 .lm-viewer-shot .lm-card-placeholder {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
 }
 /* Quando il sito non si può mostrare, lo screenshot passa in secondo piano e
    davanti resta il progetto: nome, settore, descrizione e la via d'uscita. */

@@ -99,8 +99,11 @@ export default function Hero() {
          in un listener perché il loop gira già: un secondo ascoltatore dello
          stesso numero è solo un'altra cosa che può disallinearsi. */
       if (!settled && window.scrollY > 0) settleNow()
-      driver.update()
       raf = requestAnimationFrame(loop)
+      /* Con la finestra di un lavoro aperta l'hero è coperto: il loop resta
+         vivo (riparte da solo alla chiusura) ma non ridisegna la scena. */
+      if (document.body.classList.contains('lm-lock')) return
+      driver.update()
     }
     /* Il loop parte SENZA aspettare l'entrata: è lui che si accorge dello
        scroll. Finché l'entrata è in corso non dipinge nulla di visibile — al

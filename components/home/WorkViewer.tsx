@@ -7,7 +7,7 @@ import { useI18n } from '@/components/i18n/I18nProvider'
 import { fill } from '@/lib/i18n/messages'
 import BrowserChrome from './BrowserChrome'
 import WorkMediaView from './WorkMediaView'
-import { gsap, prefersReducedMotion } from './useMotion'
+import { gsap, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
 
 /**
  * Il sito del cliente aperto DENTRO la vetrina.
@@ -40,6 +40,11 @@ const CLOSE_MS = 0.4
    cinque secondi si leggono come "è rotto", non come "sta caricando". Il
    fondo intanto non è mai vuoto, perché lo screenshot è già lì sotto. */
 const EMBED_TIMEOUT_MS = 3000
+/* Quando il server ha già detto che il sito si lascia incorporare, l'attesa
+   non è più un dubbio ma un caricamento: tre secondi staccavano l'iframe a
+   metà sui telefoni in 4G, e il visitatore vedeva sparire il sito che stava
+   arrivando. Quindici restano una rete per il sito che non dipinge mai. */
+const EMBED_TIMEOUT_CONFIRMED_MS = 15000
 /** Durata della visita guidata prima che l utente prenda il controllo. */
 const TOUR_S = 26
 
@@ -70,6 +75,13 @@ export default function WorkViewer({
   const [showEmbed, setShowEmbed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [blocked, setBlocked] = useState(false)
+  /** Il server ha confermato che il sito si lascia incorporare. */
+  const [confirmed, setConfirmed] = useState(false)
+  /* Telefono o niente mouse: niente visita guidata. Col dito il sito si
+     scorre da sé, e un velo che aspetta il primo tocco era un passaggio in
+     più — più un iframe alto il doppio da dipingere mentre trasla. Letto una
+     volta all'apertura: la finestra non cambia natura mentre è aperta. */
+  const [compact] = useState(() => !mouseEffectsEnabled())
   /** false = sta scorrendo da solo · true = comanda l'utente. */
   const [taken, setTaken] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -184,7 +196,9 @@ export default function WorkViewer({
     fetch(`/api/embeddable?url=${encodeURIComponent(work.siteUrl)}`)
       .then((r) => r.json())
       .then((data) => {
-        if (alive && !data.ok) setBlocked(true)
+        if (!alive) return
+        if (data.ok) setConfirmed(true)
+        else setBlocked(true)
       })
       .catch(() => {
         /* Se il controllo stesso fallisce non si conclude nulla: decide il
@@ -198,16 +212,19 @@ export default function WorkViewer({
 
   useEffect(() => {
     if (!showEmbed || loaded || blocked) return
-    const id = window.setTimeout(() => setBlocked(true), EMBED_TIMEOUT_MS)
+    const id = window.setTimeout(
+      () => setBlocked(true),
+      confirmed ? EMBED_TIMEOUT_CONFIRMED_MS : EMBED_TIMEOUT_MS
+    )
     return () => window.clearTimeout(id)
-  }, [showEmbed, loaded, blocked])
+  }, [showEmbed, loaded, blocked, confirmed])
 
   /* Visita guidata: appena il sito ha caricato scorre da solo dall'alto in
      basso. Non è lo scroll del documento — è cross-origin, irraggiungibile —
      ma l'iframe stesso, reso più alto del riquadro e traslato. */
   useEffect(() => {
     const frame = iframeRef.current
-    if (!frame || !loaded || blocked || taken || prefersReducedMotion()) return
+    if (!frame || !loaded || blocked || taken || compact || prefersReducedMotion()) return
 
     const travel = frame.offsetHeight - (frame.parentElement?.clientHeight ?? 0)
     if (travel <= 8) return
@@ -223,7 +240,7 @@ export default function WorkViewer({
       tourRef.current?.kill()
       tourRef.current = null
     }
-  }, [loaded, blocked, taken])
+  }, [loaded, blocked, taken, compact])
 
   /**
    * L'overlay si monta in fondo al <body>, non dove sta il componente.
@@ -282,7 +299,7 @@ export default function WorkViewer({
           {showEmbed && !blocked ? (
             <iframe
               ref={iframeRef}
-              className={`lm-viewer-iframe${taken ? ' is-taken' : ''}`}
+              className={`lm-viewer-iframe${taken || compact ? ' is-taken' : ''}`}
               src={work.siteUrl}
               title={fill(m.works.viewerLabel, { client: work.client })}
               onLoad={() => setLoaded(true)}
@@ -295,7 +312,7 @@ export default function WorkViewer({
               quindi senza velo non ci sarebbe modo di accorgersi che l'utente
               vuole prendere il controllo. Al primo gesto il velo sparisce e il
               sito diventa navigabile. */}
-          {showEmbed && !blocked && !taken ? (
+          {showEmbed && !blocked && !taken && !compact ? (
             <div
               className="lm-viewer-grab"
               onPointerDown={takeOver}
@@ -320,8 +337,13 @@ export default function WorkViewer({
             <div
               className={`lm-viewer-fallback${blocked ? ' is-blocked' : ''}${loaded && !blocked ? ' is-gone' : ''}`}
             >
+              {/* La prima schermata, non lo screenshot intero: quello è alto
+                  fino a 16.200px, cioè 50–90 MB decodificati, e su iPhone
+                  supera il limite di pixel e non si vede affatto. Qui ne serve
+                  solo la parte che sta nel riquadro, ed è la stessa della card
+                  — spesso già in cache. */}
               <div className="lm-viewer-shot">
-                <WorkMediaView work={work} eager />
+                <WorkMediaView work={work} eager variant="card" sizes="94vw" />
               </div>
 
               {blocked ? (

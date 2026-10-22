@@ -66,6 +66,12 @@ export default function Marquee() {
     let lastX = 0
     let dragVel = 0
     let raf = 0
+    /* Il loop gira solo quando serve: nastro a schermo, scheda visibile e
+       nessuna finestra di un lavoro aperta sopra. Prima girava sempre, anche
+       a fondo pagina o sotto il viewer, e un rAF che scrive un transform a
+       ogni frame tiene sveglio il compositor per niente. */
+    let running = false
+    let onScreen = false
 
     const onScroll = () => {
       scrollVel += window.scrollY - lastScroll
@@ -114,8 +120,40 @@ export default function Marquee() {
 
       const skew = Math.max(-7, Math.min(7, scrollVel * -0.25 + dragVel * -0.18))
       track.style.transform = `translateX(${base}px) skewX(${skew}deg)`
+      if (running) raf = requestAnimationFrame(tick)
+    }
+
+    const start = () => {
+      if (running) return
+      running = true
+      // La velocità di scroll accumulata da fermo farebbe saltare il nastro.
+      lastScroll = window.scrollY
+      scrollVel = 0
       raf = requestAnimationFrame(tick)
     }
+    const stop = () => {
+      if (!running) return
+      running = false
+      cancelAnimationFrame(raf)
+    }
+    const sync = () => {
+      const locked = document.body.classList.contains('lm-lock')
+      if (onScreen && !locked && !document.hidden) start()
+      else stop()
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting
+        sync()
+      },
+      { rootMargin: '120px 0px' }
+    )
+    io.observe(wrap)
+    // lm-lock lo mette il viewer sul body: è l'unico segnale che c'è.
+    const mo = new MutationObserver(sync)
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+    document.addEventListener('visibilitychange', sync)
 
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onResize)
@@ -123,10 +161,12 @@ export default function Marquee() {
     wrap.addEventListener('pointermove', onMove)
     wrap.addEventListener('pointerup', onUp)
     wrap.addEventListener('pointercancel', onUp)
-    raf = requestAnimationFrame(tick)
 
     return () => {
-      cancelAnimationFrame(raf)
+      stop()
+      io.disconnect()
+      mo.disconnect()
+      document.removeEventListener('visibilitychange', sync)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onResize)
       wrap.removeEventListener('pointerdown', onDown)

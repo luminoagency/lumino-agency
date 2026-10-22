@@ -33,6 +33,7 @@ export default function WorkCard({
   const cardRef = useRef<HTMLElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const warmedRef = useRef(false)
 
   useEffect(() => {
     const card = cardRef.current
@@ -136,9 +137,31 @@ export default function WorkCard({
     window.setTimeout(() => onOpen(work, rect), 170)
   }
 
+  /**
+   * Al primo passaggio sopra la card (o al primo tocco) si apre già la
+   * connessione verso il sito del cliente: DNS, TCP e TLS costano mezzo
+   * secondo in 4G, e così li si paga mentre il visitatore decide se
+   * cliccare invece che dopo. Una volta sola per card; se l'indirizzo non è
+   * valido non succede niente.
+   */
+  const warm = () => {
+    if (warmedRef.current || !work.siteUrl) return
+    warmedRef.current = true
+    try {
+      const link = document.createElement('link')
+      link.rel = 'preconnect'
+      link.href = new URL(work.siteUrl).origin
+      document.head.appendChild(link)
+    } catch {
+      /* Indirizzo non valido: niente da scaldare. */
+    }
+  }
+
   return (
     <article
       ref={cardRef}
+      onPointerEnter={warm}
+      onPointerDown={warm}
       className="lm-card lm-reveal"
       data-work={work.id}
       data-cursor="view"

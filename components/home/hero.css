@@ -273,8 +273,10 @@
   white-space: nowrap;
   border-top: 1px solid var(--line);
   padding-block: 0.75rem;
-  background: linear-gradient(to top, rgba(23, 18, 16, 0.9), rgba(23, 18, 16, 0.2));
-  backdrop-filter: blur(8px);
+  /* Fondo più pieno al posto del backdrop-filter: la striscia scorre di
+     continuo, e un blur sotto un nastro che si muove si ricalcola a ogni
+     frame. */
+  background: linear-gradient(to top, rgba(23, 18, 16, 0.94), rgba(23, 18, 16, 0.45));
 }
 .lm-hticker-track {
   display: inline-flex;
