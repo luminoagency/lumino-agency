@@ -36,6 +36,9 @@ import Stats from '@/components/home/Stats'
 import Contact from '@/components/home/Contact'
 import Footer from '@/components/home/Footer'
 import WhatsAppDock from '@/components/home/WhatsAppDock'
+import Artigiani from '@/components/artigiani/Artigiani'
+import '@/components/artigiani/artigiani.css'
+import { laDisplay, laText, laMark } from '@/components/artigiani/fonts'
 
 /**
  * Home — vetrina dello studio, nelle tre lingue.
@@ -98,6 +101,17 @@ export default function HomePage({ params }: { params: { locale: string } }) {
   if (!isLocale(params.locale)) notFound()
   const locale: Locale = params.locale
   const m = getMessages(locale)
+
+  /* Italiano: la home nuova di Lumino per artigiani (segretaria AI su
+     WhatsApp + servizi + portfolio + lista d'attesa). EN/FR restano la
+     vetrina dello studio. */
+  if (locale === 'it') {
+    return (
+      <div className={`${laDisplay.variable} ${laText.variable} ${laMark.variable}`} lang="it">
+        <Artigiani />
+      </div>
+    )
+  }
 
   return (
     <I18nProvider locale={locale} messages={m}>
