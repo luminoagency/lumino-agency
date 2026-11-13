@@ -17,6 +17,12 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Link della bio Instagram: porta dritto al modulo della lista d'attesa.
+        source: '/lista',
+        destination: '/it#lista',
+        permanent: false,
+      },
+      {
         /* Il service worker dell'area staff sta in radice per poter governare
            anche `/staff` (un worker governa solo la sua cartella, e
            `/staff/sw.js` non governerebbe la home della dashboard). Questa
