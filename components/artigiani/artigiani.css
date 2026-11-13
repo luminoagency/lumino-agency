@@ -15,7 +15,7 @@
 .la :focus-visible{outline:3px solid var(--red);outline-offset:3px;border-radius:8px}
 
 /* type */
-.la-h1,.la-h2,.la h3,.la-how h2{font-family:var(--la-display),sans-serif;font-variation-settings:"wdth" 82,"opsz" 96;font-weight:700;letter-spacing:-.025em;line-height:.95;margin:0}
+.la-h1,.la-h2,.la h3,.la-how h2{font-family:var(--la-display),sans-serif;font-variation-settings:"wdth" 82,"opsz" 96;font-weight:700;letter-spacing:-.012em;line-height:.97;margin:0}
 .la-h1{font-size:clamp(52px,8.6vw,138px);line-height:.9}
 .la-h1 em,.la-h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .la-h2{font-size:clamp(40px,5.4vw,84px)}
@@ -360,7 +360,8 @@
  .lh__intro{bottom:4vh}
  .lh__intro .la-ctas{flex-direction:column}
  .lh__after{left:6vw;right:6vw;bottom:auto;top:14vh}
- .lh__h2{font-size:min(10.5vw,64px);white-space:normal}
+ .lh__h2{font-size:min(8.6vw,64px)}
+ .lh__after{top:auto;bottom:auto;top:13vh}
  .lh__phone{right:50%;width:min(250px,64vw);bottom:-12vh;transform:translate(50%,calc((1 - var(--o)) * 70vh))}
 }
 @media (prefers-reduced-motion:reduce){.lh__n{animation:none}.lh__cue span{animation:none}}
