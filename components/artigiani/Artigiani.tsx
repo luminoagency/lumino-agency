@@ -40,6 +40,41 @@ export default function Artigiani() {
     return () => io.disconnect()
   }, [])
 
+  /* ── hero: la finestra si apre con lo scroll ── */
+  const heroRef = useRef<HTMLElement>(null)
+  const slotRef = useRef<HTMLSpanElement>(null)
+  const winRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const hero = heroRef.current, slot = slotRef.current, win = winRef.current
+    if (!hero || !slot || !win) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let mx = 0, my = 0, raf = 0
+    const ease = (x: number) => 1 - Math.pow(1 - x, 3)
+    const frame = () => {
+      raf = 0
+      const r = hero.getBoundingClientRect()
+      const total = Math.max(1, hero.offsetHeight - window.innerHeight)
+      const p = Math.min(Math.max(-r.top / total, 0), 1)
+      const stage = hero.firstElementChild as HTMLElement
+      const sr = stage.getBoundingClientRect(), br = slot.getBoundingClientRect()
+      const o = reduce ? (p > 0.5 ? 1 : 0) : ease(Math.min(Math.max((p - 0.08) / 0.55, 0), 1))
+      const x0 = br.left - sr.left, y0 = br.top - sr.top, w0 = br.width, h0 = br.height
+      const inset = 0
+      const L = x0 + (inset - x0) * o, T = y0 + (inset - y0) * o
+      const W = w0 + (sr.width - w0) * o, H = h0 + (sr.height - h0) * o
+      const rad = Math.min(w0 / 2, 999) * (1 - o) + 0 * o
+      win.style.cssText = `left:${L}px;top:${T}px;width:${W}px;height:${H}px;border-radius:${rad}px`
+      hero.style.setProperty('--o', String(o))
+      hero.style.setProperty('--p', String(p))
+      hero.style.setProperty('--mx', String(mx)); hero.style.setProperty('--my', String(my))
+    }
+    const req = () => { if (!raf) raf = requestAnimationFrame(frame) }
+    const mm = (e: PointerEvent) => { mx = e.clientX / window.innerWidth - 0.5; my = e.clientY / window.innerHeight - 0.5; req() }
+    frame()
+    window.addEventListener('scroll', req, { passive: true }); window.addEventListener('resize', req); window.addEventListener('pointermove', mm)
+    return () => { window.removeEventListener('scroll', req); window.removeEventListener('resize', req); window.removeEventListener('pointermove', mm); if (raf) cancelAnimationFrame(raf) }
+  }, [])
+
   /* ── come funziona: scena legata allo scroll ── */
   const howRef = useRef<HTMLElement>(null)
   const [step, setStep] = useState(0)
@@ -114,7 +149,7 @@ export default function Artigiani() {
         <nav className="la-nav__links" aria-label="Sezioni">
           <a href="#come">Come funziona</a><a href="#conto">Il conto</a><a href="#servizi">Cosa facciamo</a><a href="#lavori">Lavori</a>
         </nav>
-        <a className="la-btn la-btn--ink la-nav__cta" href="#lista">Prova gratis</a>
+        <a className="la-btn la-btn--red la-nav__cta" href="#lista">Provalo gratis</a>
         <button className="la-burger" aria-label={menu ? 'Chiudi il menu' : 'Apri il menu'} aria-expanded={menu} onClick={() => setMenu(!menu)}><span /><span /></button>
       </header>
       {menu && (
@@ -124,28 +159,36 @@ export default function Artigiani() {
       )}
 
       <main>
-        {/* ── HERO ── */}
-        <section className="la-hero" id="top">
-          <div className="la-wrap la-hero__top">
-            <h1 className="la-h1">
-              <span className="la-line"><span>Mandi un vocale.</span></span>
-              <span className="la-line"><span>Lumino fa <em>il resto.</em></span></span>
-            </h1>
-            <div className="la-hero__side">
-              <p>La segretaria AI per idraulici, elettricisti e artigiani: preventivi col tuo logo, promemoria a chi non paga, agenda pronta al mattino. Tutto dentro WhatsApp.</p>
-              <div className="la-ctas">
-                <a className="la-btn la-btn--red" href="#lista">Entra nella lista d&apos;attesa</a>
+        {/* ── HERO: la I del logo diventa una finestra ── */}
+        <section className="lh" id="top" ref={heroRef}>
+          <div className="lh__stage">
+            <div className="lh__word" aria-hidden="true">
+              <span className="lh__l lh__l--a">LUM</span>
+              <span className="lh__slot" ref={slotRef} />
+              <span className="lh__l lh__l--b">NO</span>
+            </div>
+            <div className="lh__win" ref={winRef}>
+              <img src="/artigiani/idraulico.webp" alt="Idraulico che registra un vocale su WhatsApp dopo un lavoro in bagno" />
+              <div className="lh__tint" />
+              <div className="lh__shade" />
+            </div>
+            <div className="lh__n lh__n--1" data-d="1.2"><i>✓</i><div><b>Preventivo inviato · 22:41</b><span>Bagno Rossi · 240,00 €</span></div></div>
+            <div className="lh__n lh__n--2" data-d="-0.9"><i className="g">€</i><div><b>Bonifico ricevuto</b><span>Sig. Bianchi · +180,00 €</span></div></div>
+            <div className="lh__n lh__n--3" data-d="0.7"><i>●</i><div><b>Vocale · 0:07</b><span>«Bagno Rossi, miscelatore…»</span></div></div>
+            <div className="lh__intro">
+              <h1 className="lh__h1">Tu mandi un vocale. <em>Lumino fa il resto.</em></h1>
+              <p>La segretaria AI degli artigiani, dentro WhatsApp: preventivi col tuo logo, promemoria a chi non paga, agenda pronta al mattino.</p>
+              <div className="la-ctas lh__ctas">
+                <a className="la-btn la-btn--red" href="#lista">Provalo gratis</a>
                 <a className="la-btn la-btn--line" href="#come">Guarda come funziona</a>
               </div>
             </div>
-          </div>
-          <div className="la-wrap la-hero__stage">
-            <figure className="la-hero__photo">
-              <img src="/artigiani/idraulico.webp" alt="Idraulico che registra un vocale su WhatsApp dopo un lavoro in bagno" />
-            </figure>
-            <Phone className="la-hero__phone" />
-            <div className="la-chip la-chip--a"><b>22:41</b> preventivo inviato</div>
-            <div className="la-chip la-chip--b"><b>0</b> app da installare</div>
+            <div className="lh__after">
+              <h2 className="lh__h2">Finisci il lavoro.<br /><em>Il resto parte da solo.</em></h2>
+              <a className="la-btn la-btn--red lh__after-cta" href="#lista">Entra nella lista d&apos;attesa</a>
+            </div>
+            <div className="lh__phone"><Phone /></div>
+            <div className="lh__cue" aria-hidden="true"><span /></div>
           </div>
         </section>
 

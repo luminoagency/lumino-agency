@@ -1,6 +1,6 @@
 /* Lumino · home italiana per artigiani. Tutto vive sotto .la */
 .la{
-  --bg:#F5F4F0;--paper:#FFFFFF;--ink:#141210;--ink2:#47403A;--mute:#8B827A;--line:rgba(20,18,16,.12);
+  --bg:#F4EEE4;--paper:#FFFDF9;--ink:#171210;--grad:linear-gradient(100deg,#E5342A,#EC6A9C 46%,#8B5CF6);--ink2:#47403A;--mute:#8B827A;--line:rgba(20,18,16,.12);
   --red:#E5342A;--red2:#C8271E;
   --wrapw:1320px;--pad:clamp(20px,4vw,56px);
   --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.3,1.35,.45,1);
@@ -17,7 +17,7 @@
 /* type */
 .la-h1,.la-h2,.la h3,.la-how h2{font-family:var(--la-display),sans-serif;font-variation-settings:"wdth" 82,"opsz" 96;font-weight:700;letter-spacing:-.025em;line-height:.95;margin:0}
 .la-h1{font-size:clamp(52px,8.6vw,138px);line-height:.9}
-.la-h1 em,.la-h2 em{font-style:normal;color:var(--red)}
+.la-h1 em,.la-h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .la-h2{font-size:clamp(40px,5.4vw,84px)}
 .la-h2--light{color:#fff}
 .la-kick{font-size:13px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:0 0 18px}
@@ -26,14 +26,14 @@
 
 /* wordmark */
 .la-wm{font-family:var(--la-mark),Impact,sans-serif;font-size:22px;letter-spacing:.3em;line-height:1;display:inline-flex}
-.la-wm span{color:var(--red)}
+.la-wm span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* buttons */
 .la-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 26px;border-radius:999px;font-weight:650;font-size:16px;border:0;cursor:pointer;transition:transform .25s var(--ease),background .25s,box-shadow .25s;font-family:inherit}
 .la-btn:hover{transform:translateY(-2px)}
 .la-btn:active{transform:translateY(0) scale(.98)}
-.la .la-btn--red{background:var(--red);color:#fff;box-shadow:0 10px 24px -12px rgba(229,52,42,.7)}
-.la .la-btn--red:hover{background:var(--red2)}
+.la .la-btn--red{background:var(--grad);background-size:140% 100%;background-position:0 0;color:#fff;box-shadow:0 14px 30px -14px rgba(229,52,42,.75),0 10px 30px -18px rgba(139,92,246,.7);transition:background-position .5s var(--ease),transform .3s var(--ease)}
+.la .la-btn--red:hover{background-position:100% 0;transform:translateY(-1px)}
 .la .la-btn--ink{background:var(--ink);color:#fff}
 .la-btn--line{box-shadow:inset 0 0 0 1.5px var(--line);color:var(--ink)}
 .la-btn--line:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
@@ -169,7 +169,7 @@
 .la-how h2{font-size:clamp(40px,4.8vw,72px);max-width:14ch;color:#fff}
 .la-how__steps p{margin-top:18px;font-size:19px;color:rgba(255,255,255,.75);max-width:40ch}
 .la-how__bar{height:3px;background:rgba(255,255,255,.18);border-radius:3px;max-width:340px;margin-top:36px;overflow:hidden}
-.la-how__bar i{display:block;height:100%;background:var(--red);transition:width .6s var(--ease)}
+.la-how__bar i{display:block;height:100%;background:var(--grad);transition:width .6s var(--ease)}
 .la-how__phone{width:min(320px,28vw)}
 
 /* ── IL CONTO ── */
@@ -317,3 +317,50 @@
   .la-line>span,.la-hero__side,.la-chip,.la-phone,.la-rv{opacity:1 !important;transform:none !important}
   .la-hero__photo{clip-path:none !important}
 }
+
+/* ═══ HERO: la I del logo diventa finestra ═══ */
+.lh{position:relative;height:260vh;--o:0;--p:0;--mx:0;--my:0}
+.lh__stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:radial-gradient(120% 70% at 50% 115%,rgba(236,106,156,.20),transparent 60%),radial-gradient(60% 50% at 85% 10%,rgba(139,92,246,.10),transparent 70%),var(--bg)}
+.lh__word{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);display:flex;align-items:center;font-family:var(--la-mark),Impact,sans-serif;font-size:min(29vw,420px);line-height:.8;letter-spacing:.01em;white-space:nowrap;color:var(--ink);pointer-events:none}
+.lh__l{display:block;transition:none;transform:translateX(calc(var(--o) * var(--dir) * 40vw));opacity:calc(1 - var(--o) * 1.6)}
+.lh__l--a{--dir:-1}.lh__l--b{--dir:1}
+.lh__slot{display:block;width:.36em;height:1.1em;margin:0 .06em}
+.lh__win{position:absolute;overflow:hidden;z-index:2;box-shadow:0 40px 90px -30px rgba(139,92,246,.6),0 0 0 calc((1 - var(--o)) * 6px) rgba(255,255,255,.7);will-change:left,top,width,height}
+.lh__win img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:70% 30%;transform:scale(calc(1.25 - var(--o) * .2)) translate(calc(var(--mx) * -10px),calc(var(--my) * -10px))}
+.lh__tint{position:absolute;inset:0;background:var(--grad);mix-blend-mode:soft-light;opacity:calc(.55 - var(--o) * .45)}
+.lh__shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,18,16,.0) 35%,rgba(23,18,16,.7));opacity:var(--o)}
+.lh__n{position:absolute;z-index:3;display:flex;gap:12px;align-items:center;background:rgba(255,253,249,.74);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-radius:22px;padding:12px 18px 12px 12px;box-shadow:0 24px 50px -24px rgba(23,18,16,.45),inset 0 0 0 1px rgba(255,255,255,.6);font-size:14px;line-height:1.3;width:min(300px,72vw);opacity:calc(1 - var(--o) * 2.2);transform:translate(calc(var(--mx) * var(--dd) * 30px),calc(var(--my) * var(--dd) * 30px - var(--o) * 120px)) rotate(var(--r))}
+.lh__n i{flex:0 0 40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:800;background:#25D366}
+.lh__n i.g{background:var(--grad)}
+.lh__n b{display:block;font-size:13.5px}.lh__n span{color:var(--ink2)}
+.lh__n--1{left:7vw;top:20vh;--r:-4deg;--dd:1.2;animation:lh-in .9s .5s both var(--ease)}
+.lh__n--2{right:6vw;top:29vh;--r:3deg;--dd:-.9;animation:lh-in .9s .8s both var(--ease)}
+.lh__n--3{left:11vw;bottom:25vh;--r:2deg;--dd:.7;animation:lh-in .9s 1.1s both var(--ease)}
+@keyframes lh-in{from{opacity:0;translate:0 30px;scale:.92}}
+.lh__intro{position:absolute;left:50%;bottom:6vh;transform:translate(-50%,calc(var(--o) * 60px));width:min(820px,90vw);text-align:center;z-index:3;opacity:calc(1 - var(--o) * 2.5)}
+.lh__h1{font-family:var(--la-text);font-weight:800;font-size:clamp(24px,2.4vw,36px);letter-spacing:-.02em;line-height:1.15}
+.lh__h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lh__intro p{margin:10px auto 0;max-width:60ch;color:var(--ink2);font-size:clamp(15px,1.1vw,17px)}
+.lh__ctas{justify-content:center;margin-top:18px}
+.lh__after{position:absolute;left:6vw;bottom:10vh;max-width:58vw;z-index:4;color:#fff;opacity:clamp(0,calc((var(--o) - .75) * 4),1);transform:translateY(calc((1 - var(--o)) * 60px))}
+.lh__h2{font-family:var(--la-mark),Impact,sans-serif;font-weight:400;font-size:clamp(52px,7vw,124px);line-height:.92;letter-spacing:.005em;text-transform:uppercase}
+.lh__h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lh__after-cta{margin-top:26px}
+.lh__phone{position:absolute;right:7vw;bottom:-4vh;width:min(300px,24vw);z-index:4;opacity:clamp(0,calc((var(--o) - .6) * 3),1);transform:translateY(calc((1 - var(--o)) * 70vh)) rotate(calc((1 - var(--o)) * 8deg))}
+.lh__cue{position:absolute;left:50%;bottom:2vh;width:24px;height:38px;border-radius:14px;box-shadow:inset 0 0 0 2px rgba(23,18,16,.35);transform:translateX(-50%);opacity:calc(1 - var(--o) * 4);z-index:3}
+.lh__cue span{position:absolute;left:50%;top:8px;width:4px;height:8px;border-radius:2px;background:var(--ink);transform:translateX(-50%);animation:lh-cue 1.6s infinite}
+@keyframes lh-cue{50%{transform:translate(-50%,10px);opacity:.2}}
+@media (max-width:760px){
+ .lh{height:230vh}
+ .lh__word{font-size:27vw;top:45%}
+ .lh__n{width:min(260px,68vw);font-size:12.5px}
+ .lh__n--1{left:5vw;top:15vh}.lh__n--2{right:4vw;top:24vh}.lh__n--3{display:none}
+ .lh__intro p{font-size:14px}
+ .lh__after{max-width:none}
+ .lh__intro{bottom:4vh}
+ .lh__intro .la-ctas{flex-direction:column}
+ .lh__after{left:6vw;right:6vw;bottom:auto;top:16vh}
+ .lh__phone{right:50%;width:min(250px,64vw);bottom:-12vh;transform:translate(50%,calc((1 - var(--o)) * 70vh))}
+}
+@media (prefers-reduced-motion:reduce){.lh__n{animation:none}.lh__cue span{animation:none}}
+.lh__phone .la-phone{width:100%}
