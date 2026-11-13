@@ -57,13 +57,14 @@ export default function Artigiani() {
       const p = Math.min(Math.max(-r.top / total, 0), 1)
       const stage = hero.firstElementChild as HTMLElement
       const sr = stage.getBoundingClientRect(), br = slot.getBoundingClientRect()
-      const o = reduce ? (p > 0.5 ? 1 : 0) : ease(Math.min(Math.max((p - 0.08) / 0.55, 0), 1))
+      const o = reduce ? (p > 0.5 ? 1 : 0) : ease(Math.min(Math.max((p - 0.04) / 0.5, 0), 1))
+      // La foto resta ferma a tutto schermo: si apre solo la maschera, dalla I del logo
+      // fino ai bordi. Così l'inquadratura non cambia mai mentre si scorre.
       const x0 = br.left - sr.left, y0 = br.top - sr.top, w0 = br.width, h0 = br.height
-      const inset = 0
-      const L = x0 + (inset - x0) * o, T = y0 + (inset - y0) * o
-      const W = w0 + (sr.width - w0) * o, H = h0 + (sr.height - h0) * o
-      const rad = Math.min(w0 / 2, 999) * (1 - o) + 0 * o
-      win.style.cssText = `left:${L}px;top:${T}px;width:${W}px;height:${H}px;border-radius:${rad}px`
+      const t = y0 * (1 - o), l = x0 * (1 - o)
+      const rr = (sr.width - x0 - w0) * (1 - o), bb = (sr.height - y0 - h0) * (1 - o)
+      const rad = (w0 / 2) * (1 - o)
+      win.style.clipPath = `inset(${t}px ${rr}px ${bb}px ${l}px round ${rad}px)`
       hero.style.setProperty('--o', String(o))
       hero.style.setProperty('--p', String(p))
       hero.style.setProperty('--mx', String(mx)); hero.style.setProperty('--my', String(my))
@@ -168,7 +169,7 @@ export default function Artigiani() {
               <span className="lh__l lh__l--b">NO</span>
             </div>
             <div className="lh__win" ref={winRef}>
-              <img src="/artigiani/idraulico.webp" alt="Idraulico che registra un vocale su WhatsApp dopo un lavoro in bagno" />
+              <img src="/artigiani/idraulico-hd.webp" alt="Idraulico che registra un vocale su WhatsApp dopo un lavoro in bagno" />
               <div className="lh__tint" />
               <div className="lh__shade" />
             </div>
