@@ -326,9 +326,9 @@
 .lh__slot{display:block;width:.26em;height:.86em;margin:0 .07em;border-radius:.13em;background:linear-gradient(180deg,#E5342A,#EC6A9C 50%,#8B5CF6)}
 .lh__win{position:absolute;inset:0;z-index:5;overflow:hidden;background:#171210;color:#fff;clip-path:inset(40% 48% 40% 48% round 999px);will-change:clip-path}
 .lh__glow{position:absolute;inset:0;background:radial-gradient(55% 60% at 78% 55%,rgba(139,92,246,.42),transparent 70%),radial-gradient(50% 55% at 15% 90%,rgba(229,52,42,.38),transparent 70%),radial-gradient(40% 40% at 60% 0%,rgba(236,106,156,.22),transparent 70%)}
-.lh__after{position:absolute;left:6vw;top:50%;margin-top:-22vh;max-width:min(640px,48vw);z-index:3;opacity:0}
+.lh__after{position:absolute;left:6vw;top:50%;margin-top:-22vh;max-width:min(860px,60vw);z-index:3;opacity:0}
 .lh__k{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:22px !important}
-.lh__h2{font-family:var(--la-mark),Impact,sans-serif;font-weight:400;font-size:min(6.4vw,12vh,120px);line-height:.94;letter-spacing:.005em;text-transform:uppercase;margin:0}
+.lh__h2{font-family:var(--la-mark),Impact,sans-serif;font-weight:400;font-size:min(5.6vw,11vh,108px);line-height:.94;letter-spacing:.005em;text-transform:uppercase;margin:0;white-space:nowrap}
 .lh__h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .lh__sub{margin-top:24px !important;font-size:clamp(16px,1.25vw,19px);color:rgba(255,255,255,.72);max-width:40ch}
 .lh__after-cta{margin-top:30px}
@@ -363,7 +363,7 @@
  .lh__intro p{font-size:14px}
  .lh__intro .la-ctas{flex-direction:column}
  .lh__after{left:7vw;right:7vw;top:11vh;margin-top:0;max-width:none}
- .lh__h2{font-size:min(9.4vw,60px)}
+ .lh__h2{font-size:min(8.4vw,60px);white-space:nowrap}
  .lh__sub{font-size:15px;margin-top:14px !important}
  .lh__after-cta{margin-top:18px}
  .lh__phone{right:auto;left:50%;top:auto;bottom:-16vh;margin:0 0 0 calc(min(230px,58vw) / -2);width:min(230px,58vw)}
