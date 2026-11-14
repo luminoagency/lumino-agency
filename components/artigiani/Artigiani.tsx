@@ -25,6 +25,15 @@ const STEPS = [
 ]
 const STEP_TO_PHONE = [0, 2, 4, 5]
 
+const EVE = [
+  ['Preventivo · Bagno Rossi', 'da scrivere e mandare', 'Preventivo inviato'],
+  ['Sollecito · Sig. Bianchi', '180 € in ritardo da 3 settimane', 'Promemoria inviato'],
+  ['Richiamare la Sig.ra Conti', 'vuole un prezzo per la caldaia', 'Risposto con la fascia di prezzo'],
+  ['Fattura n. 112', 'da fare e inviare', 'Fattura inviata'],
+  ['Agenda di domani', '3 lavori da mettere in ordine', 'Agenda pronta alle 7:30'],
+  ['Note cantiere Ferri', 'foto e misure da sistemare', 'Note salvate nel lavoro'],
+] as const
+
 const fmt = (n: number) => n.toLocaleString('it-IT')
 
 export default function Artigiani() {
@@ -40,7 +49,7 @@ export default function Artigiani() {
     return () => io.disconnect()
   }, [])
 
-  /* ── hero: la finestra si apre con lo scroll ── */
+  /* ── hero: la I del logo si apre nel mondo Lumino ── */
   const heroRef = useRef<HTMLElement>(null)
   const slotRef = useRef<HTMLSpanElement>(null)
   const winRef = useRef<HTMLDivElement>(null)
@@ -48,32 +57,85 @@ export default function Artigiani() {
     const hero = heroRef.current, slot = slotRef.current, win = winRef.current
     if (!hero || !slot || !win) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let mx = 0, my = 0, raf = 0
+    const q = (c: string) => hero.querySelector(c) as HTMLElement
+    const la = q('.lh__l--a'), lb = q('.lh__l--b'), intro = q('.lh__intro'), after = q('.lh__after'), phone = q('.lh__phone'), cue = q('.lh__cue')
+    const ns = Array.from(hero.querySelectorAll<HTMLElement>('.lh__n'))
+    const chips = Array.from(hero.querySelectorAll<HTMLElement>('.lh__chip'))
+    const cl = (x: number) => Math.min(Math.max(x, 0), 1)
     const ease = (x: number) => 1 - Math.pow(1 - x, 3)
+    let raf = 0, last = -1
     const frame = () => {
       raf = 0
       const r = hero.getBoundingClientRect()
       const total = Math.max(1, hero.offsetHeight - window.innerHeight)
-      const p = Math.min(Math.max(-r.top / total, 0), 1)
-      const stage = hero.firstElementChild as HTMLElement
-      const sr = stage.getBoundingClientRect(), br = slot.getBoundingClientRect()
-      const o = reduce ? (p > 0.5 ? 1 : 0) : ease(Math.min(Math.max((p - 0.04) / 0.5, 0), 1))
-      // La foto resta ferma a tutto schermo: si apre solo la maschera, dalla I del logo
-      // fino ai bordi. Così l'inquadratura non cambia mai mentre si scorre.
-      const x0 = br.left - sr.left, y0 = br.top - sr.top, w0 = br.width, h0 = br.height
+      const p = cl(-r.top / total)
+      if (Math.abs(p - last) < 0.0005) return
+      last = p
+      const o = reduce ? (p > 0.3 ? 1 : 0) : ease(cl((p - 0.03) / 0.55))
+      const sr = hero.firstElementChild!.getBoundingClientRect(), br = slot.getBoundingClientRect()
+      const x0 = br.left - sr.left, y0 = br.top - sr.top
       const t = y0 * (1 - o), l = x0 * (1 - o)
-      const rr = (sr.width - x0 - w0) * (1 - o), bb = (sr.height - y0 - h0) * (1 - o)
-      const rad = (w0 / 2) * (1 - o)
-      win.style.clipPath = `inset(${t}px ${rr}px ${bb}px ${l}px round ${rad}px)`
-      hero.style.setProperty('--o', String(o))
-      hero.style.setProperty('--p', String(p))
-      hero.style.setProperty('--mx', String(mx)); hero.style.setProperty('--my', String(my))
+      const rr = (sr.width - x0 - br.width) * (1 - o), bb = (sr.height - y0 - br.height) * (1 - o)
+      win.style.clipPath = `inset(${t}px ${rr}px ${bb}px ${l}px round ${(br.width / 2) * (1 - o) + 0}px)`
+      const lo = cl(1 - o * 3)
+      la.style.transform = `translate3d(${-o * 18}vw,0,0)`; la.style.opacity = String(lo)
+      lb.style.transform = `translate3d(${o * 18}vw,0,0)`; lb.style.opacity = String(lo)
+      intro.style.opacity = String(cl(1 - o * 5)); intro.style.transform = `translate3d(-50%,${o * 40}px,0)`
+      cue.style.opacity = String(cl(1 - o * 6))
+      ns.forEach((n) => { n.style.opacity = String(cl(1 - o * 4)); n.style.translate = `0 ${-o * 120}px` })
+      const a1 = cl((o - 0.62) / 0.3), a2 = cl((o - 0.72) / 0.28)
+      after.style.opacity = String(a1); after.style.transform = `translate3d(0,${(1 - ease(a1)) * 50}px,0)`
+      phone.style.opacity = String(a2); phone.style.transform = `translate3d(0,${(1 - ease(a2)) * 120}px,0)`
+      chips.forEach((c, i) => { const k = cl((o - 0.8 - i * 0.06) / 0.2); c.style.opacity = String(k); c.style.transform = `translate3d(0,${(1 - ease(k)) * 30}px,0)` })
     }
     const req = () => { if (!raf) raf = requestAnimationFrame(frame) }
-    const mm = (e: PointerEvent) => { mx = e.clientX / window.innerWidth - 0.5; my = e.clientY / window.innerHeight - 0.5; req() }
+    const rs = () => { last = -1; req() }
     frame()
-    window.addEventListener('scroll', req, { passive: true }); window.addEventListener('resize', req); window.addEventListener('pointermove', mm)
-    return () => { window.removeEventListener('scroll', req); window.removeEventListener('resize', req); window.removeEventListener('pointermove', mm); if (raf) cancelAnimationFrame(raf) }
+    window.addEventListener('scroll', req, { passive: true }); window.addEventListener('resize', rs)
+    return () => { window.removeEventListener('scroll', req); window.removeEventListener('resize', rs); if (raf) cancelAnimationFrame(raf) }
+  }, [])
+
+  /* ── la sera: i lavori si accumulano, poi Lumino li sbriga ── */
+  const eveRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const sec = eveRef.current; if (!sec) return
+    const q = (c: string) => sec.querySelector(c) as HTMLElement
+    const pin = q('.le__pin'), clock = q('.le__clock'), h1 = q('.le__h--a'), h2 = q('.le__h--b'), h3 = q('.le__h--c'), sw = q('.le__sw'), end = q('.le__end')
+    const cards = Array.from(sec.querySelectorAll<HTMLElement>('.le__c'))
+    const cl = (x: number) => Math.min(Math.max(x, 0), 1)
+    const ease = (x: number) => 1 - Math.pow(1 - x, 3)
+    const R = [-6, 4, -3, 6, -4, 2], X = [-8, 7, -3, 9, -6, 3], Y = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
+    const hm = (m: number) => { const h = 19 + Math.floor(m / 60), mm = Math.floor(m % 60); return `${h}:${String(mm).padStart(2, '0')}` }
+    let raf = 0, last = -1
+    const frame = () => {
+      raf = 0
+      const r = sec.getBoundingClientRect()
+      const total = Math.max(1, sec.offsetHeight - window.innerHeight)
+      const p = cl(-r.top / total)
+      if (Math.abs(p - last) < 0.0005) return
+      last = p
+      const night = cl(p / 0.16) * (1 - cl((p - 0.88) / 0.06))
+      pin.style.setProperty('--n', night.toFixed(3))
+      const on = p > 0.52
+      sw.classList.toggle('on', on)
+      let m = 270 * cl(p / 0.42)
+      if (p > 0.52) m = 5 + 265 * (1 - cl((p - 0.52) / 0.36))
+      clock.textContent = hm(m)
+      h1.style.opacity = String(p < 0.52 ? 1 : 0); h2.style.opacity = String(p >= 0.52 && p < 0.9 ? 1 : 0)
+      h3.style.opacity = String(cl((p - 0.9) / 0.06)); h3.style.transform = `translate3d(0,${(1 - cl((p - 0.9) / 0.06)) * 30}px,0)`
+      end.style.opacity = String(cl((p - 0.92) / 0.06))
+      cards.forEach((c, i) => {
+        const a = ease(cl((p - 0.04 - i * 0.06) / 0.06))
+        const d = cl((p - 0.53 - i * 0.05) / 0.03), f = ease(cl((p - 0.6 - i * 0.05) / 0.06))
+        c.classList.toggle('done', d > 0.5)
+        c.style.opacity = String(a * (1 - f))
+        c.style.transform = `translate3d(${X[i]}%,calc(${Y[i] * 100}% + ${(1 - a) * -60 - f * 120}vh),0) rotate(${R[i] * (1 - f) + f * R[i] * 3}deg) scale(${0.9 + 0.1 * a})`
+      })
+    }
+    const req = () => { if (!raf) raf = requestAnimationFrame(frame) }
+    frame()
+    window.addEventListener('scroll', req, { passive: true }); window.addEventListener('resize', req)
+    return () => { window.removeEventListener('scroll', req); window.removeEventListener('resize', req); if (raf) cancelAnimationFrame(raf) }
   }, [])
 
   /* ── come funziona: scena legata allo scroll ── */
@@ -90,12 +152,6 @@ export default function Artigiani() {
     on(); window.addEventListener('scroll', on, { passive: true })
     return () => window.removeEventListener('scroll', on)
   }, [])
-
-  /* ── prima / dopo ── */
-  const [cut, setCut] = useState(50)
-  const baRef = useRef<HTMLDivElement>(null)
-  const drag = useRef(false)
-  const moveCut = (x: number) => { const r = baRef.current!.getBoundingClientRect(); setCut(Math.min(96, Math.max(4, ((x - r.left) / r.width) * 100))) }
 
   /* ── il conto ── */
   const [h, setH] = useState(2), [nights, setNights] = useState(5), [rate, setRate] = useState(40)
@@ -168,14 +224,8 @@ export default function Artigiani() {
               <span className="lh__slot" ref={slotRef} />
               <span className="lh__l lh__l--b">NO</span>
             </div>
-            <div className="lh__win" ref={winRef}>
-              <img src="/artigiani/idraulico-hd.webp" alt="Idraulico che registra un vocale su WhatsApp dopo un lavoro in bagno" />
-              <div className="lh__tint" />
-              <div className="lh__shade" />
-            </div>
-            <div className="lh__n lh__n--1" data-d="1.2"><i>✓</i><div><b>Preventivo inviato · 22:41</b><span>Bagno Rossi · 240,00 €</span></div></div>
-            <div className="lh__n lh__n--2" data-d="-0.9"><i className="g">€</i><div><b>Bonifico ricevuto</b><span>Sig. Bianchi · +180,00 €</span></div></div>
-            <div className="lh__n lh__n--3" data-d="0.7"><i>●</i><div><b>Vocale · 0:07</b><span>«Bagno Rossi, miscelatore…»</span></div></div>
+            <div className="lh__n lh__n--1"><i>✓</i><div><b>Preventivo inviato · 22:41</b><span>Bagno Rossi · 240,00 €</span></div></div>
+            <div className="lh__n lh__n--2"><i className="g">€</i><div><b>Bonifico ricevuto</b><span>Sig. Bianchi · +180,00 €</span></div></div>
             <div className="lh__intro">
               <h1 className="lh__h1">Tu mandi un vocale. <em>Lumino fa il resto.</em></h1>
               <p>La segretaria AI degli artigiani, dentro WhatsApp: preventivi col tuo logo, promemoria a chi non paga, agenda pronta al mattino.</p>
@@ -184,37 +234,42 @@ export default function Artigiani() {
                 <a className="la-btn la-btn--line" href="#come">Guarda come funziona</a>
               </div>
             </div>
-            <div className="lh__after">
-              <h2 className="lh__h2">Finisci il lavoro.<br /><em>Il resto parte da solo.</em></h2>
-              <a className="la-btn la-btn--red lh__after-cta" href="#lista">Entra nella lista d&apos;attesa</a>
-            </div>
-            <div className="lh__phone"><Phone /></div>
             <div className="lh__cue" aria-hidden="true"><span /></div>
+            <div className="lh__win" ref={winRef}>
+              <div className="lh__glow" />
+              <div className="lh__after">
+                <p className="lh__k">Lumino · per artigiani</p>
+                <h2 className="lh__h2">Finisci il lavoro.<br /><em>Il resto parte da solo.</em></h2>
+                <p className="lh__sub">Mandi un vocale su WhatsApp: preventivo, promemoria e agenda li fa Lumino.</p>
+                <a className="la-btn la-btn--red lh__after-cta" href="#lista">Entra nella lista d&apos;attesa</a>
+              </div>
+              <div className="lh__phone"><Phone tilt={false} /></div>
+              <div className="lh__chip lh__chip--1"><i>✓</i>Preventivo inviato · 240 €</div>
+              <div className="lh__chip lh__chip--2"><i className="g">€</i>Bonifico ricevuto · +180 €</div>
+            </div>
           </div>
         </section>
 
-        {/* ── PRIMA / DOPO ── */}
-        <section className="la-ba la-wrap">
-          <div className="la-ba__head la-rv">
-            <h2 className="la-h2">Le tue sere <em>ti tornano indietro.</em></h2>
-            <p>Trascina la linea: a sinistra le 23:00 di adesso, a destra le 7:30 con Lumino.</p>
-          </div>
-          <div
-            ref={baRef}
-            className="la-ba__frame la-rv"
-            onPointerDown={(e) => { drag.current = true; (e.target as HTMLElement).setPointerCapture?.(e.pointerId); moveCut(e.clientX) }}
-            onPointerMove={(e) => drag.current && moveCut(e.clientX)}
-            onPointerUp={() => { drag.current = false }}
-            onKeyDown={(e) => { if (e.key === 'ArrowLeft') setCut((c) => Math.max(4, c - 5)); if (e.key === 'ArrowRight') setCut((c) => Math.min(96, c + 5)) }}
-            role="slider" aria-label="Confronta prima e dopo" aria-valuenow={Math.round(cut)} aria-valuemin={0} aria-valuemax={100} tabIndex={0}
-          >
-            <img className="la-ba__img" src="/artigiani/mattino.webp" alt="Il mattino dopo, con il caffè e l'agenda già pronta sul telefono" />
-            <div className="la-ba__clip" style={{ clipPath: `inset(0 ${100 - cut}% 0 0)` }}>
-              <img className="la-ba__img" src="/artigiani/sera.webp" alt="La sera alle 23 con fogli, calcolatrice e preventivi da scrivere" />
+        {/* ── LA SERA ── */}
+        <section className="le" ref={eveRef} aria-label="La tua sera, prima e con Lumino">
+          <div className="le__pin">
+            <div className="la-wrap le__grid">
+              <div className="le__copy">
+                <p className="la-kick le__kick">La tua sera</p>
+                <div className="le__hs">
+                  <h2 className="la-h2 le__h le__h--a">Stasera, alle <span className="le__clock">19:00</span>, ti aspetta questo.</h2>
+                  <h2 className="la-h2 le__h le__h--b">Con Lumino lo fa lui. Tu chiudi il telefono.</h2>
+                  <h2 className="la-h2 le__h le__h--c">Le tue sere <em>ti tornano indietro.</em></h2>
+                </div>
+                <div className="le__sw" aria-hidden="true"><span>Senza Lumino</span><i><b /></i><span>Con Lumino</span></div>
+                <p className="le__end">Due ore a sera, ogni sera. Con un vocale da dieci secondi.</p>
+              </div>
+              <div className="le__pile" aria-hidden="true">
+                {EVE.map(([t, s2, d], i) => (
+                  <div className="le__c" key={i}><b>{t}</b><span>{s2}</span><em>✓ {d}</em></div>
+                ))}
+              </div>
             </div>
-            <span className="la-ba__tag la-ba__tag--l">23:00 · prima</span>
-            <span className="la-ba__tag la-ba__tag--r">07:30 · con Lumino</span>
-            <div className="la-ba__line" style={{ left: `${cut}%` }}><span>↔</span></div>
           </div>
         </section>
 
