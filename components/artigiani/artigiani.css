@@ -374,6 +374,7 @@
 /* ═══ LA SERA ═══ */
 .le{position:relative;height:330vh}
 .le__pin{--n:0;position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;background:color-mix(in srgb,#171210 calc(var(--n) * 100%),var(--bg));color:color-mix(in srgb,#fff calc(var(--n) * 100%),var(--ink))}
+.le__pin::before{content:"";position:absolute;inset:0;background:radial-gradient(50% 60% at 80% 60%,rgba(139,92,246,.28),transparent 70%),radial-gradient(40% 50% at 10% 100%,rgba(229,52,42,.22),transparent 70%);opacity:var(--n);pointer-events:none}
 .le__grid{display:grid;grid-template-columns:1fr minmax(320px,460px);gap:60px;align-items:center;width:100%}
 .le__kick{color:inherit;opacity:.55}
 .le__hs{position:relative;min-height:3.1em;font-size:clamp(40px,5.4vw,84px)}
@@ -387,12 +388,12 @@
 .le__sw b{position:absolute;left:4px;top:4px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.25);transition:transform .35s var(--spring)}
 .le__sw.on i{background:var(--grad)}.le__sw.on b{transform:translateX(30px)}
 .le__end{margin-top:22px !important;font-size:19px;opacity:0;max-width:34ch}
-.le__pile{position:relative;height:min(70vh,560px)}
-.le__c{position:absolute;left:0;right:0;top:4vh;margin:auto;width:100%;max-width:420px;background:#fffdf9;color:var(--ink);border-radius:20px;padding:20px 22px;box-shadow:0 26px 60px -24px rgba(0,0,0,.55);opacity:0;will-change:transform,opacity}
+.le__pile{position:relative;height:min(72vh,600px)}
+.le__c{position:absolute;left:0;right:0;top:calc(50% - 44px);margin:auto;width:100%;max-width:440px;background:#fffdf9;color:var(--ink);border-radius:20px;padding:20px 22px;box-shadow:0 26px 60px -24px rgba(0,0,0,.55);opacity:0;will-change:transform,opacity}
 .le__c b{display:block;font-size:19px;font-weight:750}
 .le__c span{display:block;color:var(--mute);font-size:15px;margin-top:4px}
 .le__c em{display:none;margin-top:10px;font-style:normal;font-weight:700;font-size:14px;color:#1a9e4b}
-.le__c.done{background:#f1fbf4}.le__c.done em{display:block}
+.le__c.done{background:#ecfbf1;box-shadow:0 0 0 2px #25D366,0 26px 60px -24px rgba(0,0,0,.55)}.le__c.done em{display:block}.le__c.done span{display:none}
 @media (max-width:980px){
  .le{height:300vh}
  .le__grid{grid-template-columns:1fr;gap:18px;align-content:start;padding-top:12vh}
@@ -400,7 +401,7 @@
  .le__hs{font-size:clamp(34px,9vw,52px);min-height:3.2em}
  .le__sw{margin-top:16px}
  .le__end{font-size:16px}
- .le__pile{height:46vh}
+ .le__pile{height:50vh}
  .le__c{max-width:none;width:86%;padding:16px 18px}
  .le__c b{font-size:16px}.le__c span{font-size:13.5px}
 }

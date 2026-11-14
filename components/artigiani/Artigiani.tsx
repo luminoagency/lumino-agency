@@ -104,7 +104,7 @@ export default function Artigiani() {
     const cards = Array.from(sec.querySelectorAll<HTMLElement>('.le__c'))
     const cl = (x: number) => Math.min(Math.max(x, 0), 1)
     const ease = (x: number) => 1 - Math.pow(1 - x, 3)
-    const R = [-7, 5, -3, 8, -5, 3], X = [-14, 10, -4, 14, -10, 4], Y = [0, 6, 12, 18, 24, 30]
+    const R = [-6, 4, -3, 6, -4, 2], X = [-8, 7, -3, 9, -6, 3], Y = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
     const hm = (m: number) => { const h = 19 + Math.floor(m / 60), mm = Math.floor(m % 60); return `${h}:${String(mm).padStart(2, '0')}` }
     let raf = 0, last = -1
     const frame = () => {
@@ -114,7 +114,7 @@ export default function Artigiani() {
       const p = cl(-r.top / total)
       if (Math.abs(p - last) < 0.0005) return
       last = p
-      const night = cl(p / 0.42) * (1 - cl((p - 0.86) / 0.12))
+      const night = cl(p / 0.16) * (1 - cl((p - 0.88) / 0.06))
       pin.style.setProperty('--n', night.toFixed(3))
       const on = p > 0.5
       sw.classList.toggle('on', on)
@@ -126,10 +126,10 @@ export default function Artigiani() {
       end.style.opacity = String(cl((p - 0.92) / 0.06))
       cards.forEach((c, i) => {
         const a = ease(cl((p - 0.04 - i * 0.06) / 0.06))
-        const d = cl((p - 0.56 - i * 0.055) / 0.05), f = ease(cl((p - 0.6 - i * 0.055) / 0.06))
+        const d = cl((p - 0.53 - i * 0.05) / 0.03), f = ease(cl((p - 0.6 - i * 0.05) / 0.06))
         c.classList.toggle('done', d > 0.5)
         c.style.opacity = String(a * (1 - f))
-        c.style.transform = `translate3d(${X[i]}%,${(1 - a) * -60 + Y[i] - f * 140}vh,0) rotate(${R[i] * (1 - f) + f * R[i] * 3}deg) scale(${0.9 + 0.1 * a})`
+        c.style.transform = `translate3d(${X[i]}%,calc(${Y[i] * 100}% + ${(1 - a) * -60 - f * 120}vh),0) rotate(${R[i] * (1 - f) + f * R[i] * 3}deg) scale(${0.9 + 0.1 * a})`
       })
     }
     const req = () => { if (!raf) raf = requestAnimationFrame(frame) }
