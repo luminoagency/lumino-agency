@@ -116,7 +116,7 @@ export default function Artigiani() {
       last = p
       const night = cl(p / 0.16) * (1 - cl((p - 0.88) / 0.06))
       pin.style.setProperty('--n', night.toFixed(3))
-      const on = p > 0.5
+      const on = p > 0.52
       sw.classList.toggle('on', on)
       let m = 270 * cl(p / 0.42)
       if (p > 0.52) m = 5 + 265 * (1 - cl((p - 0.52) / 0.36))
