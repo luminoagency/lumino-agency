@@ -15,7 +15,6 @@
       "about": "Qui sommes-nous",
       "process": "La méthode",
       "services": "Services",
-      "collab": "Collaborations",
       "sectors": "Secteurs",
       "works": "Réalisations",
       "contact": "Contact"
@@ -158,28 +157,6 @@
         ]
       ]
     }
-  },
-  "collab": {
-    "kicker": "Collaborations",
-    "title": "Nous travaillons avec les meilleurs.",
-    "lead": "Pour les tournages, les campagnes et les projets plus grands, nous nous associons à des partenaires et des entreprises avec qui nous travaillons vraiment.",
-    "items": [
-      {
-        "name": "Viral Digital Agency",
-        "role": "Vidéastes pour les tournages sur place",
-        "url": "https://viralagency.it"
-      },
-      {
-        "name": "Garani",
-        "role": "Campagnes Google Ads et contacts",
-        "url": "https://garani.it"
-      },
-      {
-        "name": "MediaWorld",
-        "role": "Projet de bons d’achat pour entreprises",
-        "url": ""
-      }
-    ]
   },
   "works": {
     "kicker": "Réalisations",

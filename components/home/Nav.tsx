@@ -32,7 +32,6 @@ interface MenuItem {
 const MENU = [
   { href: '#metodo', key: 'process' },
   { href: '#servizi', key: 'services' },
-  { href: '#collaborazioni', key: 'collab' },
   { href: '#settori', key: 'sectors' },
   { href: '#lavori', key: 'works' },
   { href: '#contatti', key: 'contact' },

@@ -15,7 +15,6 @@
       "about": "About",
       "process": "Method",
       "services": "Services",
-      "collab": "Collaborations",
       "sectors": "Sectors",
       "works": "Work",
       "contact": "Contact"
@@ -158,28 +157,6 @@
         ]
       ]
     }
-  },
-  "collab": {
-    "kicker": "Collaborations",
-    "title": "We work with people who are good.",
-    "lead": "For shoots, campaigns and bigger projects we team up with partners and companies we really work with.",
-    "items": [
-      {
-        "name": "Viral Digital Agency",
-        "role": "Videomakers for on-site shoots",
-        "url": "https://viralagency.it"
-      },
-      {
-        "name": "Garani",
-        "role": "Google Ads campaigns and leads",
-        "url": "https://garani.it"
-      },
-      {
-        "name": "MediaWorld",
-        "role": "Corporate gift card project",
-        "url": ""
-      }
-    ]
   },
   "works": {
     "kicker": "Work",

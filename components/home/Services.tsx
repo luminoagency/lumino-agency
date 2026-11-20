@@ -487,8 +487,11 @@ export default function Services() {
         pin: true,
         scrub: 0.6,
         invalidateOnRefresh: true,
+        refreshPriority: 1,
       },
     })
+    ScrollTrigger.sort()
+    ScrollTrigger.refresh()
     return () => {
       tween.scrollTrigger?.kill()
       tween.kill()

@@ -135,6 +135,8 @@ export default function Process() {
       anticipatePin: 1,
       invalidateOnRefresh: true,
       scrub: true,
+      // Sta sopra Servizi, che si ferma anche lei: deve misurarsi per prima.
+      refreshPriority: 2,
       onUpdate: (self) => apply(self.progress),
       onRefresh: (self) => apply(self.progress),
     })
@@ -142,6 +144,10 @@ export default function Process() {
     section.classList.add('is-pinned')
     media.classList.add('is-scrubbed')
     apply(0)
+    /* Il pin aggiunge spazio sotto di sé: chi sta più in basso (Servizi) va
+       rimisurato, nell'ordine della pagina. */
+    ScrollTrigger.sort()
+    ScrollTrigger.refresh()
 
     return () => {
       /* kill(true) e non kill(): senza il revert, il div che ScrollTrigger

@@ -40,7 +40,6 @@ import Services from '@/components/home/Services'
 import '@/components/home/services.css'
 import '@/components/home/growth.css'
 import '@/components/home/polish.css'
-import Collab from '@/components/home/Collab'
 
 /**
  * Home — vetrina dello studio, nelle tre lingue.
@@ -121,7 +120,6 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           <Process />
           <Services />
           <Statement m={m} />
-          <Collab />
           <Sectors />
           <Works />
           <Stats />

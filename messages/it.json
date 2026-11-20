@@ -15,7 +15,6 @@
       "about": "Chi siamo",
       "process": "Il metodo",
       "services": "Servizi",
-      "collab": "Collaborazioni",
       "sectors": "Settori",
       "works": "Lavori",
       "contact": "Contatti"
@@ -158,28 +157,6 @@
         ]
       ]
     }
-  },
-  "collab": {
-    "kicker": "Collaborazioni",
-    "title": "Lavoriamo con chi è bravo.",
-    "lead": "Per le riprese, le campagne e i progetti più grandi ci affianchiamo a partner e aziende con cui lavoriamo davvero.",
-    "items": [
-      {
-        "name": "Viral Digital Agency",
-        "role": "Videomaker per le riprese sul posto",
-        "url": "https://viralagency.it"
-      },
-      {
-        "name": "Garani",
-        "role": "Campagne Google Ads e contatti",
-        "url": "https://garani.it"
-      },
-      {
-        "name": "MediaWorld",
-        "role": "Progetto buoni acquisto aziendali",
-        "url": ""
-      }
-    ]
   },
   "works": {
     "kicker": "Lavori",
