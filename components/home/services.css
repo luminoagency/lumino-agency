@@ -304,3 +304,5 @@
 .lm-sec-mark path { vector-effect: none; stroke-width: 3.2; }
 .sv-reel { display: flex; justify-content: center; align-items: flex-start; padding-top: 0; }
 .sv-phone { margin-top: 4%; flex: none; }
+.sv-reel-meta { right: 0; padding-right: 2.8rem; }
+.sv-reel-meta span { animation: sv-rise 0.5s 0.45s cubic-bezier(.2, .8, .2, 1) both; }
