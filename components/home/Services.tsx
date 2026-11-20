@@ -95,7 +95,7 @@ function WebTool({ d, live }: { d: Demo; live: boolean }) {
       </div>
       <div className="sv-web-view">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/servizi/sito.webp" alt="" loading="lazy" width={560} height={2600} />
+        <img src="/servizi/sito.webp" alt="" loading="lazy" width={560} height={2040} />
       </div>
       <div className="sv-web-score">
         <svg viewBox="0 0 44 44" aria-hidden="true">

@@ -347,3 +347,7 @@
 }
 .sv-track { align-items: flex-start; }
 .sv-builds { margin-top: 0; }
+@media (max-width: 820px) {
+  .sv { padding-bottom: 3.5rem; }
+}
+.sv-web-score { border: 1px solid var(--line); box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7); }
