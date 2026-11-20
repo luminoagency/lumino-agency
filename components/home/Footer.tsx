@@ -33,7 +33,7 @@ export default function Footer({ m }: { m: Messages }) {
         </span>
 
         <span>
-          © {year} {COMPANY.legalName} — {COMPANY.brand}. Company no. {COMPANY.companyNumber}.
+          © {year} {COMPANY.legalName}, {COMPANY.brand}. Company no. {COMPANY.companyNumber}.
         </span>
 
         <nav className="lm-footer-links" aria-label={m.footer.legalNav}>

@@ -1,15 +1,15 @@
 {
   "meta": {
-    "title": "Lumino — Social, ads and customers for businesses",
+    "title": "Lumino | Social, ads and customers for businesses",
     "description": "Social media management with on-site videomakers, Google Ads and Meta Ads campaigns, landing pages and a lead dashboard. Lumino brings businesses customers.",
-    "ogImageAlt": "Lumino — Social and ads that bring customers"
+    "ogImageAlt": "Lumino | Social and ads that bring customers"
   },
   "nav": {
     "menu": "Explore",
     "close": "Close",
     "home": "Lumino — home",
     "clientArea": "Client area",
-    "company": "EMYRA LTD — London",
+    "company": "EMYRA LTD, London",
     "languageLabel": "Language",
     "items": {
       "about": "About",
@@ -22,7 +22,7 @@
     }
   },
   "hero": {
-    "srTitle": "Lumino — social, ads and customers for businesses.",
+    "srTitle": "Lumino, social, ads and customers for businesses.",
     "payoffLead": "Social and ads ",
     "payoffAccent": "that bring customers.",
     "cta": "How we work",
@@ -228,10 +228,10 @@
       "sponsored": "Sponsored",
       "sponsoredShort": "Sponsored",
       "adCta": "Book now",
-      "googleTitle": "Sea-view dinner tonight — book your table",
+      "googleTitle": "Sea-view dinner tonight: book your table",
       "googleBody": "Menu of the day, terrace on the sea. Tables free this weekend.",
       "reach": "people reached nearby",
-      "dashTitle": "Leads — this month",
+      "dashTitle": "This month’s leads",
       "example": "example",
       "leads": "leads",
       "costPerLead": "cost per lead",
@@ -378,7 +378,7 @@
     ],
     "cta": "Message us on WhatsApp",
     "status": "online",
-    "bubble": "Hi 👋 Tell us about your project — we usually reply the same day.",
+    "bubble": "Hi! Tell us what you sell and to whom. We reply the same day.",
     "now": "now"
   },
   "footer": {

@@ -233,7 +233,7 @@ export default function WhatsAppBlock() {
         </span>
 
         <span className="lm-wa-bubble">
-          Ciao 👋 Raccontaci del tuo progetto — rispondiamo di solito in giornata.
+          {m.whatsapp.bubble}
           <span className="lm-wa-time" aria-hidden="true">
             ora
           </span>

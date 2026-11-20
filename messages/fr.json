@@ -1,15 +1,15 @@
 {
   "meta": {
-    "title": "Lumino — Réseaux sociaux, publicité et clients pour les entreprises",
+    "title": "Lumino | Réseaux sociaux, publicité et clients pour les entreprises",
     "description": "Gestion des réseaux sociaux avec vidéaste sur place, campagnes Google Ads et Meta Ads, landing pages et tableau de bord des contacts. Lumino apporte des clients aux entreprises.",
-    "ogImageAlt": "Lumino — Réseaux sociaux et publicité qui amènent des clients"
+    "ogImageAlt": "Lumino | Réseaux et publicité qui amènent des clients"
   },
   "nav": {
     "menu": "Explorer",
     "close": "Fermer",
     "home": "Lumino — accueil",
     "clientArea": "Espace client",
-    "company": "EMYRA LTD — Londres",
+    "company": "EMYRA LTD, Londres",
     "languageLabel": "Langue",
     "items": {
       "about": "Qui sommes-nous",
@@ -22,7 +22,7 @@
     }
   },
   "hero": {
-    "srTitle": "Lumino — réseaux sociaux, publicité et clients pour les entreprises.",
+    "srTitle": "Lumino, réseaux sociaux, publicité et clients pour les entreprises.",
     "payoffLead": "Réseaux et publicité ",
     "payoffAccent": "qui amènent des clients.",
     "cta": "Notre méthode",
@@ -228,10 +228,10 @@
       "sponsored": "Sponsorisé",
       "sponsoredShort": "Sponsorisé",
       "adCta": "Réserver",
-      "googleTitle": "Dîner vue mer ce soir — réservez votre table",
+      "googleTitle": "Dîner vue mer ce soir : réservez votre table",
       "googleBody": "Menu du jour, terrasse sur la mer. Tables libres ce week-end.",
       "reach": "personnes touchées autour",
-      "dashTitle": "Contacts — ce mois-ci",
+      "dashTitle": "Contacts de ce mois-ci",
       "example": "exemple",
       "leads": "contacts",
       "costPerLead": "coût par contact",
@@ -383,7 +383,7 @@
     ],
     "cta": "Écrivez-nous sur WhatsApp",
     "status": "en ligne",
-    "bubble": "Bonjour 👋 Parlez-nous de votre projet — nous répondons en général dans la journée.",
+    "bubble": "Bonjour ! Dites-nous ce que vous vendez et à qui. On vous répond dans la journée.",
     "now": "maintenant"
   },
   "footer": {

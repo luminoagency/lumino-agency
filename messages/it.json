@@ -1,15 +1,15 @@
 {
   "meta": {
-    "title": "Lumino — Social, pubblicità e clienti per le aziende",
+    "title": "Lumino | Social, pubblicità e clienti per le aziende",
     "description": "Gestione social con videomaker sul posto, campagne Google Ads e Meta Ads, landing page e dashboard dei contatti. Lumino porta clienti alle aziende.",
-    "ogImageAlt": "Lumino — Social e pubblicità che portano clienti"
+    "ogImageAlt": "Lumino | Social e pubblicità che portano clienti"
   },
   "nav": {
     "menu": "Esplora",
     "close": "Chiudi",
     "home": "Lumino — home",
     "clientArea": "Area clienti",
-    "company": "EMYRA LTD — Londra",
+    "company": "EMYRA LTD, Londra",
     "languageLabel": "Lingua",
     "items": {
       "about": "Chi siamo",
@@ -22,7 +22,7 @@
     }
   },
   "hero": {
-    "srTitle": "Lumino — social, pubblicità e clienti per le aziende.",
+    "srTitle": "Lumino, social, pubblicità e clienti per le aziende.",
     "payoffLead": "Social e pubblicità ",
     "payoffAccent": "che portano clienti.",
     "cta": "Come lavoriamo",
@@ -228,10 +228,10 @@
       "sponsored": "Sponsorizzato",
       "sponsoredShort": "Sponsorizzato",
       "adCta": "Prenota ora",
-      "googleTitle": "Cena vista mare stasera — prenota il tuo tavolo",
+      "googleTitle": "Cena vista mare stasera: prenota il tuo tavolo",
       "googleBody": "Menù del giorno, terrazza sul mare. Tavoli liberi questo weekend.",
       "reach": "persone raggiunte in zona",
-      "dashTitle": "Contatti — questo mese",
+      "dashTitle": "Contatti di questo mese",
       "example": "esempio",
       "leads": "contatti",
       "costPerLead": "costo per contatto",
@@ -378,7 +378,7 @@
     ],
     "cta": "Scrivici su WhatsApp",
     "status": "online",
-    "bubble": "Ciao 👋 Raccontaci del tuo progetto — rispondiamo di solito in giornata.",
+    "bubble": "Ciao! Raccontaci cosa vendi e a chi. Ti rispondiamo in giornata.",
     "now": "ora"
   },
   "footer": {

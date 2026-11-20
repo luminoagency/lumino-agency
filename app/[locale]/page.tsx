@@ -39,6 +39,7 @@ import WhatsAppDock from '@/components/home/WhatsAppDock'
 import Services from '@/components/home/Services'
 import '@/components/home/services.css'
 import '@/components/home/growth.css'
+import '@/components/home/polish.css'
 import Collab from '@/components/home/Collab'
 
 /**

@@ -1,0 +1,108 @@
+/* ═══ Rifinitura — via i segni che fanno "sito generato" ════════════════════
+   Caricato per ultimo, ha l'ultima parola:
+   · niente testo sfumato rosso→rosa→viola: l'accento è un rosso pieno in corsivo
+   · aloni di fondo più bassi, il colore lo portano le foto
+   · menu a due linee invece dei quattro puntini colorati                    */
+
+.lm-grad-text,
+.lm-hero-payoff em {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--red);
+  -webkit-text-fill-color: currentColor;
+  font-style: italic;
+}
+
+.lm-glow { opacity: 0.34; }
+.lm-glow-b {
+  background: radial-gradient(circle, rgb(var(--violet-rgb) / 0.55), transparent 70%);
+}
+.lm-aurora { opacity: 0.3; }
+.lm-dawn { opacity: 0.6; }
+
+/* Menu: due linee. All'hover la seconda si accorcia. */
+.lm-cluster { width: 26px; height: 12px; transform: none !important; }
+.lm-cluster i {
+  width: 26px;
+  height: 1.6px;
+  border-radius: 2px;
+  background: var(--cream) !important;
+  transform: none !important;
+  transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.lm-cluster i:nth-child(1) { top: 0; left: auto; right: 0; }
+.lm-cluster i:nth-child(3) { top: auto; bottom: 0; left: auto; right: 0; }
+.lm-cluster i:nth-child(2),
+.lm-cluster i:nth-child(4) { display: none; }
+.lm-menu-btn:hover .lm-cluster i:nth-child(3),
+.lm-menu-btn:focus-visible .lm-cluster i:nth-child(3) { width: 15px; }
+
+/* Nastro dei lavori: una barra sottile al posto della stellina. */
+.lm-hticker-star {
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  background: var(--line);
+  color: transparent;
+  overflow: hidden;
+  vertical-align: middle;
+  font-size: inherit;
+}
+
+/* Etichette di sezione: niente maiuscoletto spaziato con la lineetta davanti.
+   Numero della sezione in rosso e nome scritto normale, come in un indice. */
+body { counter-reset: lm-kick; }
+.lm-kicker {
+  counter-increment: lm-kick;
+  font-family: var(--font-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.05rem, 1.25vw, 1.25rem);
+  letter-spacing: -0.005em;
+  text-transform: none;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.lm-kicker::before {
+  content: counter(lm-kick, decimal-leading-zero);
+  width: auto;
+  height: auto;
+  background: none;
+  opacity: 1;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-style: normal;
+  font-size: 0.82em;
+  letter-spacing: 0.04em;
+  color: var(--red);
+}
+
+/* Avatar della chat WhatsApp: tinta piena, non sfumata. */
+.lm-wa-avatar, .lm-wa-av { background: var(--red) !important; }
+
+/* Etichette piccole dentro gli strumenti e i pulsanti: scritte normali. */
+.sv-ads-top em, .sv-ads-kpis span, .sv-lead-head em, .gd-dash-head em,
+.lm-act-tag, .sv-soc-reach, .lm-sec-name, .lm-sec-builds-title,
+.lm-hero-cta, .lm-hero-cta span, .lm-wa-status, .sv-web-score span {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.sv-ads-top em, .sv-lead-head em, .gd-dash-head em, .lm-act-tag { font-size: 0.68rem; font-style: italic; }
+.sv-ads-kpis span { font-size: 0.7rem; }
+.lm-hero-cta { font-size: 0.95rem; }
+.lm-sec-name { font-family: var(--font-serif), Georgia, serif; font-style: italic; font-weight: 400; font-size: 1.15rem; }
+.lm-sec-builds-title { font-size: 0.8rem; }
+
+/* Tutte le altre etichette piccole in maiuscoletto spaziato: scritte normali. */
+.lm-card-badge, .lm-card-tag, .lm-hticker-sector, .lm-cur-disc span, .lm-mail-said,
+.lm-close, .lm-grabhint, .lm-viewer-grab-hint, .lm-viewer-exit-word, .lm-viewer-bar-who i,
+.lm-viewer-bar-out, .lm-viewer-note-tag, .lm-viewer-loading, .lm-ov-links a.lm-ov-wa,
+.lm-wa-status, .lm-wadock-label {
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+}
+.lm-hticker-sector { font-family: var(--font-serif), Georgia, serif; font-style: italic; font-size: 0.85rem; }
+
+/* Finestre del browser: senza i tre puntini colorati. */
+.lm-chrome-dots { display: none !important; }
