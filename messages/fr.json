@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Lumino — Studio digital | Sites, réseaux sociaux et campagnes",
-    "description": "Studio digital : sites sur mesure, gestion des réseaux sociaux, campagnes Google Ads et Meta Ads, IA et automatisations. Pour la restauration, l’hôtellerie, les entreprises et le retail.",
-    "ogImageAlt": "Lumino — Sites, réseaux sociaux et campagnes dont on se souvient"
+    "title": "Lumino — Réseaux sociaux, publicité et clients pour les entreprises",
+    "description": "Gestion des réseaux sociaux avec vidéaste sur place, campagnes Google Ads et Meta Ads, landing pages et tableau de bord des contacts. Lumino apporte des clients aux entreprises.",
+    "ogImageAlt": "Lumino — Réseaux sociaux et publicité qui amènent des clients"
   },
   "nav": {
     "menu": "Explorer",
@@ -12,85 +12,87 @@
     "company": "EMYRA LTD — Londres",
     "languageLabel": "Langue",
     "items": {
-      "about": "À propos",
+      "about": "Qui sommes-nous",
+      "process": "La méthode",
       "services": "Services",
-      "works": "Réalisations",
+      "collab": "Collaborations",
       "sectors": "Secteurs",
+      "works": "Réalisations",
       "contact": "Contact"
     }
   },
   "hero": {
-    "srTitle": "Lumino — studio digital. Sites, réseaux sociaux et campagnes dont on se souvient.",
-    "payoffLead": "Sites, réseaux et campagnes ",
-    "payoffAccent": "dont on se souvient.",
-    "cta": "Voir les réalisations",
-    "windowAlt": "{client} — site réalisé par Lumino"
+    "srTitle": "Lumino — réseaux sociaux, publicité et clients pour les entreprises.",
+    "payoffLead": "Réseaux et publicité ",
+    "payoffAccent": "qui amènent des clients.",
+    "cta": "Notre méthode",
+    "windowAlt": "Photo : {client}"
   },
   "marquee": {
     "words": [
-      "Sites",
       "Réseaux",
-      "Campagnes",
-      "Automatisation"
+      "Publicité",
+      "Contacts",
+      "Clients"
     ],
-    "aria": "Sites, réseaux sociaux, campagnes, automatisation",
+    "aria": "Réseaux sociaux, publicité, contacts, clients",
     "dragHint": "↔ faites glisser"
   },
   "about": {
     "kicker": "Le studio",
-    "titleLine1": "Nous sommes un studio,",
-    "titleLine2": "pas une agence.",
-    "body1Before": "La différence n’est pas la taille : c’est qui vous répond. Ici, le projet ne passe pas de service en service — ",
-    "body1Strong": "celui qui le dessine est celui qui l’écrit",
-    "body1After": ", et c’est la même personne du premier croquis à la ligne de code mise en ligne.",
-    "body2": "Nous prenons peu de clients à la fois, parce qu’un travail bien fait — un site, un profil, une campagne — demande de comprendre un métier avant de le représenter. Nous regardons comment vous travaillez, ce que vous vendez, qui passe la porte. Puis nous construisons quelque chose qui vous ressemble, et non le modèle de quelqu’un d’autre."
+    "titleLine1": "Le service marketing",
+    "titleLine2": "que vous n’avez pas.",
+    "body1Before": "Quand on fait tourner une entreprise, on n’a pas le temps de tourner des reels, suivre les campagnes et répondre aux messages. Chez nous ",
+    "body1Strong": "une seule équipe fait tout",
+    "body1After": " : tournage, montage, publication, annonces et contacts, avec un interlocuteur qui répond toujours.",
+    "body2": "Nous prenons peu de clients à la fois, parce qu’un profil qui vend demande de comprendre un métier avant de le raconter. Nous regardons comment vous travaillez, ce que vous vendez, qui passe la porte. Puis nous le montrons aux bonnes personnes, et nous vous montrons combien sont devenues clientes."
   },
   "services": {
     "kicker": "Services",
-    "titleLine1": "Pas seulement des sites.",
+    "titleLine1": "Une seule équipe.",
     "titleLine2": "Tout ce qui vous fait ",
     "titleAccent": "choisir.",
-    "lead": "Site, réseaux sociaux, campagnes et automatisations : quatre métiers sous le même toit, avec le même soin et un seul interlocuteur. Ensemble ou un par un.",
+    "lead": "Réseaux sociaux, publicité et contacts : tout est relié, avec un seul interlocuteur. Et quand il le faut, le site aussi.",
     "buildLabel": "Ce que nous faisons",
     "items": [
       {
-        "name": "Sites & plateformes",
-        "meta": "Sites · E-commerce · Web apps",
-        "body": "Écrits de zéro, rapides sur mobile et trouvés sur Google. Du site vitrine à la boutique en ligne, jusqu’aux plateformes avec espace client.",
-        "builds": [
-          "Design sur mesure, jamais un thème acheté",
-          "Chargement en moins de deux secondes",
-          "SEO local et fiche Google soignée"
-        ]
-      },
-      {
+        "tool": "reel",
         "name": "Réseaux sociaux",
-        "meta": "Plan · Reels · Croissance",
-        "body": "Nous prenons le profil en main : plan éditorial, photos et reels montés chez nous, publication et réponses. Vous continuez à travailler, le profil grandit.",
+        "body": "Le vidéaste vient chez vous, nous écrivons, montons et publions. Reels, carrousels et stories selon un plan chaque semaine, et réponses aux commentaires et messages.",
         "builds": [
-          "Un plan éditorial chaque mois",
+          "Tournage sur place avec vidéaste",
           "Reels et carrousels montés au studio",
-          "Un rapport clair sur la croissance et les contacts"
+          "Plan éditorial et rapport chaque mois"
         ]
       },
       {
+        "tool": "ads",
         "name": "Campagnes publicitaires",
-        "meta": "Google Ads · Meta Ads · Rapports",
         "body": "Des annonces sur Google, Instagram et Facebook qui amènent des clients, pas seulement des clics. Nous paramétrons, testons, coupons le gaspillage et montrons où va chaque euro.",
         "builds": [
           "Search, Shopping et Performance Max",
           "Publicités Instagram et Facebook",
-          "Optimisation chaque semaine, rapport chaque mois"
+          "Optimisation chaque semaine"
         ]
       },
       {
-        "name": "IA & automatisations",
-        "meta": "Agents · Tableaux de bord · Outils",
-        "body": "Des assistants qui répondent aux clients à votre place, des tableaux de bord qui mettent les chiffres en ordre, des outils de gestion simples qui s’utilisent depuis le téléphone.",
+        "tool": "leads",
+        "name": "Des clients pour les entreprises",
+        "body": "Des landing pages faites pour convertir, formulaires et WhatsApp reliés aux annonces, et un tableau de bord partagé où vous voyez chaque contact : d’où il vient et combien il a coûté.",
         "builds": [
-          "Agents IA sur WhatsApp et sur le site",
-          "Tableaux de bord avec les chiffres utiles",
-          "Outils légers, rien à installer"
+          "Une landing page par campagne",
+          "Tableau de bord des contacts partagé",
+          "Coût par contact toujours maîtrisé"
+        ]
+      },
+      {
+        "tool": "web",
+        "name": "Le site aussi",
+        "body": "Quand il le faut, nous construisons aussi le site : écrit de zéro, rapide sur mobile, trouvé sur Google. Notre niveau, vous le voyez plus bas, dans les réalisations.",
+        "builds": [
+          "Design sur mesure, jamais un thème acheté",
+          "Chargement en moins de deux secondes",
+          "SEO local et fiche Google soignée"
         ]
       }
     ],
@@ -115,29 +117,74 @@
       ],
       "adsHint": "Bougez le budget",
       "adsNote": "Simulation",
-      "chatName": "Votre établissement",
-      "chatStatus": "répond tout de suite",
-      "chatHint": "Choisissez une question",
-      "qa": [
+      "leadTitle": "Contacts entrants",
+      "leadCount": "contacts ce mois-ci",
+      "leadButton": "+ Un contact arrive",
+      "leadSources": [
+        "Google",
+        "Instagram",
+        "WhatsApp"
+      ],
+      "leadPool": [
         [
-          "Vous avez une table pour 4 ce soir ?",
-          "Oui, il reste une table à 21 h. À quel nom je la réserve ?"
+          "Giulia R.",
+          "Table pour 4, samedi soir",
+          "0"
         ],
         [
-          "Vous faites des plats sans gluten ?",
-          "Oui, la moitié de la carte existe sans gluten. Je vous l’envoie ici ?"
+          "Marco B.",
+          "Devis pour 20 personnes",
+          "1"
         ],
         [
-          "Vous fermez à quelle heure ?",
-          "Ce soir la cuisine ferme à 23 h, le restaurant à minuit."
+          "Sara T.",
+          "Infos sur les prix",
+          "2"
+        ],
+        [
+          "Luca M.",
+          "Demande de visite",
+          "0"
+        ],
+        [
+          "Elena P.",
+          "Disponibilité dimanche",
+          "1"
+        ],
+        [
+          "Davide C.",
+          "Je voudrais un rendez-vous",
+          "2"
         ]
       ]
     }
   },
+  "collab": {
+    "kicker": "Collaborations",
+    "title": "Nous travaillons avec les meilleurs.",
+    "lead": "Pour les tournages, les campagnes et les projets plus grands, nous nous associons à des partenaires et des entreprises avec qui nous travaillons vraiment.",
+    "items": [
+      {
+        "name": "Viral Digital Agency",
+        "role": "Vidéastes pour les tournages sur place",
+        "url": "https://viralagency.it"
+      },
+      {
+        "name": "Garani",
+        "role": "Campagnes Google Ads et contacts",
+        "url": "https://garani.it"
+      },
+      {
+        "name": "MediaWorld",
+        "role": "Projet de bons d’achat pour entreprises",
+        "url": ""
+      }
+    ]
+  },
   "works": {
     "kicker": "Réalisations",
-    "title": "Ce que nous avons construit.",
-    "lead": "Survolez une carte pour voir le site défiler. Cliquez pour l’ouvrir et le parcourir vraiment, sans quitter cette page.",
+    "title": "Et quand il le faut, le site.",
+    "lead": "Notre niveau de création de sites. Survolez une carte pour la voir défiler, cliquez pour naviguer sans quitter la page.",
     "viewerLabel": "Le site de {client}",
     "closePreview": "Fermer l’aperçu",
     "close": "Fermer",
@@ -148,55 +195,92 @@
     "tapToBrowse": "touchez pour naviguer"
   },
   "statement": {
-    "line1": "Un site, un profil, une annonce :",
-    "line2": "ce sont les premiers endroits où",
-    "line3": "quelqu’un vous choisit."
+    "line1": "Un like",
+    "line2": "ne paie pas le loyer.",
+    "line3": "Un client, si."
   },
   "process": {
-    "kicker": "Le design",
+    "kicker": "La méthode",
     "steps": [
       {
         "num": "01",
-        "title": "Une ouverture qui arrête le pouce",
-        "body": "Le premier écran décide s’ils restent ou s’ils partent. Nous construisons des ouvertures qui ne ressemblent à aucune autre : une typographie qui réagit, des images qui respirent, aucun modèle tout fait."
+        "title": "Des contenus qui arrêtent le pouce",
+        "body": "Le vidéaste vient chez vous, nous écrivons, tournons et montons. Reels, carrousels et stories publiés selon un plan chaque semaine, avec réponses aux commentaires et messages."
       },
       {
         "num": "02",
-        "title": "Un mouvement sur mesure",
-        "body": "Chaque animation a une raison d’être. Le mouvement guide le regard là où il faut, raconte le produit et reste sous les 60 millisecondes de réponse."
+        "title": "Des annonces qui trouvent ceux qui achètent",
+        "body": "Les meilleurs contenus deviennent des campagnes sur Instagram, Facebook et Google, montrées seulement à ceux qui peuvent vraiment devenir clients : zone, âge, centres d’intérêt, intention d’achat."
       },
       {
         "num": "03",
-        "title": "Le téléphone d’abord",
-        "body": "80 % de vos clients arrivent depuis un mobile. Nous concevons d’abord pour eux, puis nous élargissons. Chargement sous les deux secondes, toujours."
+        "title": "Des contacts, pas des likes",
+        "body": "Chaque demande arrive dans un tableau de bord que vous voyez aussi : qui c’est, de quelle annonce elle vient, combien elle a coûté. Chaque mois, on coupe ce qui ne rapporte pas et on pousse ce qui rapporte."
       }
     ],
     "acts": {
-      "wireframe": "maquette",
-      "alive": "vivant",
-      "mobile": "mobile",
-      "loading": "chargement",
-      "scores": [
-        "Performance",
-        "Accessibilité",
-        "SEO"
-      ]
+      "reel": "Reels",
+      "shoot": "Tournage sur place",
+      "shootSub": "une demi-journée, du contenu pour un mois",
+      "views": "vues",
+      "followers": "nouveaux abonnés",
+      "saves": "enregistrements",
+      "sponsored": "Sponsorisé",
+      "sponsoredShort": "Sponsorisé",
+      "adCta": "Réserver",
+      "googleTitle": "Dîner vue mer ce soir — réservez votre table",
+      "googleBody": "Menu du jour, terrasse sur la mer. Tables libres ce week-end.",
+      "reach": "personnes touchées autour",
+      "dashTitle": "Contacts — ce mois-ci",
+      "example": "exemple",
+      "leads": "contacts",
+      "costPerLead": "coût par contact",
+      "leadList": [
+        [
+          "Giulia R.",
+          "Table pour 4, samedi soir",
+          "Google"
+        ],
+        [
+          "Marco B.",
+          "Déjeuner d’entreprise pour 20",
+          "Instagram"
+        ],
+        [
+          "Sara T.",
+          "Infos sur le menu dégustation",
+          "WhatsApp"
+        ],
+        [
+          "Luca M.",
+          "Anniversaire, 12 personnes",
+          "Google"
+        ],
+        [
+          "Elena P.",
+          "Réservation pour dimanche",
+          "Instagram"
+        ]
+      ],
+      "tag1": "contenus",
+      "tag2": "annonces",
+      "tag3": "contacts"
     }
   },
   "sectors": {
     "kicker": "Pour qui nous travaillons",
     "lead": "Le métier change, pas la méthode. Chaque secteur a sa façon de se faire choisir : notre travail est de comprendre quelle est la vôtre.",
-    "buildLabel": "Ce que nous construisons",
+    "buildLabel": "Ce que nous faisons",
     "items": [
       {
         "name": "Restaurants",
         "meta": "Carte · Réservations · Salle",
-        "body": "La carte est le produit : elle doit se mettre à jour dans la journée, se lire au pouce et se trouver sur Google. Des réservations qui arrivent directement en salle, sans intermédiaire qui retient une commission.",
+        "body": "Le menu, c’est le produit : il faut le montrer. Des reels des plats tournés en salle, des annonces aux gens du quartier, et des réservations qui arrivent directement, sans intermédiaire qui prend sa part.",
         "builds": [
-          "Une carte que vous mettez à jour vous-même, sans nous appeler",
-          "Des réservations qui arrivent directement en salle",
-          "Des photos de plats traitées comme il faut",
-          "Des avis Google qui se mettent à jour tout seuls"
+          "Reels des plats tournés sur place",
+          "Annonces aux gens qui vivent et travaillent autour",
+          "Réservations directes sur WhatsApp et le site",
+          "Des avis Google qui augmentent"
         ],
         "word": "restaurants",
         "pre": "des "
@@ -204,12 +288,12 @@
       {
         "name": "Hôtels",
         "meta": "Chambres · Réservation directe · Saisons",
-        "body": "Chaque réservation directe est une commission que vous ne payez pas. Des chambres racontées une par une, des disponibilités toujours justes, et un site qui change au rythme des saisons.",
+        "body": "Chaque réservation directe est une commission en moins. Des contenus qui donnent envie de partir, des campagnes aux bons mois et des demandes qui arrivent chez vous, pas sur le portail.",
         "builds": [
-          "Des chambres racontées une par une",
-          "La réservation directe, sans commission",
-          "Des disponibilités toujours alignées sur votre logiciel",
-          "Un site qui change au rythme des saisons"
+          "Contenus des chambres et des expériences",
+          "Campagnes saisonnières sur Google et Meta",
+          "Réservations directes, sans commission",
+          "Rapports sur ce que rapporte chaque canal"
         ],
         "word": "hôtels",
         "pre": "des "
@@ -217,12 +301,12 @@
       {
         "name": "Entreprises",
         "meta": "Identité · Catalogues · Force de vente",
-        "body": "Celui qui vous cherche en évalue trois autres en même temps. Le site doit dire en trente secondes ce que vous faites, pour qui, et pourquoi c’est vous — puis donner à la force de vente des documents qui tiennent la comparaison.",
+        "body": "Celui qui vous cherche compare aussi trois autres. On vous fait trouver en premier, on dit ce que vous faites en trente secondes et chaque demande arrive dans un tableau de bord que votre commercial voit aussi.",
         "builds": [
-          "Une identité visuelle cohérente partout",
-          "Un catalogue consultable et toujours à jour",
-          "Des supports que la force de vente utilise vraiment",
-          "Des contacts qui arrivent qualifiés"
+          "Campagnes Google sur ceux qui cherchent votre service",
+          "Une landing page pour chaque offre",
+          "Contacts qualifiés dans un tableau de bord",
+          "Profils LinkedIn et réseaux soignés"
         ],
         "word": "entreprises",
         "pre": "des "
@@ -230,12 +314,12 @@
       {
         "name": "Commerce",
         "meta": "Vitrine · Catalogue · Boutique",
-        "body": "La boutique physique et la boutique en ligne sont la même boutique. Un catalogue qui se feuillette vite, des stocks réels, et une raison de passer en boutique plutôt que d’attendre un livreur.",
+        "body": "La boutique physique et la boutique en ligne sont la même boutique. Des contenus qui font entrer les gens, des annonces à ceux qui passent dans le quartier et des promotions qui se mesurent vraiment.",
         "builds": [
-          "Un catalogue qui se feuillette au pouce",
-          "Des stocks réels, boutique par boutique",
-          "Le retrait en boutique comme choix, pas comme pis-aller",
-          "Une vitrine qui fait entrer les gens"
+          "Reels et stories des nouveautés",
+          "Annonces locales qui amènent en boutique",
+          "Campagnes pour les jours de soldes",
+          "Des clients qui reviennent, pas seulement des nouveaux"
         ],
         "word": "commerces",
         "pre": "des "
@@ -243,12 +327,12 @@
       {
         "name": "Immobilier",
         "meta": "Portefeuille · Visites · Négociations",
-        "body": "Un bien se vend avec les photos et avec le chemin qui y mène. Des fiches qui se lisent au téléphone pendant une pause, et une demande de visite qui arrive avant celle de la concurrence.",
+        "body": "Un bien se vend avec ses photos et avec ceux qui les voient. Vidéos des biens, annonces ciblées sur ceux qui cherchent vraiment, et demandes de visite qui arrivent avant la concurrence.",
         "builds": [
-          "Des fiches de bien qui se lisent pendant une pause café",
-          "Des photos et des plans traités comme il faut",
-          "Une demande de visite en deux touches",
-          "Une recherche qui filtre vraiment"
+          "Vidéos et photos des biens",
+          "Annonces à ceux qui cherchent dans le secteur",
+          "Demandes de visite dans un tableau de bord",
+          "Un profil d’agence qui inspire confiance"
         ],
         "word": "agences immobilières",
         "pre": "des "
@@ -265,36 +349,36 @@
     "kicker": "En bref",
     "items": [
       {
-        "value": 4,
+        "value": 3,
         "suffix": "",
-        "label": "services sous le même toit : sites, réseaux, campagnes et IA"
-      },
-      {
-        "value": 100,
-        "suffix": " %",
-        "label": "des projets écrits de zéro, sans thème acheté"
+        "label": "métiers sous le même toit : réseaux, publicité et contacts"
       },
       {
         "value": 1,
         "suffix": "",
-        "label": "interlocuteur unique, du premier croquis à la campagne en ligne"
+        "label": "tableau de bord partagé : vous voyez chaque contact et son coût"
+      },
+      {
+        "value": 1,
+        "suffix": "",
+        "label": "interlocuteur unique, du tournage à la campagne en ligne"
       }
     ]
   },
   "contact": {
     "kicker": "Contact",
-    "titleLine1": "Vous avez un projet",
+    "titleLine1": "Envie de plus de",
     "titleLine2Before": "",
-    "titleLine2Accent": "en tête ?",
+    "titleLine2Accent": "clients ?",
     "copied": "copié",
     "responseTime": "Nous répondons par e-mail sous 1 jour ouvré."
   },
   "whatsapp": {
-    "message": "Bonjour Lumino, j’ai vu votre site et j’aimerais vous parler d’un projet.",
-    "typedHead": "Bonjour Lumino, je voudrais un site pour",
+    "message": "Bonjour Lumino, j'ai vu votre site et je voudrais plus de clients pour mon activité.",
+    "typedHead": "Bonjour Lumino, je veux plus de clients pour",
     "typedTails": [
       " mon restaurant",
-      " mon hôtel",
+      " ma boutique",
       " mon entreprise"
     ],
     "cta": "Écrivez-nous sur WhatsApp",

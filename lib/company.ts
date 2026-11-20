@@ -42,11 +42,11 @@ export const COMPANY = {
    */
   whatsapp: {
     /** Formato wa.me: prefisso internazionale, niente + né spazi. */
-    number: '393293382674',
+    number: '393201453320',
     /** Come va mostrato a schermo. */
-    display: '+39 329 338 2674',
+    display: '+39 320 145 3320',
     /** Link pulito, senza testo precompilato. */
-    waLink: 'https://wa.me/393293382674',
+    waLink: 'https://wa.me/393201453320',
   },
 
   /** Web. */

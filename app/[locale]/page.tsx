@@ -38,6 +38,8 @@ import Footer from '@/components/home/Footer'
 import WhatsAppDock from '@/components/home/WhatsAppDock'
 import Services from '@/components/home/Services'
 import '@/components/home/services.css'
+import '@/components/home/growth.css'
+import Collab from '@/components/home/Collab'
 
 /**
  * Home — vetrina dello studio, nelle tre lingue.
@@ -115,11 +117,12 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           <Hero />
           <Marquee />
           <About m={m} />
-          <Services />
-          <Works />
-          <Statement m={m} />
           <Process />
+          <Services />
+          <Statement m={m} />
+          <Collab />
           <Sectors />
+          <Works />
           <Stats />
           <Contact />
         </main>

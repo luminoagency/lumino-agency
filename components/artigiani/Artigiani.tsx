@@ -382,7 +382,7 @@ export default function Artigiani() {
               <p className="la-kick la-kick--light">Lista d&apos;attesa</p>
               <h2 className="la-h2 la-h2--light">Il primo preventivo <em>è il tuo.</em></h2>
               <p>I primi artigiani entrano in prova gratis. Compila il foglio: ti scriviamo su WhatsApp, nessuna chiamata.</p>
-              <p className="la-list__alt">Preferisci scriverci? <a href="https://wa.me/393293382674">WhatsApp +39 329 338 2674</a></p>
+              <p className="la-list__alt">Preferisci scriverci? <a href="https://wa.me/393201453320">WhatsApp +39 320 145 3320</a></p>
             </div>
             <form className="la-paper la-rv" onSubmit={submit} noValidate>
               <div className="la-paper__h"><b>Iscrizione</b><span>Lumino · prova gratuita</span></div>
@@ -404,7 +404,7 @@ export default function Artigiani() {
                   {sent === 'sending' ? 'Invio…' : sent === 'ok' ? 'Inviato ✓' : 'Firma e invia'}
                 </button>
               </div>
-              {sent === 'err' && <p className="la-paper__err">Qualcosa non è andato. Scrivici su WhatsApp al +39 329 338 2674.</p>}
+              {sent === 'err' && <p className="la-paper__err">Qualcosa non è andato. Scrivici su WhatsApp al +39 320 145 3320.</p>}
               <div className={`la-stamp${sent === 'ok' ? ' on' : ''}`} aria-live="polite">{sent === 'ok' ? 'Ricevuto ✓' : ''}</div>
             </form>
           </div>

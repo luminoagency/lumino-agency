@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { POINTER_BREAKPOINT, ScrollTrigger, prefersReducedMotion, registerScrollTrigger } from './useMotion'
 import { useI18n } from '@/components/i18n/I18nProvider'
-import ProcessDemo, { seekDemo, type DemoMode } from './ProcessDemos'
+import ProcessDemo, { seekDemo, type DemoMode } from './GrowthDemos'
 
 /**
- * Sezione 6 — Il design.
+ * Il metodo — da sconosciuto a cliente in tre atti: contenuti, annunci,
+ * contatti (i demo stanno in GrowthDemos).
  *
  * La sezione si PINNA e lo scroll pilota il fotogramma dei demo, invece di
  * limitarsi a cambiare step. Prima i demo scorrevano via prima di essersi
@@ -199,7 +200,7 @@ export default function Process() {
   }, [mode])
 
   return (
-    <section className="lm-section lm-process" id="design" ref={sectionRef}>
+    <section className="lm-section lm-process" id="metodo" ref={sectionRef}>
       <div className="lm-wrap">
         <p className="lm-kicker lm-reveal">{m.process.kicker}</p>
 

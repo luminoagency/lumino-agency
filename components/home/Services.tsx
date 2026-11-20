@@ -28,10 +28,11 @@ type Demo = {
   adsKpis: string[]
   adsHint: string
   adsNote: string
-  chatName: string
-  chatStatus: string
-  chatHint: string
-  qa: string[][]
+  leadTitle: string
+  leadCount: string
+  leadButton: string
+  leadSources: string[]
+  leadPool: string[][]
 }
 
 const tagOf = (locale: string) => (locale === 'en' ? 'en-GB' : locale === 'fr' ? 'fr-FR' : 'it-IT')
@@ -357,99 +358,65 @@ function AdsTool({ d, live }: { d: Demo; live: boolean }) {
   )
 }
 
-/* ── 4. La chat a cui si fa una domanda ──────────────────────────────────── */
+/* ── 4. La dashboard dei contatti che si riempie ─────────────────────────── */
 
-type Msg = { id: number; who: 'in' | 'out'; text: string }
+type Lead = { id: number; name: string; what: string; src: number }
 
-function ChatTool({ d, live }: { d: Demo; live: boolean }) {
-  const [msgs, setMsgs] = useState<Msg[]>([])
-  const [typing, setTyping] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [asked, setAsked] = useState<number[]>([])
-  const timers = useRef<number[]>([])
-  const bodyRef = useRef<HTMLDivElement>(null)
+function LeadTool({ d, live }: { d: Demo; live: boolean }) {
+  const { locale } = useI18n()
+  const pool = d.leadPool
+  const [list, setList] = useState<Lead[]>(() => pool.slice(0, 2).map((l, i) => ({ id: i, name: l[0], what: l[1], src: Number(l[2]) })))
+  const [count, setCount] = useState(29)
+  const next = useRef(2)
+  const shown = useTween(count, 500)
 
-  useEffect(() => {
-    const list = timers.current
-    return () => list.forEach((t) => window.clearTimeout(t))
-  }, [])
-  useEffect(() => {
-    const b = bodyRef.current
-    if (b) b.scrollTo({ top: b.scrollHeight, behavior: 'smooth' })
-  }, [msgs, typing])
-
-  const ask = useCallback(
-    (i: number) => {
-      if (busy) return
-      const [q, a] = d.qa[i]
-      const reduce = prefersReducedMotion()
-      const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, reduce ? 0 : ms))
-      setBusy(true)
-      setAsked((list) => [...list, i])
-      setMsgs((m) => [...m, { id: Date.now(), who: 'in', text: q }])
-      later(() => setTyping(true), 350)
-      later(() => {
-        setTyping(false)
-        const id = Date.now() + 1
-        if (reduce) {
-          setMsgs((m) => [...m, { id, who: 'out', text: a }])
-          setBusy(false)
-          return
-        }
-        // La risposta si scrive davanti a te, a gruppi di lettere.
-        let k = 0
-        const step = () => {
-          k = Math.min(a.length, k + 3)
-          setMsgs((m) => [...m.filter((x) => x.id !== id), { id, who: 'out', text: a.slice(0, k) }])
-          if (k < a.length) timers.current.push(window.setTimeout(step, 28))
-          else setBusy(false)
-        }
-        step()
-      }, 1400)
-    },
-    [busy, d.qa],
-  )
+  const push = useCallback(() => {
+    const l = pool[next.current % pool.length]
+    next.current += 1
+    setList((cur) => [{ id: next.current + 100, name: l[0], what: l[1], src: Number(l[2]) }, ...cur].slice(0, 4))
+    setCount((c) => c + 1)
+  }, [pool])
 
   useEffect(() => {
-    if (!live) return
-    const t = window.setTimeout(() => ask(0), 700)
-    return () => window.clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live])
+    if (!live || prefersReducedMotion()) return
+    const id = window.setInterval(push, 2600)
+    return () => window.clearInterval(id)
+  }, [live, push])
 
   return (
-    <div className="sv-chat">
-      <div className="sv-chat-head">
-        <span className="sv-chat-av" aria-hidden="true">L</span>
-        <span>
-          <b>{d.chatName}</b>
-          <em>{d.chatStatus}</em>
-        </span>
+    <div className="sv-lead">
+      <div className="sv-lead-head">
+        <span>{d.leadTitle}</span>
+        <em>{d.adsNote}</em>
       </div>
-      <div className="sv-chat-body" ref={bodyRef} aria-live="polite">
-        {msgs.map((m) => (
-          <p key={m.id} className={`sv-msg sv-msg-${m.who}`}>{m.text}</p>
+      <div className="sv-lead-kpi">
+        <b>{Math.round(shown).toLocaleString(tagOf(locale))}</b>
+        <span>{d.leadCount}</span>
+      </div>
+      <ul className="sv-lead-list" aria-live="polite">
+        {list.map((l) => (
+          <li key={l.id}>
+            <span className="sv-lead-av">{l.name.charAt(0)}</span>
+            <span className="sv-lead-txt">
+              <b>{l.name}</b>
+              <em>{l.what}</em>
+            </span>
+            <span className={`sv-lead-src sv-lead-src-${l.src}`}>{d.leadSources[l.src]}</span>
+          </li>
         ))}
-        {typing && (
-          <p className="sv-typing" aria-hidden="true"><i /><i /><i /></p>
-        )}
-      </div>
-      <div className="sv-chips" aria-label={d.chatHint}>
-        {d.qa.map(([q], i) =>
-          asked.includes(i) ? null : (
-            <button key={q} type="button" disabled={busy} onClick={() => ask(i)} data-cursor="grow">
-              {q}
-            </button>
-          ),
-        )}
-      </div>
+      </ul>
+      <button type="button" className="sv-lead-btn" onClick={push} data-cursor="grow">
+        {d.leadButton}
+      </button>
     </div>
   )
 }
 
 /* ── Pannello ────────────────────────────────────────────────────────────── */
 
-function Panel({ i, item, d, label }: { i: number; item: { name: string; body: string; builds: string[] }; d: Demo; label: string }) {
+type Item = { name: string; body: string; builds: string[]; tool: string }
+
+function Panel({ i, item, d, label }: { i: number; item: Item; d: Demo; label: string }) {
   const { ref, live } = useLive<HTMLElement>()
   const toolRef = useRef<HTMLDivElement>(null)
 
@@ -476,10 +443,10 @@ function Panel({ i, item, d, label }: { i: number; item: { name: string; body: s
     <article ref={ref} className={`sv-panel sv-panel-${i}${live ? ' is-live' : ''}`}>
       <div className="sv-tool-wrap" onPointerMove={tilt} onPointerLeave={untilt}>
         <div className="sv-tool" ref={toolRef}>
-          {i === 0 && <WebTool d={d} live={live} />}
-          {i === 1 && <ReelTool d={d} live={live} />}
-          {i === 2 && <AdsTool d={d} live={live} />}
-          {i === 3 && <ChatTool d={d} live={live} />}
+          {item.tool === 'reel' && <ReelTool d={d} live={live} />}
+          {item.tool === 'ads' && <AdsTool d={d} live={live} />}
+          {item.tool === 'leads' && <LeadTool d={d} live={live} />}
+          {item.tool === 'web' && <WebTool d={d} live={live} />}
           <span className="sv-sheen" aria-hidden="true" />
         </div>
       </div>
@@ -546,7 +513,7 @@ export default function Services() {
 
       <div className="sv-track" ref={trackRef}>
         {sv.items.map((item, i) => (
-          <Panel key={item.name} i={i} item={item} d={sv.demo as Demo} label={sv.buildLabel} />
+          <Panel key={item.name} i={i} item={item as Item} d={sv.demo as Demo} label={sv.buildLabel} />
         ))}
       </div>
     </section>

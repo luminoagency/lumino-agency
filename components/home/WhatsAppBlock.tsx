@@ -26,9 +26,6 @@ import { WA_LINK } from './whatsappLink'
  * usano il pulsante flottante e la scorciatoia nel menu.
  */
 
-/* Il testo che si scrive da solo: la testa resta, la coda ruota. */
-const TYPED_HEAD = 'Ciao Lumino, vorrei un sito per'
-const TYPED_TAILS = [' il mio ristorante', ' il mio hotel', ' la mia azienda']
 
 const TYPE_MS = 55
 const ERASE_MS = 28
@@ -37,6 +34,10 @@ const TILT_MAX = 4
 
 export default function WhatsAppBlock() {
   const { m } = useI18n()
+  /* Il testo che si scrive da solo, nella lingua della pagina: la testa resta,
+     la coda ruota. */
+  const TYPED_HEAD = m.whatsapp.typedHead
+  const TYPED_TAILS = m.whatsapp.typedTails
   const rootRef = useRef<HTMLAnchorElement>(null)
   const typedRef = useRef<HTMLSpanElement>(null)
   const [live, setLive] = useState(false)
@@ -117,7 +118,7 @@ export default function WhatsAppBlock() {
 
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
-  }, [live])
+  }, [live, TYPED_HEAD, TYPED_TAILS])
 
   /* Inclinazione verso il puntatore: roba da mouse, quindi solo lì. */
   useEffect(() => {

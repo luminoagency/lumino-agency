@@ -209,11 +209,6 @@ export default function Hero() {
 
       {HERO_WINDOWS.map((win) => (
         <div className={`lm-hero-win ${win.slot}`} key={win.slot}>
-          <span className="lm-hero-win-bar" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
           <Image
             src={win.src}
             alt={fill(m.hero.windowAlt, { client: win.client })}
@@ -235,7 +230,7 @@ export default function Hero() {
           <em>{m.hero.payoffAccent}</em>
         </p>
 
-        <a className="lm-hero-cta" href="#lavori" data-cursor="grow">
+        <a className="lm-hero-cta" href="#metodo" data-cursor="grow">
           <span className="lm-hero-cta-ring" aria-hidden="true">
             ↓
           </span>

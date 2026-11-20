@@ -30,10 +30,11 @@ interface MenuItem {
 /* Gli ancoraggi non cambiano con la lingua — sono id nel DOM — ma le
    etichette sì: qui c'è la chiave, il testo lo mette il catalogo. */
 const MENU = [
-  { href: '#studio', key: 'about' },
+  { href: '#metodo', key: 'process' },
   { href: '#servizi', key: 'services' },
-  { href: '#lavori', key: 'works' },
+  { href: '#collaborazioni', key: 'collab' },
   { href: '#settori', key: 'sectors' },
+  { href: '#lavori', key: 'works' },
   { href: '#contatti', key: 'contact' },
 ] as const
 

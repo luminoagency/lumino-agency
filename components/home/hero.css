@@ -200,7 +200,7 @@
 /* Profondità: quelle dietro sono più spente e proiettano un'ombra più corta. */
 .lm-hero-win.w1,
 .lm-hero-win.w2 {
-  filter: brightness(0.8) saturate(0.88);
+  filter: brightness(0.9);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.6);
 }
 
@@ -590,4 +590,13 @@ body.lm-loaded .lm-hticker { animation-delay: 2.2s; }
   .lm-hero-cta-ring {
     transition: none;
   }
+}
+
+/* Le finestre ora sono foto, non browser: niente barra, angoli da stampa. */
+.lm-hero-win { border-radius: 14px; border-color: rgba(244, 238, 228, 0.16); }
+@media (min-width: 1100px) {
+  .lm-hero-win.w1 { width: 19%; }
+  .lm-hero-win.w2 { width: 17.5%; }
+  .lm-hero-win.w3 { width: 18%; }
+  .lm-hero-win.w4 { width: 19.5%; }
 }

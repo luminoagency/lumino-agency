@@ -1,10 +1,9 @@
 /**
  * Composizione dell'hero: cosa c'è in scena e dove sta.
  *
- * Le quattro finestre mostrano gli screenshot VERI dei nostri siti (gli stessi
- * file di /public/works/ usati dalla sezione Lavori). Nel riferimento HTML sono
- * in base64 solo per farlo funzionare da file singolo: qui sono file, serviti
- * da next/image.
+ * Le quattro finestre raccontano il lavoro in quattro scatti: le riprese, chi
+ * guarda il contenuto, il titolare che riceve i contatti, il locale pieno.
+ * Foto generate per Lumino (/public/hero/), servite da next/image.
  *
  * L'ordine conta e non va cambiato a caso: è quello che il driver del
  * movimento usa per decidere verso quale angolo ogni finestra esce
@@ -23,19 +22,19 @@ export interface HeroWindow {
 }
 
 export const HERO_WINDOWS: HeroWindow[] = [
-  { slot: 'w1', src: '/works/hero/hosteria-moderna.webp', width: 1440, height: 900, client: 'Hosteria Moderna' },
-  { slot: 'w2', src: '/works/hero/hotel-aurora.webp', width: 1440, height: 900, client: 'Hotel Aurora' },
-  { slot: 'w3', src: '/works/hero/miss-poppy.webp', width: 1440, height: 900, client: 'Miss Poppy' },
-  { slot: 'w4', src: '/works/hero/trattoria-dalloste.webp', width: 1440, height: 900, client: "Trattoria Dall'Oste" },
+  { slot: 'w1', src: '/hero/shoot.webp', width: 800, height: 498, client: 'riprese sul posto per i social' },
+  { slot: 'w2', src: '/hero/scroll.webp', width: 800, height: 498, client: 'un cliente che guarda un reel' },
+  { slot: 'w3', src: '/hero/shop.webp', width: 800, height: 498, client: 'una titolare che riceve nuovi contatti' },
+  { slot: 'w4', src: '/hero/sala.webp', width: 800, height: 498, client: 'un locale pieno di clienti' },
 ]
 
 /** Le sei lettere del wordmark. La I è quella nel gradiente. */
 export const HERO_LETTERS = ['L', 'U', 'M', 'I', 'N', 'O'] as const
 
 /** Il payoff sotto la composizione. Esportato: è anche il testo dell'h1. */
-export const HERO_PAYOFF_LEAD = 'Progettiamo e costruiamo siti che '
-export const HERO_PAYOFF_ACCENT = 'si ricordano.'
-export const HERO_TITLE = `Lumino — studio digitale. ${HERO_PAYOFF_LEAD}${HERO_PAYOFF_ACCENT}`
+export const HERO_PAYOFF_LEAD = 'Social e pubblicità '
+export const HERO_PAYOFF_ACCENT = 'che portano clienti.'
+export const HERO_TITLE = `Lumino — social, pubblicità e clienti per le aziende. ${HERO_PAYOFF_LEAD}${HERO_PAYOFF_ACCENT}`
 
 /**
  * Durata complessiva dell'entrata, in ms.
