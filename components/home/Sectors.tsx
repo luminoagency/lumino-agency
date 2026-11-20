@@ -1,6 +1,7 @@
 'use client'
 
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { prefersReducedMotion } from './useMotion'
 import { useI18n } from '@/components/i18n/I18nProvider'
 
 /**
@@ -23,9 +24,36 @@ export default function Sectors() {
   const s = m.sectors.sentence
   const [active, setActive] = useState(0)
   const current = items[active]
+  const sectionRef = useRef<HTMLElement>(null)
+  const touched = useRef(false)
+
+  /* Finché nessuno la tocca, la frase cambia parola da sola mentre è in vista. */
+  useEffect(() => {
+    const el = sectionRef.current
+    if (!el || prefersReducedMotion()) return
+    let id = 0
+    const io = new IntersectionObserver(([e]) => {
+      window.clearInterval(id)
+      if (!e.isIntersecting) return
+      id = window.setInterval(() => {
+        if (touched.current) return window.clearInterval(id)
+        setActive((a) => (a + 1) % items.length)
+      }, 3400)
+    }, { threshold: 0.4 })
+    io.observe(el)
+    return () => {
+      io.disconnect()
+      window.clearInterval(id)
+    }
+  }, [items.length])
+
+  const pick = (i: number) => {
+    touched.current = true
+    setActive(i)
+  }
 
   return (
-    <section className="lm-section lm-sec" id="settori">
+    <section className="lm-section lm-sec" id="settori" ref={sectionRef}>
       <div className="lm-wrap">
         <p className="lm-kicker lm-reveal">{m.sectors.kicker}</p>
 
@@ -42,12 +70,15 @@ export default function Sectors() {
                 aria-selected={i === active}
                 aria-controls="lm-sec-panel"
                 className={`lm-sec-word${i === active ? ' is-on' : ''}`}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                onClick={() => setActive(i)}
+                onMouseEnter={() => pick(i)}
+                onFocus={() => pick(i)}
+                onClick={() => pick(i)}
                 data-cursor="open"
               >
                 {it.word}
+                <svg className="lm-sec-mark" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true">
+                  <path pathLength={1} d="M3 8.5C38 4 70 3.2 104 5.6S168 9.4 197 4.2" />
+                </svg>
               </button>
             </Fragment>
           ))}

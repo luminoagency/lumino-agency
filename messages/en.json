@@ -48,7 +48,8 @@
   "services": {
     "kicker": "Services",
     "titleLine1": "Not just websites.",
-    "titleLine2": "Everything that gets you chosen.",
+    "titleLine2": "Everything that gets you ",
+    "titleAccent": "chosen.",
     "lead": "Website, social, ads and automation: four crafts under one roof, with the same care and a single point of contact. Take them together or one at a time.",
     "buildLabel": "What we do",
     "items": [
@@ -94,24 +95,42 @@
       }
     ],
     "demo": {
-      "webScore": "Performance",
       "webLabel": "Trattoria Dall’Oste",
-      "handle": "yourbrand",
-      "followers": "followers",
-      "posts": "posts",
-      "reach": "reach",
-      "toast": "New reel published",
-      "adsPeriod": "Last 30 days",
+      "webHint": "Hover it: the site scrolls with you",
+      "webHintTouch": "Drag to scroll",
+      "handle": "yourplace",
+      "reelCaptions": [
+        "Tajine straight from the oven.",
+        "Sea view from room 204.",
+        "Grill lit from six."
+      ],
+      "likes": "likes",
+      "reelHint": "Tap the reel",
+      "budgetLabel": "Daily budget",
       "adsKpis": [
         "Clicks",
-        "Conversions",
-        "Return"
+        "Leads",
+        "Cost per lead"
       ],
-      "chatName": "Assistant",
-      "chatOnline": "online",
-      "chatUser": "Hi, do you have a table for 4 tonight at 9?",
-      "chatBot": "Yes, there’s a table at 9. What name shall I put it under?",
-      "chatSaved": "Booking saved"
+      "adsHint": "Move the budget",
+      "adsNote": "Simulation",
+      "chatName": "Your place",
+      "chatStatus": "replies instantly",
+      "chatHint": "Pick a question",
+      "qa": [
+        [
+          "Do you have a table for 4 tonight?",
+          "Yes, there’s a table at 9. What name shall I put it under?"
+        ],
+        [
+          "Do you do gluten-free dishes?",
+          "Yes, half the menu can be made gluten-free. Shall I send it here?"
+        ],
+        [
+          "How late are you open?",
+          "Tonight the kitchen closes at 11, the restaurant at midnight."
+        ]
+      ]
     }
   },
   "works": {

@@ -48,7 +48,8 @@
   "services": {
     "kicker": "Services",
     "titleLine1": "Pas seulement des sites.",
-    "titleLine2": "Tout ce qui vous fait choisir.",
+    "titleLine2": "Tout ce qui vous fait ",
+    "titleAccent": "choisir.",
     "lead": "Site, réseaux sociaux, campagnes et automatisations : quatre métiers sous le même toit, avec le même soin et un seul interlocuteur. Ensemble ou un par un.",
     "buildLabel": "Ce que nous faisons",
     "items": [
@@ -94,24 +95,42 @@
       }
     ],
     "demo": {
-      "webScore": "Performance",
       "webLabel": "Trattoria Dall’Oste",
-      "handle": "votremarque",
-      "followers": "abonnés",
-      "posts": "posts",
-      "reach": "portée",
-      "toast": "Nouveau reel publié",
-      "adsPeriod": "30 derniers jours",
+      "webHint": "Survolez-le : le site défile avec vous",
+      "webHintTouch": "Glissez pour défiler",
+      "handle": "votrelieu",
+      "reelCaptions": [
+        "Tajine tout juste sorti du four.",
+        "Vue mer depuis la chambre 204.",
+        "Braise allumée dès 18 h."
+      ],
+      "likes": "j’aime",
+      "reelHint": "Touchez le reel",
+      "budgetLabel": "Budget par jour",
       "adsKpis": [
         "Clics",
-        "Conversions",
-        "Retour"
+        "Contacts",
+        "Coût par contact"
       ],
-      "chatName": "Assistant",
-      "chatOnline": "en ligne",
-      "chatUser": "Bonjour, vous avez une table pour 4 ce soir à 21 h ?",
-      "chatBot": "Oui, il reste une table à 21 h. À quel nom je la réserve ?",
-      "chatSaved": "Réservation enregistrée"
+      "adsHint": "Bougez le budget",
+      "adsNote": "Simulation",
+      "chatName": "Votre établissement",
+      "chatStatus": "répond tout de suite",
+      "chatHint": "Choisissez une question",
+      "qa": [
+        [
+          "Vous avez une table pour 4 ce soir ?",
+          "Oui, il reste une table à 21 h. À quel nom je la réserve ?"
+        ],
+        [
+          "Vous faites des plats sans gluten ?",
+          "Oui, la moitié de la carte existe sans gluten. Je vous l’envoie ici ?"
+        ],
+        [
+          "Vous fermez à quelle heure ?",
+          "Ce soir la cuisine ferme à 23 h, le restaurant à minuit."
+        ]
+      ]
     }
   },
   "works": {

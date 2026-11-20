@@ -48,7 +48,8 @@
   "services": {
     "kicker": "Servizi",
     "titleLine1": "Non solo siti.",
-    "titleLine2": "Tutto quello che ti fa scegliere.",
+    "titleLine2": "Tutto quello che ti fa ",
+    "titleAccent": "scegliere.",
     "lead": "Sito, social, campagne e automazioni: quattro mestieri sotto lo stesso tetto, con la stessa cura e un solo referente. Li prendi insieme o uno alla volta.",
     "buildLabel": "Cosa facciamo",
     "items": [
@@ -94,24 +95,42 @@
       }
     ],
     "demo": {
-      "webScore": "Prestazioni",
       "webLabel": "Trattoria Dall’Oste",
-      "handle": "iltuobrand",
-      "followers": "follower",
-      "posts": "post",
-      "reach": "copertura",
-      "toast": "Nuovo reel pubblicato",
-      "adsPeriod": "Ultimi 30 giorni",
+      "webHint": "Passaci sopra: il sito scorre con te",
+      "webHintTouch": "Trascina per scorrere",
+      "handle": "iltuolocale",
+      "reelCaptions": [
+        "Tajine appena uscita dal forno.",
+        "Vista mare dalla camera 204.",
+        "Brace accesa dalle sei."
+      ],
+      "likes": "mi piace",
+      "reelHint": "Tocca il reel",
+      "budgetLabel": "Budget al giorno",
       "adsKpis": [
         "Clic",
-        "Conversioni",
-        "Ritorno"
+        "Contatti",
+        "Costo per contatto"
       ],
-      "chatName": "Assistente",
-      "chatOnline": "online",
-      "chatUser": "Ciao, avete posto per 4 stasera alle 21?",
-      "chatBot": "Sì, alle 21 c’è un tavolo in sala. A che nome lo segno?",
-      "chatSaved": "Prenotazione salvata"
+      "adsHint": "Sposta il budget",
+      "adsNote": "Simulazione",
+      "chatName": "Il tuo locale",
+      "chatStatus": "risponde subito",
+      "chatHint": "Scegli una domanda",
+      "qa": [
+        [
+          "Avete posto stasera per 4?",
+          "Sì, alle 21 c’è un tavolo in sala. A che nome lo segno?"
+        ],
+        [
+          "Fate piatti senza glutine?",
+          "Sì, metà del menù si può fare senza glutine. Te lo mando qui?"
+        ],
+        [
+          "Fino a che ora siete aperti?",
+          "Stasera la cucina chiude alle 23, il locale a mezzanotte."
+        ]
+      ]
     }
   },
   "works": {
