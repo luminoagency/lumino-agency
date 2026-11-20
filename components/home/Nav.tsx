@@ -31,6 +31,7 @@ interface MenuItem {
    etichette sì: qui c'è la chiave, il testo lo mette il catalogo. */
 const MENU = [
   { href: '#studio', key: 'about' },
+  { href: '#servizi', key: 'services' },
   { href: '#lavori', key: 'works' },
   { href: '#settori', key: 'sectors' },
   { href: '#contatti', key: 'contact' },

@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Lumino — Digital studio | Websites built to measure",
-    "description": "Digital studio: we design and build websites to measure. Identity, interfaces and motion for restaurants, hotels, companies and retail.",
-    "ogImageAlt": "Lumino — We design and build websites people remember"
+    "title": "Lumino — Digital studio | Websites, social and ads",
+    "description": "Digital studio: websites built to measure, social media management, Google Ads and Meta Ads campaigns, AI and automation. For restaurants, hotels, companies and retail.",
+    "ogImageAlt": "Lumino — Websites, social and ads people remember"
   },
   "nav": {
     "menu": "Explore",
@@ -13,26 +13,27 @@
     "languageLabel": "Language",
     "items": {
       "about": "About",
+      "services": "Services",
       "works": "Work",
-      "sectors": "What we do",
+      "sectors": "Sectors",
       "contact": "Contact"
     }
   },
   "hero": {
-    "srTitle": "Lumino — digital studio. We design and build websites people remember.",
-    "payoffLead": "We design and build websites ",
+    "srTitle": "Lumino — digital studio. Websites, social and ads people remember.",
+    "payoffLead": "Websites, social and ads ",
     "payoffAccent": "people remember.",
     "cta": "See the work",
     "windowAlt": "{client} — website built by Lumino"
   },
   "marquee": {
     "words": [
-      "Identity",
-      "Interfaces",
-      "Motion",
-      "Code"
+      "Websites",
+      "Social",
+      "Ads",
+      "Automation"
     ],
-    "aria": "Identity, interfaces, motion, code",
+    "aria": "Websites, social, ads, automation",
     "dragHint": "↔ drag"
   },
   "about": {
@@ -42,7 +43,76 @@
     "body1Before": "The difference isn’t size: it’s who answers. Here a project doesn’t get handed between departments — ",
     "body1Strong": "whoever designs it is the one who writes it",
     "body1After": ", and it stays the same person from the first sketch to the line of code that goes live.",
-    "body2": "We take on few projects at a time, because a site done properly means understanding a trade before representing it. We look at how you work, what you sell, who walks through the door. Then we build something that looks like you, not like somebody else’s template."
+    "body2": "We take on few clients at a time, because work done properly — a website, a profile, a campaign — means understanding a trade before representing it. We look at how you work, what you sell, who walks through the door. Then we build something that looks like you, not like somebody else’s template."
+  },
+  "services": {
+    "kicker": "Services",
+    "titleLine1": "Not just websites.",
+    "titleLine2": "Everything that gets you chosen.",
+    "lead": "Website, social, ads and automation: four crafts under one roof, with the same care and a single point of contact. Take them together or one at a time.",
+    "buildLabel": "What we do",
+    "items": [
+      {
+        "name": "Websites & platforms",
+        "meta": "Websites · E-commerce · Web apps",
+        "body": "Written from scratch, fast on a phone and found on Google. From a showcase site to an online shop, all the way to platforms with a client area.",
+        "builds": [
+          "Design to measure, never a bought theme",
+          "Loads in under two seconds",
+          "Local SEO and a cared-for Google profile"
+        ]
+      },
+      {
+        "name": "Social management",
+        "meta": "Plan · Reels · Growth",
+        "body": "We take the whole profile off your hands: editorial plan, photos and reels edited in-house, publishing and replies. You keep working, the profile keeps growing.",
+        "builds": [
+          "A content plan every month",
+          "Reels and carousels edited in the studio",
+          "A clear report on growth and leads"
+        ]
+      },
+      {
+        "name": "Ad campaigns",
+        "meta": "Google Ads · Meta Ads · Reports",
+        "body": "Ads on Google, Instagram and Facebook that bring customers, not just clicks. We set up, test, cut the waste and show you where every euro goes.",
+        "builds": [
+          "Search, Shopping and Performance Max",
+          "Instagram and Facebook ads",
+          "Weekly optimisation, monthly report"
+        ]
+      },
+      {
+        "name": "AI & automation",
+        "meta": "Agents · Dashboards · Tools",
+        "body": "Assistants that answer customers for you, dashboards that put the numbers in order, simple management tools you run from your phone.",
+        "builds": [
+          "AI agents on WhatsApp and on your site",
+          "Dashboards with the numbers that matter",
+          "Light tools, nothing to install"
+        ]
+      }
+    ],
+    "demo": {
+      "webScore": "Performance",
+      "webLabel": "Miss Poppy",
+      "handle": "yourbrand",
+      "followers": "followers",
+      "posts": "posts",
+      "reach": "reach",
+      "toast": "New reel published",
+      "adsPeriod": "Last 30 days",
+      "adsKpis": [
+        "Clicks",
+        "Conversions",
+        "Return"
+      ],
+      "chatName": "Assistant",
+      "chatOnline": "online",
+      "chatUser": "Hi, do you have a table for 4 tonight at 9?",
+      "chatBot": "Yes, there’s a table at 9. What name shall I put it under?",
+      "chatSaved": "Booking saved"
+    }
   },
   "works": {
     "kicker": "Work",
@@ -58,8 +128,8 @@
     "tapToBrowse": "tap to browse"
   },
   "statement": {
-    "line1": "A website isn’t a brochure.",
-    "line2": "It’s the first place where",
+    "line1": "A website, a profile, an ad:",
+    "line2": "they’re the first places where",
     "line3": "somebody chooses you."
   },
   "process": {
@@ -94,7 +164,7 @@
     }
   },
   "sectors": {
-    "kicker": "What we do",
+    "kicker": "Who we work for",
     "lead": "The trade changes, the method doesn’t. Every sector has its own way of being chosen: our job is working out what yours is.",
     "buildLabel": "What we build",
     "items": [
@@ -107,7 +177,8 @@
           "Bookings that land straight on the floor",
           "Food photography treated properly",
           "Google reviews that update on their own"
-        ]
+        ],
+        "word": "restaurants"
       },
       {
         "name": "Hotels",
@@ -118,7 +189,8 @@
           "Direct booking, no commission",
           "Availability always in step with your system",
           "A site that changes as the season changes"
-        ]
+        ],
+        "word": "hotels"
       },
       {
         "name": "Companies",
@@ -129,7 +201,8 @@
           "A catalogue that’s browsable and always current",
           "Material the sales team will actually use",
           "Enquiries that arrive qualified"
-        ]
+        ],
+        "word": "companies"
       },
       {
         "name": "Retail",
@@ -140,7 +213,8 @@
           "Real availability, shop by shop",
           "Click and collect as a choice, not a fallback",
           "A storefront that brings people in"
-        ]
+        ],
+        "word": "shops"
       },
       {
         "name": "Real estate",
@@ -151,17 +225,24 @@
           "Photographs and floor plans treated properly",
           "A viewing request in two taps",
           "Search that actually filters"
-        ]
+        ],
+        "word": "estate agencies"
       }
-    ]
+    ],
+    "sentence": {
+      "before": "We work with ",
+      "and": " and ",
+      "after": ".",
+      "hint": "Tap a sector"
+    }
   },
   "stats": {
     "kicker": "In short",
     "items": [
       {
-        "value": 5,
+        "value": 4,
         "suffix": "",
-        "label": "sectors we’ve already built in and put online"
+        "label": "services under one roof: websites, social, ads and AI"
       },
       {
         "value": 100,
@@ -171,7 +252,7 @@
       {
         "value": 1,
         "suffix": "",
-        "label": "single point of contact from first sketch to going live"
+        "label": "single point of contact, from first sketch to a running campaign"
       }
     ]
   },

@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Lumino — La segretaria AI degli artigiani, su WhatsApp",
-    "description": "Mandi un vocale su WhatsApp: Lumino fa il preventivo col tuo logo, ricorda i pagamenti e prepara l'agenda. Agent AI, dashboard, siti e contenuti per aziende vere.",
-    "ogImageAlt": "Lumino — Progettiamo e costruiamo siti che si ricordano"
+    "title": "Lumino — Studio digitale | Siti, social e campagne",
+    "description": "Studio digitale: siti su misura, gestione dei social, campagne Google Ads e Meta Ads, AI e automazioni. Per ristoranti, hotel, aziende e retail.",
+    "ogImageAlt": "Lumino — Siti, social e campagne che si ricordano"
   },
   "nav": {
     "menu": "Esplora",
@@ -13,26 +13,27 @@
     "languageLabel": "Lingua",
     "items": {
       "about": "Chi siamo",
+      "services": "Servizi",
       "works": "Lavori",
-      "sectors": "Cosa facciamo",
+      "sectors": "Settori",
       "contact": "Contatti"
     }
   },
   "hero": {
-    "srTitle": "Lumino — studio digitale. Progettiamo e costruiamo siti che si ricordano.",
-    "payoffLead": "Progettiamo e costruiamo siti che ",
-    "payoffAccent": "si ricordano.",
+    "srTitle": "Lumino — studio digitale. Siti, social e campagne che si ricordano.",
+    "payoffLead": "Siti, social e campagne ",
+    "payoffAccent": "che si ricordano.",
     "cta": "Guarda i lavori",
     "windowAlt": "{client} — sito realizzato da Lumino"
   },
   "marquee": {
     "words": [
-      "Identità",
-      "Interfacce",
-      "Movimento",
-      "Codice"
+      "Siti",
+      "Social",
+      "Campagne",
+      "Automazioni"
     ],
-    "aria": "Identità, interfacce, movimento, codice",
+    "aria": "Siti, social, campagne, automazioni",
     "dragHint": "↔ trascina"
   },
   "about": {
@@ -42,7 +43,76 @@
     "body1Before": "La differenza non è la dimensione: è chi risponde. Da noi il progetto non passa di mano fra reparti — ",
     "body1Strong": "chi lo disegna è chi lo scrive",
     "body1After": ", e resta la stessa persona dal primo schizzo alla riga di codice che va online.",
-    "body2": "Prendiamo pochi progetti per volta perché un sito fatto bene richiede di capire un mestiere prima di rappresentarlo. Guardiamo come lavori, cosa vendi, chi entra dalla porta. Poi costruiamo qualcosa che somigli a te e non al template di qualcun altro."
+    "body2": "Prendiamo pochi clienti per volta, perché un lavoro fatto bene — un sito, un profilo, una campagna — richiede di capire un mestiere prima di rappresentarlo. Guardiamo come lavori, cosa vendi, chi entra dalla porta. Poi costruiamo qualcosa che somigli a te e non al template di qualcun altro."
+  },
+  "services": {
+    "kicker": "Servizi",
+    "titleLine1": "Non solo siti.",
+    "titleLine2": "Tutto quello che ti fa scegliere.",
+    "lead": "Sito, social, campagne e automazioni: quattro mestieri sotto lo stesso tetto, con la stessa cura e un solo referente. Li prendi insieme o uno alla volta.",
+    "buildLabel": "Cosa facciamo",
+    "items": [
+      {
+        "name": "Siti e piattaforme",
+        "meta": "Siti · E-commerce · Web app",
+        "body": "Scritti da zero, veloci sul telefono e trovati su Google. Dal sito vetrina al negozio online, fino alle piattaforme con area clienti.",
+        "builds": [
+          "Design su misura, mai un tema comprato",
+          "Caricamento sotto i due secondi",
+          "SEO locale e scheda Google curata"
+        ]
+      },
+      {
+        "name": "Gestione social",
+        "meta": "Piano · Reel · Crescita",
+        "body": "Ci prendiamo il profilo per intero: piano editoriale, foto e reel montati da noi, pubblicazione e risposte. Tu continui a lavorare, il profilo intanto cresce.",
+        "builds": [
+          "Piano editoriale ogni mese",
+          "Reel e caroselli montati in studio",
+          "Report chiaro su crescita e contatti"
+        ]
+      },
+      {
+        "name": "Campagne pubblicitarie",
+        "meta": "Google Ads · Meta Ads · Report",
+        "body": "Annunci su Google, Instagram e Facebook che portano clienti, non solo clic. Impostiamo, testiamo, togliamo lo spreco e ti mostriamo dove va ogni euro.",
+        "builds": [
+          "Search, Shopping e Performance Max",
+          "Inserzioni su Instagram e Facebook",
+          "Ottimizzazione ogni settimana, report ogni mese"
+        ]
+      },
+      {
+        "name": "AI e automazioni",
+        "meta": "Agent · Dashboard · Gestionali",
+        "body": "Assistenti che rispondono ai clienti al posto tuo, dashboard che mettono ordine nei numeri, gestionali semplici che si usano dal telefono.",
+        "builds": [
+          "Agent AI su WhatsApp e sul sito",
+          "Dashboard con i numeri che contano",
+          "Gestionali leggeri, senza installare niente"
+        ]
+      }
+    ],
+    "demo": {
+      "webScore": "Prestazioni",
+      "webLabel": "Miss Poppy",
+      "handle": "iltuobrand",
+      "followers": "follower",
+      "posts": "post",
+      "reach": "copertura",
+      "toast": "Nuovo reel pubblicato",
+      "adsPeriod": "Ultimi 30 giorni",
+      "adsKpis": [
+        "Clic",
+        "Conversioni",
+        "Ritorno"
+      ],
+      "chatName": "Assistente",
+      "chatOnline": "online",
+      "chatUser": "Ciao, avete posto per 4 stasera alle 21?",
+      "chatBot": "Sì, alle 21 c’è un tavolo in sala. A che nome lo segno?",
+      "chatSaved": "Prenotazione salvata"
+    }
   },
   "works": {
     "kicker": "Lavori",
@@ -58,8 +128,8 @@
     "tapToBrowse": "tocca per navigare"
   },
   "statement": {
-    "line1": "Un sito non è una brochure.",
-    "line2": "È il primo posto in cui",
+    "line1": "Un sito, un profilo, un annuncio:",
+    "line2": "sono i primi posti in cui",
     "line3": "qualcuno ti sceglie."
   },
   "process": {
@@ -94,7 +164,7 @@
     }
   },
   "sectors": {
-    "kicker": "Cosa facciamo",
+    "kicker": "Per chi lavoriamo",
     "lead": "Cambia il mestiere, non il metodo. Ogni settore ha un modo diverso di farsi scegliere: il nostro lavoro è capire quale sia il tuo.",
     "buildLabel": "Cosa costruiamo",
     "items": [
@@ -107,7 +177,8 @@
           "Prenotazioni che arrivano dritte in sala",
           "Foto dei piatti trattate come si deve",
           "Recensioni Google aggiornate da sole"
-        ]
+        ],
+        "word": "ristoranti"
       },
       {
         "name": "Hotel",
@@ -118,7 +189,8 @@
           "Prenotazione diretta, senza commissioni",
           "Disponibilità sempre allineata al gestionale",
           "Il sito cambia col cambiare della stagione"
-        ]
+        ],
+        "word": "hotel"
       },
       {
         "name": "Aziende",
@@ -129,7 +201,8 @@
           "Catalogo consultabile e sempre aggiornato",
           "Materiali che la rete vendita può usare davvero",
           "Contatti che arrivano qualificati"
-        ]
+        ],
+        "word": "aziende"
       },
       {
         "name": "Retail",
@@ -140,7 +213,8 @@
           "Disponibilità reale, negozio per negozio",
           "Ritiro in negozio come scelta, non ripiego",
           "Vetrina che porta gente dentro"
-        ]
+        ],
+        "word": "negozi"
       },
       {
         "name": "Immobiliare",
@@ -151,17 +225,24 @@
           "Foto e planimetrie trattate come si deve",
           "Richiesta di visita in due tocchi",
           "Ricerca che filtra davvero"
-        ]
+        ],
+        "word": "agenzie immobiliari"
       }
-    ]
+    ],
+    "sentence": {
+      "before": "Lavoriamo con ",
+      "and": " e ",
+      "after": ".",
+      "hint": "Tocca un settore"
+    }
   },
   "stats": {
     "kicker": "In breve",
     "items": [
       {
-        "value": 5,
+        "value": 4,
         "suffix": "",
-        "label": "settori in cui abbiamo già costruito e messo online"
+        "label": "servizi sotto lo stesso tetto: siti, social, campagne e AI"
       },
       {
         "value": 100,
@@ -171,7 +252,7 @@
       {
         "value": 1,
         "suffix": "",
-        "label": "referente unico dal primo schizzo alla messa online"
+        "label": "referente unico, dal primo schizzo alla campagna che gira"
       }
     ]
   },

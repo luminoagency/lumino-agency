@@ -66,9 +66,9 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        // Link della bio Instagram: porta dritto al modulo della lista d'attesa.
+        // Link della bio Instagram: porta dritto ai contatti dello studio.
         source: '/lista',
-        destination: '/it#lista',
+        destination: '/it#contatti',
         permanent: false,
       },
       {

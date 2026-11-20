@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Lumino — Studio digital | Sites web sur mesure",
-    "description": "Studio digital : nous concevons et développons des sites sur mesure. Identité, interfaces et mouvement pour la restauration, l’hôtellerie, les entreprises et le retail.",
-    "ogImageAlt": "Lumino — Nous concevons et développons des sites dont on se souvient"
+    "title": "Lumino — Studio digital | Sites, réseaux sociaux et campagnes",
+    "description": "Studio digital : sites sur mesure, gestion des réseaux sociaux, campagnes Google Ads et Meta Ads, IA et automatisations. Pour la restauration, l’hôtellerie, les entreprises et le retail.",
+    "ogImageAlt": "Lumino — Sites, réseaux sociaux et campagnes dont on se souvient"
   },
   "nav": {
     "menu": "Explorer",
@@ -13,26 +13,27 @@
     "languageLabel": "Langue",
     "items": {
       "about": "À propos",
+      "services": "Services",
       "works": "Réalisations",
-      "sectors": "Ce que nous faisons",
+      "sectors": "Secteurs",
       "contact": "Contact"
     }
   },
   "hero": {
-    "srTitle": "Lumino — studio digital. Nous concevons et développons des sites dont on se souvient.",
-    "payoffLead": "Nous concevons et développons des sites ",
+    "srTitle": "Lumino — studio digital. Sites, réseaux sociaux et campagnes dont on se souvient.",
+    "payoffLead": "Sites, réseaux et campagnes ",
     "payoffAccent": "dont on se souvient.",
     "cta": "Voir les réalisations",
     "windowAlt": "{client} — site réalisé par Lumino"
   },
   "marquee": {
     "words": [
-      "Identité",
-      "Interfaces",
-      "Mouvement",
-      "Code"
+      "Sites",
+      "Réseaux",
+      "Campagnes",
+      "Automatisation"
     ],
-    "aria": "Identité, interfaces, mouvement, code",
+    "aria": "Sites, réseaux sociaux, campagnes, automatisation",
     "dragHint": "↔ faites glisser"
   },
   "about": {
@@ -42,7 +43,76 @@
     "body1Before": "La différence n’est pas la taille : c’est qui vous répond. Ici, le projet ne passe pas de service en service — ",
     "body1Strong": "celui qui le dessine est celui qui l’écrit",
     "body1After": ", et c’est la même personne du premier croquis à la ligne de code mise en ligne.",
-    "body2": "Nous prenons peu de projets à la fois, parce qu’un site bien fait demande de comprendre un métier avant de le représenter. Nous regardons comment vous travaillez, ce que vous vendez, qui pousse votre porte. Ensuite nous construisons quelque chose qui vous ressemble, et non le modèle de quelqu’un d’autre."
+    "body2": "Nous prenons peu de clients à la fois, parce qu’un travail bien fait — un site, un profil, une campagne — demande de comprendre un métier avant de le représenter. Nous regardons comment vous travaillez, ce que vous vendez, qui passe la porte. Puis nous construisons quelque chose qui vous ressemble, et non le modèle de quelqu’un d’autre."
+  },
+  "services": {
+    "kicker": "Services",
+    "titleLine1": "Pas seulement des sites.",
+    "titleLine2": "Tout ce qui vous fait choisir.",
+    "lead": "Site, réseaux sociaux, campagnes et automatisations : quatre métiers sous le même toit, avec le même soin et un seul interlocuteur. Ensemble ou un par un.",
+    "buildLabel": "Ce que nous faisons",
+    "items": [
+      {
+        "name": "Sites & plateformes",
+        "meta": "Sites · E-commerce · Web apps",
+        "body": "Écrits de zéro, rapides sur mobile et trouvés sur Google. Du site vitrine à la boutique en ligne, jusqu’aux plateformes avec espace client.",
+        "builds": [
+          "Design sur mesure, jamais un thème acheté",
+          "Chargement en moins de deux secondes",
+          "SEO local et fiche Google soignée"
+        ]
+      },
+      {
+        "name": "Réseaux sociaux",
+        "meta": "Plan · Reels · Croissance",
+        "body": "Nous prenons le profil en main : plan éditorial, photos et reels montés chez nous, publication et réponses. Vous continuez à travailler, le profil grandit.",
+        "builds": [
+          "Un plan éditorial chaque mois",
+          "Reels et carrousels montés au studio",
+          "Un rapport clair sur la croissance et les contacts"
+        ]
+      },
+      {
+        "name": "Campagnes publicitaires",
+        "meta": "Google Ads · Meta Ads · Rapports",
+        "body": "Des annonces sur Google, Instagram et Facebook qui amènent des clients, pas seulement des clics. Nous paramétrons, testons, coupons le gaspillage et montrons où va chaque euro.",
+        "builds": [
+          "Search, Shopping et Performance Max",
+          "Publicités Instagram et Facebook",
+          "Optimisation chaque semaine, rapport chaque mois"
+        ]
+      },
+      {
+        "name": "IA & automatisations",
+        "meta": "Agents · Tableaux de bord · Outils",
+        "body": "Des assistants qui répondent aux clients à votre place, des tableaux de bord qui mettent les chiffres en ordre, des outils de gestion simples qui s’utilisent depuis le téléphone.",
+        "builds": [
+          "Agents IA sur WhatsApp et sur le site",
+          "Tableaux de bord avec les chiffres utiles",
+          "Outils légers, rien à installer"
+        ]
+      }
+    ],
+    "demo": {
+      "webScore": "Performance",
+      "webLabel": "Miss Poppy",
+      "handle": "votremarque",
+      "followers": "abonnés",
+      "posts": "posts",
+      "reach": "portée",
+      "toast": "Nouveau reel publié",
+      "adsPeriod": "30 derniers jours",
+      "adsKpis": [
+        "Clics",
+        "Conversions",
+        "Retour"
+      ],
+      "chatName": "Assistant",
+      "chatOnline": "en ligne",
+      "chatUser": "Bonjour, vous avez une table pour 4 ce soir à 21 h ?",
+      "chatBot": "Oui, il reste une table à 21 h. À quel nom je la réserve ?",
+      "chatSaved": "Réservation enregistrée"
+    }
   },
   "works": {
     "kicker": "Réalisations",
@@ -58,8 +128,8 @@
     "tapToBrowse": "touchez pour naviguer"
   },
   "statement": {
-    "line1": "Un site n’est pas une brochure.",
-    "line2": "C’est le premier endroit où",
+    "line1": "Un site, un profil, une annonce :",
+    "line2": "ce sont les premiers endroits où",
     "line3": "quelqu’un vous choisit."
   },
   "process": {
@@ -94,7 +164,7 @@
     }
   },
   "sectors": {
-    "kicker": "Ce que nous faisons",
+    "kicker": "Pour qui nous travaillons",
     "lead": "Le métier change, pas la méthode. Chaque secteur a sa façon de se faire choisir : notre travail est de comprendre quelle est la vôtre.",
     "buildLabel": "Ce que nous construisons",
     "items": [
@@ -107,7 +177,9 @@
           "Des réservations qui arrivent directement en salle",
           "Des photos de plats traitées comme il faut",
           "Des avis Google qui se mettent à jour tout seuls"
-        ]
+        ],
+        "word": "restaurants",
+        "pre": "des "
       },
       {
         "name": "Hôtels",
@@ -118,7 +190,9 @@
           "La réservation directe, sans commission",
           "Des disponibilités toujours alignées sur votre logiciel",
           "Un site qui change au rythme des saisons"
-        ]
+        ],
+        "word": "hôtels",
+        "pre": "des "
       },
       {
         "name": "Entreprises",
@@ -129,7 +203,9 @@
           "Un catalogue consultable et toujours à jour",
           "Des supports que la force de vente utilise vraiment",
           "Des contacts qui arrivent qualifiés"
-        ]
+        ],
+        "word": "entreprises",
+        "pre": "des "
       },
       {
         "name": "Commerce",
@@ -140,7 +216,9 @@
           "Des stocks réels, boutique par boutique",
           "Le retrait en boutique comme choix, pas comme pis-aller",
           "Une vitrine qui fait entrer les gens"
-        ]
+        ],
+        "word": "commerces",
+        "pre": "des "
       },
       {
         "name": "Immobilier",
@@ -151,17 +229,25 @@
           "Des photos et des plans traités comme il faut",
           "Une demande de visite en deux touches",
           "Une recherche qui filtre vraiment"
-        ]
+        ],
+        "word": "agences immobilières",
+        "pre": "des "
       }
-    ]
+    ],
+    "sentence": {
+      "before": "Nous travaillons avec ",
+      "and": " et ",
+      "after": ".",
+      "hint": "Touchez un secteur"
+    }
   },
   "stats": {
     "kicker": "En bref",
     "items": [
       {
-        "value": 5,
+        "value": 4,
         "suffix": "",
-        "label": "secteurs dans lesquels nous avons déjà construit et mis en ligne"
+        "label": "services sous le même toit : sites, réseaux, campagnes et IA"
       },
       {
         "value": 100,
@@ -171,7 +257,7 @@
       {
         "value": 1,
         "suffix": "",
-        "label": "interlocuteur unique du premier croquis à la mise en ligne"
+        "label": "interlocuteur unique, du premier croquis à la campagne en ligne"
       }
     ]
   },
