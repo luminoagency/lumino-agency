@@ -349,7 +349,31 @@
         "suffix": "",
         "label": "single point of contact, from the shoot to the running campaign"
       }
-    ]
+    ],
+    "headline": "One team, everything you need to grow.",
+    "roles": [
+      "Shoots and content",
+      "Google and Meta ads",
+      "Leads and requests"
+    ],
+    "dashTitle": "Leads this month",
+    "dashNote": "example",
+    "dashRows": [
+      [
+        "Giulia R.",
+        "Instagram"
+      ],
+      [
+        "Ferri Studio",
+        "Google"
+      ],
+      [
+        "Marco B.",
+        "WhatsApp"
+      ]
+    ],
+    "chat": "Hi! I'm your account manager: for anything, just write here.",
+    "chatMeta": "Always the same person"
   },
   "contact": {
     "kicker": "Contact",
@@ -370,7 +394,24 @@
     "cta": "Message us on WhatsApp",
     "status": "online",
     "bubble": "Hi! Tell us what you sell and to whom. We reply the same day.",
-    "now": "now"
+    "now": "now",
+    "typing": "typing…",
+    "today": "Today",
+    "hello": "Hi! This is the Lumino team.",
+    "quick": [
+      {
+        "label": "I want more clients",
+        "text": "Hi Lumino, I'd like more clients for my business."
+      },
+      {
+        "label": "Social media",
+        "text": "Hi Lumino, I'm interested in social media management."
+      },
+      {
+        "label": "Google and Meta ads",
+        "text": "Hi Lumino, I'd like to run ads on Google and Instagram."
+      }
+    ]
   },
   "footer": {
     "legalNav": "Legal links",

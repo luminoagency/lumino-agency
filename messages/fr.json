@@ -354,7 +354,31 @@
         "suffix": "",
         "label": "interlocuteur unique, du tournage à la campagne en ligne"
       }
-    ]
+    ],
+    "headline": "Une seule équipe, tout ce qu'il faut pour grandir.",
+    "roles": [
+      "Tournages et contenus",
+      "Publicité Google et Meta",
+      "Contacts et demandes"
+    ],
+    "dashTitle": "Contacts ce mois-ci",
+    "dashNote": "exemple",
+    "dashRows": [
+      [
+        "Giulia R.",
+        "Instagram"
+      ],
+      [
+        "Studio Ferri",
+        "Google"
+      ],
+      [
+        "Marco B.",
+        "WhatsApp"
+      ]
+    ],
+    "chat": "Bonjour ! Je suis votre référent : pour tout, écrivez ici.",
+    "chatMeta": "Toujours la même personne"
   },
   "contact": {
     "kicker": "Contact",
@@ -375,7 +399,24 @@
     "cta": "Écrivez-nous sur WhatsApp",
     "status": "en ligne",
     "bubble": "Bonjour ! Dites-nous ce que vous vendez et à qui. On vous répond dans la journée.",
-    "now": "maintenant"
+    "now": "maintenant",
+    "typing": "écrit…",
+    "today": "Aujourd'hui",
+    "hello": "Bonjour ! Ici l'équipe Lumino.",
+    "quick": [
+      {
+        "label": "Je veux plus de clients",
+        "text": "Bonjour Lumino, je voudrais plus de clients pour mon activité."
+      },
+      {
+        "label": "Réseaux sociaux",
+        "text": "Bonjour Lumino, la gestion des réseaux sociaux m'intéresse."
+      },
+      {
+        "label": "Pubs Google et Meta",
+        "text": "Bonjour Lumino, je voudrais faire de la publicité sur Google et Instagram."
+      }
+    ]
   },
   "footer": {
     "legalNav": "Liens légaux",

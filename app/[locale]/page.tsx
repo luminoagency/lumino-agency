@@ -5,6 +5,7 @@ import '@/components/home/home.css'
 import '@/components/home/motion.css'
 import '@/components/home/hero.css'
 import '@/components/home/process.css'
+import '@/components/home/brief.css'
 import '@/components/home/whatsapp.css'
 
 import { anton } from '@/components/home/fonts'

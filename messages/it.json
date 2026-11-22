@@ -349,7 +349,31 @@
         "suffix": "",
         "label": "referente unico, dalle riprese alla campagna che gira"
       }
-    ]
+    ],
+    "headline": "Un solo team, tutto quello che serve per crescere.",
+    "roles": [
+      "Riprese e contenuti",
+      "Pubblicità Google e Meta",
+      "Contatti e richieste"
+    ],
+    "dashTitle": "Contatti di questo mese",
+    "dashNote": "esempio",
+    "dashRows": [
+      [
+        "Giulia R.",
+        "Instagram"
+      ],
+      [
+        "Studio Ferri",
+        "Google"
+      ],
+      [
+        "Marco B.",
+        "WhatsApp"
+      ]
+    ],
+    "chat": "Ciao! Sono il tuo referente: per qualsiasi cosa scrivi qui.",
+    "chatMeta": "Sempre la stessa persona"
   },
   "contact": {
     "kicker": "Contatti",
@@ -370,7 +394,24 @@
     "cta": "Scrivici su WhatsApp",
     "status": "online",
     "bubble": "Ciao! Raccontaci cosa vendi e a chi. Ti rispondiamo in giornata.",
-    "now": "ora"
+    "now": "ora",
+    "typing": "sta scrivendo…",
+    "today": "Oggi",
+    "hello": "Ciao! Qui è il team Lumino.",
+    "quick": [
+      {
+        "label": "Voglio più clienti",
+        "text": "Ciao Lumino, vorrei più clienti per la mia attività."
+      },
+      {
+        "label": "Gestione social",
+        "text": "Ciao Lumino, mi interessa la gestione dei social."
+      },
+      {
+        "label": "Pubblicità Google e Meta",
+        "text": "Ciao Lumino, vorrei fare pubblicità su Google e Instagram."
+      }
+    ]
   },
   "footer": {
     "legalNav": "Link legali",

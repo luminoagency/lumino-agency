@@ -3,68 +3,71 @@
 import { useEffect, useRef, useState } from 'react'
 import { COMPANY } from '@/lib/company'
 import { useI18n } from '@/components/i18n/I18nProvider'
-import { POINTER_BREAKPOINT, lerp, mouseEffectsEnabled, prefersReducedMotion } from './useMotion'
-import { WA_LINK } from './whatsappLink'
+import { prefersReducedMotion } from './useMotion'
 
 /**
- * Blocco WhatsApp della sezione Contatti.
+ * Contatti — la chat WhatsApp di Lumino.
  *
- * Non un pulsante verde generico ma una conversazione già cominciata: prima i
- * tre puntini di "sta scrivendo", poi la risposta in arrivo, poi un campo che
- * si scrive da solo. Chi lo guarda capisce che dall'altra parte c'è qualcuno
- * senza bisogno che glielo si scriva.
+ * Disegnata come la vera app (tema scuro): barra in alto con la foto profilo
+ * di Lumino, due messaggi in arrivo, risposte rapide e il campo che si scrive
+ * da solo. Ogni risposta rapida e il tasto invia aprono WhatsApp con il testo
+ * già pronto.
  *
- * Il campo di testo NON è un <input>: sarebbe a fuoco alla prima tabulazione e
- * su telefono aprirebbe la tastiera per niente. È un div. Il blocco intero è
- * un <a>, quindi resta una cosa sola, navigabile da tastiera.
- *
- * Il verde di WhatsApp è solo un accento — pulsante di invio e spunte. Il resto
- * è la nostra palette: un blocco verde su una vetrina scura sarebbe un corpo
- * estraneo.
- *
- * Il link col messaggio precompilato viene da whatsappLink.ts: lo stesso che
- * usano il pulsante flottante e la scorciatoia nel menu.
+ * Per il telefono: l'unico lavoro continuo è la scrittura nel campo, e gira
+ * solo mentre la chat è sullo schermo. Niente inclinazione al mouse, niente
+ * effetti al passaggio.
  */
-
 
 const TYPE_MS = 55
 const ERASE_MS = 28
 const HOLD_MS = 1400
-const TILT_MAX = 4
+
+const waUrl = (text: string) => `${COMPANY.whatsapp.waLink}?text=${encodeURIComponent(text)}`
+
+/** La foto profilo: il wordmark LUMINO su fondo scuro, con la I nel gradiente. */
+function LuminoAvatar() {
+  return (
+    <svg className="lm-wa2-avatar" viewBox="0 0 64 64" aria-hidden="true">
+      <defs>
+        <linearGradient id="lmwaI" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#e53b33" />
+          <stop offset=".5" stopColor="#ec6699" />
+          <stop offset="1" stopColor="#8b5cf6" />
+        </linearGradient>
+      </defs>
+      <circle cx="32" cy="32" r="32" fill="#181412" />
+      <text x="9.2" y="38.5" fill="#f4ede3" fontSize="15.5" letterSpacing=".2" style={{ fontFamily: 'var(--font-display), Anton, Impact, sans-serif' }}>
+        LUM
+      </text>
+      <rect x="33.6" y="26.9" width="2.6" height="11.6" fill="url(#lmwaI)" />
+      <text x="37.6" y="38.5" fill="#f4ede3" fontSize="15.5" letterSpacing=".2" style={{ fontFamily: 'var(--font-display), Anton, Impact, sans-serif' }}>
+        NO
+      </text>
+    </svg>
+  )
+}
 
 export default function WhatsAppBlock() {
   const { m } = useI18n()
-  /* Il testo che si scrive da solo, nella lingua della pagina: la testa resta,
-     la coda ruota. */
-  const TYPED_HEAD = m.whatsapp.typedHead
-  const TYPED_TAILS = m.whatsapp.typedTails
-  const rootRef = useRef<HTMLAnchorElement>(null)
+  const w = m.whatsapp
+  const TYPED_HEAD = w.typedHead
+  const TYPED_TAILS = w.typedTails
+  const rootRef = useRef<HTMLDivElement>(null)
   const typedRef = useRef<HTMLSpanElement>(null)
   const [live, setLive] = useState(false)
-  const [burst, setBurst] = useState(false)
-  /* Al tocco il testo scritto nel campo sale nella conversazione come
-     messaggio inviato: il gesto si conclude qui prima che si apra WhatsApp. */
   const [sent, setSent] = useState<string | null>(null)
 
-  /* La conversazione parte al primo ingresso in viewport e si ferma quando
-     esce: è un ciclo, e farlo girare per tutta la pagina non serve a nessuno. */
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
-
-    const observer = new IntersectionObserver(([entry]) => setLive(entry.isIntersecting), {
-      threshold: 0.3,
-    })
+    const observer = new IntersectionObserver(([entry]) => setLive(entry.isIntersecting), { threshold: 0.3 })
     observer.observe(root)
     return () => observer.disconnect()
   }, [])
 
-  /* Il campo che si scrive da solo. */
   useEffect(() => {
     const el = typedRef.current
     if (!el) return
-
-    // Con motion ridotto si mostra il messaggio finito, non un campo vuoto.
     if (prefersReducedMotion()) {
       el.textContent = TYPED_HEAD + TYPED_TAILS[0]
       return
@@ -80,7 +83,6 @@ export default function WhatsAppBlock() {
 
     const step = (now: number) => {
       const wait = phase === 'erase' ? ERASE_MS : TYPE_MS
-
       if (phase === 'hold') {
         if (now >= holdUntil) {
           phase = 'erase'
@@ -88,7 +90,6 @@ export default function WhatsAppBlock() {
         }
       } else if (now - last >= wait) {
         last = now
-
         if (phase === 'head') {
           chars += 1
           el.textContent = TYPED_HEAD.slice(0, chars)
@@ -112,164 +113,94 @@ export default function WhatsAppBlock() {
           }
         }
       }
-
       raf = requestAnimationFrame(step)
     }
-
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
   }, [live, TYPED_HEAD, TYPED_TAILS])
 
-  /* Inclinazione verso il puntatore: roba da mouse, quindi solo lì. */
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-
-    const target = { x: 0, y: 0 }
-    const current = { x: 0, y: 0 }
-    let raf = 0
-    let running = false
-
-    const tick = () => {
-      current.x = lerp(current.x, target.x, 0.12)
-      current.y = lerp(current.y, target.y, 0.12)
-      root.style.transform = `perspective(900px) rotateX(${current.y}deg) rotateY(${current.x}deg)`
-
-      const settled = Math.abs(current.x - target.x) < 0.01 && Math.abs(current.y - target.y) < 0.01
-      if (settled && target.x === 0 && target.y === 0) {
-        root.style.transform = ''
-        running = false
-        return
-      }
-      raf = requestAnimationFrame(tick)
-    }
-
-    const start = () => {
-      if (running) return
-      running = true
-      raf = requestAnimationFrame(tick)
-    }
-
-    const onMove = (event: PointerEvent) => {
-      const rect = root.getBoundingClientRect()
-      target.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2 * TILT_MAX
-      target.y = -((event.clientY - rect.top) / rect.height - 0.5) * 2 * TILT_MAX
-      start()
-    }
-    const onLeave = () => {
-      target.x = 0
-      target.y = 0
-      start()
-    }
-
-    let attached = false
-    const attach = () => {
-      if (attached) return
-      root.addEventListener('pointermove', onMove)
-      root.addEventListener('pointerleave', onLeave)
-      attached = true
-    }
-    const detach = () => {
-      if (!attached) return
-      root.removeEventListener('pointermove', onMove)
-      root.removeEventListener('pointerleave', onLeave)
-      attached = false
-      cancelAnimationFrame(raf)
-      running = false
-      root.style.transform = ''
-      current.x = 0
-      current.y = 0
-      target.x = 0
-      target.y = 0
-    }
-
-    const sync = () => (mouseEffectsEnabled() ? attach() : detach())
-    const queries = [
-      window.matchMedia(`(min-width: ${POINTER_BREAKPOINT}px) and (pointer: fine)`),
-      window.matchMedia('(prefers-reduced-motion: reduce)'),
-    ]
-    queries.forEach((q) => q.addEventListener('change', sync))
-    sync()
-
-    return () => {
-      queries.forEach((q) => q.removeEventListener('change', sync))
-      detach()
-    }
-  }, [])
+  const send = (text: string) => setSent(text)
+  const typedNow = () => typedRef.current?.textContent || TYPED_HEAD + TYPED_TAILS[0]
 
   return (
     <div className="lm-wa-wrap">
-      <a
-        ref={rootRef}
-        className={`lm-wa${live ? ' is-live' : ''}${burst ? ' is-burst' : ''}${sent ? ' is-sent' : ''}`}
-        href={WA_LINK}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={m.whatsapp.cta}
-        data-cursor="whatsapp"
-        onPointerDown={() => {
-          setBurst(true)
-          setSent(typedRef.current?.textContent || TYPED_HEAD + TYPED_TAILS[0])
-        }}
-        onAnimationEnd={() => setBurst(false)}
-      >
-        <span className="lm-wa-flash" aria-hidden="true" />
-
-        <span className="lm-wa-head">
-          <span className="lm-wa-avatar" aria-hidden="true">
-            <i className="lm-wa-ring" />L
-          </span>
-          <span className="lm-wa-who">
+      <div ref={rootRef} className={`lm-wa2${live ? ' is-live' : ''}${sent ? ' is-sent' : ''}`}>
+        <div className="lm-wa2-bar">
+          <LuminoAvatar />
+          <div className="lm-wa2-who">
             <b>Lumino</b>
-            <i className="lm-wa-status">{m.whatsapp.status}</i>
-          </span>
-        </span>
+            <span>{live && !sent ? w.typing : w.status}</span>
+          </div>
+          <a className="lm-wa2-icon" href={`tel:+${COMPANY.whatsapp.number}`} aria-label={COMPANY.whatsapp.display}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.6 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.6 3.6a1 1 0 0 1-.25 1z" />
+            </svg>
+          </a>
+        </div>
 
-        {/* Sta scrivendo → poi la bolla in arrivo. */}
-        <span className="lm-wa-dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
+        <div className="lm-wa2-chat">
+          <span className="lm-wa2-day">{w.today}</span>
+          <p className="lm-wa2-msg is-in is-first">
+            {w.hello}
+            <time>09:41</time>
+          </p>
+          <p className="lm-wa2-msg is-in">
+            {w.bubble}
+            <time>09:41</time>
+          </p>
 
-        <span className="lm-wa-bubble">
-          {m.whatsapp.bubble}
-          <span className="lm-wa-time" aria-hidden="true">
-            ora
-          </span>
-        </span>
+          {sent ? (
+            <p className="lm-wa2-msg is-out">
+              {sent}
+              <time>
+                {w.now}
+                <svg viewBox="0 0 18 12" aria-hidden="true">
+                  <path d="M1 6.5l3 3L10 2.5M7 9.5l1 1 7-8" fill="none" stroke="#53bdeb" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </time>
+            </p>
+          ) : null}
 
-        {/* Il messaggio inviato: compare solo dopo il tocco. */}
-        {sent ? (
-          <span className="lm-wa-bubble is-out">
-            {sent}
-            <span className="lm-wa-time" aria-hidden="true">
-              ora <b className="lm-wa-ticks">✓✓</b>
+          <div className="lm-wa2-quick">
+            {w.quick.map((q: { label: string; text: string }) => (
+              <a key={q.label} href={waUrl(q.text)} target="_blank" rel="noopener noreferrer" onClick={() => send(q.text)}>
+                {q.label}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <a
+          className="lm-wa2-composer"
+          href={waUrl(w.message)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={w.cta}
+          onClick={() => send(typedNow())}
+        >
+          <span className="lm-wa2-field">
+            <svg className="lm-wa2-emoji" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.7" />
+              <circle cx="9" cy="10" r="1.2" fill="currentColor" />
+              <circle cx="15" cy="10" r="1.2" fill="currentColor" />
+              <path d="M8.2 14.2c1 1.4 2.3 2 3.8 2s2.8-.6 3.8-2" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <span className="lm-wa2-text">
+              <span ref={typedRef} className="lm-wa2-typed" />
+              <span className="lm-wa2-caret" aria-hidden="true" />
             </span>
           </span>
-        ) : null}
-
-        {/* Finto campo: un div, non un input — non deve aprire la tastiera. */}
-        <span className="lm-wa-composer">
-          <span className="lm-wa-field">
-            <span ref={typedRef} className="lm-wa-typed" />
-            <span className="lm-wa-caret" aria-hidden="true" />
-          </span>
-          <span className="lm-wa-send" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M4 12h14M13 6l6 6-6 6"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+          <span className="lm-wa2-send" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6 3.4 10.1 15.4 12 3.4 13.9z" />
             </svg>
           </span>
-        </span>
-      </a>
+        </a>
+      </div>
 
-      <p className="lm-wa-number">{COMPANY.whatsapp.display}</p>
+      <a className="lm-wa-number" href={waUrl(w.message)} target="_blank" rel="noopener noreferrer">
+        {COMPANY.whatsapp.display}
+      </a>
     </div>
   )
 }
