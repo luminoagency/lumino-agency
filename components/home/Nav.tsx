@@ -30,11 +30,11 @@ interface MenuItem {
 /* Gli ancoraggi non cambiano con la lingua — sono id nel DOM — ma le
    etichette sì: qui c'è la chiave, il testo lo mette il catalogo. */
 const MENU = [
-  { href: '#metodo', key: 'process' },
-  { href: '#servizi', key: 'services' },
-  { href: '#settori', key: 'sectors' },
-  { href: '#lavori', key: 'works' },
-  { href: '#contatti', key: 'contact' },
+  { href: '#metodo', key: 'process', pic: '/hero/wall/maker.webp' },
+  { href: '#servizi', key: 'services', pic: '/hero/wall/scroll.webp' },
+  { href: '#settori', key: 'sectors', pic: '/hero/wall/shop.webp' },
+  { href: '#lavori', key: 'works', pic: '/hero/wall/sala.webp' },
+  { href: '#contatti', key: 'contact', pic: '/hero/wall/full.webp' },
 ] as const
 
 /** Durata del pannello, allineata a @keyframes lm-swipe in motion.css. */
@@ -195,6 +195,7 @@ export default function Nav() {
             >
               <span className="lm-ix">{String(i + 1).padStart(2, '0')}</span>
               <span className="lm-ov-label">{m.nav.items[item.key]}</span>
+              <span className="lm-ov-pic" style={{ backgroundImage: `url(${item.pic})` }} aria-hidden="true" />
             </a>
           ))}
 

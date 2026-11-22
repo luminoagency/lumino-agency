@@ -30,7 +30,6 @@ import Hero from '@/components/home/Hero'
 import Marquee from '@/components/home/Marquee'
 import About from '@/components/home/About'
 import Works from '@/components/home/Works'
-import Statement from '@/components/home/Statement'
 import Process from '@/components/home/Process'
 import Sectors from '@/components/home/Sectors'
 import Stats from '@/components/home/Stats'
@@ -42,6 +41,7 @@ import '@/components/home/services.css'
 import '@/components/home/growth.css'
 import '@/components/home/polish.css'
 import '@/components/home/light.css'
+import '@/components/home/menu.css'
 
 /**
  * Home — vetrina dello studio, nelle tre lingue.
@@ -121,7 +121,6 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           <About m={m} />
           <Process />
           <Services />
-          <Statement m={m} />
           <Sectors />
           <Works />
           <Stats />

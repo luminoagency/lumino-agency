@@ -1,0 +1,123 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Menu a tutto schermo, versione Lumino: fondo scuro come l'hero, voci
+   grandi con la foto della sezione, WhatsApp come pulsante vero.
+   Caricato per ultimo: sovrascrive motion.css.
+   ════════════════════════════════════════════════════════════════════════ */
+.lm-overlay {
+  background: #16110e;
+  color: #f4eee4;
+  --line: rgba(244, 238, 228, 0.12);
+  --line-ink: rgba(244, 238, 228, 0.12);
+  --ink: #f4eee4;
+  --ink-dim: #b9aea1;
+}
+.lm-overlay .lm-ov-wash,
+.lm-overlay .lm-ov-ghost { display: none; }
+.lm-overlay .lm-ov-top .lm-wordmark { color: #f4eee4; }
+.lm-overlay .lm-close { color: #f4eee4; }
+.lm-overlay .lm-close-ring { border-color: rgba(244, 238, 228, 0.3); }
+.lm-overlay .lm-close-ring i { background: #f4eee4; }
+
+.lm-overlay .lm-ov-links {
+  margin-top: clamp(1.5rem, 6vh, 3.5rem);
+  gap: 0;
+}
+.lm-overlay .lm-ov-links a:not(.lm-ov-wa) {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2vw, 1.5rem);
+  width: 100%;
+  padding: clamp(0.7rem, 1.6vh, 1rem) 0;
+  border-bottom: 1px solid rgba(244, 238, 228, 0.1);
+  color: #f4eee4;
+  font-size: clamp(2.3rem, 6.4vw, 4.6rem);
+  line-height: 1;
+}
+.lm-overlay .lm-ov-links a .lm-ix {
+  font-family: var(--font-display), Anton, sans-serif;
+  font-size: 0.32em;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #e53b33, #ec6699 55%, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  min-width: 1.6em;
+}
+.lm-overlay .lm-ov-label { flex: 1; }
+.lm-ov-pic {
+  width: clamp(3.4rem, 7vw, 5.2rem);
+  height: clamp(3.4rem, 7vw, 5.2rem);
+  flex: none;
+  border-radius: 1rem;
+  background: #241c18 center / cover no-repeat;
+  transform: rotate(-4deg);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.lm-overlay .lm-ov-links a:nth-child(even) .lm-ov-pic { transform: rotate(4deg); }
+.lm-overlay .lm-ov-links a:hover .lm-ov-pic,
+.lm-overlay .lm-ov-links a:active .lm-ov-pic { transform: rotate(0) scale(1.08); }
+.lm-overlay .lm-ov-links a:not(.lm-ov-wa):hover,
+.lm-overlay .lm-ov-links a:not(.lm-ov-wa):active { padding-left: 0; font-style: italic; }
+.lm-overlay.is-open .lm-ov-links a:nth-child(6) { animation-delay: 0.6s; }
+.lm-overlay .lm-ov-links.is-hot a:not(:hover) { opacity: 0.4; }
+
+/* WhatsApp: un pulsante vero, nel gradiente Lumino */
+.lm-overlay .lm-ov-links a.lm-ov-wa {
+  max-width: none;
+  margin-top: clamp(1.4rem, 3.5vh, 2.2rem);
+  padding: 1.1rem 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e53b33, #ec6699 55%, #8b5cf6);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  align-items: center;
+}
+.lm-overlay .lm-ov-wa-num { color: rgba(255, 255, 255, 0.9); letter-spacing: 0.03em; font-weight: 600; }
+.lm-overlay .lm-ov-links a.lm-ov-wa:hover .lm-ov-wa-num { color: #fff; }
+
+.lm-overlay .lm-ov-lang { border-top: 0; margin-top: clamp(1.2rem, 3vh, 2rem); padding-top: 0; }
+.lm-overlay .lm-lang {
+  background: rgba(244, 238, 228, 0.06);
+  border-color: rgba(244, 238, 228, 0.14);
+}
+.lm-overlay .lm-lang-opt { color: #b9aea1; }
+.lm-overlay .lm-lang-opt.is-on { background: #f4eee4; color: #16110e; }
+.lm-overlay .lm-ov-foot { color: #8f857a; border-color: rgba(244, 238, 228, 0.1); }
+.lm-overlay .lm-ov-foot a { color: #f4eee4; }
+
+.lm-overlay .lm-close:focus:not(:focus-visible) { outline: none; }
+.lm-overlay .lm-ov-links a:not(.lm-ov-wa) { font-size: clamp(2.3rem, min(6.4vw, 7.6vh), 4.6rem); }
+
+/* PC: la foto compare accanto alla voce puntata, non sta lontana a destra */
+@media (min-width: 821px) {
+  .lm-overlay .lm-ov-label { flex: none; }
+  .lm-overlay .lm-ov-links a:not(.lm-ov-wa) .lm-ov-pic {
+    opacity: 0;
+    transform: translateX(-12px) rotate(-6deg) scale(0.85);
+    transition: opacity 0.35s, transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+  }
+  .lm-overlay .lm-ov-links a:not(.lm-ov-wa):hover .lm-ov-pic {
+    opacity: 1;
+    transform: rotate(-4deg);
+  }
+  .lm-overlay .lm-ov-links a.lm-ov-wa {
+    max-width: 34rem;
+    justify-content: space-between;
+  }
+}
+
+/* Telefono: numero sotto l'etichetta, mai spezzato */
+@media (max-width: 820px) {
+  .lm-overlay .lm-ov-links a.lm-ov-wa {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    border-radius: 1.4rem;
+    padding: 1rem 1.3rem;
+  }
+  .lm-overlay .lm-ov-wa-num { white-space: nowrap; font-size: 0.9rem; }
+}
