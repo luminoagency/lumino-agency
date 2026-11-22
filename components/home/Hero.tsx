@@ -46,6 +46,7 @@ export default function Hero() {
     const hint = q('.lm-hw-hint')
     const focus = q('.lm-hw-focus')
     const video = q<HTMLVideoElement>('.lm-hw-focus video')
+    const card = q('.lm-hw-card')
     const chips = Array.from(root.querySelectorAll<HTMLElement>('.lm-hw-chip'))
     const lines = Array.from(root.querySelectorAll<HTMLElement>('.lm-hw-line'))
     const views = q('.lm-hw-views')
@@ -78,7 +79,29 @@ export default function Hero() {
     let lastP = -1
     let focusPlaying = false
 
-    const tileW = () => (desktop ? 250 : 132)
+    /* La card del video È una casella della colonna centrale (che resta
+       ferma): stessa larghezza, stessa posizione, stessa scala del muro.
+       Ha già le misure finali e si rimpicciolisce con transform: niente
+       ridisegni, solo composizione. */
+    const TW = desktop ? 250 : 132
+    const TH = (TW * 16) / 9
+    const M_SCALE = 1.25
+    let sEnd = 1.7
+    let k0 = 0.35
+    const layout = () => {
+      if (desktop) {
+        sEnd = Math.max(1.32, (vh * 0.84) / TH)
+        card.style.width = `${TW * sEnd}px`
+        card.style.height = `${TH * sEnd}px`
+        card.style.borderRadius = `${22 * sEnd}px`
+      } else {
+        k0 = (TH * M_SCALE) / vh
+        card.style.width = `${(vh * 9) / 16}px`
+        card.style.height = `${vh}px`
+        card.style.borderRadius = `${(14 * M_SCALE) / k0}px`
+      }
+    }
+    layout()
 
     const apply = (p: number) => {
       if (Math.abs(p - lastP) < 0.0004) return
@@ -90,13 +113,14 @@ export default function Hero() {
       const flat = ease(seg(p, 0, 0.32))
       const zoom = ease(seg(p, 0.26, 0.6))
       if (desktop) {
-        const s = 1.18 + flat * 0.12 + zoom * 0.55
+        const s = 1.18 + flat * 0.12 + zoom * (sEnd - 1.3)
+        card.style.transform = `translate3d(-50%,-50%,0) scale(${s / sEnd})`
         wall.style.transform = `translate3d(-50%,-50%,0) rotateX(${(1 - flat) * 28}deg) rotateZ(${(1 - flat) * -14}deg) scale(${s})`
       } else {
-        wall.style.transform = `translate3d(-50%,-50%,0) rotate(${(1 - flat) * -14}deg) scale(1.25)`
+        wall.style.transform = `translate3d(-50%,-50%,0) rotate(${(1 - flat) * -14}deg) scale(${M_SCALE})`
       }
-      shade.style.opacity = String(0.62 + 0.3 * seg(p, 0.2, 0.5))
-      dim.style.opacity = String(0.8 * ease(seg(p, 0.3, 0.6)))
+      shade.style.opacity = String(0.62 + 0.13 * seg(p, 0.2, 0.5))
+      dim.style.opacity = String((desktop ? 0.45 : 0.8) * ease(seg(p, 0.34, 0.6)))
 
       /* il titolo se ne va */
       const c = seg(p, 0.03, 0.2)
@@ -104,22 +128,13 @@ export default function Hero() {
       copy.style.transform = `translate3d(0,${-70 * out(c)}px,0)`
       hint.style.opacity = String(1 - seg(p, 0, 0.06))
 
-      /* 2 · il video esce dal muro e prende lo schermo */
+      /* 2 · la casella centrale si accende col video e cresce col muro */
       const f = ease(seg(p, 0.32, 0.6))
-      focus.style.opacity = String(seg(p, 0.27, 0.34))
-      if (desktop) {
-        const th0 = Math.min(vh * 0.62, tileW() * (16 / 9) * (1.3 + 0.4 * zoom))
-        /* Da PC il video resta verticale, grande al centro, col muro scuro
-           intorno: a tutto schermo andrebbe tagliato e si vedrebbe sgranato. */
-        const thEnd = vh * 0.84
-        const th = th0 + (thEnd - th0) * f
-        const tw = th * (9 / 16)
-        const ix = Math.max(0, (vw - tw) / 2)
-        const iy = Math.max(0, (vh - th) / 2)
-        focus.style.clipPath = `inset(${iy}px ${ix}px ${iy}px ${ix}px round 26px)`
-      } else {
-        /* Da telefono solo scale: un livello, zero ridisegni. */
-        focus.style.transform = `translate3d(0,0,0) scale(${0.46 + 0.54 * f})`
+      focus.style.opacity = String(seg(p, 0.29, 0.34))
+      if (!desktop) {
+        /* Da telefono il muro non cresce: la card parte dalla sua casella
+           e arriva a tutto schermo. Solo scale. */
+        card.style.transform = `translate3d(-50%,-50%,0) scale(${k0 + (1 - k0) * f})`
       }
 
       const deep = !desktop && f > 0.99
@@ -168,6 +183,7 @@ export default function Hero() {
       onRefresh: (self) => {
         vw = window.innerWidth
         vh = window.innerHeight
+        layout()
         lastP = -1
         apply(self.progress)
       },
@@ -207,7 +223,7 @@ export default function Hero() {
               const tiles = tilesForColumn(c)
               const loop = [...tiles, ...tiles]
               return (
-                <div className={`lm-hw-col ${c % 2 ? 'is-up' : 'is-down'}`} key={c} style={{ ['--d' as string]: `${46 + (c % 3) * 9}s` }}>
+                <div className={`lm-hw-col ${c % 2 ? 'is-up' : 'is-down'}${c === 3 ? ' is-mid-d' : ''}${c === 2 ? ' is-mid-m' : ''}`} key={c} style={{ ['--d' as string]: `${46 + (c % 3) * 9}s` }}>
                   <div className="lm-hw-col-in">
                     {loop.map((t, i) => {
                       const firstVideo = t.video && i < tiles.length && !seen.has(t.name)
@@ -229,8 +245,10 @@ export default function Hero() {
         <div className="lm-hw-dim" />
 
         <div className="lm-hw-focus" aria-hidden="true">
-          <video muted loop playsInline preload="metadata" poster="/hero/wall/focus.webp" />
-          <div className="lm-hw-focus-grad" />
+          <div className="lm-hw-card">
+            <video muted loop playsInline preload="metadata" poster="/hero/wall/focus.webp" />
+            <div className="lm-hw-focus-grad" />
+          </div>
         </div>
 
         <div className="lm-hw-chips" aria-hidden="true">
