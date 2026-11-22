@@ -817,3 +817,79 @@
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Telefono: la sezione si ferma mentre scorri (sticky, non pin JS).
+   Alta tre schermi; dentro, un blocco alto uno schermo che resta fermo:
+   in alto l'atto, sotto il suo testo. Il progresso dello scroll sceglie
+   l'atto e lo fa avanzare, come da PC. Va dopo il blocco mobile qui sopra
+   e lo sovrascrive.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 820px) {
+  .lm-process.is-msticky {
+    height: 320vh;
+    padding: 0;
+    min-height: 0;
+  }
+  @supports (height: 100svh) {
+    .lm-process.is-msticky { height: 320svh; }
+  }
+  .lm-process.is-msticky .lm-wrap {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+    padding-top: 4.5rem;
+    padding-bottom: 1.25rem;
+  }
+  @supports (height: 100svh) {
+    .lm-process.is-msticky .lm-wrap { height: 100svh; }
+  }
+  .lm-process.is-msticky .lm-kicker { margin: 0; }
+  .lm-process.is-msticky .lm-process-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .lm-process.is-msticky .lm-process-media {
+    display: block;
+    position: relative;
+    width: 100%;
+    align-self: stretch;
+    height: min(46svh, 118vw);
+    border-radius: 1rem;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .lm-process.is-msticky .lm-process-bars { display: flex; }
+  .lm-process.is-msticky .lm-process-layer {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    order: 0;
+    opacity: 0;
+  }
+  .lm-process.is-msticky .lm-process-steps {
+    display: grid;
+    position: relative;
+    width: 100%;
+  }
+  .lm-process.is-msticky .lm-process-step {
+    grid-area: 1 / 1;
+    order: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    gap: 0.4rem;
+  }
+  .lm-process.is-msticky .lm-process-step.is-active { opacity: 1; }
+  .lm-process.is-msticky .lm-process-step p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+}

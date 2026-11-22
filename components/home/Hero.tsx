@@ -66,7 +66,7 @@ export default function Hero() {
       })
     }
 
-    root.classList.add('is-ready')
+    root.classList.add('is-ready', desktop ? 'is-desk' : 'is-mob')
     if (reduced) {
       root.classList.add('is-static')
       return
@@ -84,11 +84,17 @@ export default function Hero() {
       if (Math.abs(p - lastP) < 0.0004) return
       lastP = p
 
-      /* 1 · il muro si raddrizza e si avvicina */
+      /* 1 · il muro si raddrizza e si avvicina.
+         Da telefono il muro NON cambia scala: Safari ridisegnerebbe tutto il
+         livello a ogni fotogramma. Si raddrizza soltanto e poi si spegne. */
       const flat = ease(seg(p, 0, 0.32))
       const zoom = ease(seg(p, 0.26, 0.6))
-      const s = (desktop ? 1.18 : 1.2) + flat * 0.12 + zoom * (desktop ? 0.55 : 1.6)
-      wall.style.transform = `translate3d(-50%,-50%,0) rotateX(${(1 - flat) * (desktop ? 28 : 24)}deg) rotateZ(${(1 - flat) * -14}deg) scale(${s})`
+      if (desktop) {
+        const s = 1.18 + flat * 0.12 + zoom * 0.55
+        wall.style.transform = `translate3d(-50%,-50%,0) rotateX(${(1 - flat) * 28}deg) rotateZ(${(1 - flat) * -14}deg) scale(${s})`
+      } else {
+        wall.style.transform = `translate3d(-50%,-50%,0) rotate(${(1 - flat) * -14}deg) scale(1.25)`
+      }
       shade.style.opacity = String(0.62 + 0.3 * seg(p, 0.2, 0.5))
       dim.style.opacity = String(0.8 * ease(seg(p, 0.3, 0.6)))
 
@@ -100,21 +106,23 @@ export default function Hero() {
 
       /* 2 · il video esce dal muro e prende lo schermo */
       const f = ease(seg(p, 0.32, 0.6))
-      const th0 = Math.min(vh * 0.62, tileW() * (16 / 9) * (1.3 + 0.4 * zoom))
-      /* Da PC il video resta verticale, grande al centro, col muro scuro
-         intorno: a tutto schermo andrebbe tagliato e ingrandito, e si
-         vedrebbe sgranato. Da telefono invece prende tutto lo schermo. */
-      const thEnd = desktop ? vh * 0.84 : vh
-      const twEnd = desktop ? thEnd * (9 / 16) : vw
-      const th = th0 + (thEnd - th0) * f
-      const tw = th0 * (9 / 16) + (twEnd - th0 * (9 / 16)) * f
-      const ix = Math.max(0, (vw - tw) / 2)
-      const iy = Math.max(0, (vh - th) / 2)
-      const r = desktop ? 22 + 6 * f : 22 * (1 - f)
       focus.style.opacity = String(seg(p, 0.27, 0.34))
-      focus.style.clipPath = `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${r}px)`
+      if (desktop) {
+        const th0 = Math.min(vh * 0.62, tileW() * (16 / 9) * (1.3 + 0.4 * zoom))
+        /* Da PC il video resta verticale, grande al centro, col muro scuro
+           intorno: a tutto schermo andrebbe tagliato e si vedrebbe sgranato. */
+        const thEnd = vh * 0.84
+        const th = th0 + (thEnd - th0) * f
+        const tw = th * (9 / 16)
+        const ix = Math.max(0, (vw - tw) / 2)
+        const iy = Math.max(0, (vh - th) / 2)
+        focus.style.clipPath = `inset(${iy}px ${ix}px ${iy}px ${ix}px round 26px)`
+      } else {
+        /* Da telefono solo scale: un livello, zero ridisegni. */
+        focus.style.transform = `translate3d(0,0,0) scale(${0.46 + 0.54 * f})`
+      }
 
-      const deep = !desktop && f > 0.995
+      const deep = !desktop && f > 0.99
       if (deep !== lastDeep) {
         root.classList.toggle('is-deep', deep)
         lastDeep = deep

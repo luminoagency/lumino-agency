@@ -63,6 +63,7 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 export default function Process() {
   const { m } = useI18n()
   const [mode, setMode] = useState<DemoMode>('auto')
+  const [wide, setWide] = useState(true)
   const sectionRef = useRef<HTMLElement>(null)
   const mediaRef = useRef<HTMLDivElement>(null)
   const stepsRef = useRef<(HTMLDivElement | null)[]>([])
@@ -76,8 +77,11 @@ export default function Process() {
       window.matchMedia('(prefers-reduced-motion: reduce)'),
     ]
     const sync = () => {
+      /* Scrub ovunque: da PC col pin di ScrollTrigger, da telefono con
+         position: sticky (vedi sotto). Fermo solo con il movimento ridotto. */
+      setWide(queries[0].matches)
       if (prefersReducedMotion()) setMode('still')
-      else setMode(queries[0].matches ? 'scrub' : 'auto')
+      else setMode('scrub')
     }
     queries.forEach((q) => q.addEventListener('change', sync))
     sync()
@@ -125,23 +129,36 @@ export default function Process() {
       })
     }
 
-    const trigger = ScrollTrigger.create({
-      trigger: section,
-      start: 'top top',
-      // ~100vh per ciascuno dei tre step.
-      end: '+=300%',
-      pin: true,
-      pinSpacing: true,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      scrub: true,
-      // Sta sopra Servizi, che si ferma anche lei: deve misurarsi per prima.
-      refreshPriority: 2,
-      onUpdate: (self) => apply(self.progress),
-      onRefresh: (self) => apply(self.progress),
-    })
+    /* Da telefono niente pin JS: la sezione è alta tre schermi e dentro ha
+       un blocco sticky (process.css, .is-msticky). È il browser a tenerla
+       ferma, quindi niente salti quando la barra dell'indirizzo cambia
+       altezza; qui si legge solo il progresso. */
+    const trigger = wide
+      ? ScrollTrigger.create({
+          trigger: section,
+          start: 'top top',
+          // ~100vh per ciascuno dei tre step.
+          end: '+=300%',
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          scrub: true,
+          // Sta sopra Servizi, che si ferma anche lei: deve misurarsi per prima.
+          refreshPriority: 2,
+          onUpdate: (self) => apply(self.progress),
+          onRefresh: (self) => apply(self.progress),
+        })
+      : ScrollTrigger.create({
+          trigger: section,
+          start: 'top top',
+          end: 'bottom bottom',
+          refreshPriority: 2,
+          onUpdate: (self) => apply(self.progress),
+          onRefresh: (self) => apply(self.progress),
+        })
 
-    section.classList.add('is-pinned')
+    section.classList.add(wide ? 'is-pinned' : 'is-msticky')
     media.classList.add('is-scrubbed')
     apply(0)
     /* Il pin aggiunge spazio sotto di sé: chi sta più in basso (Servizi) va
@@ -158,7 +175,7 @@ export default function Process() {
       trigger.kill(true)
       ScrollTrigger.refresh()
 
-      section.classList.remove('is-pinned')
+      section.classList.remove('is-pinned', 'is-msticky')
       media.classList.remove('is-scrubbed')
       layers.forEach((layer) => {
         layer.style.opacity = ''
@@ -169,7 +186,7 @@ export default function Process() {
       steps.forEach((step) => step.classList.remove('is-active'))
       stages.forEach((stage) => stage.style.removeProperty('--seek'))
     }
-  }, [mode])
+  }, [mode, wide])
 
   /* ── Mobile: nessun pin, nessuno scrub, autoplay a tempo ────────────────
      I tre atti sono impilati in verticale, ciascuno col proprio testo, e

@@ -115,7 +115,7 @@ body {
     padding 0.4s,
     background 0.4s,
     border-color 0.4s;
-  border-bottom: 1px solid transparent;
+  border-bottom: 0;
 }
 
 /* Il contenitore del marchio: decide colore e misura, il disegno lo fa .lm-wm

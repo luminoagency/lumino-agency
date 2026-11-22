@@ -329,6 +329,20 @@
   @supports (height: 100svh) { .lm-hw { height: 300svh; } }
   .lm-hw-wall { --w: 132px; --gap: 12px; transform: translate3d(-50%, -50%, 0) rotateX(24deg) rotateZ(-14deg) scale(1.2); }
   .lm-hw-tile { border-radius: 14px; }
+  /* Telefono: le colonne non scorrono una per una (sette livelli animati
+     dentro un livello inclinato). Scorre tutto il muro insieme, piano. */
+  .lm-hw-col-in { animation: none; will-change: auto; }
+  .lm-hw-col.is-up, .lm-hw-col.is-down { transform: none; }
+  .lm-hw-col:nth-child(even) { margin-top: 70px; }
+  .lm-hw-wall { transition: opacity 0.8s ease; }
+  .lm-hw-focus {
+    clip-path: none;
+    border-radius: 28px;
+    overflow: hidden;
+    transform: scale(0.46);
+    will-change: transform, opacity;
+  }
+  .lm-hw-chip { box-shadow: none; border: 1px solid rgba(0, 0, 0, 0.08); }
   /* da telefono bastano 5 colonne: meno riquadri da comporre, niente scatti */
   .lm-hw-col:nth-child(n + 6) { display: none; }
   .lm-hw-copy { padding-top: 5rem; }
