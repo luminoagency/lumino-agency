@@ -371,3 +371,15 @@
 @media (prefers-reduced-motion: reduce) {
   .lm-hw-ch, .lm-hw-kicker, .lm-hw-pay, .lm-hw-ctas { animation: none; opacity: 1; transform: none; }
 }
+
+/* PC: il video ha già le misure della card finale, così il ritaglio
+   mostra l'inquadratura intera e non il centro ingrandito. */
+.lm-hw.is-desk .lm-hw-focus video {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 84%;
+  width: auto;
+  aspect-ratio: 9 / 16;
+  transform: translate(-50%, -50%);
+}
