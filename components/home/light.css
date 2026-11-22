@@ -1,0 +1,41 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Sito chiaro: dopo l'hero (che resta scuro, è un muro di video) tutte le
+   sezioni passano su crema. Non si riscrive ogni sezione: si girano i
+   colori di base nel loro contesto. Le schede scure dentro le sezioni
+   restano scure apposta: su crema fanno da contrasto.
+   ════════════════════════════════════════════════════════════════════════ */
+.lm { background: #f4eee4; }
+.lm main > section:not(.lm-hw),
+.lm main > div > section,
+.lm footer {
+  --void: #f4eee4;
+  --void-2: #ebe2d4;
+  --cream: #16110e;
+  --cream-dim: #5e554d;
+  --line: rgba(22, 17, 14, 0.14);
+  background-color: var(--void);
+  color: var(--cream);
+}
+
+/* Le schede scure restano scure: dentro rimettiamo i colori di prima. */
+.lm .lm-brief-card,
+.lm .lm-wa2,
+.lm .gd,
+.lm .lm-process-media,
+.lm .sv-reel,
+.lm .sv-ads,
+.lm .sv-lead {
+  --void: #171210;
+  --void-2: #1e1715;
+  --surface: #241c18;
+  --cream: #f4eee4;
+  --cream-dim: #b9aea1;
+  --line: rgba(244, 238, 228, 0.16);
+  color: var(--cream);
+}
+
+/* Header: sopra le sezioni chiare un nero pieno, non un grigio velato. */
+.lm-nav.is-scrolled {
+  background: #16110e;
+  backdrop-filter: none;
+}

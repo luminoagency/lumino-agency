@@ -41,6 +41,7 @@ import Services from '@/components/home/Services'
 import '@/components/home/services.css'
 import '@/components/home/growth.css'
 import '@/components/home/polish.css'
+import '@/components/home/light.css'
 
 /**
  * Home — vetrina dello studio, nelle tre lingue.
