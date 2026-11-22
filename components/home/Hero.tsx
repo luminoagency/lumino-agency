@@ -1,247 +1,299 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useRef } from 'react'
 import { useI18n } from '@/components/i18n/I18nProvider'
-import HeroTicker from './HeroTicker'
-import { createHeroDriver } from './heroMotion'
-import { HERO_ENTRANCE_MS, HERO_LETTERS, HERO_WINDOWS } from './heroScene'
-import { fill } from '@/lib/i18n/messages'
-import {
-  POINTER_BREAKPOINT,
-  onAmbientMotionChange,
-  onMouseEffectsChange,
-  prefersReducedMotion,
-  trackPointer,
-} from './useMotion'
+import { HERO_LETTERS, WALL_COLS, tilesForColumn } from './heroScene'
+import { POINTER_BREAKPOINT, ScrollTrigger, prefersReducedMotion, registerScrollTrigger } from './useMotion'
 
 /**
- * Sezione 1 — Hero.
+ * Sezione 1 — Hero «muro dei contenuti».
  *
- * Il protagonista è il wordmark LUMINO gigante. Attorno, intrecciate con le
- * lettere, quattro finestre con gli screenshot veri dei nostri siti: due in
- * alto, più scure e più piccole, quindi lontane; due in basso, più luminose e
- * più grandi, davanti alle lettere.
+ * La sezione è alta più schermi e dentro ha un blocco `position: sticky` alto
+ * uno schermo: è il browser a tenerlo fermo, non un pin in JavaScript. Su
+ * telefono è l'unico modo per avere un'animazione davvero attaccata al dito,
+ * senza il salto del pin-spacer quando la barra dell'indirizzo cambia altezza.
  *
- * REGOLA COMPOSITIVA — il wordmark possiede la fascia centrale. Le finestre
- * stanno sopra e sotto quella fascia e sfiorano solo le lettere esterne: LUMINO
- * si deve leggere per intero, sempre. Per questo le quattro finestre sono figlie
- * DIRETTE dell'hero e non del contenitore del wordmark: ancorarle a quello le
- * faceva seguire una scatola che cambia misura col testo, ed era il motivo per
- * cui su telefono finivano addosso alle lettere.
+ * Lo scroll diventa un numero tra 0 e 1 (ScrollTrigger, già sincronizzato con
+ * Lenis) e quel numero muove SOLO transform, opacity e clip-path di pochi
+ * livelli: il muro intero, il video in primo piano, i testi, le schede.
  *
- * Niente wrapper attorno alle finestre, per lo stesso motivo per cui non stanno
- * dentro al wordmark: un contenitore posizionato creerebbe un contesto di
- * impilamento, e le due finestre davanti alle lettere non potrebbero più stare
- * davvero davanti.
+ *   0.00–0.30  il muro inclinato si raddrizza, il titolo sale e sparisce
+ *   0.28–0.60  il video del videomaker esce dal muro e prende tutto lo schermo
+ *   0.58–1.00  sopra il video arrivano i risultati, una frase alla volta
  *
- * UN SOLO requestAnimationFrame: uscita allo scroll e parallasse sono lo stesso
- * driver (heroMotion.ts), perché muovono gli stessi elementi nello stesso
- * istante. Il loop parte a entrata finita, si ferma quando l'hero esce dal
- * viewport e non esiste affatto con prefers-reduced-motion — lì il CSS mostra
- * la composizione finale, ferma.
+ * Quando il video copre lo schermo il muro si ferma e si nasconde: niente
+ * colonne che scorrono dietro un video a tutto schermo, niente lavoro sprecato.
  */
+
+const clamp = (x: number) => Math.min(1, Math.max(0, x))
+const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a))
+const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+const out = (x: number) => 1 - Math.pow(1 - x, 3)
 
 export default function Hero() {
   const { m } = useI18n()
-  const heroRef = useRef<HTMLElement>(null)
+  const h = m.hero
+  const rootRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    const hero = heroRef.current
-    if (!hero) return
+    const root = rootRef.current
+    if (!root) return
+    const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!
+    const wall = q('.lm-hw-wall')
+    const shade = q('.lm-hw-shade')
+    const dim = q('.lm-hw-dim')
+    const copy = q('.lm-hw-copy')
+    const hint = q('.lm-hw-hint')
+    const focus = q('.lm-hw-focus')
+    const video = q<HTMLVideoElement>('.lm-hw-focus video')
+    const chips = Array.from(root.querySelectorAll<HTMLElement>('.lm-hw-chip'))
+    const lines = Array.from(root.querySelectorAll<HTMLElement>('.lm-hw-line'))
+    const views = q('.lm-hw-views')
+    const tileVideos = Array.from(root.querySelectorAll<HTMLVideoElement>('.lm-hw-tile video'))
 
-    const driver = createHeroDriver({
-      letters: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-ch')),
-      windows: Array.from(hero.querySelectorAll<HTMLElement>('.lm-hero-win')),
-      bloom: hero.querySelector<HTMLElement>('.lm-hero-bloom'),
-      payoff: hero.querySelector<HTMLElement>('.lm-hero-foot'),
-      ticker: hero.querySelector<HTMLElement>('.lm-hticker'),
+    const reduced = prefersReducedMotion()
+    const desktop = window.matchMedia(`(min-width: ${POINTER_BREAKPOINT}px)`).matches
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true
+
+    /* Il video in primo piano: versione leggera su telefono. */
+    video.src = desktop ? '/hero/wall/focus.mp4' : '/hero/wall/focus-m.mp4'
+
+    /* I video del muro solo su PC: su telefono restano le foto. */
+    if (desktop && !reduced && !saveData) {
+      tileVideos.forEach((v) => {
+        v.src = v.dataset.src!
+        v.play().catch(() => {})
+      })
+    }
+
+    root.classList.add('is-ready')
+    if (reduced) {
+      root.classList.add('is-static')
+      return
+    }
+
+    let vw = window.innerWidth
+    let vh = window.innerHeight
+    let lastDeep = false
+    let lastP = -1
+    let focusPlaying = false
+
+    const tileW = () => (desktop ? 250 : 132)
+
+    const apply = (p: number) => {
+      if (Math.abs(p - lastP) < 0.0004) return
+      lastP = p
+
+      /* 1 · il muro si raddrizza e si avvicina */
+      const flat = ease(seg(p, 0, 0.32))
+      const zoom = ease(seg(p, 0.26, 0.6))
+      const s = (desktop ? 1.18 : 1.2) + flat * 0.12 + zoom * (desktop ? 0.55 : 1.6)
+      wall.style.transform = `translate3d(-50%,-50%,0) rotateX(${(1 - flat) * (desktop ? 28 : 24)}deg) rotateZ(${(1 - flat) * -14}deg) scale(${s})`
+      shade.style.opacity = String(0.62 + 0.3 * seg(p, 0.2, 0.5))
+      dim.style.opacity = String(0.8 * ease(seg(p, 0.3, 0.6)))
+
+      /* il titolo se ne va */
+      const c = seg(p, 0.03, 0.2)
+      copy.style.opacity = String(1 - c)
+      copy.style.transform = `translate3d(0,${-70 * out(c)}px,0)`
+      hint.style.opacity = String(1 - seg(p, 0, 0.06))
+
+      /* 2 · il video esce dal muro e prende lo schermo */
+      const f = ease(seg(p, 0.32, 0.6))
+      const th0 = Math.min(vh * 0.62, tileW() * (16 / 9) * (1.3 + 0.4 * zoom))
+      /* Da PC il video resta verticale, grande al centro, col muro scuro
+         intorno: a tutto schermo andrebbe tagliato e ingrandito, e si
+         vedrebbe sgranato. Da telefono invece prende tutto lo schermo. */
+      const thEnd = desktop ? vh * 0.84 : vh
+      const twEnd = desktop ? thEnd * (9 / 16) : vw
+      const th = th0 + (thEnd - th0) * f
+      const tw = th0 * (9 / 16) + (twEnd - th0 * (9 / 16)) * f
+      const ix = Math.max(0, (vw - tw) / 2)
+      const iy = Math.max(0, (vh - th) / 2)
+      const r = desktop ? 22 + 6 * f : 22 * (1 - f)
+      focus.style.opacity = String(seg(p, 0.27, 0.34))
+      focus.style.clipPath = `inset(${iy}px ${ix}px ${iy}px ${ix}px round ${r}px)`
+
+      const deep = !desktop && f > 0.995
+      if (deep !== lastDeep) {
+        root.classList.toggle('is-deep', deep)
+        lastDeep = deep
+      }
+
+      const wantPlay = p > 0.22 && p < 0.999
+      if (wantPlay !== focusPlaying) {
+        focusPlaying = wantPlay
+        if (wantPlay) video.play().catch(() => {})
+        else video.pause()
+      }
+
+      /* 3 · i risultati sopra il video */
+      const starts = [0.6, 0.7, 0.8, 0.88]
+      chips.forEach((el, i) => {
+        const k = out(seg(p, starts[i], starts[i] + 0.06))
+        el.style.opacity = String(k)
+        el.style.transform = `translate3d(0,${(1 - k) * 26}px,0) scale(${0.92 + 0.08 * k})`
+      })
+      const n = Math.round(1200 + 47000 * out(seg(p, 0.6, 0.76)))
+      views.textContent = n.toLocaleString('it-IT').replace(/ /g, '.')
+
+      const bands = [
+        [0.56, 0.7],
+        [0.7, 0.82],
+        [0.82, 1.01],
+      ]
+      lines.forEach((el, i) => {
+        const [a, b] = bands[i]
+        const inn = out(seg(p, a, a + 0.04))
+        const gone = i < 2 ? seg(p, b - 0.03, b) : 0
+        el.style.opacity = String(inn * (1 - gone))
+        el.style.transform = `translate3d(0,${(1 - inn) * 30 - gone * 20}px,0)`
+      })
+    }
+
+    registerScrollTrigger()
+    const st = ScrollTrigger.create({
+      trigger: root,
+      start: 'top top',
+      end: 'bottom bottom',
+      onUpdate: (self) => apply(self.progress),
+      onRefresh: (self) => {
+        vw = window.innerWidth
+        vh = window.innerHeight
+        lastP = -1
+        apply(self.progress)
+      },
     })
+    apply(st.progress)
 
-    let raf = 0
-    let running = false
-    /* L'entrata è finita (o è stata interrotta)? Finché non lo è, comanda il
-       CSS: un'animazione in corso ha la precedenza sullo stile inline, quindi
-       il driver può anche scrivere ma non si vede nulla. */
-    let settled = false
-    let visible = true
-    let motionOk = !prefersReducedMotion()
-
-    /**
-     * Chiude l'entrata, subito.
-     *
-     * `is-settled` toglie le animazioni d'ingresso (`animation: none`) e mette
-     * gli elementi al loro stato d'arrivo. Da quel momento lo stile inline del
-     * driver ha via libera.
-     *
-     * Si chiama al primo pixel di scroll, non a fine entrata: erano due cose
-     * che si contendevano le stesse proprietà, e vinceva sempre l'animazione.
-     * Chi scrollava mentre l'hero stava ancora entrando non vedeva succedere
-     * niente finché l'entrata non finiva da sola — e non era una questione di
-     * durate, era la cascata.
-     *
-     * `driver.update()` alla fine e non al prossimo fotogramma: così la scena
-     * passa dallo stato d'arrivo alla posizione che le compete per lo scroll
-     * corrente dentro lo STESSO frame, e non si vede lampeggiare la
-     * composizione ferma prima che l'uscita la sposti.
-     */
-    const settleNow = () => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(settle)
-      hero.classList.add('is-settled')
-      start()
-      driver.update()
-    }
-
-    const loop = () => {
-      /* Il primo pixel di scroll chiude l'entrata. La condizione sta qui e non
-         in un listener perché il loop gira già: un secondo ascoltatore dello
-         stesso numero è solo un'altra cosa che può disallinearsi. */
-      if (!settled && window.scrollY > 0) settleNow()
-      driver.update()
-      raf = requestAnimationFrame(loop)
-    }
-    /* Il loop parte SENZA aspettare l'entrata: è lui che si accorge dello
-       scroll. Finché l'entrata è in corso non dipinge nulla di visibile — al
-       progresso zero esce subito — ma è vivo e pronto. */
-    const start = () => {
-      if (running || !visible || !motionOk) return
-      running = true
-      raf = requestAnimationFrame(loop)
-    }
-    const stop = () => {
-      if (!running) return
-      running = false
-      cancelAnimationFrame(raf)
-    }
-
-    /* Se nessuno scrolla, l'entrata finisce per conto suo e a quel punto va
-       comunque staccata: da lì in poi il campo è del driver. */
-    const settle = window.setTimeout(settleNow, HERO_ENTRANCE_MS)
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        visible = entry.isIntersecting
-        if (visible) start()
-        else stop()
+    /* Fuori dallo schermo: si ferma tutto (muro, video). */
+    const io = new IntersectionObserver(
+      ([e]) => {
+        root.classList.toggle('is-off', !e.isIntersecting)
+        if (!e.isIntersecting) {
+          video.pause()
+          focusPlaying = false
+          tileVideos.forEach((v) => v.pause())
+        } else if (desktop && !saveData) {
+          tileVideos.forEach((v) => v.src && v.play().catch(() => {}))
+        }
       },
       { threshold: 0 },
     )
-    observer.observe(hero)
-
-    /* Due percorsi, non uno spento e uno acceso. Su schermo stretto l'uscita
-       c'è ma è alleggerita: stessa coreografia, niente sfocatura, corse più
-       corte (vedi PROFILES in heroMotion.ts). Con motion ridotto non c'è
-       affatto — e va deciso qui, perché il loop parte comunque per il
-       parallasse e senza questo veto scriverebbe l'uscita lo stesso. */
-    const narrow = window.matchMedia(`(max-width: ${POINTER_BREAKPOINT - 1}px)`)
-    const syncExit = () => {
-      if (prefersReducedMotion()) driver.setExit('off')
-      else driver.setExit(narrow.matches ? 'light' : 'full')
-    }
-    narrow.addEventListener('change', syncExit)
-    syncExit()
-
-    /* Chi ricarica a metà pagina non deve vedere un'entrata: è già oltre.
-       Si chiude qui, prima del primo fotogramma, così l'hero compare già nello
-       stato che gli compete per la posizione in cui si trova. Va dopo
-       syncExit(), altrimenti il primo dipinto userebbe il profilo sbagliato. */
-    if (window.scrollY > 0) settleNow()
-
-    /* Il parallasse è roba da mouse: col dito non esiste il passare sopra
-       senza toccare. Il puntatore condiviso si accende solo se serve. */
-    let stopPointer: (() => void) | null = null
-    const unsubscribePointer = onMouseEffectsChange((enabled) => {
-      driver.setParallax(enabled)
-      if (enabled && !stopPointer) {
-        stopPointer = trackPointer()
-      } else if (!enabled && stopPointer) {
-        stopPointer()
-        stopPointer = null
-      }
-    })
-
-    const unsubscribeMotion = onAmbientMotionChange((enabled) => {
-      motionOk = enabled
-      // La preferenza può cambiare a pagina aperta: il profilo va rideciso.
-      syncExit()
-      if (enabled) {
-        start()
-      } else {
-        stop()
-        driver.reset()
-      }
-    })
+    io.observe(root)
 
     return () => {
-      window.clearTimeout(settle)
-      observer.disconnect()
-      narrow.removeEventListener('change', syncExit)
-      unsubscribePointer()
-      unsubscribeMotion()
-      stopPointer?.()
-      stop()
-      driver.reset()
+      st.kill()
+      io.disconnect()
     }
   }, [])
 
+  const seen = new Set<string>()
+
   return (
-    <section className="lm-hero" id="hero" ref={heroRef}>
-      {/* Il bagliore: due nuclei separati e saturi — rosso a sinistra, blu-viola
-          a destra — più un centro caldo. Il respiro sta sul nucleo interno e non
-          qui, perché su questo elemento scrive il driver dell'uscita: un
-          contenitore che si anima da solo non si lascia comandare da fuori. */}
-      <div className="lm-hero-bloom" aria-hidden="true">
-        <span className="lm-hero-bloom-core" />
-      </div>
-
-      <h1 className="lm-hero-word">
-        <span className="lm-sr">{m.hero.srTitle}</span>
-        <span className="lm-hero-letters" aria-hidden="true">
-          {HERO_LETTERS.map((letter) => (
-            <span className={`lm-hero-ch${letter === 'I' ? ' is-grad' : ''}`} key={letter}>
-              {letter}
-            </span>
-          ))}
-        </span>
-      </h1>
-
-      {HERO_WINDOWS.map((win) => (
-        <div className={`lm-hero-win ${win.slot}`} key={win.slot}>
-          <Image
-            src={win.src}
-            alt={fill(m.hero.windowAlt, { client: win.client })}
-            width={win.width}
-            height={win.height}
-            sizes={`(max-width: ${POINTER_BREAKPOINT - 1}px) 42vw, 18vw`}
-            /* Tutte e quattro sono in prima schermata: caricate pigramente
-               entrerebbero a composizione già finita, lasciando due buchi.
-               Il conto è basso comunque — `sizes` fa servire ritagli da
-               ~230px, non gli screenshot interi. */
-            priority
-          />
+    <section ref={rootRef} className="lm-hw" id="top" aria-label={h.srTitle}>
+      <div className="lm-hw-sticky">
+        <div className="lm-hw-stage" aria-hidden="true">
+          <div className="lm-hw-wall">
+            {Array.from({ length: WALL_COLS }, (_, c) => {
+              const tiles = tilesForColumn(c)
+              const loop = [...tiles, ...tiles]
+              return (
+                <div className={`lm-hw-col ${c % 2 ? 'is-up' : 'is-down'}`} key={c} style={{ ['--d' as string]: `${46 + (c % 3) * 9}s` }}>
+                  <div className="lm-hw-col-in">
+                    {loop.map((t, i) => {
+                      const firstVideo = t.video && i < tiles.length && !seen.has(t.name)
+                      if (firstVideo) seen.add(t.name)
+                      return (
+                        <div className="lm-hw-tile" key={i} style={{ backgroundImage: `url(/hero/wall/${t.name}.webp)` }}>
+                          {firstVideo && <video data-src={`/hero/wall/${t.name}.mp4`} muted loop playsInline preload="none" />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      ))}
 
-      <div className="lm-hero-foot">
-        <p className="lm-hero-payoff">
-          {m.hero.payoffLead}
-          <em>{m.hero.payoffAccent}</em>
-        </p>
+        <div className="lm-hw-shade" />
+        <div className="lm-hw-dim" />
 
-        <a className="lm-hero-cta" href="#metodo" data-cursor="grow">
-          <span className="lm-hero-cta-ring" aria-hidden="true">
-            ↓
-          </span>
-          {m.hero.cta}
-        </a>
+        <div className="lm-hw-focus" aria-hidden="true">
+          <video muted loop playsInline preload="metadata" poster="/hero/wall/focus.webp" />
+          <div className="lm-hw-focus-grad" />
+        </div>
+
+        <div className="lm-hw-chips" aria-hidden="true">
+          <div className="lm-hw-chip c1">
+            <b className="lm-hw-views">1.200</b>
+            <span>{h.chipViews}</span>
+          </div>
+          <div className="lm-hw-chip c2">
+            <span className="tag">{h.chipAdTag}</span>
+            <b>{h.chipAd}</b>
+          </div>
+          <div className="lm-hw-chip c3">
+            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#25d366" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z" />
+              <path fill="#fff" d="M8.6 7.3c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .6l-.4.6c-.1.2-.2.3 0 .6.5.9 1.3 1.7 2.2 2.2.3.2.5.1.6 0l.6-.7c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.4.4 0 .4-.1 1-.6 1.4-.5.5-1.3.8-2 .6-1.1-.3-2.6-1-3.9-2.3-1.6-1.6-2.3-3.1-2.4-4 0-.9.3-1.6.5-2.2z" />
+            </svg>
+            <div>
+              <b>{h.chipWa}</b>
+              <span>{h.chipWaMeta}</span>
+            </div>
+          </div>
+          <div className="lm-hw-chip c4">
+            <svg className="ic" viewBox="0 0 24 24" aria-hidden="true">
+              <rect width="24" height="24" rx="6" fill="#34c759" />
+              <path fill="#fff" d="M8.2 6.3c.3-.3.8-.3 1.1 0l1.4 1.8c.3.3.2.8 0 1.1l-.8.9a8 8 0 0 0 3.9 3.9l.9-.8c.3-.3.8-.3 1.1 0l1.8 1.4c.3.3.3.8 0 1.1l-.9 1c-.5.5-1.3.7-2 .4a12 12 0 0 1-6.9-6.9c-.3-.7-.1-1.5.4-2z" />
+            </svg>
+            <div>
+              <b>{h.chipCall}</b>
+              <span>{h.chipCallMeta}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="lm-hw-lines" aria-hidden="true">
+          {h.lines.map((l: string, i: number) => (
+            <p className="lm-hw-line" key={i}>
+              {l}
+            </p>
+          ))}
+        </div>
+
+        <div className="lm-hw-copy">
+          <p className="lm-hw-kicker">{h.kicker}</p>
+          <h1 className="lm-hw-title">
+            <span className="lm-sr">{h.srTitle}</span>
+            <span className="lm-hw-word" aria-hidden="true">
+              {HERO_LETTERS.map((ch, i) => (
+                <span className={`lm-hw-ch${ch === 'I' ? ' is-i' : ''}`} key={i} style={{ ['--i' as string]: i }}>
+                  {ch}
+                </span>
+              ))}
+            </span>
+          </h1>
+          <p className="lm-hw-pay">
+            {h.payoffLead}
+            <em>{h.payoffAccent}</em>
+          </p>
+          <div className="lm-hw-ctas">
+            <a className="lm-hw-btn is-main" href="#contatti">
+              {h.ctaMain}
+            </a>
+            <a className="lm-hw-btn" href="#metodo">
+              {h.cta}
+            </a>
+          </div>
+        </div>
+
+        <div className="lm-hw-hint" aria-hidden="true">
+          <span />
+        </div>
       </div>
-
-      <HeroTicker />
-
-      <div className="lm-hero-vig" aria-hidden="true" />
-      <div className="lm-hero-grain" aria-hidden="true" />
     </section>
   )
 }

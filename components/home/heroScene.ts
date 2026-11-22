@@ -1,50 +1,51 @@
 /**
- * Composizione dell'hero: cosa c'è in scena e dove sta.
+ * Composizione dell'hero «muro dei contenuti».
  *
- * Le quattro finestre raccontano il lavoro in quattro scatti: le riprese, chi
- * guarda il contenuto, il titolare che riceve i contatti, il locale pieno.
- * Foto generate per Lumino (/public/hero/), servite da next/image.
+ * Il muro è fatto di riquadri verticali come i reel: alcuni sono video corti in
+ * loop (solo da PC, dove la decodifica costa poco), gli altri sono foto. Su
+ * telefono si vedono solo le foto: il movimento lo danno le colonne che
+ * scorrono, e l'unico video che gira è quello in primo piano. È la regola che
+ * tiene il telefono senza scatti.
  *
- * L'ordine conta e non va cambiato a caso: è quello che il driver del
- * movimento usa per decidere verso quale angolo ogni finestra esce
- * (0 e 2 a sinistra, 1 e 3 a destra; le prime due in alto, le altre in basso).
+ * Tutti i file stanno in /public/hero/wall, già tagliati 300×534 (9:16).
  */
 
-export interface HeroWindow {
-  /** Classe di posizione: la geometria vive in hero.css, non qui. */
-  slot: 'w1' | 'w2' | 'w3' | 'w4'
-  src: string
-  /** Dimensioni reali del file: servono a next/image per non far ballare il layout. */
-  width: number
-  height: number
-  /** Nome del progetto — finisce nell'alt, non a schermo. */
-  client: string
+export interface WallTile {
+  /** Nome del file senza estensione: c'è sempre il .webp, il .mp4 solo se video. */
+  name: string
+  video: boolean
+  alt: string
 }
 
-export const HERO_WINDOWS: HeroWindow[] = [
-  { slot: 'w1', src: '/hero/shoot.webp', width: 800, height: 498, client: 'riprese sul posto per i social' },
-  { slot: 'w2', src: '/hero/scroll.webp', width: 800, height: 498, client: 'un cliente che guarda un reel' },
-  { slot: 'w3', src: '/hero/shop.webp', width: 800, height: 498, client: 'una titolare che riceve nuovi contatti' },
-  { slot: 'w4', src: '/hero/sala.webp', width: 800, height: 498, client: 'un locale pieno di clienti' },
+export const WALL_TILES: WallTile[] = [
+  { name: 'maker', video: true, alt: 'riprese sul posto con il videomaker' },
+  { name: 'shop', video: false, alt: 'una titolare in negozio' },
+  { name: 'crowd', video: true, alt: 'un locale pieno di clienti' },
+  { name: 'reel-1', video: false, alt: 'un contenuto per i social' },
+  { name: 'couple', video: true, alt: 'clienti che arrivano' },
+  { name: 'scroll', video: false, alt: 'un cliente che guarda un reel' },
+  { name: 'plate', video: true, alt: 'un piatto ripreso per un reel' },
+  { name: 'reel-2', video: false, alt: 'un contenuto per i social' },
+  { name: 'typing', video: true, alt: 'qualcuno che cerca sul telefono' },
+  { name: 'shoot', video: false, alt: 'un set fotografico' },
+  { name: 'full', video: true, alt: 'una sala piena' },
+  { name: 'reel-3', video: false, alt: 'un contenuto per i social' },
+  { name: 'sofa', video: true, alt: 'una persona che scorre il feed' },
+  { name: 'sala', video: false, alt: 'una sala apparecchiata' },
+  { name: 'owner', video: true, alt: 'un titolare nella sua attività' },
+  { name: 'reel-4', video: false, alt: 'un contenuto per i social' },
 ]
 
-/** Le sei lettere del wordmark. La I è quella nel gradiente. */
+/** Colonne del muro e riquadri per colonna (prima della copia per il loop). */
+export const WALL_COLS = 7
+export const WALL_PER_COL = 4
+
+/** Riquadri della colonna c: ognuna pesca dalla lista con un passo diverso,
+ *  così due colonne vicine non mostrano mai la stessa sequenza. */
+export function tilesForColumn(c: number): WallTile[] {
+  const out: WallTile[] = []
+  for (let r = 0; r < WALL_PER_COL; r++) out.push(WALL_TILES[(c * 5 + r * 3 + c) % WALL_TILES.length])
+  return out
+}
+
 export const HERO_LETTERS = ['L', 'U', 'M', 'I', 'N', 'O'] as const
-
-/** Il payoff sotto la composizione. Esportato: è anche il testo dell'h1. */
-export const HERO_PAYOFF_LEAD = 'Social e pubblicità '
-export const HERO_PAYOFF_ACCENT = 'che portano clienti.'
-export const HERO_TITLE = `Lumino — social, pubblicità e clienti per le aziende. ${HERO_PAYOFF_LEAD}${HERO_PAYOFF_ACCENT}`
-
-/**
- * Durata complessiva dell'entrata, in ms.
- *
- * È la somma dell'ultimo ritardo e dell'ultima durata dichiarati in hero.css
- * (la striscia: 2.2s + 0.9s), più un margine. Scaduta questa, il componente
- * mette `is-settled` sull'hero: le animazioni d'entrata vengono staccate e da
- * quel momento lo stile inline del driver ha via libera.
- *
- * Se cambiano i ritardi in hero.css va cambiata anche questa: sono la stessa
- * decisione scritta in due linguaggi.
- */
-export const HERO_ENTRANCE_MS = 3400

@@ -25,7 +25,21 @@
     "payoffLead": "Social e pubblicità ",
     "payoffAccent": "che portano clienti.",
     "cta": "Come lavoriamo",
-    "windowAlt": "Foto: {client}"
+    "windowAlt": "Foto: {client}",
+    "kicker": "Marketing e digitale per aziende",
+    "ctaMain": "Voglio più clienti",
+    "chipViews": "visualizzazioni",
+    "chipAdTag": "Sponsorizzato",
+    "chipAd": "La tua azienda, a 2 km da chi cerca",
+    "chipWa": "Avete disponibilità sabato?",
+    "chipWaMeta": "WhatsApp · adesso",
+    "chipCall": "Nuova chiamata",
+    "chipCallMeta": "Richiesta preventivo",
+    "lines": [
+      "Contenuti che si fanno guardare.",
+      "Pubblicità che arriva alle persone giuste.",
+      "E il telefono comincia a suonare."
+    ]
   },
   "marquee": {
     "words": [

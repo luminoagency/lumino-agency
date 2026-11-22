@@ -19,7 +19,10 @@ body {
   min-height: 100vh;
   background: var(--void);
   color: var(--cream);
+  /* clip e non hidden: hidden crea un contenitore di scroll e lo sticky
+     dell'hero smetterebbe di funzionare. */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .lm ::selection {

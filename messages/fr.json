@@ -25,7 +25,21 @@
     "payoffLead": "Réseaux et publicité ",
     "payoffAccent": "qui amènent des clients.",
     "cta": "Notre méthode",
-    "windowAlt": "Photo : {client}"
+    "windowAlt": "Photo : {client}",
+    "kicker": "Marketing et digital pour entreprises",
+    "ctaMain": "Je veux plus de clients",
+    "chipViews": "vues",
+    "chipAdTag": "Sponsorisé",
+    "chipAd": "Votre entreprise, à 2 km de qui cherche",
+    "chipWa": "Vous êtes disponibles samedi ?",
+    "chipWaMeta": "WhatsApp · maintenant",
+    "chipCall": "Nouvel appel",
+    "chipCallMeta": "Demande de devis",
+    "lines": [
+      "Des contenus qu'on regarde vraiment.",
+      "De la publicité qui touche les bonnes personnes.",
+      "Et le téléphone commence à sonner."
+    ]
   },
   "marquee": {
     "words": [
